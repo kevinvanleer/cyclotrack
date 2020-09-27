@@ -1,4 +1,4 @@
-package com.example.cyclotrack
+package com.kvl.cyclotrack
 
 import android.content.Context
 import android.content.Context.SENSOR_SERVICE

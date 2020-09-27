@@ -1,4 +1,4 @@
-package com.example.cyclotrack
+package com.kvl.cyclotrack
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry

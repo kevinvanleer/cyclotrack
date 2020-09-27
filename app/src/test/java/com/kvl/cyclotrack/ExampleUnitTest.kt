@@ -1,4 +1,4 @@
-package com.example.cyclotrack
+package com.kvl.cyclotrack
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

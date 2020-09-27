@@ -1,4 +1,4 @@
-package com.example.cyclotrack
+package com.kvl.cyclotrack
 
 import android.Manifest
 import android.content.pm.PackageManager

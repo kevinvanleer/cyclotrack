@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/LiveDataFragment"
-        android:name="com.example.cyclotrack.LiveDataFragment"
+        android:name="com.kvl.cyclotrack.LiveDataFragment"
         android:label="Current Activity"
         tools:layout="@layout/live_data_fragment">
 
@@ -17,7 +17,7 @@
     </fragment>
     <fragment
         android:id="@+id/FirstFragment"
-        android:name="com.example.cyclotrack.FirstFragment"
+        android:name="com.kvl.cyclotrack.FirstFragment"
         android:label="@string/first_fragment_label"
         tools:layout="@layout/fragment_first">
 
@@ -27,7 +27,7 @@
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
-        android:name="com.example.cyclotrack.SecondFragment"
+        android:name="com.kvl.cyclotrack.SecondFragment"
         android:label="@string/second_fragment_label"
         tools:layout="@layout/fragment_second">
 

@@ -1,4 +1,4 @@
-package com.example.cyclotrack
+package com.kvl.cyclotrack
 
 import android.os.Bundle
 import android.view.LayoutInflater
