@@ -45,12 +45,14 @@ class LiveDataFragment : Fragment() {
 
         viewModel.getLocationData().observe(this, Observer {
             Log.d("UI", "Location observer detected change")
-            speedTextView.text = "${String.format("%.1f", it.speed * 2.23694)} ±${
+            /*speedTextView.text = "${String.format("%.1f", it.speed * 2.23694)} ±${
                 String.format("%.1f",
-                    it.location.speedAccuracyMetersPerSecond * 2.23694)
-            } mph"
+                    (it.location?.speedAccuracyMetersPerSecond?.times(2.23694)) ?: 0f)
+            } mph"*/
+            val averageSpeed = it.distance / it.duration * 1e9 * 2.23694
+            speedTextView.text = "${String.format("%.1f", if (it.speed.isFinite()) it.speed else 0f * 2.23694)} mph"
             averageSpeedTextView.text =
-                "${String.format("%.1f", it.distance / it.duration * 1e9 * 2.23694)} mph"
+                "${String.format("%.1f", if(averageSpeed.isFinite()) averageSpeed else 0f)} mph"
             distanceTextView.text = "${String.format("%.2f", it.distance * 0.000621371)} mi"
             durationTextView.text = DateUtils.formatElapsedTime((it.duration / 1e9).toLong())
         })
