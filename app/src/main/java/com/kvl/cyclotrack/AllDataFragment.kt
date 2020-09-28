@@ -12,9 +12,11 @@ import android.widget.TextView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navGraphViewModels
 import kotlin.reflect.full.declaredMemberProperties
 
 class AllDataFragment : Fragment() {
+    private val viewModel: LiveDataViewModel by navGraphViewModels(R.id.nav_graph)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,7 +33,6 @@ class AllDataFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val viewModel = ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
         val grid: GridLayout = view.findViewById(R.id.all_data_grid)
 
         Log.d("UI::AllDataFragment", "onViewCreated")

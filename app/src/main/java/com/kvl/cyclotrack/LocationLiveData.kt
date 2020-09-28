@@ -74,12 +74,11 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
         var newDistance: Double = oldDistance
         var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
 
-
         val newDuration =
             if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0
         val durationDelta = (newDuration - (old?.duration ?: 0.0))
 
-        if (accurateEnough && newDuration > 5.0) {
+        if (accurateEnough) {
             val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
             val newSpeed: Float =
                 if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()

@@ -24,7 +24,7 @@
 
         <action
             android:id="@+id/action_start_activity"
-            app:destination="@id/AllDataFragment" />
+            app:destination="@id/LiveDataFragment" />
     </fragment>
     <fragment
         android:id="@+id/LiveDataFragment"

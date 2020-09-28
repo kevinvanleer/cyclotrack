@@ -8,6 +8,7 @@ import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProviders
 
 class MainActivity : AppCompatActivity() {
     private fun initializeLocationService() {
@@ -46,6 +47,7 @@ class MainActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setSupportActionBar(findViewById(R.id.toolbar))
         initializeLocationService()
+        ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
     }
 
 
