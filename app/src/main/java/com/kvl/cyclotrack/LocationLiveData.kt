@@ -9,15 +9,16 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import kotlin.math.max
 
 
 class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private var startTime: Double = Double.NaN
-    private val ACCURACY_THRESHOLD = 10f
-    private val SPEED_THRESHOLD = 1e-10
-    private val MAXIMUM_SPEED = 20f
-    private val MAXIMUM_ACCELERATION = 2f
+    private val accuracyThreshold = 20f
+    private val speedThreshold = 1e-10
+    private val maximumSpeedThreshold = 20f
+    private val maximumAccelerationThreshold = 2f
 
     override fun onInactive() {
         super.onInactive()
@@ -71,7 +72,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private fun setLocationModel(old: LocationModel?, new: Location) {
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
-        var accurateEnough = new.hasAccuracy() && new.accuracy < ACCURACY_THRESHOLD
+        var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
 
 
         val newDuration =
@@ -82,10 +83,10 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
             val newSpeed: Float =
                 if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
-            if (newSpeed > SPEED_THRESHOLD) newDistance += distanceDelta
+            if (newSpeed > speedThreshold) newDistance += distanceDelta
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
             val newSlope =
-                if (newSpeed > SPEED_THRESHOLD) (new.altitude - oldAltitude) / distanceDelta else old?.slope
+                if (newSpeed > speedThreshold) (new.altitude - oldAltitude) / distanceDelta else old?.slope
                     ?: 0.0
             val newAcceleration = (newSpeed - (old?.speed ?: 0f) / durationDelta).toFloat()
 
@@ -99,8 +100,10 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
 
             value = LocationModel(location = new,
                 speed = newSpeed,
+                maxSpeed = max(newSpeed, old?.maxSpeed ?: 0f),
                 distance = newDistance,
                 acceleration = newAcceleration,
+                maxAcceleration = max(newAcceleration, old?.maxAcceleration ?: 0f),
                 slope = newSlope,
                 duration = newDuration,
                 accuracy = new.accuracy,
@@ -111,7 +114,9 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                 value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
                     ?: LocationModel(duration = newDuration,
                         speed = 0f,
+                        maxSpeed = 0f,
                         acceleration = 0f,
+                        maxAcceleration = 0f,
                         distance = 0.0,
                         slope = 0.0,
                         location = null,
@@ -133,7 +138,9 @@ data class LocationModel(
     val location: Location?,
     val accuracy: Float,
     val speed: Float,
+    val maxSpeed: Float,
     val acceleration: Float,
+    val maxAcceleration: Float,
     val distance: Double,
     val slope: Double,
     val duration: Double,
