@@ -79,7 +79,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0
         val durationDelta = (newDuration - (old?.duration ?: 0.0))
 
-        if (accurateEnough) {
+        if (accurateEnough && newDuration > 5.0) {
             val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
             val newSpeed: Float =
                 if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
@@ -91,19 +91,23 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             val newAcceleration = (newSpeed - (old?.speed ?: 0f) / durationDelta).toFloat()
 
             Log.d("SPEED",
-                if (newDuration == 0.0) "0" else (distanceDelta / durationDelta).toFloat().toString())
+                if (newDuration == 0.0) "0" else (distanceDelta / durationDelta).toFloat()
+                    .toString())
             Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
             Log.d("SPEED_DURATION_DELTA", durationDelta.toString())
 
             Log.v("LOCATION_MODEL_NEW",
                 "accuracy: ${new.accuracy}; speed: ${newSpeed}; acceleration: ${newAcceleration}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
 
+            Log.d("MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
+
             value = LocationModel(location = new,
                 speed = newSpeed,
-                maxSpeed = max(newSpeed, old?.maxSpeed ?: 0f),
+                maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f, old?.maxSpeed ?: 0f),
                 distance = newDistance,
                 acceleration = newAcceleration,
-                maxAcceleration = max(newAcceleration, old?.maxAcceleration ?: 0f),
+                maxAcceleration = max(if (newAcceleration.isFinite()) newAcceleration else 0f,
+                    old?.maxAcceleration ?: 0f),
                 slope = newSlope,
                 duration = newDuration,
                 accuracy = new.accuracy,

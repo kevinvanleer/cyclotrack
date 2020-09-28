@@ -1,0 +1,32 @@
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.kvl.cyclotrack.AllDataFragment">
+
+    <GridLayout
+        android:id="@+id/all_data_grid"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:columnCount="2"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:rowCount="10"
+        android:useDefaultMargins="true"
+        app:layout_constraintBottom_toTopOf="@id/button_exit_all_data"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/button_exit_all_data"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:text="DASHBOARD"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/all_data_grid" />
+</androidx.constraintlayout.widget.ConstraintLayout>
