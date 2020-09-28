@@ -31,13 +31,13 @@
         android:name="com.kvl.cyclotrack.LiveDataFragment"
         android:label="Dashboard"
         tools:layout="@layout/live_data_fragment">
-    <action
-        android:id="@+id/action_to_debug_view"
-        app:destination="@id/AllDataFragment" />
+        <action
+            android:id="@+id/action_to_debug_view"
+            app:destination="@id/AllDataFragment" />
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.kvl.cyclotrack.SecondFragment"
         android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second"/>
+        tools:layout="@layout/fragment_second" />
 </navigation>

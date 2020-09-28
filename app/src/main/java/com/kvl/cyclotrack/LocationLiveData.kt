@@ -16,7 +16,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private var startTime: Double = Double.NaN
     private val accuracyThreshold = 20f
-    private val speedThreshold = 1e-10
+    private val speedThreshold = 0.05
     private val maximumSpeedThreshold = 20f
     private val maximumAccelerationThreshold = 2f
 
