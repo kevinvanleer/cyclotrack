@@ -70,28 +70,23 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
         var newDistance: Double = oldDistance
         var accurateEnough = new.hasAccuracy() && new.accuracy < 5f
 
-        /*accurateEnough = when {
-            android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O -> new.speedAccuracyMetersPerSecond > 0f && new.speed > new.speedAccuracyMetersPerSecond
-            else -> new.hasAccuracy() && new.accuracy < 5f
-        }*/
-
         val newDuration =
             if (startTime != Long.MIN_VALUE) new.elapsedRealtimeNanos - startTime else 0
 
         if (accurateEnough) {
-            newDistance = old?.location?.distanceTo(new)?.plus(old.distance) ?: oldDistance
+            val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
+            val newSpeed: Float = if (newDuration == 0L) 0f else (distanceDelta / ((newDuration - (old?.duration ?: 0L)))).toFloat()
+            if (newSpeed > 1e-10) newDistance += distanceDelta
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
-            //val newSlope = if(newDistance == 0.0) 0.0 else (new.altitude - oldAltitude) / newDistance
-            val newSlope = (new.altitude - oldAltitude) / (newDistance - (old?.distance ?: 0.0))
-            val newSpeed: Float = if (newDuration == 0L) 0f else ((newDistance - (old?.distance
-                ?: 0.0)) / ((newDuration - (old?.duration ?: 0L)))).toFloat()
-            Log.d("SPEED", if (newDuration == 0L) "0" else ((newDistance - (old?.distance
-                ?: 0.0)) / (newDuration - (old?.duration ?: 0L))).toFloat().toString())
-            Log.d("SPEED_DISTANCE_DELTA", (newDistance - (old?.distance ?: 0.0)).toString())
+            val newSlope = if(newSpeed > 1e-10) (new.altitude - oldAltitude) / distanceDelta else old?.slope ?: 0.0
+
+            Log.d("SPEED", if (newDuration == 0L) "0" else (distanceDelta / (newDuration - (old?.duration ?: 0L))).toFloat().toString())
+            Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
             Log.d("SPEED_DURATION_DELTA", (newDuration - (old?.duration ?: 0L)).toString())
 
             Log.v("LOCATION_MODEL_NEW",
                 "speed: ${newSpeed}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
+
             value = LocationModel(location = new,
                 speed = newSpeed,
                 distance = newDistance,
