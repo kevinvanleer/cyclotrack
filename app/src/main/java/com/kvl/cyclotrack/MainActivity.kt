@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setSupportActionBar(findViewById(R.id.toolbar))
+        initializeLocationService()
     }
 
 

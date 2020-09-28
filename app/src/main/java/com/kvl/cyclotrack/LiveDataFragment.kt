@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -43,6 +44,10 @@ class LiveDataFragment : Fragment() {
         averageSpeedTextView = view.findViewById(R.id.textview_average_speed)
         heartRateTextView = view.findViewById(R.id.textview_heart_rate)
 
+        val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
+        val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
+
+
         viewModel.getLocationData().observe(this, Observer {
             Log.d("UI", "Location observer detected change")
             /*speedTextView.text = "${String.format("%.1f", it.speed * 2.23694)} ±${
@@ -50,15 +55,19 @@ class LiveDataFragment : Fragment() {
                     (it.location?.speedAccuracyMetersPerSecond?.times(2.23694)) ?: 0f)
             } mph"*/
             val averageSpeed = it.distance / it.duration * 1e9 * 2.23694
-            speedTextView.text = "${String.format("%.1f", if (it.speed.isFinite()) it.speed else 0f * 2.23694)} mph"
+            speedTextView.text = "${String.format("%.1f", if (it.speed.isFinite()) it.speed * 2.23694 else 888f)} mph"
             averageSpeedTextView.text =
-                "${String.format("%.1f", if(averageSpeed.isFinite()) averageSpeed else 0f)} mph"
+                "${String.format("%.1f", if(averageSpeed.isFinite()) averageSpeed else 0f)} avg"
             distanceTextView.text = "${String.format("%.2f", it.distance * 0.000621371)} mi"
             durationTextView.text = DateUtils.formatElapsedTime((it.duration / 1e9).toLong())
+            heartRateTextView.text = String.format("%.2f", if (it.slope.isFinite()) it.slope else 0f)
+            //heartRateTextView.text = String.format("%.2f", it.location?.accuracy ?: 0f)
+            trackingImage.visibility = if(it.tracking) View.VISIBLE else View.INVISIBLE
+            accuracyTextView.text = String.format("%.2f", it.location?.accuracy ?: 0f)
         })
         viewModel.getSensorData().observe(this, Observer {
             Log.d("UI", "Sensor observer detected change")
-            heartRateTextView.text = String.format("%.1f", it.tilt?.get(0))
+            //heartRateTextView.text = String.format("%.1f", it.tilt?.get(0))
         })
     }
 }

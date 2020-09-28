@@ -46,8 +46,9 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult?) {
             locationResult ?: return
+            Log.v("LOCATION", "New location result")
             for (location in locationResult.locations) {
-                location.dump(LogPrinter(Log.VERBOSE, "LOCATION"), "kvl")
+                //location.dump(LogPrinter(Log.VERBOSE, "LOCATION"), "kvl")
                 Log.v("LOCATION",
                     "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -67,7 +68,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private fun setLocationModel(old: LocationModel?, new: Location) {
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
-        var accurateEnough = new.hasAccuracy() && new.accuracy < 4f
+        var accurateEnough = new.hasAccuracy() && new.accuracy < 5f
 
         /*accurateEnough = when {
             android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O -> new.speedAccuracyMetersPerSecond > 0f && new.speed > new.speedAccuracyMetersPerSecond
@@ -77,12 +78,17 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
         val newDuration =
             if (startTime != Long.MIN_VALUE) new.elapsedRealtimeNanos - startTime else 0
 
-        if(accurateEnough) {
+        if (accurateEnough) {
             newDistance = old?.location?.distanceTo(new)?.plus(old.distance) ?: oldDistance
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
             //val newSlope = if(newDistance == 0.0) 0.0 else (new.altitude - oldAltitude) / newDistance
-            val newSlope = (new.altitude - oldAltitude) / newDistance
-            val newSpeed : Float = if (newDuration == 0L) 0f else ((newDistance - (old?.distance ?: 0.0)).toFloat() / (newDuration - (old?.duration ?: 0L)))
+            val newSlope = (new.altitude - oldAltitude) / (newDistance - (old?.distance ?: 0.0))
+            val newSpeed: Float = if (newDuration == 0L) 0f else ((newDistance - (old?.distance
+                ?: 0.0)) / (newDuration - (old?.duration ?: 0L))).toFloat()
+            Log.d("SPEED", if (newDuration == 0L) "0" else ((newDistance - (old?.distance
+                ?: 0.0)) / (newDuration - (old?.duration ?: 0L))).toFloat().toString())
+            Log.d("SPEED_DISTANCE_DELTA", (newDistance - (old?.distance ?: 0.0)).toString())
+            Log.d("SPEED_DURATION_DELTA", (newDuration - (old?.duration ?: 0L)).toString())
 
             Log.v("LOCATION_MODEL_NEW",
                 "speed: ${newSpeed}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
@@ -90,10 +96,17 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                 speed = newSpeed,
                 distance = newDistance,
                 slope = newSlope,
-                duration = newDuration)
+                duration = newDuration,
+                tracking = true)
         } else {
             Log.v("LOCATION_MODEL_PLACEHOLDER", "${newDuration.toString()}")
-            var newValue = value?.copy(duration = newDuration) ?: LocationModel(duration = newDuration, speed = 0f, distance = 0.0, slope = 0.0, location = null)
+            var newValue =
+                value?.copy(duration = newDuration, tracking = false) ?: LocationModel(duration = newDuration,
+                    speed = 0f,
+                    distance = 0.0,
+                    slope = 0.0,
+                    location = null,
+                    tracking = false)
             value = newValue
         }
     }
@@ -113,4 +126,5 @@ data class LocationModel(
     val distance: Double,
     val slope: Double,
     val duration: Long,
+    val tracking: Boolean,
 )

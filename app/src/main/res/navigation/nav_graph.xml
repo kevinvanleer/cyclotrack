@@ -6,16 +6,6 @@
     app:startDestination="@id/FirstFragment">
 
     <fragment
-        android:id="@+id/LiveDataFragment"
-        android:name="com.kvl.cyclotrack.LiveDataFragment"
-        android:label="Current Activity"
-        tools:layout="@layout/live_data_fragment">
-
-        <action
-            android:id="@+id/action_FirstFragment_to_SecondFragment"
-            app:destination="@id/SecondFragment" />
-    </fragment>
-    <fragment
         android:id="@+id/FirstFragment"
         android:name="com.kvl.cyclotrack.FirstFragment"
         android:label="@string/first_fragment_label"
@@ -26,13 +16,15 @@
             app:destination="@id/LiveDataFragment" />
     </fragment>
     <fragment
+        android:id="@+id/LiveDataFragment"
+        android:name="com.kvl.cyclotrack.LiveDataFragment"
+        android:label="Dashboard"
+        tools:layout="@layout/live_data_fragment">
+    </fragment>
+    <fragment
         android:id="@+id/SecondFragment"
         android:name="com.kvl.cyclotrack.SecondFragment"
         android:label="@string/second_fragment_label"
         tools:layout="@layout/fragment_second">
-
-        <action
-            android:id="@+id/action_start_activity"
-            app:destination="@id/LiveDataFragment" />
     </fragment>
 </navigation>
