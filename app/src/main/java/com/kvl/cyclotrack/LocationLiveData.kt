@@ -84,7 +84,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             //val newSlope = if(newDistance == 0.0) 0.0 else (new.altitude - oldAltitude) / newDistance
             val newSlope = (new.altitude - oldAltitude) / (newDistance - (old?.distance ?: 0.0))
             val newSpeed: Float = if (newDuration == 0L) 0f else ((newDistance - (old?.distance
-                ?: 0.0)) / (newDuration - (old?.duration ?: 0L))).toFloat()
+                ?: 0.0)) / ((newDuration - (old?.duration ?: 0L)))).toFloat()
             Log.d("SPEED", if (newDuration == 0L) "0" else ((newDistance - (old?.distance
                 ?: 0.0)) / (newDuration - (old?.duration ?: 0L))).toFloat().toString())
             Log.d("SPEED_DISTANCE_DELTA", (newDistance - (old?.distance ?: 0.0)).toString())
