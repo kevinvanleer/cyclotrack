@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
 import android.util.Log
-import android.util.LogPrinter
 import androidx.lifecycle.LiveData
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -75,12 +74,18 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
 
         if (accurateEnough) {
             val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
-            val newSpeed: Float = if (newDuration == 0L) 0f else (distanceDelta / ((newDuration - (old?.duration ?: 0L)))).toFloat()
+            val newSpeed: Float =
+                if (newDuration == 0L) 0f else (distanceDelta / ((newDuration - (old?.duration
+                    ?: 0L)))).toFloat()
             if (newSpeed > 1e-10) newDistance += distanceDelta
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
-            val newSlope = if(newSpeed > 1e-10) (new.altitude - oldAltitude) / distanceDelta else old?.slope ?: 0.0
+            val newSlope =
+                if (newSpeed > 1e-10) (new.altitude - oldAltitude) / distanceDelta else old?.slope
+                    ?: 0.0
 
-            Log.d("SPEED", if (newDuration == 0L) "0" else (distanceDelta / (newDuration - (old?.duration ?: 0L))).toFloat().toString())
+            Log.d("SPEED",
+                if (newDuration == 0L) "0" else (distanceDelta / (newDuration - (old?.duration
+                    ?: 0L))).toFloat().toString())
             Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
             Log.d("SPEED_DURATION_DELTA", (newDuration - (old?.duration ?: 0L)).toString())
 
@@ -94,14 +99,15 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                 duration = newDuration,
                 tracking = true)
         } else {
-            Log.v("LOCATION_MODEL_PLACEHOLDER", "${newDuration.toString()}")
+            Log.v("LOCATION_MODEL_PLACEHOLDER", "$newDuration")
             var newValue =
-                value?.copy(duration = newDuration, tracking = false) ?: LocationModel(duration = newDuration,
-                    speed = 0f,
-                    distance = 0.0,
-                    slope = 0.0,
-                    location = null,
-                    tracking = false)
+                value?.copy(duration = newDuration, tracking = false)
+                    ?: LocationModel(duration = newDuration,
+                        speed = 0f,
+                        distance = 0.0,
+                        slope = 0.0,
+                        location = null,
+                        tracking = false)
             value = newValue
         }
     }
