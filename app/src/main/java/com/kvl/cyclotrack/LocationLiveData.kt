@@ -13,7 +13,11 @@ import com.google.android.gms.location.LocationServices
 
 class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    private var startTime: Long = Long.MIN_VALUE
+    private var startTime: Double = Double.NaN
+    private val ACCURACY_THRESHOLD = 10f
+    private val SPEED_THRESHOLD = 1e-10
+    private val MAXIMUM_SPEED = 20f
+    private val MAXIMUM_ACCELERATION = 2f
 
     override fun onInactive() {
         super.onInactive()
@@ -26,7 +30,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
                 location?.also {
-                    if (startTime == Long.MIN_VALUE) startTime = it.elapsedRealtimeNanos
+                    if (!startTime.isFinite()) startTime = it.elapsedRealtimeNanos / 1e9
                     setLocationModel(value, it)
                 }
             }
@@ -67,50 +71,52 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private fun setLocationModel(old: LocationModel?, new: Location) {
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
-        var accurateEnough = new.hasAccuracy() && new.accuracy < 5f
+        var accurateEnough = new.hasAccuracy() && new.accuracy < ACCURACY_THRESHOLD
+
 
         val newDuration =
-            if (startTime != Long.MIN_VALUE) new.elapsedRealtimeNanos - startTime else 0
+            if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0
+        val durationDelta = (newDuration - (old?.duration ?: 0.0))
 
         if (accurateEnough) {
             val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
             val newSpeed: Float =
-                if (newDuration == 0L) 0f else (distanceDelta / ((newDuration - (old?.duration
-                    ?: 0L)))).toFloat()
-            if (newSpeed > 1e-10) newDistance += distanceDelta
+                if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
+            if (newSpeed > SPEED_THRESHOLD) newDistance += distanceDelta
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
             val newSlope =
-                if (newSpeed > 1e-10) (new.altitude - oldAltitude) / distanceDelta else old?.slope
+                if (newSpeed > SPEED_THRESHOLD) (new.altitude - oldAltitude) / distanceDelta else old?.slope
                     ?: 0.0
+            val newAcceleration = (newSpeed - (old?.speed ?: 0f) / durationDelta).toFloat()
 
             Log.d("SPEED",
-                if (newDuration == 0L) "0" else (distanceDelta / (newDuration - (old?.duration
-                    ?: 0L))).toFloat().toString())
+                if (newDuration == 0.0) "0" else (distanceDelta / durationDelta).toFloat().toString())
             Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
-            Log.d("SPEED_DURATION_DELTA", (newDuration - (old?.duration ?: 0L)).toString())
+            Log.d("SPEED_DURATION_DELTA", durationDelta.toString())
 
             Log.v("LOCATION_MODEL_NEW",
-                "accuracy: ${new.accuracy}; speed: ${newSpeed}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
+                "accuracy: ${new.accuracy}; speed: ${newSpeed}; acceleration: ${newAcceleration}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
 
             value = LocationModel(location = new,
                 speed = newSpeed,
                 distance = newDistance,
+                acceleration = newAcceleration,
                 slope = newSlope,
                 duration = newDuration,
                 accuracy = new.accuracy,
                 tracking = true)
         } else {
             Log.v("LOCATION_MODEL_PLACEHOLDER", "$newDuration")
-            var newValue =
+            value =
                 value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
                     ?: LocationModel(duration = newDuration,
                         speed = 0f,
+                        acceleration = 0f,
                         distance = 0.0,
                         slope = 0.0,
                         location = null,
                         accuracy = new.accuracy,
                         tracking = false)
-            value = newValue
         }
     }
 
@@ -127,8 +133,9 @@ data class LocationModel(
     val location: Location?,
     val accuracy: Float,
     val speed: Float,
+    val acceleration: Float,
     val distance: Double,
     val slope: Double,
-    val duration: Long,
+    val duration: Double,
     val tracking: Boolean,
 )
