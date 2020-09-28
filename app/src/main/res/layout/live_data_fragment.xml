@@ -74,16 +74,20 @@
         android:id="@+id/image_tracking"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@android:drawable/ic_menu_mylocation"/>
+        android:src="@android:drawable/ic_menu_mylocation"
+        android:contentDescription="Location fix obtained"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"/>
+
     <TextView
         android:id="@+id/textview_accuracy"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/zero"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/image_tracking"
         app:layout_constraintEnd_toStartOf="@id/textview_time"
         app:layout_constraintStart_toEndOf="@id/image_tracking"
-        app:layout_constraintBottom_toBottomOf="@id/image_tracking" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -19,12 +19,10 @@
         android:id="@+id/LiveDataFragment"
         android:name="com.kvl.cyclotrack.LiveDataFragment"
         android:label="Dashboard"
-        tools:layout="@layout/live_data_fragment">
-    </fragment>
+        tools:layout="@layout/live_data_fragment"></fragment>
     <fragment
         android:id="@+id/SecondFragment"
         android:name="com.kvl.cyclotrack.SecondFragment"
         android:label="@string/second_fragment_label"
-        tools:layout="@layout/fragment_second">
-    </fragment>
+        tools:layout="@layout/fragment_second"></fragment>
 </navigation>

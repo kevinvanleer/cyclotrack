@@ -72,8 +72,8 @@ class SensorLiveData(context: Context) : LiveData<SensorModel>() {
 
     override fun onActive() {
         Log.d("UI", "Activating sensor live data")
-        sensorManager.registerListener(accListener, accelerometer, SensorManager.SENSOR_DELAY_UI)
-        sensorManager.registerListener(gyroListener, gyroscope, SensorManager.SENSOR_DELAY_UI)
+        sensorManager.registerListener(accListener, accelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(gyroListener, gyroscope, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
     override fun onInactive() {

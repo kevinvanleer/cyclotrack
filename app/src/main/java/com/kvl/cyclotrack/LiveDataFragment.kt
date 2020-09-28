@@ -55,15 +55,19 @@ class LiveDataFragment : Fragment() {
                     (it.location?.speedAccuracyMetersPerSecond?.times(2.23694)) ?: 0f)
             } mph"*/
             val averageSpeed = it.distance / it.duration * 1e9 * 2.23694
-            speedTextView.text = "${String.format("%.1f", if (it.speed.isFinite()) it.speed * 1e9 * 2.23694 else 888f)} mph"
+            speedTextView.text = "${
+                String.format("%.1f",
+                    if (it.speed.isFinite()) it.speed * 1e9 * 2.23694 else 888f)
+            } mph"
             averageSpeedTextView.text =
-                "${String.format("%.1f", if(averageSpeed.isFinite()) averageSpeed else 0f)} avg"
+                "${String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)} avg"
             distanceTextView.text = "${String.format("%.2f", it.distance * 0.000621371)} mi"
             durationTextView.text = DateUtils.formatElapsedTime((it.duration / 1e9).toLong())
-            heartRateTextView.text = String.format("%.2f", if (it.slope.isFinite()) it.slope else 0f)
+            heartRateTextView.text =
+                String.format("%.2f", if (it.slope.isFinite()) it.slope else 0f)
             //heartRateTextView.text = String.format("%.2f", it.location?.accuracy ?: 0f)
-            trackingImage.visibility = if(it.tracking) View.VISIBLE else View.INVISIBLE
-            accuracyTextView.text = String.format("%.2f", it.location?.accuracy ?: 0f)
+            trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
+            accuracyTextView.text = String.format("%.2f", it.accuracy)
         })
         viewModel.getSensorData().observe(this, Observer {
             Log.d("UI", "Sensor observer detected change")

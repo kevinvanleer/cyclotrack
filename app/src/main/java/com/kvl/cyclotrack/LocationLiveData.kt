@@ -90,23 +90,25 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             Log.d("SPEED_DURATION_DELTA", (newDuration - (old?.duration ?: 0L)).toString())
 
             Log.v("LOCATION_MODEL_NEW",
-                "speed: ${newSpeed}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
+                "accuracy: ${new.accuracy}; speed: ${newSpeed}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
 
             value = LocationModel(location = new,
                 speed = newSpeed,
                 distance = newDistance,
                 slope = newSlope,
                 duration = newDuration,
+                accuracy = new.accuracy,
                 tracking = true)
         } else {
             Log.v("LOCATION_MODEL_PLACEHOLDER", "$newDuration")
             var newValue =
-                value?.copy(duration = newDuration, tracking = false)
+                value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
                     ?: LocationModel(duration = newDuration,
                         speed = 0f,
                         distance = 0.0,
                         slope = 0.0,
                         location = null,
+                        accuracy = new.accuracy,
                         tracking = false)
             value = newValue
         }
@@ -123,6 +125,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
 
 data class LocationModel(
     val location: Location?,
+    val accuracy: Float,
     val speed: Float,
     val distance: Double,
     val slope: Double,
