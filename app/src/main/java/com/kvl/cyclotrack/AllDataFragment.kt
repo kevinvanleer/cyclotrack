@@ -55,8 +55,7 @@ class AllDataFragment : Fragment() {
                 for (prop in Location::class.declaredMemberFunctions) {
                     val label = TextView(activity)
                     val value = TextView(activity)
-                    if (prop.parameters.size == 1 && prop.returnType.toString() != "kotlin.Unit" && prop.name != "toString" && prop.name != "getExtras") {
-                        Log.d("REFLECTION", "This ${prop.returnType} prop is accessible")
+                    if (prop.parameters.size == 1 && prop.returnType.toString() != "kotlin.Unit" && prop.name != "toString" && prop.name != "getExtras" && prop.name != "describeContents") {
                         try {
                             label.text = prop.name
                             value.text = prop.call(it.location).toString()

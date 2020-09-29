@@ -9,16 +9,16 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import kotlin.math.floor
 import kotlin.math.max
 
 
 class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private var startTime: Double = Double.NaN
-    private val accuracyThreshold = 20f
-    private val speedThreshold = 0.05
-    private val maximumSpeedThreshold = 20f
-    private val maximumAccelerationThreshold = 2f
+    private var splitTime: Double = 0.0
+    private val accuracyThreshold = 10f
+    private val defaultSpeedThreshold = 0.5f
 
     override fun onInactive() {
         super.onInactive()
@@ -73,25 +73,52 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
         var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+        var speedThreshold = defaultSpeedThreshold
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (new.hasSpeedAccuracy()) {
+                //accurateEnough = accurateEnough && new.speed > new.speedAccuracyMetersPerSecond
+                speedThreshold = max(defaultSpeedThreshold, new.speedAccuracyMetersPerSecond * 1.5f)
+            }
+        }
 
         val newDuration =
             if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0
-        val durationDelta = (newDuration - (old?.duration ?: 0.0))
+        //val durationDelta = (newDuration - (old?.duration ?: 0.0))
+        val durationDelta =
+            newDuration - if (startTime.isFinite()) ((old?.location?.elapsedRealtimeNanos
+                ?: 0L) / 1e9) - startTime else 0.0
 
         if (accurateEnough) {
             val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
-            val newSpeed: Float =
-                if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
-            if (newSpeed > speedThreshold) newDistance += distanceDelta
-            val oldAltitude: Double = old?.location?.altitude ?: 0.0
-            val newSlope =
-                if (newSpeed > speedThreshold) (new.altitude - oldAltitude) / distanceDelta else old?.slope
-                    ?: 0.0
-            val newAcceleration = (newSpeed - (old?.speed ?: 0f) / durationDelta).toFloat()
 
-            Log.d("SPEED",
-                if (newDuration == 0.0) "0" else (distanceDelta / durationDelta).toFloat()
-                    .toString())
+            //val newSpeed: Float =
+            //    if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
+            val newSpeed = if (new.speed > speedThreshold) new.speed else 0f
+
+            var newSplitSpeed = old?.splitSpeed ?: 0f
+
+            if (new.speed > speedThreshold) newDistance += distanceDelta
+
+            if (floor(newDistance * 0.001) > floor((old?.distance ?: Double.MAX_VALUE) * 0.001)) {
+                newSplitSpeed = (1000f / (newDuration - splitTime)).toFloat()
+                splitTime = newDuration
+            }
+
+
+            val oldAltitude: Double = old?.location?.altitude ?: 0.0
+            val slopeAlpha = 0.5
+            val newSlope =
+                if (distanceDelta == 0.0) 0.0
+                else slopeAlpha * (
+                        if (new.speed > speedThreshold) ((new.altitude - oldAltitude) / distanceDelta)
+                        else (old?.slope ?: 0.0)
+                        ) + ((1 - slopeAlpha) * (old?.slope ?: 0.0))
+            val newAcceleration =
+                if (durationDelta == 0.0) 0f
+                else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()
+
+            Log.d("SPEED", newSpeed.toString())
             Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
             Log.d("SPEED_DURATION_DELTA", durationDelta.toString())
 
@@ -100,19 +127,22 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
 
             Log.d("MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
-            value = LocationModel(location = new,
-                speed = newSpeed,
-                maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f, old?.maxSpeed ?: 0f),
-                distance = newDistance,
-                acceleration = newAcceleration,
-                maxAcceleration = max(if (newAcceleration.isFinite()) newAcceleration else 0f,
-                    old?.maxAcceleration ?: 0f),
-                slope = newSlope,
-                duration = newDuration,
-                accuracy = new.accuracy,
-                tracking = true)
+            value =
+                LocationModel(location = new,
+                    speed = newSpeed,
+                    maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f,
+                        old?.maxSpeed ?: 0f),
+                    distance = newDistance,
+                    acceleration = newAcceleration,
+                    maxAcceleration = max(if (newAcceleration.isFinite()) newAcceleration else 0f,
+                        old?.maxAcceleration ?: 0f),
+                    slope = newSlope,
+                    duration = newDuration,
+                    accuracy = new.accuracy,
+                    splitSpeed = newSplitSpeed,
+                    tracking = true)
+
         } else {
-            Log.v("LOCATION_MODEL_PLACEHOLDER", "$newDuration")
             value =
                 value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
                     ?: LocationModel(duration = newDuration,
@@ -122,6 +152,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                         maxAcceleration = 0f,
                         distance = 0.0,
                         slope = 0.0,
+                        splitSpeed = 0f,
                         location = null,
                         accuracy = new.accuracy,
                         tracking = false)
@@ -141,6 +172,7 @@ data class LocationModel(
     val location: Location?,
     val accuracy: Float,
     val speed: Float,
+    val splitSpeed: Float,
     val maxSpeed: Float,
     val acceleration: Float,
     val maxAcceleration: Float,

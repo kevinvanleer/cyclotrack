@@ -14,12 +14,6 @@ import androidx.navigation.navGraphViewModels
 class LiveDataFragment : Fragment() {
     private val viewModel: LiveDataViewModel by navGraphViewModels(R.id.nav_graph)
 
-    private lateinit var speedTextView: TextView
-    private lateinit var distanceTextView: TextView
-    private lateinit var durationTextView: TextView
-    private lateinit var averageSpeedTextView: TextView
-    private lateinit var heartRateTextView: TextView
-
     companion object {
         fun newInstance() = LiveDataFragment()
     }
@@ -50,11 +44,12 @@ class LiveDataFragment : Fragment() {
 
         Log.d("UI", "LiveDataFragment::onViewCreated")
         //viewModel = ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
-        speedTextView = view.findViewById(R.id.textview_speed)
-        distanceTextView = view.findViewById(R.id.textview_distance)
-        durationTextView = view.findViewById(R.id.textview_duration)
-        averageSpeedTextView = view.findViewById(R.id.textview_average_speed)
-        heartRateTextView = view.findViewById(R.id.textview_heart_rate)
+        val speedTextView: TextView = view.findViewById(R.id.textview_speed)
+        val distanceTextView: TextView = view.findViewById(R.id.textview_distance)
+        val durationTextView: TextView = view.findViewById(R.id.textview_duration)
+        val averageSpeedTextView: TextView = view.findViewById(R.id.textview_average_speed)
+        val heartRateTextView: TextView = view.findViewById(R.id.textview_heart_rate)
+        val splitSpeedTextView: TextView = view.findViewById(R.id.textview_split_speed)
 
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
@@ -63,15 +58,9 @@ class LiveDataFragment : Fragment() {
         viewModel.getLocationData().observe(this, object : Observer<LocationModel> {
             override fun onChanged(it: LocationModel) {
                 Log.d("UI", "Location observer detected change")
-                /*speedTextView.text = "${String.format("%.1f", it.speed * 2.23694)} ±${
-                String.format("%.1f",
-                    (it.location?.speedAccuracyMetersPerSecond?.times(2.23694)) ?: 0f)
-                } mph"*/
                 val averageSpeed = it.distance / it.duration * 2.23694
-                speedTextView.text = "${
-                    String.format("%.1f",
-                        if (it.speed.isFinite()) it.speed * 2.23694 else 888f)
-                } mph"
+                splitSpeedTextView.text =
+                    "${String.format("%.1f", (it.location?.speed ?: 0f) * 2.23694)} mph"
                 averageSpeedTextView.text =
                     "${
                         String.format("%.1f",
@@ -80,10 +69,11 @@ class LiveDataFragment : Fragment() {
                 distanceTextView.text = "${String.format("%.2f", it.distance * 0.000621371)} mi"
                 durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
                 heartRateTextView.text =
-                    String.format("%.2f", if (it.slope.isFinite()) it.slope else 0f)
-                //heartRateTextView.text = String.format("%.2f", it.location?.accuracy ?: 0f)
+                    String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
+
                 trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
                 accuracyTextView.text = String.format("%.2f", it.accuracy)
+                speedTextView.text = String.format("%.1f spl", it.splitSpeed)
             }
         })
         viewModel.getSensorData().observe(this, object : Observer<SensorModel> {

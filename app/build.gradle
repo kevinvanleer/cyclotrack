@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "com.kvl.cyclotrack"
-        minSdkVersion 26
+        minSdkVersion 23
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
