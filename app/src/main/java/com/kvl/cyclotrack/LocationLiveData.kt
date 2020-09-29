@@ -9,6 +9,7 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 
@@ -105,15 +106,18 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                 splitTime = newDuration
             }
 
-
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
-            val slopeAlpha = 0.5
-            val newSlope =
-                if (distanceDelta == 0.0) 0.0
-                else slopeAlpha * (
+            val verticalSpeed = abs((new.altitude - oldAltitude) / durationDelta)
+            Log.v("VERTICAL_SPEED", verticalSpeed.toString())
+            var newSlope = 0.0
+            if (verticalSpeed < newSpeed && distanceDelta != 0.0) {
+                val slopeAlpha = 0.5
+                newSlope = slopeAlpha * (
                         if (new.speed > speedThreshold) ((new.altitude - oldAltitude) / distanceDelta)
                         else (old?.slope ?: 0.0)
                         ) + ((1 - slopeAlpha) * (old?.slope ?: 0.0))
+                Log.v("SLOPE", newSlope.toString())
+            }
             val newAcceleration =
                 if (durationDelta == 0.0) 0f
                 else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()

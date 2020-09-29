@@ -39,7 +39,6 @@ class AllDataFragment : Fragment() {
             grid.removeAllViews()
 
             for (prop in LocationModel::class.declaredMemberProperties) {
-                Log.d("UI", prop.toString())
                 val label = TextView(activity)
                 val value = TextView(activity)
                 if (prop.parameters.size == 1 && prop.name != "location") {
