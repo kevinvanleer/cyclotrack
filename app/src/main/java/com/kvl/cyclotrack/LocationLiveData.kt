@@ -3,42 +3,77 @@ package com.kvl.cyclotrack
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
+import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.LiveData
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 
 
 class LocationLiveData(context: Context) : LiveData<LocationModel>() {
-    private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    //private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    private val locationManager = (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
     private var startTime: Double = Double.NaN
     private var splitTime: Double = 0.0
-    private val accuracyThreshold = 10f
+    private val accuracyThreshold = 5f
     private val defaultSpeedThreshold = 0.5f
+
+    private val locationListener = object: LocationListener {
+        override fun onLocationChanged(location: Location?) {
+            Log.v("LOCATION", "New location result")
+            if(location != null) {
+                Log.v("LOCATION",
+                    "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    Log.v("LOCATION",
+                        "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
+                    Log.v("LOCATION",
+                        "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
+                    Log.v("LOCATION",
+                        "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
+                }
+                setLocationModel(value, location)
+            }
+        }
+
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onProviderEnabled(provider: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onProviderDisabled(provider: String?) {
+            TODO("Not yet implemented")
+        }
+    }
 
     override fun onInactive() {
         super.onInactive()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        //fusedLocationClient.removeLocationUpdates(locationCallback)
+        locationManager.removeUpdates(locationListener)
     }
 
     @SuppressLint("MissingPermission")
     override fun onActive() {
         super.onActive()
-        fusedLocationClient.lastLocation
+        /*fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
                 location?.also {
                     if (!startTime.isFinite()) startTime = it.elapsedRealtimeNanos / 1e9
                     setLocationModel(value, it)
                 }
             }
-        startLocationUpdates()
+        startLocationUpdates()*/
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100L, 1f, locationListener)
     }
 
+    /*
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         fusedLocationClient.requestLocationUpdates(
@@ -69,6 +104,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             }
         }
     }
+    */
 
     private fun setLocationModel(old: LocationModel?, new: Location) {
         val oldDistance: Double = old?.distance ?: 0.0
@@ -162,7 +198,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                         tracking = false)
         }
     }
-
+    /*
     companion object {
         val locationRequest = LocationRequest.create()?.apply {
             interval = 1000
@@ -170,6 +206,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
     }
+    */
 }
 
 data class LocationModel(
