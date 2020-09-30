@@ -13,12 +13,12 @@ import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 
-
 class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     //private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private val locationManager = (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
     private var startTime: Double = Double.NaN
     private var splitTime: Double = 0.0
+    private var splitDistance: Double = 0.0
     private val accuracyThreshold = 7.5f
     private val defaultSpeedThreshold = 0.5f
 
@@ -142,8 +142,9 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
             if (floor(newDistance * 0.000621371) > floor((old?.distance ?: Double.MAX_VALUE) * 0.000621371)) {
-                newSplitSpeed = (1609.34f / (newDuration - splitTime)).toFloat()
+                newSplitSpeed = ((newDistance - splitDistance) / (newDuration - splitTime)).toFloat()
                 splitTime = newDuration
+                splitDistance = newDistance
             }
 
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
