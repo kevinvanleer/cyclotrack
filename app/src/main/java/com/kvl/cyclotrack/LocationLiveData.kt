@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.LiveData
+import com.google.android.gms.location.LocationServices
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
@@ -18,7 +19,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
     private val locationManager = (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
     private var startTime: Double = Double.NaN
     private var splitTime: Double = 0.0
-    private val accuracyThreshold = 5f
+    private val accuracyThreshold = 7.5f
     private val defaultSpeedThreshold = 0.5f
 
     private val locationListener = object: LocationListener {
@@ -34,6 +35,7 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                         "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
                     Log.v("LOCATION",
                         "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
+                    Log.v("LOCATION", "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
                 }
                 setLocationModel(value, location)
             }
@@ -112,6 +114,8 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
         var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
         var speedThreshold = defaultSpeedThreshold
 
+        if (!startTime.isFinite()) startTime = new.elapsedRealtimeNanos / 1e9
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             if (new.hasSpeedAccuracy()) {
                 //accurateEnough = accurateEnough && new.speed > new.speedAccuracyMetersPerSecond
@@ -137,8 +141,8 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (floor(newDistance * 0.001) > floor((old?.distance ?: Double.MAX_VALUE) * 0.001)) {
-                newSplitSpeed = (1000f / (newDuration - splitTime)).toFloat()
+            if (floor(newDistance * 0.000621371) > floor((old?.distance ?: Double.MAX_VALUE) * 0.000621371)) {
+                newSplitSpeed = (1609.34f / (newDuration - splitTime)).toFloat()
                 splitTime = newDuration
             }
 

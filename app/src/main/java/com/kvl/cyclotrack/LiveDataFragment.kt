@@ -73,7 +73,7 @@ class LiveDataFragment : Fragment() {
 
                 trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
                 accuracyTextView.text = String.format("%.2f", it.accuracy)
-                speedTextView.text = String.format("%.1f spl", it.splitSpeed)
+                speedTextView.text = String.format("%.1f spl", it.splitSpeed * 2.23694)
             }
         })
         viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
