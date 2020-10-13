@@ -18,13 +18,15 @@ class TripSummariesAdapter(
     private val trips: Array<Trip>,
     private val viewModel: TripSummariesViewModel,
     private val viewLifecycleOwner: LifecycleOwner,
-    private val savedInstanceState: Bundle?
+    private val savedInstanceState: Bundle?,
 ) :
     RecyclerView.Adapter<TripSummariesAdapter.TripSummariesViewHolder>() {
-    class TripSummariesViewHolder(val tripSummaryView: TripSummaryCard) : RecyclerView.ViewHolder(tripSummaryView)
+    class TripSummariesViewHolder(val tripSummaryView: TripSummaryCard) :
+        RecyclerView.ViewHolder(tripSummaryView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummariesViewHolder {
-        val tripSummaryView = LayoutInflater.from(parent.context).inflate(R.layout.trip_summary_card, parent, false) as TripSummaryCard
+        val tripSummaryView = LayoutInflater.from(parent.context)
+            .inflate(R.layout.trip_summary_card, parent, false) as TripSummaryCard
         return TripSummariesViewHolder(tripSummaryView)
     }
 
@@ -37,8 +39,9 @@ class TripSummariesAdapter(
         holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
             trips[position].distance ?: 0.0)
         holder.tripSummaryView.createMap(savedInstanceState)
-        viewModel.getTripMeasurements(tripId).observe(viewLifecycleOwner, {
-            measurements -> Log.d("TRIP_SUMMARIES_ADAPTER", "Recorded ${measurements.size} measurements for trip ${tripId}")
+        viewModel.getTripMeasurements(tripId).observe(viewLifecycleOwner, { measurements ->
+            Log.d("TRIP_SUMMARIES_ADAPTER",
+                "Recorded ${measurements.size} measurements for trip ${tripId}")
             val path = PolylineOptions()
             var northeastLat = -1000.0
             var northeastLng = -1000.0
@@ -49,26 +52,42 @@ class TripSummariesAdapter(
             var lastLat = 0.0
             var lastLng = 0.0
 
+            var maxSpeedAccuracy = 0f
+            var accSpeedAccuracy = 0f
+            var sampleCount = 0
+
             measurements.forEach {
-                if(lastLat != 0.0 && lastLng != 0.0) {
-                    var distanceArray = floatArrayOf(0f)
-                    Location.distanceBetween(lastLat, lastLng, it.latitude, it.longitude, distanceArray)
-                    totalDistance += distanceArray[0]
+                if (it.accuracy < 5) {
+                    if (lastLat != 0.0 && lastLng != 0.0) {
+                        var distanceArray = floatArrayOf(0f)
+                        Location.distanceBetween(lastLat,
+                            lastLng,
+                            it.latitude,
+                            it.longitude,
+                            distanceArray)
+                        totalDistance += distanceArray[0]
+                    }
+                    lastLat = it.latitude
+                    lastLng = it.longitude
+                    path.add(LatLng(it.latitude, it.longitude))
+                    northeastLat = max(northeastLat, it.latitude)
+                    northeastLng = max(northeastLng, it.longitude)
+                    southwestLat = min(southwestLat, it.latitude)
+                    southwestLng = min(southwestLng, it.longitude)
+                    maxSpeedAccuracy = max(maxSpeedAccuracy, it.speedAccuracyMetersPerSecond)
+                    accSpeedAccuracy += it.speedAccuracyMetersPerSecond
+                    sampleCount++
                 }
-                lastLat = it.latitude
-                lastLng = it.longitude
-                path.add(LatLng(it.latitude, it.longitude))
-                northeastLat = max(northeastLat, it.latitude)
-                northeastLng = max(northeastLng, it.longitude)
-                southwestLat = min(southwestLat, it.latitude)
-                southwestLng = min(southwestLng, it.longitude)
             }
-            Log.d("TRIP_SUMMARIES_ADAPTER", "distance=${totalDistance}")
+            Log.d("TRIP_SUMMARIES_ADAPTER",
+                "distance=${totalDistance}, maxSpeedAcc=${maxSpeedAccuracy}, avgSpeedAcc=${accSpeedAccuracy / sampleCount}")
             path.startCap(RoundCap())
             path.endCap(RoundCap())
             path.width(5f)
             path.color(0xff007700.toInt())
-            holder.tripSummaryView.drawPath(path, LatLngBounds(LatLng(southwestLat, southwestLng), LatLng(northeastLat, northeastLng)))
+            holder.tripSummaryView.drawPath(path,
+                LatLngBounds(LatLng(southwestLat, southwestLng),
+                    LatLng(northeastLat, northeastLng)))
             holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
                 totalDistance)
         })

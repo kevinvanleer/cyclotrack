@@ -99,7 +99,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet): CardView(context, 
         path = polyline
         bounds = latLngBound
         map.addPolyline(polyline)
-        map.moveCamera(newLatLngBounds(bounds, 10))
+        map.moveCamera(newLatLngBounds(bounds, 5))
     }
 
     override fun onFinishInflate() {
@@ -113,11 +113,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet): CardView(context, 
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
-            /*if(path != null && bounds != null) {
-                Log.d("TRIP_SUMMARY_CARD", "ADDING POLYLINE")
-                map.addPolyline(path)
-                map.moveCamera(newLatLngBounds(bounds, 0))
-            }*/
+
         }
     }
 

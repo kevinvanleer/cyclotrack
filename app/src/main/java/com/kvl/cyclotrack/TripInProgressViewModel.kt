@@ -41,7 +41,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             if (new.hasSpeedAccuracy()) {
                 //accurateEnough = accurateEnough && new.speed > new.speedAccuracyMetersPerSecond
-                speedThreshold = max(defaultSpeedThreshold, new.speedAccuracyMetersPerSecond * 1.5f)
+                //speedThreshold = max(defaultSpeedThreshold, new.speedAccuracyMetersPerSecond * 1.5f)
             }
         }
 
