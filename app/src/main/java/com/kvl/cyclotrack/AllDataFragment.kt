@@ -10,14 +10,20 @@ import android.widget.Button
 import android.widget.GridLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import dagger.hilt.android.AndroidEntryPoint
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.declaredMemberProperties
 
+@AndroidEntryPoint
 class AllDataFragment : Fragment() {
-    private val viewModel: LiveDataViewModel by navGraphViewModels(R.id.nav_graph)
+    private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
+        defaultViewModelProviderFactory
+    }
+    //private val viewModel: TripInProgressViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -34,11 +40,11 @@ class AllDataFragment : Fragment() {
 
         Log.d("UI::AllDataFragment", "onViewCreated")
 
-        viewModel.getLocationData().observe(this, Observer {
+        viewModel.currentProgress.observe(viewLifecycleOwner, {
             Log.d("UI::AllDataFragment", "Location observer detected change")
             grid.removeAllViews()
 
-            for (prop in LocationModel::class.declaredMemberProperties) {
+            for (prop in TripProgress::class.declaredMemberProperties) {
                 val label = TextView(activity)
                 val value = TextView(activity)
                 if (prop.parameters.size == 1 && prop.name != "location") {
@@ -50,11 +56,11 @@ class AllDataFragment : Fragment() {
                     grid.addView(value)
                 }
             }
-            if (it.location != null) {
-                for (prop in Location::class.declaredMemberFunctions) {
+            if (it?.location != null) {
+                for (prop in Measurements::class.declaredMemberProperties) {
                     val label = TextView(activity)
                     val value = TextView(activity)
-                    if (prop.parameters.size == 1 && prop.returnType.toString() != "kotlin.Unit" && prop.name != "toString" && prop.name != "getExtras" && prop.name != "describeContents") {
+                    if (prop.parameters.size == 1) {
                         try {
                             label.text = prop.name
                             value.text = prop.call(it.location).toString()

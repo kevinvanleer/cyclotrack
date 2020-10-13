@@ -1,114 +1,36 @@
 package com.kvl.cyclotrack
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
-import android.os.Bundle
 import android.util.Log
-import androidx.lifecycle.LiveData
-import com.google.android.gms.location.LocationServices
+import androidx.hilt.lifecycle.ViewModelInject
+import androidx.lifecycle.*
+import dagger.hilt.android.scopes.ActivityRetainedScoped
+import dagger.hilt.android.scopes.ActivityScoped
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
 
-class LocationLiveData(context: Context) : LiveData<LocationModel>() {
-    //private var fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-    private val locationManager = (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
+class TripInProgressViewModel @ViewModelInject constructor(
+    private val tripsRepository: TripsRepository,
+    private val measurementsRepository: MeasurementsRepository,
+    private val gpsService: GpsService) : ViewModel() {
+
+    private var tripId: Long? = null
+    private var record = false
     private var startTime: Double = Double.NaN
     private var splitTime: Double = 0.0
     private var splitDistance: Double = 0.0
     private val accuracyThreshold = 7.5f
     private val defaultSpeedThreshold = 0.5f
+    private val _currentProgress = MutableLiveData<TripProgress>()
 
-    private val locationListener = object: LocationListener {
-        override fun onLocationChanged(location: Location?) {
-            Log.v("LOCATION", "New location result")
-            if(location != null) {
-                Log.v("LOCATION",
-                    "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    Log.v("LOCATION",
-                        "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
-                    Log.v("LOCATION",
-                        "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
-                    Log.v("LOCATION",
-                        "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
-                    Log.v("LOCATION", "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
-                }
-                setLocationModel(value, location)
-            }
-        }
+    val currentProgress: LiveData<TripProgress>
+        get() = _currentProgress
 
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            TODO("Not yet implemented")
-        }
-
-        override fun onProviderEnabled(provider: String?) {
-            TODO("Not yet implemented")
-        }
-
-        override fun onProviderDisabled(provider: String?) {
-            TODO("Not yet implemented")
-        }
-    }
-
-    override fun onInactive() {
-        super.onInactive()
-        //fusedLocationClient.removeLocationUpdates(locationCallback)
-        locationManager.removeUpdates(locationListener)
-    }
-
-    @SuppressLint("MissingPermission")
-    override fun onActive() {
-        super.onActive()
-        /*fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                location?.also {
-                    if (!startTime.isFinite()) startTime = it.elapsedRealtimeNanos / 1e9
-                    setLocationModel(value, it)
-                }
-            }
-        startLocationUpdates()*/
-
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100L, 1f, locationListener)
-    }
-
-    /*
-    @SuppressLint("MissingPermission")
-    private fun startLocationUpdates() {
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            null
-        )
-    }
-
-    private val locationCallback = object : LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult?) {
-            locationResult ?: return
-            Log.v("LOCATION", "New location result")
-            for (location in locationResult.locations) {
-                //location.dump(LogPrinter(Log.VERBOSE, "LOCATION"), "kvl")
-                Log.v("LOCATION",
-                    "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    Log.v("LOCATION",
-                        "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
-                    Log.v("LOCATION",
-                        "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
-                    Log.v("LOCATION",
-                        "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
-                }
-
-                setLocationModel(value, location)
-            }
-        }
-    }
-    */
-
-    private fun setLocationModel(old: LocationModel?, new: Location) {
+    private fun setTripProgress(new: Measurements) {
+        val old = _currentProgress.value
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
         var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
@@ -131,7 +53,9 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                 ?: 0L) / 1e9) - startTime else 0.0
 
         if (accurateEnough) {
-            val distanceDelta = old?.location?.distanceTo(new)?.toDouble() ?: 0.0
+            var distanceResults = floatArrayOf(0f)
+            Location.distanceBetween(old?.location?.latitude ?: new.latitude,old?.location?.longitude ?: new.longitude,  new.latitude, new.longitude, distanceResults)
+            val distanceDelta = distanceResults[0].toDouble()
 
             //val newSpeed: Float =
             //    if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
@@ -172,8 +96,14 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
 
             Log.d("MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
-            value =
-                LocationModel(location = new,
+            viewModelScope.launch {
+                if (tripId != null) tripsRepository.updateTripStats(TripStats(tripId!!,
+                    newDistance,
+                    newDuration,
+                    (newDistance / newDuration).toFloat()))
+            }
+            _currentProgress.value =
+                TripProgress(location = new,
                     speed = newSpeed,
                     maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f,
                         old?.maxSpeed ?: 0f),
@@ -188,9 +118,9 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                     tracking = true)
 
         } else {
-            value =
-                value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
-                    ?: LocationModel(duration = newDuration,
+            _currentProgress.value =
+                _currentProgress.value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
+                    ?: TripProgress(duration = newDuration,
                         speed = 0f,
                         maxSpeed = 0f,
                         acceleration = 0f,
@@ -203,19 +133,66 @@ class LocationLiveData(context: Context) : LiveData<LocationModel>() {
                         tracking = false)
         }
     }
-    /*
-    companion object {
-        val locationRequest = LocationRequest.create()?.apply {
-            interval = 1000
-            fastestInterval = 100
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+    private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
+        if (record && tripId != null) {
+            viewModelScope.launch {
+                measurementsRepository.insertMeasurements(Measurements(tripId!!, LocationData(newLocation)))
+            }
         }
     }
-    */
+
+    private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
+        if(newMeasurements == null) {
+            Log.d("TIP_VIEW_MODEL", "measurements observation is null")
+        } else {
+            setTripProgress(newMeasurements)
+        }
+    }
+
+    fun startTrip(): LiveData<Long> {
+        val tripStarted = MutableLiveData<Long>()
+
+        viewModelScope.launch(Dispatchers.Default) {
+            tripId = tripsRepository.createNewTrip()
+            Log.d("TIP_VIEW_MODEL", "created new trip with id ${tripId.toString()}")
+            gpsService.startListening()
+            record = true
+            tripStarted.postValue(tripId)
+        }
+        gpsService.observeForever(gpsObserver)
+        tripStarted.observeForever(object : Observer<Long> {
+            override fun onChanged(t: Long?) {
+                getLatest()?.observeForever(newMeasurementsObserver)
+                tripStarted.removeObserver(this)
+            }
+        })
+
+        return tripStarted
+    }
+
+    fun pauseTrip() {
+        record = false
+    }
+
+    fun resumeTrip() {
+        record = true
+    }
+
+    fun getLatest(): LiveData<Measurements>? {
+        if(tripId == null) throw UninitializedPropertyAccessException()
+        return measurementsRepository.getLatestMeasurements(tripId!!)
+    }
+
+    override fun onCleared() {
+        Log.d("TIP_VIEW_MODEL", "Called onCleared")
+        super.onCleared()
+        gpsService.removeObserver(gpsObserver)
+    }
 }
 
-data class LocationModel(
-    val location: Location?,
+data class TripProgress(
+    val location: Measurements?,
     val accuracy: Float,
     val speed: Float,
     val splitSpeed: Float,

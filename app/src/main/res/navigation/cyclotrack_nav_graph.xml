@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cyclotrack_nav_graph"
+    app:startDestination="@id/FirstFragment">
+
+    <fragment
+        android:id="@+id/FirstFragment"
+        android:name="com.kvl.cyclotrack.TripSummariesFragment"
+        android:label="@string/first_fragment_label"
+        tools:layout="@layout/trip_summaries_fragment">
+
+        <action
+            android:id="@+id/action_start_trip"
+            app:destination="@id/trip_in_progress_graph" />
+    </fragment>
+    <fragment
+        android:id="@+id/SecondFragment"
+        android:name="com.kvl.cyclotrack.SecondFragment"
+        android:label="@string/second_fragment_label"
+        tools:layout="@layout/fragment_second" />
+    <navigation android:id="@+id/trip_in_progress_graph"
+        app:startDestination="@id/TripInProgressFragment">
+        <fragment
+            android:id="@+id/TripInProgressFragment"
+            android:name="com.kvl.cyclotrack.TripInProgressFragment"
+            android:label="Dashboard"
+            tools:layout="@layout/live_data_fragment">
+            <action
+                android:id="@+id/action_to_debug_view"
+                app:destination="@id/AllDataFragment" />
+        </fragment>
+        <fragment
+            android:id="@+id/AllDataFragment"
+            android:name="com.kvl.cyclotrack.AllDataFragment"
+            android:label="Debug"
+            tools:layout="@layout/fragment_all_data">
+
+            <action
+                android:id="@+id/action_back_to_dashboard"
+                app:destination="@id/TripInProgressFragment" />
+        </fragment>
+    </navigation>
+</navigation>

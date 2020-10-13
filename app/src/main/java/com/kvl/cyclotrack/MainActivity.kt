@@ -8,8 +8,9 @@ import android.view.MenuItem
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProviders
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private fun initializeLocationService() {
         when (PackageManager.PERMISSION_GRANTED) {
@@ -47,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setSupportActionBar(findViewById(R.id.toolbar))
         initializeLocationService()
-        ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
+        //ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
     }
 
 
