@@ -7,9 +7,11 @@ class MeasurementsRepository @Inject constructor(private val measurementsDao: Me
     fun getTripMeasurements(tripId: Long): LiveData<Array<Measurements>> {
         return measurementsDao.load(tripId)
     }
+
     suspend fun insertMeasurements(measurements: Measurements): Long {
         return measurementsDao.save(measurements)
     }
+
     fun getLatestMeasurements(tripId: Long): LiveData<Measurements> {
         return measurementsDao.getLastMeasurement(tripId)
     }

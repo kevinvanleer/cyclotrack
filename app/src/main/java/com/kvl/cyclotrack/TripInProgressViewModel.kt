@@ -4,8 +4,6 @@ import android.location.Location
 import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
-import dagger.hilt.android.scopes.ActivityRetainedScoped
-import dagger.hilt.android.scopes.ActivityScoped
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -15,7 +13,8 @@ import kotlin.math.max
 class TripInProgressViewModel @ViewModelInject constructor(
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,
-    private val gpsService: GpsService) : ViewModel() {
+    private val gpsService: GpsService,
+) : ViewModel() {
 
     private var tripId: Long? = null
     private var record = false
@@ -54,7 +53,11 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
         if (accurateEnough) {
             var distanceResults = floatArrayOf(0f)
-            Location.distanceBetween(old?.location?.latitude ?: new.latitude,old?.location?.longitude ?: new.longitude,  new.latitude, new.longitude, distanceResults)
+            Location.distanceBetween(old?.location?.latitude ?: new.latitude,
+                old?.location?.longitude ?: new.longitude,
+                new.latitude,
+                new.longitude,
+                distanceResults)
             val distanceDelta = distanceResults[0].toDouble()
 
             //val newSpeed: Float =
@@ -65,8 +68,11 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (floor(newDistance * 0.000621371) > floor((old?.distance ?: Double.MAX_VALUE) * 0.000621371)) {
-                newSplitSpeed = ((newDistance - splitDistance) / (newDuration - splitTime)).toFloat()
+            if (floor(newDistance * 0.000621371) > floor((old?.distance
+                    ?: Double.MAX_VALUE) * 0.000621371)
+            ) {
+                newSplitSpeed =
+                    ((newDistance - splitDistance) / (newDuration - splitTime)).toFloat()
                 splitTime = newDuration
                 splitDistance = newDistance
             }
@@ -119,7 +125,9 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
         } else {
             _currentProgress.value =
-                _currentProgress.value?.copy(duration = newDuration, accuracy = new.accuracy, tracking = false)
+                _currentProgress.value?.copy(duration = newDuration,
+                    accuracy = new.accuracy,
+                    tracking = false)
                     ?: TripProgress(duration = newDuration,
                         speed = 0f,
                         maxSpeed = 0f,
@@ -137,13 +145,14 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         if (record && tripId != null) {
             viewModelScope.launch {
-                measurementsRepository.insertMeasurements(Measurements(tripId!!, LocationData(newLocation)))
+                measurementsRepository.insertMeasurements(Measurements(tripId!!,
+                    LocationData(newLocation)))
             }
         }
     }
 
     private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
-        if(newMeasurements == null) {
+        if (newMeasurements == null) {
             Log.d("TIP_VIEW_MODEL", "measurements observation is null")
         } else {
             setTripProgress(newMeasurements)
@@ -180,7 +189,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     fun getLatest(): LiveData<Measurements>? {
-        if(tripId == null) throw UninitializedPropertyAccessException()
+        if (tripId == null) throw UninitializedPropertyAccessException()
         return measurementsRepository.getLatestMeasurements(tripId!!)
     }
 

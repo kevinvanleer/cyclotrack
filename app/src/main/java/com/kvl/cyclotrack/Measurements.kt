@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.location.Location
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index

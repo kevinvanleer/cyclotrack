@@ -6,12 +6,12 @@ import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
 
-data class TripInProgress (
+data class TripInProgress(
     val id: Long,
     val inProgress: Boolean,
 )
 
-data class TripStats (
+data class TripStats(
     val id: Long,
     val distance: Double?,
     val duration: Double?,

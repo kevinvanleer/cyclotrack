@@ -13,17 +13,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.google.android.gms.maps.MapView
-            xmlns:map="http://schemas.android.com/apk/res-auto"
+        <com.google.android.gms.maps.MapView xmlns:map="http://schemas.android.com/apk/res-auto"
             android:id="@+id/trip_summary_map"
-            map:liteMode="true"
             android:layout_width="wrap_content"
             android:layout_height="300dp"
             android:contentDescription="@string/trip_summary_image_description"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@id/trip_summary_details"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            map:liteMode="true" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/trip_summary_details"

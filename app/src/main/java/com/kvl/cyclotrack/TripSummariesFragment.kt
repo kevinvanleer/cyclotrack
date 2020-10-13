@@ -32,8 +32,10 @@ class TripSummariesFragment : Fragment() {
         val viewManager = LinearLayoutManager(activity)
 
         viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
-            Log.d("TRIP_SUMMARIES", "There were ${trips.size.toString()} trips returned from the database")
-            val viewAdapter = TripSummariesAdapter(trips, viewModel, viewLifecycleOwner, savedInstanceState)
+            Log.d("TRIP_SUMMARIES",
+                "There were ${trips.size.toString()} trips returned from the database")
+            val viewAdapter =
+                TripSummariesAdapter(trips, viewModel, viewLifecycleOwner, savedInstanceState)
             view.findViewById<RecyclerView>(R.id.trip_summary_card_list).apply {
                 setHasFixedSize(true)
                 layoutManager = viewManager

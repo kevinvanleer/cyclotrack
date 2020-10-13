@@ -10,7 +10,6 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.GoogleMapOptions
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
@@ -19,7 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
-class TripSummaryCard(context: Context, attrs: AttributeSet): CardView(context, attrs) {
+class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context, attrs) {
     private lateinit var dateView: TextView
     private lateinit var titleView: TextView
     private lateinit var startTimeView: TextView
@@ -49,24 +48,28 @@ class TripSummaryCard(context: Context, attrs: AttributeSet): CardView(context, 
         }
 
     var duration: String
-    get() = durationView.text.toString()
-    set(value) {
-        durationView.text = value
-    }
+        get() = durationView.text.toString()
+        set(value) {
+            durationView.text = value
+        }
 
     fun setStartTime(value: Long) {
         startTime = "at " + SimpleDateFormat("h:mm a").format(Date(value))
     }
 
     fun setDate(value: Long) {
-        date = if(DateUtils.isToday(value)) "earlier today" else DateUtils.getRelativeTimeSpanString(value, System.currentTimeMillis(), DateUtils.DAY_IN_MILLIS).toString()
+        date =
+            if (DateUtils.isToday(value)) "earlier today" else DateUtils.getRelativeTimeSpanString(
+                value,
+                System.currentTimeMillis(),
+                DateUtils.DAY_IN_MILLIS).toString()
     }
 
     private fun formatDuration(value: Double): String {
         var formattedString = ""
         if (value < 1.0) {
             formattedString += "zero seconds"
-        } else if(value < 60) {
+        } else if (value < 60) {
             formattedString += "${value.roundToInt().toString()} sec"
         } else if (value < 3600) {
             val minutes = value / 60
@@ -91,7 +94,8 @@ class TripSummaryCard(context: Context, attrs: AttributeSet): CardView(context, 
     }
 
     fun setTripDetails(_duration: Double, _distance: Double) {
-        duration = "${String.format("%.2f", _distance * 0.000621371)}mi  in  ${formatDuration(_duration)}"
+        duration =
+            "${String.format("%.2f", _distance * 0.000621371)}mi  in  ${formatDuration(_duration)}"
     }
 
     fun drawPath(polyline: PolylineOptions, latLngBound: LatLngBounds) {

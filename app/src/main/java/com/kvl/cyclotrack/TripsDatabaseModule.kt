@@ -20,13 +20,13 @@ object TripsDatabaseModule {
 
     @Provides
     @Singleton
-    fun provideTripDao (db: TripsDatabase) : TripDao {
+    fun provideTripDao(db: TripsDatabase): TripDao {
         return db.tripDao()
     }
 
     @Provides
     @Singleton
-    fun provideMeasurementsDao (db: TripsDatabase) : MeasurementsDao {
+    fun provideMeasurementsDao(db: TripsDatabase): MeasurementsDao {
         return db.measurementsDao()
     }
     /*

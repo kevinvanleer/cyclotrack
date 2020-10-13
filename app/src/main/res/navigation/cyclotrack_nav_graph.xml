@@ -20,7 +20,8 @@
         android:name="com.kvl.cyclotrack.SecondFragment"
         android:label="@string/second_fragment_label"
         tools:layout="@layout/fragment_second" />
-    <navigation android:id="@+id/trip_in_progress_graph"
+    <navigation
+        android:id="@+id/trip_in_progress_graph"
         app:startDestination="@id/TripInProgressFragment">
         <fragment
             android:id="@+id/TripInProgressFragment"

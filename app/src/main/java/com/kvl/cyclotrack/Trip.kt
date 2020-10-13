@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.*
 
-fun getDefaultTripName():String{
+fun getDefaultTripName(): String {
     val c = Calendar.getInstance()
 
     return when (c.get(Calendar.HOUR_OF_DAY)) {
@@ -19,7 +19,7 @@ fun getDefaultTripName():String{
 }
 
 @Entity
-data class Trip (
+data class Trip(
     val name: String? = getDefaultTripName(),
     val distance: Double? = 0.0,
     val duration: Double? = null,

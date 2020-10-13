@@ -11,9 +11,10 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import javax.inject.Inject
 
-class GpsService @Inject constructor(context: Application): LiveData<Location>() {
-    private val locationManager = (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
-    private val locationListener = object: LocationListener {
+class GpsService @Inject constructor(context: Application) : LiveData<Location>() {
+    private val locationManager =
+        (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
+    private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location?) {
             Log.v("GPS_SERVICE", "New location result")
             if (location != null) {
@@ -56,6 +57,9 @@ class GpsService @Inject constructor(context: Application): LiveData<Location>()
 
     @SuppressLint("MissingPermission")
     fun startListening() {
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100L, 1f, locationListener)
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+            100L,
+            1f,
+            locationListener)
     }
 }
