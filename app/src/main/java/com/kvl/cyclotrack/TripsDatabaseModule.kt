@@ -29,8 +29,4 @@ object TripsDatabaseModule {
     fun provideMeasurementsDao(db: TripsDatabase): MeasurementsDao {
         return db.measurementsDao()
     }
-    /*
-    @Provides
-    @Singleton
-    fun provideTripsRepository(tripDao: TripDao) = TripsRepository(tripDao)*/
 }
