@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.*
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -12,7 +13,7 @@ import androidx.navigation.navGraphViewModels
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class TripInProgressFragment : Fragment() {
+class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
         defaultViewModelProviderFactory
     }
@@ -56,6 +57,8 @@ class TripInProgressFragment : Fragment() {
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
 
+        view.setOnTouchListener(this)
+
         viewModel.startTrip()
         Log.d("TIP", "view created")
         viewModel.currentProgress.observe(viewLifecycleOwner,
@@ -84,5 +87,23 @@ class TripInProgressFragment : Fragment() {
                 //heartRateTextView.text = String.format("%.1f", it.tilt?.get(0))
             }
         })*/
+    }
+
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+        Log.d("TIP_FRAG", "TOUCH")
+        return performClick()
+    }
+    private fun performClick(): Boolean {
+        Log.d("TIP_FRAG", "CLICK")
+        val pauseButton: Button? = view?.findViewById(R.id.pause_button)
+        if(pauseButton != null) {
+            pauseButton.visibility = View.VISIBLE
+        }
+        android.os.Handler().postDelayed(
+            Runnable {
+                pauseButton?.visibility = View.GONE
+            }, 5000
+        )
+        return true
     }
 }
