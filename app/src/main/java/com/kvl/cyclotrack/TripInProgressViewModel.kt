@@ -72,13 +72,12 @@ class TripInProgressViewModel @ViewModelInject constructor(
                 old)
             val newAcceleration = getAcceleration(durationDelta, newSpeed, old)
 
-            Log.v("VERTICAL_SPEED", verticalSpeed.toString())
-            Log.d("SPEED", newSpeed.toString())
-            Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
-            Log.d("SPEED_DURATION_DELTA", durationDelta.toString())
-            Log.v("LOCATION_MODEL_NEW",
+            Log.v("TIP_VERTICAL_SPEED", verticalSpeed.toString())
+            Log.d("TIP_DISTANCE_DELTA", distanceDelta.toString())
+            Log.d("TIP_DURATION_DELTA", durationDelta.toString())
+            Log.v("TIP_UPDATE",
                 "accuracy: ${new.accuracy}; speed: ${newSpeed}; acceleration: ${newAcceleration}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
-            Log.d("MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
+            Log.d("TIP_MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
             viewModelScope.launch {
                 if (tripId != null) tripsRepository.updateTripStats(TripStats(tripId!!,
@@ -224,8 +223,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
     ) = newDuration - if (startTime.isFinite()) ((old?.location?.elapsedRealtimeNanos
         ?: 0L) / 1e9) - startTime else 0.0
 
-    /*private fun getDuration(new: Measurements) =
-        if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0*/
     private fun getDuration() =
         if(startTime.isFinite()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else 0.0
 
