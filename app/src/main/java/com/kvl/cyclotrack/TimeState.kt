@@ -4,8 +4,8 @@ import androidx.room.*
 
 enum class TimeStateEnum(val value: Int) {
     START(0),
-    PAUSE(1),
-    RESUME(2),
+    RESUME(1),
+    PAUSE(2),
     STOP(3)
 }
 
@@ -18,8 +18,8 @@ class TimeStateEnumConverter {
     fun toTimeStateEnum(value: Int): TimeStateEnum {
         return when(value) {
             0 -> TimeStateEnum.START
-            1 -> TimeStateEnum.PAUSE
-            2 -> TimeStateEnum.RESUME
+            1 -> TimeStateEnum.RESUME
+            2 -> TimeStateEnum.PAUSE
             3 -> TimeStateEnum.STOP
             else -> TimeStateEnum.STOP
         }

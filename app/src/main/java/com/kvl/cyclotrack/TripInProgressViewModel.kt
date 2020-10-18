@@ -17,12 +17,13 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val gpsService: GpsService,
 ) : ViewModel() {
 
+    private var accumulatedDuration = 0.0
     var currentState: TimeStateEnum = TimeStateEnum.STOP
     private var tripId: Long? = null
     private var record = false
     private var startTime: Double = Double.NaN
-    private var splitTime: Double = 0.0
-    private var splitDistance: Double = 0.0
+    private var timeAtLastSplit: Double = 0.0
+    private var distanceAtLastSplit: Double = 0.0
     private val accuracyThreshold = 7.5f
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
@@ -31,7 +32,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
         get() = _currentProgress
 
     fun startGps() = gpsService.startListening()
-    //fun currentState() = timeStateRepository.getLatest(tripId!!)
 
     private fun setTripProgress(new: Measurements) {
         val old = _currentProgress.value
@@ -40,71 +40,44 @@ class TripInProgressViewModel @ViewModelInject constructor(
         var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
         var speedThreshold = defaultSpeedThreshold
 
-        if (!startTime.isFinite()) startTime = new.elapsedRealtimeNanos / 1e9
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            if (new.hasSpeedAccuracy()) {
-                //accurateEnough = accurateEnough && new.speed > new.speedAccuracyMetersPerSecond
-                //speedThreshold = max(defaultSpeedThreshold, new.speedAccuracyMetersPerSecond * 1.5f)
-            }
-        }
-
-        val newDuration =
-            if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0
-        //val durationDelta = (newDuration - (old?.duration ?: 0.0))
-        val durationDelta =
-            newDuration - if (startTime.isFinite()) ((old?.location?.elapsedRealtimeNanos
-                ?: 0L) / 1e9) - startTime else 0.0
+        val newDuration = getDuration()
+        val durationDelta = getDurationDelta(newDuration, old)
 
         if (accurateEnough) {
-            var distanceResults = floatArrayOf(0f)
-            Location.distanceBetween(old?.location?.latitude ?: new.latitude,
-                old?.location?.longitude ?: new.longitude,
-                new.latitude,
-                new.longitude,
-                distanceResults)
-            val distanceDelta = distanceResults[0].toDouble()
+            val distanceDelta = getDistanceDelta(old, new)
 
-            //val newSpeed: Float =
-            //    if (newDuration == 0.0) 0f else (distanceDelta / durationDelta).toFloat()
-            val newSpeed = if (new.speed > speedThreshold) new.speed else 0f
+            val newSpeed = getSpeed(new, speedThreshold)
 
             var newSplitSpeed = old?.splitSpeed ?: 0f
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (floor(newDistance * 0.000621371) > floor((old?.distance
-                    ?: Double.MAX_VALUE) * 0.000621371)
+            if (crossedMileThreshold(newDistance, old)
             ) {
                 newSplitSpeed =
-                    ((newDistance - splitDistance) / (newDuration - splitTime)).toFloat()
-                splitTime = newDuration
-                splitDistance = newDistance
+                    ((newDistance - distanceAtLastSplit) / (newDuration - timeAtLastSplit)).toFloat()
+                timeAtLastSplit = newDuration
+                distanceAtLastSplit = newDistance
             }
 
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
             val verticalSpeed = abs((new.altitude - oldAltitude) / durationDelta)
-            Log.v("VERTICAL_SPEED", verticalSpeed.toString())
-            var newSlope = 0.0
-            if (verticalSpeed < newSpeed && distanceDelta != 0.0) {
-                val slopeAlpha = 0.5
-                newSlope = slopeAlpha * (
-                        if (new.speed > speedThreshold) ((new.altitude - oldAltitude) / distanceDelta)
-                        else (old?.slope ?: 0.0)
-                        ) + ((1 - slopeAlpha) * (old?.slope ?: 0.0))
-                Log.v("SLOPE", newSlope.toString())
-            }
-            val newAcceleration =
-                if (durationDelta == 0.0) 0f
-                else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()
 
+            var newSlope = calculateSlope(verticalSpeed,
+                newSpeed,
+                distanceDelta,
+                new,
+                speedThreshold,
+                oldAltitude,
+                old)
+            val newAcceleration = getAcceleration(durationDelta, newSpeed, old)
+
+            Log.v("VERTICAL_SPEED", verticalSpeed.toString())
             Log.d("SPEED", newSpeed.toString())
             Log.d("SPEED_DISTANCE_DELTA", distanceDelta.toString())
             Log.d("SPEED_DURATION_DELTA", durationDelta.toString())
-
             Log.v("LOCATION_MODEL_NEW",
                 "accuracy: ${new.accuracy}; speed: ${newSpeed}; acceleration: ${newAcceleration}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
-
             Log.d("MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
             viewModelScope.launch {
@@ -147,6 +120,115 @@ class TripInProgressViewModel @ViewModelInject constructor(
         }
     }
 
+    private fun setTripPaused(new: Measurements) {
+        val old = _currentProgress.value
+        val distance: Double = old?.distance ?: 0.0
+        var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+        var speedThreshold = defaultSpeedThreshold
+
+        if (!startTime.isFinite()) startTime = new.elapsedRealtimeNanos / 1e9
+
+        val duration = old?.duration ?: 0.0
+
+        if (accurateEnough) {
+            val newSpeed = getSpeed(new, speedThreshold)
+
+            _currentProgress.value =
+                TripProgress(location = null,
+                    speed = newSpeed,
+                    maxSpeed = old?.maxSpeed ?: 0f,
+                    distance = distance,
+                    acceleration = 0f,
+                    maxAcceleration = old?.maxAcceleration ?: 0f,
+                    slope = 0.0,
+                    duration = duration,
+                    accuracy = new.accuracy,
+                    splitSpeed = old?.splitSpeed ?: 0f,
+                    tracking = true)
+
+        } else {
+            _currentProgress.value =
+                _currentProgress.value?.copy(duration = duration,
+                    accuracy = new.accuracy,
+                    tracking = false)
+                    ?: TripProgress(duration = duration,
+                        speed = 0f,
+                        maxSpeed = 0f,
+                        acceleration = 0f,
+                        maxAcceleration = 0f,
+                        distance = 0.0,
+                        slope = 0.0,
+                        splitSpeed = 0f,
+                        location = null,
+                        accuracy = new.accuracy,
+                        tracking = false)
+        }
+    }
+
+
+    private fun getSpeed(
+        new: Measurements,
+        speedThreshold: Float,
+    ) = if (new.speed > speedThreshold) new.speed else 0f
+
+    private fun getAcceleration(
+        durationDelta: Double,
+        newSpeed: Float,
+        old: TripProgress?,
+    ) = if (durationDelta == 0.0) 0f
+    else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()
+
+    private fun crossedMileThreshold(
+        newDistance: Double,
+        old: TripProgress?,
+    ) = floor(newDistance * 0.000621371) > floor((old?.distance
+        ?: Double.MAX_VALUE) * 0.000621371)
+
+    private fun calculateSlope(
+        verticalSpeed: Double,
+        newSpeed: Float,
+        distanceDelta: Double,
+        new: Measurements,
+        speedThreshold: Float,
+        oldAltitude: Double,
+        old: TripProgress?,
+    ): Double {
+        var newSlope = 0.0
+        if (verticalSpeed < newSpeed && distanceDelta != 0.0) {
+            val slopeAlpha = 0.5
+            newSlope = slopeAlpha * (
+                    if (new.speed > speedThreshold) ((new.altitude - oldAltitude) / distanceDelta)
+                    else (old?.slope ?: 0.0)
+                    ) + ((1 - slopeAlpha) * (old?.slope ?: 0.0))
+            Log.v("SLOPE", newSlope.toString())
+        }
+        return newSlope
+    }
+
+    private fun getDistanceDelta(
+        old: TripProgress?,
+        new: Measurements,
+    ): Double {
+        var distanceResults = floatArrayOf(0f)
+        Location.distanceBetween(old?.location?.latitude ?: new.latitude,
+            old?.location?.longitude ?: new.longitude,
+            new.latitude,
+            new.longitude,
+            distanceResults)
+        return distanceResults[0].toDouble()
+    }
+
+    private fun getDurationDelta(
+        newDuration: Double,
+        old: TripProgress?,
+    ) = newDuration - if (startTime.isFinite()) ((old?.location?.elapsedRealtimeNanos
+        ?: 0L) / 1e9) - startTime else 0.0
+
+    /*private fun getDuration(new: Measurements) =
+        if (startTime.isFinite()) (new.elapsedRealtimeNanos / 1e9) - startTime else 0.0*/
+    private fun getDuration() =
+        if(startTime.isFinite()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else 0.0
+
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         if (record && tripId != null) {
             viewModelScope.launch {
@@ -160,7 +242,11 @@ class TripInProgressViewModel @ViewModelInject constructor(
         if (newMeasurements == null) {
             Log.d("TIP_VIEW_MODEL", "measurements observation is null")
         } else {
-            setTripProgress(newMeasurements)
+            if (currentState == TimeStateEnum.RESUME || currentState == TimeStateEnum.START) {
+                setTripProgress(newMeasurements)
+            } else {
+                setTripPaused(newMeasurements)
+            }
         }
     }
 
@@ -179,11 +265,38 @@ class TripInProgressViewModel @ViewModelInject constructor(
             override fun onChanged(t: Long?) {
                 getLatest()?.observeForever(newMeasurementsObserver)
                 timeStateRepository.getLatest(tripId!!).observeForever { currentState = it.state }
+                timeStateRepository.getTimeStates(tripId!!).observeForever { accumulateDuration(it)}
                 tripStarted.removeObserver(this)
             }
         })
 
         return tripStarted
+    }
+
+    private fun accumulateDuration(timeStates: Array<TimeState>?) {
+        var durationAcc = 0L
+        var localStartTime = 0L
+        timeStates?.forEach { timeState ->
+            when (timeState.state) {
+                TimeStateEnum.START -> {
+                    durationAcc = 0L
+                    localStartTime = timeState.timestamp
+                }
+                TimeStateEnum.PAUSE -> {
+                    durationAcc += timeState.timestamp - localStartTime
+                }
+                TimeStateEnum.RESUME -> {
+                    localStartTime = timeState.timestamp
+                }
+                TimeStateEnum.STOP -> {
+                    durationAcc += timeState.timestamp - localStartTime
+                    localStartTime = 0L
+                }
+            }
+        }
+        accumulatedDuration = durationAcc / 1e3
+        startTime = localStartTime / 1e3
+        Log.v("TIP_VIEW_MODEL", "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}")
     }
 
     fun pauseTrip() {

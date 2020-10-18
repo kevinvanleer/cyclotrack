@@ -62,11 +62,13 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         stopButton.visibility = View.VISIBLE
         resumeButton.setOnClickListener {
             viewModel.resumeTrip()
-            pauseButton.visibility = View.VISIBLE
             resumeButton.visibility = View.GONE
             stopButton.visibility = View.GONE
         }
-        stopButton.setOnClickListener { viewModel.endTrip() }
+        stopButton.setOnClickListener {
+            viewModel.endTrip()
+            findNavController().navigate(R.id.action_finish_trip)
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -91,9 +93,28 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
         view.setOnTouchListener(this)
 
-        pauseButton.setOnClickListener(startTripListener)
-        pauseButton.text = "START"
-        pauseButton.visibility = View.VISIBLE
+        if(viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
+            pauseButton.visibility = View.GONE
+            pauseButton.text = "PAUSE"
+            pauseButton.setOnClickListener(pauseTripListener)
+        } else if (viewModel.currentState == TimeStateEnum.PAUSE ){
+            pauseButton.visibility = View.GONE
+            resumeButton.visibility = View.VISIBLE
+            stopButton.visibility = View.VISIBLE
+            resumeButton.setOnClickListener {
+                viewModel.resumeTrip()
+                resumeButton.visibility = View.GONE
+                stopButton.visibility = View.GONE
+            }
+            stopButton.setOnClickListener {
+                viewModel.endTrip()
+                findNavController().navigate(R.id.action_finish_trip)
+            }
+        } else {
+            pauseButton.setOnClickListener(startTripListener)
+            pauseButton.text = "START"
+            pauseButton.visibility = View.VISIBLE
+        }
 
         //viewModel.startTrip()
         Log.d("TIP", "view created")

@@ -3,10 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cyclotrack_nav_graph"
-    app:startDestination="@id/FirstFragment">
+    app:startDestination="@id/TripSummariesFragment">
 
     <fragment
-        android:id="@+id/FirstFragment"
+        android:id="@+id/TripSummariesFragment"
         android:name="com.kvl.cyclotrack.TripSummariesFragment"
         android:label="@string/trip_summaries_fragment_label"
         tools:layout="@layout/trip_summaries_fragment">
@@ -26,16 +26,23 @@
             <action
                 android:id="@+id/action_to_debug_view"
                 app:destination="@id/AllDataFragment" />
+            <action
+                android:id="@+id/action_finish_trip"
+                app:destination="@id/TripSummariesFragment"
+                app:launchSingleTop="true"
+                app:popUpTo="@id/cyclotrack_nav_graph"
+                app:popUpToInclusive="true" />
         </fragment>
         <fragment
             android:id="@+id/AllDataFragment"
             android:name="com.kvl.cyclotrack.AllDataFragment"
             android:label="Debug"
             tools:layout="@layout/fragment_all_data">
-
             <action
                 android:id="@+id/action_back_to_dashboard"
-                app:destination="@id/TripInProgressFragment" />
+                app:destination="@id/TripInProgressFragment"
+                app:popUpTo="@id/TripInProgressFragment"
+                app:popUpToInclusive="true" />
         </fragment>
     </navigation>
 </navigation>
