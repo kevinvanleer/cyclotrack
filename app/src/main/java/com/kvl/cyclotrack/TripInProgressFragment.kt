@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.*
+import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -17,6 +18,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
         defaultViewModelProviderFactory
     }
+    private lateinit var pauseButton: Button
 
     companion object {
         fun newInstance() = TripInProgressFragment()
@@ -43,10 +45,20 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         return true
     }
 
+    private val startTripListener: OnClickListener = OnClickListener {
+        viewModel.startTrip()
+        pauseButton.visibility = View.GONE
+        pauseButton.setOnClickListener(null)
+        pauseButton.text = "PAUSE"
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         Log.d("UI", "TripInProgressFragment::onViewCreated")
+
+        viewModel.startGps()
+
         val speedTextView: TextView = view.findViewById(R.id.textview_speed)
         val distanceTextView: TextView = view.findViewById(R.id.textview_distance)
         val durationTextView: TextView = view.findViewById(R.id.textview_duration)
@@ -56,10 +68,15 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
+        pauseButton = view.findViewById(R.id.pause_button)
 
         view.setOnTouchListener(this)
 
-        viewModel.startTrip()
+        pauseButton.setOnClickListener(startTripListener)
+        pauseButton.text = "START"
+        pauseButton.visibility = View.VISIBLE
+
+        //viewModel.startTrip()
         Log.d("TIP", "view created")
         viewModel.currentProgress.observe(viewLifecycleOwner,
             { it ->
@@ -93,15 +110,13 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         Log.d("TIP_FRAG", "TOUCH")
         return performClick()
     }
+
     private fun performClick(): Boolean {
         Log.d("TIP_FRAG", "CLICK")
-        val pauseButton: Button? = view?.findViewById(R.id.pause_button)
-        if(pauseButton != null) {
-            pauseButton.visibility = View.VISIBLE
-        }
+        pauseButton.visibility = View.VISIBLE
         android.os.Handler().postDelayed(
             Runnable {
-                pauseButton?.visibility = View.GONE
+                pauseButton.visibility = View.GONE
             }, 5000
         )
         return true

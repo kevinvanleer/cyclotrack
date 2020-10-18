@@ -28,6 +28,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
     val currentProgress: LiveData<TripProgress>
         get() = _currentProgress
 
+    fun startGps() = gpsService.startListening()
+
     private fun setTripProgress(new: Measurements) {
         val old = _currentProgress.value
         val oldDistance: Double = old?.distance ?: 0.0
@@ -165,7 +167,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
         viewModelScope.launch(Dispatchers.Default) {
             tripId = tripsRepository.createNewTrip()
             Log.d("TIP_VIEW_MODEL", "created new trip with id ${tripId.toString()}")
-            gpsService.startListening()
             record = true
             tripStarted.postValue(tripId)
         }

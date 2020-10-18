@@ -58,7 +58,7 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
     @SuppressLint("MissingPermission")
     fun startListening() {
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-            100L,
+            1000L,
             1f,
             locationListener)
     }
