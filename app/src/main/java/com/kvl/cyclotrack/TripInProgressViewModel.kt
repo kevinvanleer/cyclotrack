@@ -17,6 +17,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val gpsService: GpsService,
 ) : ViewModel() {
 
+    var currentState: TimeStateEnum = TimeStateEnum.STOP
     private var tripId: Long? = null
     private var record = false
     private var startTime: Double = Double.NaN
@@ -30,6 +31,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         get() = _currentProgress
 
     fun startGps() = gpsService.startListening()
+    //fun currentState() = timeStateRepository.getLatest(tripId!!)
 
     private fun setTripProgress(new: Measurements) {
         val old = _currentProgress.value
@@ -176,6 +178,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         tripStarted.observeForever(object : Observer<Long> {
             override fun onChanged(t: Long?) {
                 getLatest()?.observeForever(newMeasurementsObserver)
+                timeStateRepository.getLatest(tripId!!).observeForever { currentState = it.state }
                 tripStarted.removeObserver(this)
             }
         })

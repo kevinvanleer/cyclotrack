@@ -127,7 +127,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.d("TIP_FRAG", "TOUCH")
-        return performClick()
+        return if(viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) performClick() else false
     }
 
     private fun performClick(): Boolean {

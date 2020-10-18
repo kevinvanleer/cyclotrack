@@ -12,7 +12,7 @@ class TimeStateRepository @Inject constructor(private val timeStateDao: TimeStat
         return timeStateDao.save(value)
     }
 
-    fun getLatestMeasurements(tripId: Long): LiveData<TimeState> {
+    fun getLatest(tripId: Long): LiveData<TimeState> {
         return timeStateDao.getCurrentState(tripId)
     }
 }
