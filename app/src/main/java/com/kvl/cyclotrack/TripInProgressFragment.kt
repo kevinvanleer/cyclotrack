@@ -19,6 +19,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         defaultViewModelProviderFactory
     }
     private lateinit var pauseButton: Button
+    private lateinit var stopButton: Button
+    private lateinit var resumeButton: Button
 
     companion object {
         fun newInstance() = TripInProgressFragment()
@@ -50,6 +52,21 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         pauseButton.visibility = View.GONE
         pauseButton.setOnClickListener(null)
         pauseButton.text = "PAUSE"
+        pauseButton.setOnClickListener(pauseTripListener)
+    }
+
+    private val pauseTripListener: OnClickListener = OnClickListener {
+        viewModel.pauseTrip()
+        pauseButton.visibility = View.GONE
+        resumeButton.visibility = View.VISIBLE
+        stopButton.visibility = View.VISIBLE
+        resumeButton.setOnClickListener {
+            viewModel.resumeTrip()
+            pauseButton.visibility = View.VISIBLE
+            resumeButton.visibility = View.GONE
+            stopButton.visibility = View.GONE
+        }
+        stopButton.setOnClickListener { viewModel.endTrip() }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -69,6 +86,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
         pauseButton = view.findViewById(R.id.pause_button)
+        resumeButton = view.findViewById(R.id.resume_button)
+        stopButton = view.findViewById(R.id.stop_button)
 
         view.setOnTouchListener(this)
 

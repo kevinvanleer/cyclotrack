@@ -13,6 +13,7 @@ import kotlin.math.max
 class TripInProgressViewModel @ViewModelInject constructor(
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,
+    private val timeStateRepository: TimeStateRepository,
     private val gpsService: GpsService,
 ) : ViewModel() {
 
@@ -166,6 +167,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
         viewModelScope.launch(Dispatchers.Default) {
             tripId = tripsRepository.createNewTrip()
+            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
             Log.d("TIP_VIEW_MODEL", "created new trip with id ${tripId.toString()}")
             record = true
             tripStarted.postValue(tripId)
@@ -182,11 +184,21 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     fun pauseTrip() {
-        record = false
+        viewModelScope.launch(Dispatchers.Default) {
+            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.PAUSE))
+        }
     }
 
     fun resumeTrip() {
-        record = true
+        viewModelScope.launch(Dispatchers.Default) {
+            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.RESUME))
+        }
+    }
+
+    fun endTrip() {
+        viewModelScope.launch(Dispatchers.Default) {
+            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
+        }
     }
 
     fun getLatest(): LiveData<Measurements>? {

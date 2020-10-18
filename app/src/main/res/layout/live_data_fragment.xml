@@ -134,5 +134,29 @@
         android:textSize="36sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+    <Button
+        android:id="@+id/stop_button"
+        android:layout_width="0dp"
+        android:layout_height="150dp"
+        android:fontFamily="@font/dashboard"
+        android:text="STOP"
+        android:visibility="gone"
+        android:textColor="#FFFFFF"
+        android:textSize="36sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/resume_button"/>
+    <Button
+        android:id="@+id/resume_button"
+        android:layout_width="0dp"
+        android:layout_height="150dp"
+        android:fontFamily="@font/dashboard"
+        android:text="RESUME"
+        android:visibility="gone"
+        android:textColor="#FFFFFF"
+        android:textSize="36sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/stop_button" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
