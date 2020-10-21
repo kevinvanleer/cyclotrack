@@ -1,5 +1,9 @@
 package com.kvl.cyclotrack
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.Log
@@ -7,12 +11,12 @@ import android.view.*
 import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.ImageView
-import android.widget.TextClock
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.*
 
 @AndroidEntryPoint
 class TripInProgressFragment : Fragment(), View.OnTouchListener {
@@ -92,16 +96,32 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
 
-        val clockView: TextClock = view.findViewById(R.id.textview_time)
-        clockView.setTextAppearance(R.style.DashboardFontAppearance)
+        val clockView: TextView = view.findViewById(R.id.textview_time)
+
+        val cal: Calendar = Calendar.getInstance()
+        clockView.text = String.format("%d:%02d %s",
+            Calendar.getInstance().get(Calendar.HOUR),
+            Calendar.getInstance().get(Calendar.MINUTE),
+            if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "am" else "pm")
+
+        context?.registerReceiver(object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.v("TIP_FRAGMENT", "Received time tick")
+                val cal: Calendar = Calendar.getInstance()
+                clockView.text = String.format("%d:%02d %s",
+                    cal.get(Calendar.HOUR),
+                    cal.get(Calendar.MINUTE),
+                    if (cal.get(Calendar.AM_PM) == 0) "am" else "pm")
+            }
+        }, IntentFilter(Intent.ACTION_TIME_TICK))
 
         view.setOnTouchListener(this)
 
-        if(viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
+        if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
             pauseButton.visibility = View.GONE
             pauseButton.text = "PAUSE"
             pauseButton.setOnClickListener(pauseTripListener)
-        } else if (viewModel.currentState == TimeStateEnum.PAUSE ){
+        } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
             pauseButton.visibility = View.GONE
             resumeButton.visibility = View.VISIBLE
             stopButton.visibility = View.VISIBLE
@@ -152,7 +172,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.d("TIP_FRAG", "TOUCH")
-        return if(viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) performClick() else false
+        return if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) performClick() else false
     }
 
     private fun performClick(): Boolean {
