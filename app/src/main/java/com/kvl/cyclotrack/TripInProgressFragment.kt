@@ -26,7 +26,14 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
+    private lateinit var clockView: TextView
 
+    private val timeTickReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.v("TIP_FRAGMENT", "Received time tick")
+            clockView.text = formatWallTime()
+        }
+    }
     companion object {
         fun newInstance() = TripInProgressFragment()
     }
@@ -95,25 +102,14 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
+        clockView = view.findViewById(R.id.textview_time)
 
-        val clockView: TextView = view.findViewById(R.id.textview_time)
+
 
         val cal: Calendar = Calendar.getInstance()
-        clockView.text = String.format("%d:%02d %s",
-            Calendar.getInstance().get(Calendar.HOUR),
-            Calendar.getInstance().get(Calendar.MINUTE),
-            if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "am" else "pm")
+        clockView.text = formatWallTime()
 
-        context?.registerReceiver(object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                Log.v("TIP_FRAGMENT", "Received time tick")
-                val cal: Calendar = Calendar.getInstance()
-                clockView.text = String.format("%d:%02d %s",
-                    cal.get(Calendar.HOUR),
-                    cal.get(Calendar.MINUTE),
-                    if (cal.get(Calendar.AM_PM) == 0) "am" else "pm")
-            }
-        }, IntentFilter(Intent.ACTION_TIME_TICK))
+        context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
 
         view.setOnTouchListener(this)
 
@@ -154,7 +150,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                             if (averageSpeed.isFinite()) averageSpeed else 0f)
                     } avg"
                 distanceTextView.text = "${String.format("%.2f", it.distance * 0.000621371)} mi"
-                durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
+                //durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
                 heartRateTextView.text =
                     String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
@@ -168,6 +164,21 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 //heartRateTextView.text = String.format("%.1f", it.tilt?.get(0))
             }
         })*/
+        viewModel.currentTime.observe(viewLifecycleOwner, {
+            durationTextView.text = DateUtils.formatElapsedTime((it).toLong())
+        })
+    }
+
+    private fun formatWallTime(): String {
+        return String.format("%d:%02d %s",
+            Calendar.getInstance().get(Calendar.HOUR),
+            Calendar.getInstance().get(Calendar.MINUTE),
+            if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "am" else "pm")
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        context?.unregisterReceiver(timeTickReceiver)
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {

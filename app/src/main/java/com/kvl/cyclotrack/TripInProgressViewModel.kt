@@ -1,11 +1,17 @@
 package com.kvl.cyclotrack
 
 import android.location.Location
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
+import androidx.lifecycle.Observer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.*
+import kotlin.concurrent.timerTask
+import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
@@ -17,6 +23,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val gpsService: GpsService,
 ) : ViewModel() {
 
+    private val clockTick = Timer()
     private var accumulatedDuration = 0.0
     var currentState: TimeStateEnum = TimeStateEnum.STOP
     private var tripId: Long? = null
@@ -27,9 +34,13 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val accuracyThreshold = 7.5f
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
+    private val _currentTime = MutableLiveData<Double>()
 
     val currentProgress: LiveData<TripProgress>
         get() = _currentProgress
+
+    val currentTime: LiveData<Double>
+        get() = _currentTime
 
     fun startGps() = gpsService.startListening()
 
@@ -224,7 +235,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         ?: 0L) / 1e9) - startTime else 0.0
 
     private fun getDuration() =
-        if(startTime.isFinite()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else 0.0
+        if(startTime.isFinite() && record) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         if (record && tripId != null) {
@@ -254,7 +265,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
             tripId = tripsRepository.createNewTrip()
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
             Log.d("TIP_VIEW_MODEL", "created new trip with id ${tripId.toString()}")
-            record = true
             tripStarted.postValue(tripId)
         }
         gpsService.observeForever(gpsObserver)
@@ -267,33 +277,49 @@ class TripInProgressViewModel @ViewModelInject constructor(
             }
         })
 
+        val timeHandler = Handler(Looper.getMainLooper());
+        timeHandler.post { _currentTime.value = getDuration() }
+
+        clockTick.scheduleAtFixedRate(timerTask {
+            val timeHandler = Handler(Looper.getMainLooper());
+            timeHandler.post {
+                Log.v("TIP_TIME_TICK", getDuration().toString())
+                _currentTime.value = getDuration() }
+        }, 1000 - System.currentTimeMillis() % 1000, 500)
+
         return tripStarted
     }
 
     private fun accumulateDuration(timeStates: Array<TimeState>?) {
         var durationAcc = 0L
         var localStartTime = 0L
+        var tripPaused = false
         timeStates?.forEach { timeState ->
             when (timeState.state) {
                 TimeStateEnum.START -> {
                     durationAcc = 0L
                     localStartTime = timeState.timestamp
+                    tripPaused = false
                 }
                 TimeStateEnum.PAUSE -> {
                     durationAcc += timeState.timestamp - localStartTime
+                    tripPaused = true
                 }
                 TimeStateEnum.RESUME -> {
                     localStartTime = timeState.timestamp
+                    tripPaused = false
                 }
                 TimeStateEnum.STOP -> {
                     durationAcc += timeState.timestamp - localStartTime
                     localStartTime = 0L
+                    tripPaused = true
                 }
             }
         }
         accumulatedDuration = durationAcc / 1e3
         startTime = localStartTime / 1e3
-        Log.v("TIP_VIEW_MODEL", "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}")
+        record = !tripPaused
+        Log.v("TIP_VIEW_MODEL", "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}; record = $record")
     }
 
     fun pauseTrip() {
@@ -312,6 +338,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
         viewModelScope.launch(Dispatchers.Default) {
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
         }
+        gpsService.removeObserver(gpsObserver)
+        //timeStateRepository.getLatest(tripId!!).observeForever { currentState = it.state }
+        //timeStateRepository.getTimeStates(tripId!!).observeForever { accumulateDuration(it)}
+        clockTick.cancel()
     }
 
     fun getLatest(): LiveData<Measurements>? {
@@ -323,6 +353,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         Log.d("TIP_VIEW_MODEL", "Called onCleared")
         super.onCleared()
         gpsService.removeObserver(gpsObserver)
+        clockTick.cancel()
     }
 }
 
