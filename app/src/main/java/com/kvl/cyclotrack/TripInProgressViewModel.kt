@@ -36,6 +36,30 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
 
+    private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
+        if (record && tripId != null) {
+            viewModelScope.launch {
+                measurementsRepository.insertMeasurements(Measurements(tripId!!,
+                    LocationData(newLocation)))
+            }
+        }
+    }
+
+    private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
+        if (newMeasurements == null) {
+            Log.d("TIP_VIEW_MODEL", "measurements observation is null")
+        } else {
+            if (currentState == TimeStateEnum.RESUME || currentState == TimeStateEnum.START) {
+                setTripProgress(newMeasurements)
+            } else {
+                setTripPaused(newMeasurements)
+            }
+        }
+    }
+
+    private val currentTimeStateObserver: Observer<TimeState> = Observer { currentState = it.state }
+    private val accumulateDurationObserver: Observer<Array<TimeState>> = Observer { accumulateDuration(it) }
+
     val currentProgress: LiveData<TripProgress>
         get() = _currentProgress
 
@@ -237,27 +261,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun getDuration() =
         if(startTime.isFinite() && record) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
-    private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
-        if (record && tripId != null) {
-            viewModelScope.launch {
-                measurementsRepository.insertMeasurements(Measurements(tripId!!,
-                    LocationData(newLocation)))
-            }
-        }
-    }
-
-    private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
-        if (newMeasurements == null) {
-            Log.d("TIP_VIEW_MODEL", "measurements observation is null")
-        } else {
-            if (currentState == TimeStateEnum.RESUME || currentState == TimeStateEnum.START) {
-                setTripProgress(newMeasurements)
-            } else {
-                setTripPaused(newMeasurements)
-            }
-        }
-    }
-
     fun startTrip(): LiveData<Long> {
         val tripStarted = MutableLiveData<Long>()
 
@@ -271,14 +274,11 @@ class TripInProgressViewModel @ViewModelInject constructor(
         tripStarted.observeForever(object : Observer<Long> {
             override fun onChanged(t: Long?) {
                 getLatest()?.observeForever(newMeasurementsObserver)
-                timeStateRepository.getLatest(tripId!!).observeForever { currentState = it.state }
-                timeStateRepository.getTimeStates(tripId!!).observeForever { accumulateDuration(it)}
+                timeStateRepository.getLatest(tripId!!).observeForever(currentTimeStateObserver)
+                timeStateRepository.getTimeStates(tripId!!).observeForever(accumulateDurationObserver)
                 tripStarted.removeObserver(this)
             }
         })
-
-        val timeHandler = Handler(Looper.getMainLooper());
-        timeHandler.post { _currentTime.value = getDuration() }
 
         clockTick.scheduleAtFixedRate(timerTask {
             val timeHandler = Handler(Looper.getMainLooper());
@@ -334,26 +334,30 @@ class TripInProgressViewModel @ViewModelInject constructor(
         }
     }
 
-    fun endTrip() {
-        viewModelScope.launch(Dispatchers.Default) {
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
-        }
-        gpsService.removeObserver(gpsObserver)
-        //timeStateRepository.getLatest(tripId!!).observeForever { currentState = it.state }
-        //timeStateRepository.getTimeStates(tripId!!).observeForever { accumulateDuration(it)}
-        clockTick.cancel()
-    }
-
     fun getLatest(): LiveData<Measurements>? {
         if (tripId == null) throw UninitializedPropertyAccessException()
         return measurementsRepository.getLatestMeasurements(tripId!!)
     }
 
+    private fun cleanup() {
+        gpsService.removeObserver(gpsObserver)
+        getLatest()?.removeObserver(newMeasurementsObserver)
+        timeStateRepository.getLatest(tripId!!).observeForever { currentTimeStateObserver }
+        timeStateRepository.getTimeStates(tripId!!).observeForever { accumulateDurationObserver }
+        clockTick.cancel()
+    }
+
+    fun endTrip() {
+        viewModelScope.launch(Dispatchers.Default) {
+            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
+        }
+        cleanup()
+    }
+
     override fun onCleared() {
         Log.d("TIP_VIEW_MODEL", "Called onCleared")
         super.onCleared()
-        gpsService.removeObserver(gpsObserver)
-        clockTick.cancel()
+        cleanup()
     }
 }
 
