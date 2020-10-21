@@ -11,4 +11,7 @@
     <string name="time_placeholder">HH:mm</string>
     <string name="time_ago_placeholder">XX days ago</string>
     <string name="cyclotrack_summary_map_id">c2e079ebb492f6ef</string>
+    <string name="pause_label">PAUSE</string>
+    <string name="stop_label">STOP</string>
+    <string name="resume_label">RESUME</string>
 </resources>

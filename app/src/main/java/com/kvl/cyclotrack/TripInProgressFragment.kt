@@ -7,6 +7,7 @@ import android.view.*
 import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextClock
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -90,6 +91,9 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
+
+        val clockView: TextClock = view.findViewById(R.id.textview_time)
+        clockView.setTextAppearance(R.style.DashboardFontAppearance)
 
         view.setOnTouchListener(this)
 

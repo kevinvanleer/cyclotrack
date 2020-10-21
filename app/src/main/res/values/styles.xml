@@ -17,4 +17,18 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
+    <style name="DashboardFontAppearance" parent="TextAppearance.AppCompat">
+        <item name="fontFamily">@font/orbitron_medium</item>
+        <item name="android:fontFamily">@font/orbitron_medium</item>
+        <item name="android:textColor">#ffffff</item>
+        <item name="android:textSize">40sp</item>
+    </style>
+
+    <style name="DashboardFontAppearanceLarge" parent="TextAppearance.AppCompat">
+        <item name="fontFamily">@font/orbitron_medium</item>
+        <item name="android:fontFamily">@font/orbitron_medium</item>
+        <item name="android:textColor">#ffffff</item>
+        <item name="android:textSize">60sp</item>
+    </style>
+
 </resources>
