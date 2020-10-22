@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.concurrent.timerTask
-import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
@@ -57,8 +56,60 @@ class TripInProgressViewModel @ViewModelInject constructor(
         }
     }
 
-    private val currentTimeStateObserver: Observer<TimeState> = Observer { currentState = it.state }
-    private val accumulateDurationObserver: Observer<Array<TimeState>> = Observer { accumulateDuration(it) }
+    private val currentTimeStateObserver: Observer<TimeState> = Observer {
+        currentState = it.state
+        /*if (tripId == null && it.state == TimeStateEnum.RESUME) {
+            measurementsRepository.getLatestMeasurements(tripId!!).observeForever(object :
+                Observer<Measurements> {
+                override fun onChanged(latestMeasurements: Measurements) {
+                    if (tripId != null) {
+                        Log.v("TIP_RESUME_TRIP", "Updating current location")
+                        if (_currentProgress.value?.location == null) {
+                            _currentProgress.value =
+                                _currentProgress.value?.copy(location = latestMeasurements)
+                        }
+                        measurementsRepository.getLatestMeasurements(tripId!!).removeObserver(this)
+                    }
+                }
+            })
+        }*/
+    }
+
+    private fun accumulateDuration(timeStates: Array<TimeState>?) {
+        var durationAcc = 0L
+        var localStartTime = 0L
+        var tripPaused = false
+        timeStates?.forEach { timeState ->
+            when (timeState.state) {
+                TimeStateEnum.START -> {
+                    durationAcc = 0L
+                    localStartTime = timeState.timestamp
+                    tripPaused = false
+                }
+                TimeStateEnum.PAUSE -> {
+                    durationAcc += timeState.timestamp - localStartTime
+                    tripPaused = true
+                }
+                TimeStateEnum.RESUME -> {
+                    localStartTime = timeState.timestamp
+                    tripPaused = false
+                }
+                TimeStateEnum.STOP -> {
+                    durationAcc += timeState.timestamp - localStartTime
+                    localStartTime = 0L
+                    tripPaused = true
+                }
+            }
+        }
+        accumulatedDuration = durationAcc / 1e3
+        startTime = localStartTime / 1e3
+        record = !tripPaused
+        Log.v("TIP_VIEW_MODEL",
+            "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}; record = $record")
+    }
+
+    private val accumulateDurationObserver: Observer<Array<TimeState>> =
+        Observer { accumulateDuration(it) }
 
     val currentProgress: LiveData<TripProgress>
         get() = _currentProgress
@@ -112,7 +163,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
             Log.d("TIP_DURATION_DELTA", durationDelta.toString())
             Log.v("TIP_UPDATE",
                 "accuracy: ${new.accuracy}; speed: ${newSpeed}; acceleration: ${newAcceleration}; distance: $newDistance; slope: $newSlope; duration: $newDuration")
-            Log.d("TIP_MAX_ACCELERATION", max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
+            Log.d("TIP_MAX_ACCELERATION",
+                max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
             viewModelScope.launch {
                 if (tripId != null) tripsRepository.updateTripStats(TripStats(tripId!!,
@@ -155,19 +207,14 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     private fun setTripPaused(new: Measurements) {
-        val old = _currentProgress.value
-        val distance: Double = old?.distance ?: 0.0
         var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
         var speedThreshold = defaultSpeedThreshold
-
         if (!startTime.isFinite()) startTime = new.elapsedRealtimeNanos / 1e9
-
-        val duration = old?.duration ?: 0.0
 
         if (accurateEnough) {
             val newSpeed = getSpeed(new, speedThreshold)
 
-            _currentProgress.value =
+           /*_currentProgress.value =
                 TripProgress(location = null,
                     speed = newSpeed,
                     maxSpeed = old?.maxSpeed ?: 0f,
@@ -178,14 +225,29 @@ class TripInProgressViewModel @ViewModelInject constructor(
                     duration = duration,
                     accuracy = new.accuracy,
                     splitSpeed = old?.splitSpeed ?: 0f,
-                    tracking = true)
+                    tracking = true)*/
+            _currentProgress.value =
+                _currentProgress.value?.copy(
+                    location = new,
+                    accuracy = new.accuracy)
+                    ?: TripProgress(duration = 0.0,
+                        speed = 0f,
+                        maxSpeed = 0f,
+                        acceleration = 0f,
+                        maxAcceleration = 0f,
+                        distance = 0.0,
+                        slope = 0.0,
+                        splitSpeed = 0f,
+                        location = new,
+                        accuracy = new.accuracy,
+                        tracking = true)
 
         } else {
             _currentProgress.value =
-                _currentProgress.value?.copy(duration = duration,
+                _currentProgress.value?.copy(
                     accuracy = new.accuracy,
                     tracking = false)
-                    ?: TripProgress(duration = duration,
+                    ?: TripProgress(duration = 0.0,
                         speed = 0f,
                         maxSpeed = 0f,
                         acceleration = 0f,
@@ -198,7 +260,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         tracking = false)
         }
     }
-
 
     private fun getSpeed(
         new: Measurements,
@@ -259,7 +320,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         ?: 0L) / 1e9) - startTime else 0.0
 
     private fun getDuration() =
-        if(startTime.isFinite() && record) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
+        if (startTime.isFinite() && record) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
     fun startTrip(): LiveData<Long> {
         val tripStarted = MutableLiveData<Long>()
@@ -275,7 +336,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
             override fun onChanged(t: Long?) {
                 getLatest()?.observeForever(newMeasurementsObserver)
                 timeStateRepository.getLatest(tripId!!).observeForever(currentTimeStateObserver)
-                timeStateRepository.getTimeStates(tripId!!).observeForever(accumulateDurationObserver)
+                timeStateRepository.getTimeStates(tripId!!)
+                    .observeForever(accumulateDurationObserver)
                 tripStarted.removeObserver(this)
             }
         })
@@ -284,42 +346,11 @@ class TripInProgressViewModel @ViewModelInject constructor(
             val timeHandler = Handler(Looper.getMainLooper());
             timeHandler.post {
                 Log.v("TIP_TIME_TICK", getDuration().toString())
-                _currentTime.value = getDuration() }
+                _currentTime.value = getDuration()
+            }
         }, 1000 - System.currentTimeMillis() % 1000, 500)
 
         return tripStarted
-    }
-
-    private fun accumulateDuration(timeStates: Array<TimeState>?) {
-        var durationAcc = 0L
-        var localStartTime = 0L
-        var tripPaused = false
-        timeStates?.forEach { timeState ->
-            when (timeState.state) {
-                TimeStateEnum.START -> {
-                    durationAcc = 0L
-                    localStartTime = timeState.timestamp
-                    tripPaused = false
-                }
-                TimeStateEnum.PAUSE -> {
-                    durationAcc += timeState.timestamp - localStartTime
-                    tripPaused = true
-                }
-                TimeStateEnum.RESUME -> {
-                    localStartTime = timeState.timestamp
-                    tripPaused = false
-                }
-                TimeStateEnum.STOP -> {
-                    durationAcc += timeState.timestamp - localStartTime
-                    localStartTime = 0L
-                    tripPaused = true
-                }
-            }
-        }
-        accumulatedDuration = durationAcc / 1e3
-        startTime = localStartTime / 1e3
-        record = !tripPaused
-        Log.v("TIP_VIEW_MODEL", "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}; record = $record")
     }
 
     fun pauseTrip() {
