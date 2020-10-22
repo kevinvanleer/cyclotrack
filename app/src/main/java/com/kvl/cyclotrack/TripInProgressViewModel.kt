@@ -344,22 +344,28 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     private fun cleanup() {
         gpsService.removeObserver(gpsObserver)
-        getLatest()?.removeObserver(newMeasurementsObserver)
-        timeStateRepository.getLatest(tripId!!).observeForever { currentTimeStateObserver }
-        timeStateRepository.getTimeStates(tripId!!).observeForever { accumulateDurationObserver }
         clockTick.cancel()
+        if(tripId != null) {
+            getLatest()?.removeObserver(newMeasurementsObserver)
+            timeStateRepository.getLatest(tripId!!).observeForever { currentTimeStateObserver }
+            timeStateRepository.getTimeStates(tripId!!)
+                .observeForever { accumulateDurationObserver }
+        }
     }
 
     fun endTrip() {
-        viewModelScope.launch(Dispatchers.Default) {
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
+        if(tripId != null && currentState != TimeStateEnum.STOP) {
+            viewModelScope.launch(Dispatchers.Default) {
+                timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
+            }
         }
-        cleanup()
     }
 
     override fun onCleared() {
         Log.d("TIP_VIEW_MODEL", "Called onCleared")
         super.onCleared()
+        //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
+        endTrip()
         cleanup()
     }
 }

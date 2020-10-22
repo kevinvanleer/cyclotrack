@@ -45,7 +45,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setSupportActionBar(findViewById(R.id.toolbar))
         initializeLocationService()
         //ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
