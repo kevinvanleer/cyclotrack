@@ -34,6 +34,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
+    private val currentTimeStateObserver: Observer<TimeState> = Observer { currentState = it.state }
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         if (record && tripId != null) {
@@ -54,25 +55,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
                 setTripPaused(newMeasurements)
             }
         }
-    }
-
-    private val currentTimeStateObserver: Observer<TimeState> = Observer {
-        currentState = it.state
-        /*if (tripId == null && it.state == TimeStateEnum.RESUME) {
-            measurementsRepository.getLatestMeasurements(tripId!!).observeForever(object :
-                Observer<Measurements> {
-                override fun onChanged(latestMeasurements: Measurements) {
-                    if (tripId != null) {
-                        Log.v("TIP_RESUME_TRIP", "Updating current location")
-                        if (_currentProgress.value?.location == null) {
-                            _currentProgress.value =
-                                _currentProgress.value?.copy(location = latestMeasurements)
-                        }
-                        measurementsRepository.getLatestMeasurements(tripId!!).removeObserver(this)
-                    }
-                }
-            })
-        }*/
     }
 
     private fun accumulateDuration(timeStates: Array<TimeState>?) {
@@ -214,24 +196,14 @@ class TripInProgressViewModel @ViewModelInject constructor(
         if (accurateEnough) {
             val newSpeed = getSpeed(new, speedThreshold)
 
-           /*_currentProgress.value =
-                TripProgress(location = null,
-                    speed = newSpeed,
-                    maxSpeed = old?.maxSpeed ?: 0f,
-                    distance = distance,
-                    acceleration = 0f,
-                    maxAcceleration = old?.maxAcceleration ?: 0f,
-                    slope = 0.0,
-                    duration = duration,
-                    accuracy = new.accuracy,
-                    splitSpeed = old?.splitSpeed ?: 0f,
-                    tracking = true)*/
             _currentProgress.value =
                 _currentProgress.value?.copy(
                     location = new,
-                    accuracy = new.accuracy)
+                    speed = newSpeed,
+                    accuracy = new.accuracy,
+                    tracking = true)
                     ?: TripProgress(duration = 0.0,
-                        speed = 0f,
+                        speed = newSpeed,
                         maxSpeed = 0f,
                         acceleration = 0f,
                         maxAcceleration = 0f,

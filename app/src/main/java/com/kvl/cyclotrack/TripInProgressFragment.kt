@@ -34,6 +34,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             clockView.text = formatWallTime()
         }
     }
+
     companion object {
         fun newInstance() = TripInProgressFragment()
     }
@@ -103,7 +104,6 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
         clockView = view.findViewById(R.id.textview_time)
-
 
 
         val cal: Calendar = Calendar.getInstance()
