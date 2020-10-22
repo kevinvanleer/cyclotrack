@@ -315,7 +315,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         })
 
         clockTick.scheduleAtFixedRate(timerTask {
-            val timeHandler = Handler(Looper.getMainLooper());
+            val timeHandler = Handler(Looper.getMainLooper())
             timeHandler.post {
                 Log.v("TIP_TIME_TICK", getDuration().toString())
                 _currentTime.value = getDuration()

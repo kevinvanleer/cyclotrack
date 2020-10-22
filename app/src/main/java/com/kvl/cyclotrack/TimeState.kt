@@ -11,12 +11,13 @@ enum class TimeStateEnum(val value: Int) {
 
 class TimeStateEnumConverter {
     @TypeConverter
-    fun fromTimeStateEnum (value: TimeStateEnum): Int {
+    fun fromTimeStateEnum(value: TimeStateEnum): Int {
         return value.ordinal
     }
+
     @TypeConverter
     fun toTimeStateEnum(value: Int): TimeStateEnum {
-        return when(value) {
+        return when (value) {
             0 -> TimeStateEnum.START
             1 -> TimeStateEnum.RESUME
             2 -> TimeStateEnum.PAUSE
@@ -31,7 +32,7 @@ class TimeStateEnumConverter {
     childColumns = arrayOf("tripId"),
     onDelete = ForeignKey.CASCADE)],
     indices = [Index(value = ["tripId"])])
-data class TimeState (
+data class TimeState(
     val tripId: Long,
     val state: TimeStateEnum,
     val timestamp: Long = System.currentTimeMillis(),

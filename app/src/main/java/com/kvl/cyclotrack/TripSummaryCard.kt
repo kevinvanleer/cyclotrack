@@ -70,13 +70,13 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         if (value < 1.0) {
             formattedString += "zero seconds"
         } else if (value < 60) {
-            formattedString += "${value.roundToInt().toString()} sec"
+            formattedString += "${value.roundToInt()} sec"
         } else if (value < 3600) {
             val minutes = value / 60
             val minutePart = minutes.toLong()
             val seconds = (minutes - minutePart) * 60
             val secondPart = seconds.toLong()
-            formattedString += "${minutePart.toString()}m ${secondPart.toString()}s"
+            formattedString += "${minutePart}m ${secondPart}s"
         } else {
             val hours = value / 3600
             val hourPart = hours.toLong()
@@ -84,7 +84,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
             val minutePart = minutes.toLong()
             val seconds = (minutes - minutePart) * 60
             val secondPart = seconds.roundToInt()
-            formattedString += "${hourPart.toString()}h ${minutePart.toString()}m ${secondPart.toString()}s"
+            formattedString += "${hourPart}h ${minutePart}m ${secondPart}s"
         }
         return formattedString
     }

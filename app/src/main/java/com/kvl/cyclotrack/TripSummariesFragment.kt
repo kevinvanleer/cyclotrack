@@ -33,7 +33,7 @@ class TripSummariesFragment : Fragment() {
 
         viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
             Log.d("TRIP_SUMMARIES",
-                "There were ${trips.size.toString()} trips returned from the database")
+                "There were ${trips.size} trips returned from the database")
             val viewAdapter =
                 TripSummariesAdapter(trips, viewModel, viewLifecycleOwner, savedInstanceState)
             view.findViewById<RecyclerView>(R.id.trip_summary_card_list).apply {

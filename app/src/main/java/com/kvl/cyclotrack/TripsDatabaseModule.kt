@@ -17,6 +17,7 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         database.execSQL("CREATE INDEX index_TimeState_tripId on TimeState(`tripId`)")
     }
 }
+
 /*
 Expected:
 TableInfo{ foreignKeys=[ForeignKey{referenceTable='Trip', onDelete='CASCADE', onUpdate='NO ACTION', columnNames=[tripId], referenceColumnNames=[id]}], indices=[Index{name='index_TimeState_tripId', unique=false, columns=[tripId]}]}
