@@ -43,10 +43,10 @@ class TripSummariesAdapter(
             Log.d("TRIP_SUMMARIES_ADAPTER",
                 "Recorded ${measurements.size} measurements for trip ${tripId}")
             val path = PolylineOptions()
-            var northeastLat = -1000.0
-            var northeastLng = -1000.0
-            var southwestLat = 1000.0
-            var southwestLng = 1000.0
+            var northeastLat = -91.0
+            var northeastLng = -181.0
+            var southwestLat = 91.0
+            var southwestLng = 181.0
 
             var totalDistance = 0.0
             var lastLat = 0.0
@@ -85,11 +85,13 @@ class TripSummariesAdapter(
             path.endCap(RoundCap())
             path.width(5f)
             path.color(0xff007700.toInt())
-            holder.tripSummaryView.drawPath(path,
-                LatLngBounds(LatLng(southwestLat, southwestLng),
-                    LatLng(northeastLat, northeastLng)))
-            holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-                totalDistance)
+            if (southwestLat < northeastLat) {
+                holder.tripSummaryView.drawPath(path,
+                    LatLngBounds(LatLng(southwestLat, southwestLng),
+                        LatLng(northeastLat, northeastLng)))
+                holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
+                    totalDistance)
+            }
         })
     }
 
