@@ -26,12 +26,12 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
-    private lateinit var clockView: TextView
+    private lateinit var clockView: MeasurementView
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             Log.v("TIP_FRAGMENT", "Received time tick")
-            clockView.text = formatWallTime()
+            updateClock()
         }
     }
 
@@ -44,7 +44,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         savedInstanceState: Bundle?,
     ): View? {
         setHasOptionsMenu(true)
-        return inflater.inflate(R.layout.live_data_fragment, container, false)
+        return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -112,7 +112,9 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         heartRateTextView.label = "SLOPE"
         splitSpeedTextView.label = "MPH"
 
-        clockView.text = formatWallTime()
+        accuracyTextView.text = "-.-"
+
+        updateClock()
 
         context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
 
@@ -147,13 +149,9 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             { it ->
                 Log.d("UI", "Location observer detected change")
                 val averageSpeed = it.distance / it.duration * 2.23694
-                splitSpeedTextView.value =
-                    "${String.format("%.1f", it.speed * 2.23694)}"
-                averageSpeedTextView.value =
-                    "${
-                        String.format("%.1f",
-                            if (averageSpeed.isFinite()) averageSpeed else 0f)
-                    } avg"
+                splitSpeedTextView.value = String.format("%.1f", it.speed * 2.23694)
+                averageSpeedTextView.value = String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
+
                 distanceTextView.value = "${String.format("%.2f", it.distance * 0.000621371)}"
                 //durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
                 heartRateTextView.value =
@@ -179,6 +177,13 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             Calendar.getInstance().get(Calendar.HOUR),
             Calendar.getInstance().get(Calendar.MINUTE),
             if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "am" else "pm")
+    }
+
+    private fun updateClock() {
+        clockView.value = String.format("%d:%02d",
+            Calendar.getInstance().get(Calendar.HOUR),
+            Calendar.getInstance().get(Calendar.MINUTE))
+        clockView.label = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
     }
 
     override fun onDestroyView() {

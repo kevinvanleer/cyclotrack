@@ -2,5 +2,7 @@
 <resources>
     <declare-styleable name="MeasurementView">
         <attr name="textSize" format="dimension" />
+        <attr name="value" format="string" />
+        <attr name="label" format="string" />
     </declare-styleable>
 </resources>

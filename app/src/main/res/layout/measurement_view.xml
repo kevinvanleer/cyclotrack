@@ -2,31 +2,34 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout"
-    android:textAppearance="@style/DashboardFontAppearance"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="5dp">
+    android:textAppearance="@style/DashboardFontAppearance"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
         <TextView
             android:id="@+id/measurement_value"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/zero"
+            android:textAlignment="viewStart"
             android:textAppearance="@style/DashboardFontAppearance"
             android:textSize="40sp"
             app:layout_constraintBottom_toTopOf="@id/measurement_label"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/measurement_label"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="LABEL"
+            android:text="@string/label_placeholder"
+            android:textAlignment="textEnd"
             android:textAppearance="@style/DashboardFontAppearance"
             android:textSize="16sp"
-            app:layout_constraintTop_toBottomOf="@id/measurement_value"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@id/measurement_value"
+            app:layout_constraintStart_toStartOf="@id/measurement_value"
+            app:layout_constraintTop_toBottomOf="@id/measurement_value" />
 </merge>

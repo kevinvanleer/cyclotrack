@@ -22,7 +22,7 @@
             android:id="@+id/TripInProgressFragment"
             android:name="com.kvl.cyclotrack.TripInProgressFragment"
             android:label="Dashboard"
-            tools:layout="@layout/live_data_fragment">
+            tools:layout="@layout/trip_in_progress_fragment">
             <action
                 android:id="@+id/action_to_debug_view"
                 app:destination="@id/AllDataFragment" />

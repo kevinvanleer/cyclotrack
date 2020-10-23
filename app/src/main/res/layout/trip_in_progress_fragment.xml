@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:measurement_view="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -8,19 +9,21 @@
     tools:context=".TripInProgressFragment">
 
     <com.kvl.cyclotrack.MeasurementView
-        xmlns:measurement_view="http://schemas.android.com/apk/res/com.kvl.cyclotrack"
         android:id="@+id/textview_distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        measurement_view:textSize="60sp"
+        android:padding="20dp"
         app:layout_constraintBottom_toTopOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        measurement_view:textSize="60sp" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_heart_rate"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:padding="20dp"
+        measurement_view:label="A LABEL"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toTopOf="@id/textview_average_speed"
         app:layout_constraintEnd_toStartOf="@id/textview_split_speed"
@@ -29,7 +32,8 @@
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_split_speed"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:padding="20dp"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
@@ -37,7 +41,8 @@
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_average_speed"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:padding="20dp"
         android:layout_height="wrap_content"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toTopOf="@id/textview_time"
@@ -47,7 +52,8 @@
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_speed"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:padding="20dp"
         android:layout_height="wrap_content"
         android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
@@ -57,24 +63,24 @@
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_duration"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:padding="20dp"
         android:layout_height="wrap_content"
-        android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/textview_time"
+        app:layout_constraintEnd_toStartOf="@+id/textview_time"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textview_speed" />
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_time"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:padding="20dp"
         android:layout_height="wrap_content"
-        android:text="@string/time_placeholder"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/textview_duration"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/textview_duration" />
+        app:layout_constraintStart_toEndOf="@+id/textview_duration" />
 
     <ImageView
         android:id="@+id/image_tracking"
@@ -89,9 +95,9 @@
         android:id="@+id/textview_accuracy"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:fontFamily="@font/orbitron_medium"
         android:text="@string/zero"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
-        android:fontFamily="@font/orbitron_medium"
         android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="@id/image_tracking"
         app:layout_constraintEnd_toStartOf="@id/textview_time"
@@ -102,10 +108,10 @@
         android:id="@+id/pause_button"
         android:layout_width="match_parent"
         android:layout_height="150dp"
+        android:fontFamily="@font/orbitron_medium"
         android:text="@string/pause_label"
         android:textColor="#FFFFFF"
         android:textSize="36sp"
-        android:fontFamily="@font/orbitron_medium"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -114,10 +120,10 @@
         android:id="@+id/stop_button"
         android:layout_width="0dp"
         android:layout_height="150dp"
+        android:fontFamily="@font/orbitron_medium"
         android:text="@string/stop_label"
         android:textColor="#FFFFFF"
         android:textSize="36sp"
-        android:fontFamily="@font/orbitron_medium"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/resume_button"
@@ -127,11 +133,11 @@
         android:id="@+id/resume_button"
         android:layout_width="0dp"
         android:layout_height="150dp"
-        android:textAppearance="@style/DashboardFontAppearance"
+        android:fontFamily="@font/orbitron_medium"
         android:text="@string/resume_label"
+        android:textAppearance="@style/DashboardFontAppearance"
         android:textColor="#FFFFFF"
         android:textSize="36sp"
-        android:fontFamily="@font/orbitron_medium"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

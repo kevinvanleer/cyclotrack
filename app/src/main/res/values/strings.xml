@@ -14,4 +14,5 @@
     <string name="pause_label">PAUSE</string>
     <string name="stop_label">STOP</string>
     <string name="resume_label">RESUME</string>
+    <string name="label_placeholder">LABEL</string>
 </resources>

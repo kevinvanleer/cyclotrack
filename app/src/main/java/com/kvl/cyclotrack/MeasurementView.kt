@@ -1,7 +1,6 @@
 package com.kvl.cyclotrack
 
 import android.content.Context
-import android.content.res.TypedArray
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
@@ -21,7 +20,9 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
     private var textWidth: Float = 0f
     private var textHeight: Float = 0f*/
 
-    private var valueTextSize = -1f
+    private var _valueTextSizeAttr = -1f
+    private var _valueTextAttr = "0.0"
+    private var _labelTextAttr = "LABEL"
     private lateinit var measurementLabelView: TextView
     private lateinit var measurementValueView: TextView
 
@@ -86,7 +87,9 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         val attributes = context.obtainStyledAttributes(
             attrs, R.styleable.MeasurementView, 0, 0)
 
-        valueTextSize = attributes.getDimension(R.styleable.MeasurementView_textSize, -1f)
+        _valueTextSizeAttr = attributes.getDimension(R.styleable.MeasurementView_textSize, -1f)
+        _labelTextAttr = attributes.getString(R.styleable.MeasurementView_label) ?: "LABEL"
+        _valueTextAttr = attributes.getString(R.styleable.MeasurementView_value) ?: "--.--"
 
         attributes.recycle()
     }
@@ -97,9 +100,12 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         measurementLabelView = findViewById(R.id.measurement_label)
         measurementValueView = findViewById(R.id.measurement_value)
 
-        if(valueTextSize >= 0) {
-            measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_PX, valueTextSize)
+        if(_valueTextSizeAttr >= 0) {
+            measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_PX, _valueTextSizeAttr)
         }
+
+        value = _valueTextAttr
+        label = _labelTextAttr
     }
 
     var value: CharSequence
