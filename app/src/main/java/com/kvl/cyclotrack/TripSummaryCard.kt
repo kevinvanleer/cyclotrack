@@ -113,6 +113,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         dateView = findViewById(R.id.trip_summary_date)
         durationView = findViewById((R.id.trip_summary_duration))
         mapView = findViewById(R.id.trip_summary_map)
+        mapView.onCreate(null)
         mapView.getMapAsync {
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it
@@ -133,7 +134,35 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         return true
     }
 
-    fun createMap(savedInstanceState: Bundle?) {
+    fun onCreateMap(savedInstanceState: Bundle?) {
         mapView.onCreate(savedInstanceState)
+    }
+
+    fun onStartMap() {
+        mapView.onStart()
+    }
+
+    fun onResumeMap() {
+        mapView.onResume()
+    }
+
+    fun onPauseMap() {
+        mapView.onPause()
+    }
+
+    fun onStopMap() {
+        mapView.onStop()
+    }
+
+    fun onDestroyMap() {
+        mapView.onDestroy()
+    }
+
+    fun onSaveMapInstanceState(state: Bundle) {
+        mapView.onSaveInstanceState(state)
+    }
+
+    fun onMapLowMemory() {
+        mapView.onLowMemory()
     }
 }

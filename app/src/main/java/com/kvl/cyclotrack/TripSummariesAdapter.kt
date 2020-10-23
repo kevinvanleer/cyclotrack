@@ -20,17 +20,17 @@ class TripSummariesAdapter(
     private val viewLifecycleOwner: LifecycleOwner,
     private val savedInstanceState: Bundle?,
 ) :
-    RecyclerView.Adapter<TripSummariesAdapter.TripSummariesViewHolder>() {
-    class TripSummariesViewHolder(val tripSummaryView: TripSummaryCard) :
+    RecyclerView.Adapter<TripSummariesAdapter.TripSummaryViewHolder>() {
+    class TripSummaryViewHolder(val tripSummaryView: TripSummaryCard) :
         RecyclerView.ViewHolder(tripSummaryView)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummariesViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder {
         val tripSummaryView = LayoutInflater.from(parent.context)
             .inflate(R.layout.trip_summary_card, parent, false) as TripSummaryCard
-        return TripSummariesViewHolder(tripSummaryView)
+        return TripSummaryViewHolder(tripSummaryView)
     }
 
-    override fun onBindViewHolder(holder: TripSummariesViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
         val tripId = trips[position].id ?: 0L
         holder.tripSummaryView.tripId = tripId
         holder.tripSummaryView.title = trips[position].name ?: "Unnamed trip"
@@ -38,7 +38,7 @@ class TripSummariesAdapter(
         holder.tripSummaryView.setDate(trips[position].timestamp)
         holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
             trips[position].distance ?: 0.0)
-        holder.tripSummaryView.createMap(savedInstanceState)
+        holder.tripSummaryView.onResumeMap()
         viewModel.getTripMeasurements(tripId).observe(viewLifecycleOwner, { measurements ->
             Log.d("TRIP_SUMMARIES_ADAPTER",
                 "Recorded ${measurements.size} measurements for trip ${tripId}")
