@@ -7,50 +7,45 @@
     android:keepScreenOn="true"
     tools:context=".TripInProgressFragment">
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
+        xmlns:measurement_view="http://schemas.android.com/apk/res/com.kvl.cyclotrack"
         android:id="@+id/textview_distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/zero"
-        android:textAppearance="@style/DashboardFontAppearance"
+        measurement_view:textSize="60sp"
         app:layout_constraintBottom_toTopOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_heart_rate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/zero"
-        android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toTopOf="@id/textview_average_speed"
         app:layout_constraintEnd_toStartOf="@id/textview_split_speed"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textview_distance" />
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_split_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/zero"
-        android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/textview_heart_rate" />
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_average_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toTopOf="@id/textview_time"
         app:layout_constraintEnd_toStartOf="@id/textview_speed"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textview_heart_rate" />
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_speed"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -60,7 +55,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/textview_average_speed" />
 
-    <TextView
+    <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

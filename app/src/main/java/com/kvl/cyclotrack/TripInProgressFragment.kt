@@ -91,12 +91,12 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
         viewModel.startGps()
 
-        val speedTextView: TextView = view.findViewById(R.id.textview_speed)
-        val distanceTextView: TextView = view.findViewById(R.id.textview_distance)
-        val durationTextView: TextView = view.findViewById(R.id.textview_duration)
-        val averageSpeedTextView: TextView = view.findViewById(R.id.textview_average_speed)
-        val heartRateTextView: TextView = view.findViewById(R.id.textview_heart_rate)
-        val splitSpeedTextView: TextView = view.findViewById(R.id.textview_split_speed)
+        val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
+        val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)
+        val durationTextView: MeasurementView = view.findViewById(R.id.textview_duration)
+        val averageSpeedTextView: MeasurementView = view.findViewById(R.id.textview_average_speed)
+        val heartRateTextView: MeasurementView = view.findViewById(R.id.textview_heart_rate)
+        val splitSpeedTextView: MeasurementView = view.findViewById(R.id.textview_split_speed)
 
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
@@ -105,8 +105,13 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         stopButton = view.findViewById(R.id.stop_button)
         clockView = view.findViewById(R.id.textview_time)
 
+        speedTextView.label = "SPLIT MPH"
+        distanceTextView.label = "MILES"
+        durationTextView.label = "DURATION"
+        averageSpeedTextView.label = "AVG MPH"
+        heartRateTextView.label = "SLOPE"
+        splitSpeedTextView.label = "MPH"
 
-        val cal: Calendar = Calendar.getInstance()
         clockView.text = formatWallTime()
 
         context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
@@ -142,21 +147,21 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             { it ->
                 Log.d("UI", "Location observer detected change")
                 val averageSpeed = it.distance / it.duration * 2.23694
-                splitSpeedTextView.text =
-                    "${String.format("%.1f", it.speed * 2.23694)} mph"
-                averageSpeedTextView.text =
+                splitSpeedTextView.value =
+                    "${String.format("%.1f", it.speed * 2.23694)}"
+                averageSpeedTextView.value =
                     "${
                         String.format("%.1f",
                             if (averageSpeed.isFinite()) averageSpeed else 0f)
                     } avg"
-                distanceTextView.text = "${String.format("%.2f", it.distance * 0.000621371)} mi"
+                distanceTextView.value = "${String.format("%.2f", it.distance * 0.000621371)}"
                 //durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
-                heartRateTextView.text =
+                heartRateTextView.value =
                     String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
                 trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
                 accuracyTextView.text = String.format("%.2f", it.accuracy)
-                speedTextView.text = String.format("%.1f spl", it.splitSpeed * 2.23694)
+                speedTextView.value = String.format("%.1f", it.splitSpeed * 2.23694)
             })
         /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
             override fun onChanged(it: SensorModel) {
@@ -165,7 +170,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             }
         })*/
         viewModel.currentTime.observe(viewLifecycleOwner, {
-            durationTextView.text = DateUtils.formatElapsedTime((it).toLong())
+            durationTextView.value = DateUtils.formatElapsedTime((it).toLong())
         })
     }
 
