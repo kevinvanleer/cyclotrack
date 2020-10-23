@@ -12,7 +12,7 @@
         android:id="@+id/textview_distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="20dp"
+        android:padding="@dimen/tip_measurement_padding"
         app:layout_constraintBottom_toTopOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,8 +22,7 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_heart_rate"
         android:layout_width="0dp"
-        android:padding="20dp"
-        measurement_view:label="A LABEL"
+        android:padding="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toTopOf="@id/textview_average_speed"
         app:layout_constraintEnd_toStartOf="@id/textview_split_speed"
@@ -33,7 +32,7 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_split_speed"
         android:layout_width="0dp"
-        android:padding="20dp"
+        android:padding="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
@@ -42,7 +41,7 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_average_speed"
         android:layout_width="0dp"
-        android:padding="20dp"
+        android:padding="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toTopOf="@id/textview_time"
@@ -53,7 +52,7 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_speed"
         android:layout_width="0dp"
-        android:padding="20dp"
+        android:padding="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
@@ -64,7 +63,7 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_duration"
         android:layout_width="0dp"
-        android:padding="20dp"
+        android:padding="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -75,7 +74,7 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_time"
         android:layout_width="0dp"
-        android:padding="20dp"
+        android:padding="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/textview_duration"
@@ -93,7 +92,8 @@
 
     <TextView
         android:id="@+id/textview_accuracy"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:paddingLeft='4dp'
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_medium"
         android:text="@string/zero"
