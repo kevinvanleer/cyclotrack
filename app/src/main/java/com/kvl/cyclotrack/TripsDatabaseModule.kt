@@ -18,13 +18,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-/*
-Expected:
-TableInfo{ foreignKeys=[ForeignKey{referenceTable='Trip', onDelete='CASCADE', onUpdate='NO ACTION', columnNames=[tripId], referenceColumnNames=[id]}], indices=[Index{name='index_TimeState_tripId', unique=false, columns=[tripId]}]}
-Found:
-TableInfo{foreignKeys=[ForeignKey{referenceTable='Trip', onDelete='NO ACTION', onUpdate='NO ACTION', columnNames=[tripId], referenceColumnNames=[id]}], indices=[]}
-at androidx.room.RoomOpenHelper.onUpgrade(RoomOpenHelper.java:103)
-*/
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE NO ACTION)")
+        database.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
+    }
+}
+
 @Module
 @InstallIn(ApplicationComponent::class)
 object TripsDatabaseModule {
@@ -33,7 +33,7 @@ object TripsDatabaseModule {
     @Singleton
     fun provideTripsDatabase(@ApplicationContext appContext: Context): TripsDatabase =
         Room.databaseBuilder(appContext, TripsDatabase::class.java, "trips-cyclotrack-kvl")
-            .addMigrations(MIGRATION_1_2).build()
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
 
     @Provides
     @Singleton
@@ -51,5 +51,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideTimeStateDao(db: TripsDatabase): TimeStateDao {
         return db.timeStateDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSplitDao(db: TripsDatabase): SplitDao {
+        return db.splitDao()
     }
 }
