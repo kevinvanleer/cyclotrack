@@ -12,8 +12,11 @@ import androidx.room.PrimaryKey
     indices = [Index(value = ["tripId"])])
 data class Split (
     val tripId: Long,
-    val timestamp: Long,
+    val duration: Double,
+    val totalDuration: Double,
     val distance: Double,
+    val totalDistance: Double,
+    val timestamp: Long = System.currentTimeMillis(),
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
 )

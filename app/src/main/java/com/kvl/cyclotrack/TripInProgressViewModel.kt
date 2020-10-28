@@ -19,6 +19,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
+    private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
 ) : ViewModel() {
 
@@ -91,6 +92,11 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val accumulateDurationObserver: Observer<Array<TimeState>> =
         Observer { accumulateDuration(it) }
 
+    private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
+        timeAtLastSplit = newSplit.totalDuration
+        distanceAtLastSplit = newSplit.totalDistance
+    }
+
     val currentProgress: LiveData<TripProgress>
         get() = _currentProgress
 
@@ -118,12 +124,23 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (crossedMileThreshold(newDistance, old)
+            if (crossedSplitThreshold(newDistance, old)
             ) {
+                val splitDistance = newDistance - distanceAtLastSplit
+                val splitDuration = newDuration - timeAtLastSplit
                 newSplitSpeed =
-                    ((newDistance - distanceAtLastSplit) / (newDuration - timeAtLastSplit)).toFloat()
-                timeAtLastSplit = newDuration
-                distanceAtLastSplit = newDistance
+                    (splitDistance / splitDuration).toFloat()
+                viewModelScope.launch {
+                    splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
+                        duration = splitDuration,
+                        distance = splitDistance,
+                        totalDuration = newDuration,
+                        totalDistance = newDistance,
+                        tripId = tripId!!))
+                }
+
+                //timeAtLastSplit = newDuration
+                //distanceAtLastSplit = newDistance
             }
 
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
@@ -243,7 +260,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     ) = if (durationDelta == 0.0) 0f
     else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()
 
-    private fun crossedMileThreshold(
+    private fun crossedSplitThreshold(
         newDistance: Double,
         old: TripProgress?,
     ) = floor(newDistance * 0.000621371) > floor((old?.distance
@@ -308,6 +325,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                 timeStateRepository.getLatest(tripId!!).observeForever(currentTimeStateObserver)
                 timeStateRepository.getTimeStates(tripId!!)
                     .observeForever(accumulateDurationObserver)
+                splitRepository.getLastSplit(tripId!!).observeForever(lastSplitObserver)
                 tripStarted.removeObserver(this)
             }
         })
@@ -345,9 +363,9 @@ class TripInProgressViewModel @ViewModelInject constructor(
         clockTick.cancel()
         if(tripId != null) {
             getLatest()?.removeObserver(newMeasurementsObserver)
-            timeStateRepository.getLatest(tripId!!).observeForever { currentTimeStateObserver }
-            timeStateRepository.getTimeStates(tripId!!)
-                .observeForever { accumulateDurationObserver }
+            timeStateRepository.getLatest(tripId!!).removeObserver(currentTimeStateObserver )
+            timeStateRepository.getTimeStates(tripId!!).removeObserver( accumulateDurationObserver )
+            splitRepository.getLastSplit(tripId!!).removeObserver(lastSplitObserver)
         }
     }
 
