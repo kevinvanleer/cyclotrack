@@ -38,7 +38,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val _currentTime = MutableLiveData<Double>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer { currentState = it.state }
 
-    private fun tripInProgress() = currentState == TimeStateEnum.START || currentState == TimeStateEnum.RESUME
+    private fun tripInProgress() =
+        currentState == TimeStateEnum.START || currentState == TimeStateEnum.RESUME
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         if (tripInProgress() && tripId != null) {
@@ -93,8 +94,13 @@ class TripInProgressViewModel @ViewModelInject constructor(
         Observer { accumulateDuration(it) }
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
-        timeAtLastSplit = newSplit.totalDuration
-        distanceAtLastSplit = newSplit.totalDistance
+        if(newSplit != null) {
+            timeAtLastSplit = newSplit.totalDuration
+            distanceAtLastSplit = newSplit.totalDistance
+        } else {
+            timeAtLastSplit = 0.0
+            distanceAtLastSplit = 0.0
+        }
     }
 
     val currentProgress: LiveData<TripProgress>
@@ -361,16 +367,16 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun cleanup() {
         gpsService.removeObserver(gpsObserver)
         clockTick.cancel()
-        if(tripId != null) {
+        if (tripId != null) {
             getLatest()?.removeObserver(newMeasurementsObserver)
-            timeStateRepository.getLatest(tripId!!).removeObserver(currentTimeStateObserver )
-            timeStateRepository.getTimeStates(tripId!!).removeObserver( accumulateDurationObserver )
+            timeStateRepository.getLatest(tripId!!).removeObserver(currentTimeStateObserver)
+            timeStateRepository.getTimeStates(tripId!!).removeObserver(accumulateDurationObserver)
             splitRepository.getLastSplit(tripId!!).removeObserver(lastSplitObserver)
         }
     }
 
     fun endTrip() {
-        if(tripId != null && currentState != TimeStateEnum.STOP) {
+        if (tripId != null && currentState != TimeStateEnum.STOP) {
             viewModelScope.launch(Dispatchers.Default) {
                 timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
             }
