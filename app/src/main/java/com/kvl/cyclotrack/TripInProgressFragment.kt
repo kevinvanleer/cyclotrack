@@ -150,7 +150,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 Log.d("UI", "Location observer detected change")
                 val averageSpeed = it.distance / it.duration * 2.23694
                 splitSpeedTextView.value = String.format("%.1f", it.speed * 2.23694)
-                averageSpeedTextView.value = String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
+                averageSpeedTextView.value =
+                    String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
 
                 distanceTextView.value = "${String.format("%.2f", it.distance * 0.000621371)}"
                 //durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
@@ -180,8 +181,10 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     }
 
     private fun updateClock() {
+        var hour = Calendar.getInstance().get(Calendar.HOUR)
+        if (hour == 0) hour = 12
         clockView.value = String.format("%d:%02d",
-            Calendar.getInstance().get(Calendar.HOUR),
+            hour,
             Calendar.getInstance().get(Calendar.MINUTE))
         clockView.label = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
     }
