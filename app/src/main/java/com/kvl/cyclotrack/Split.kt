@@ -10,7 +10,7 @@ import androidx.room.PrimaryKey
     childColumns = arrayOf("tripId"),
     onDelete = ForeignKey.NO_ACTION)],
     indices = [Index(value = ["tripId"])])
-data class Split (
+data class Split(
     val tripId: Long,
     val duration: Double,
     val totalDuration: Double,

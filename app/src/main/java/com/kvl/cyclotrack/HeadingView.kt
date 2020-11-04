@@ -15,13 +15,13 @@ class Heading(context: Context, attrs: AttributeSet) : ConstraintLayout(context,
     var label: CharSequence
         get() = headingLabelView.text
         set(newValue) {
-            headingLabelView.text
+            headingLabelView.text = newValue
         }
 
     var value: CharSequence
         get() = headingValueView.text
         set(newValue) {
-            headingValueView.text
+            headingValueView.text = newValue
         }
 
 
@@ -30,7 +30,7 @@ class Heading(context: Context, attrs: AttributeSet) : ConstraintLayout(context,
 
         val attributes = context.obtainStyledAttributes(attrs, R.styleable.Heading, 0, 0)
 
-        labelAttr = attributes.getString(R.styleable.Heading_label) ?: ""
+        labelAttr = attributes.getString(R.styleable.Heading_headingLabel) ?: ""
 
         attributes.recycle()
     }
