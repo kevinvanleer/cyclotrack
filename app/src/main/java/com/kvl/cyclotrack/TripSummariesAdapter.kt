@@ -1,16 +1,27 @@
 package com.kvl.cyclotrack
 
+import android.app.Activity
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
+import androidx.navigation.NavController
+import androidx.navigation.Navigation
+import androidx.navigation.Navigation.createNavigateOnClickListener
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import dagger.hilt.android.AndroidEntryPoint
 import kotlin.math.max
 import kotlin.math.min
 
@@ -93,7 +104,10 @@ class TripSummariesAdapter(
                     totalDistance)
             }
         })
-    }
+        holder.tripSummaryView.setOnClickListener { view ->
+            view.findNavController().navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+        }
+}
 
-    override fun getItemCount() = trips.size
+override fun getItemCount() = trips.size
 }

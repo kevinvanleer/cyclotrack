@@ -1,5 +1,5 @@
 <resources>
     <declare-styleable name="Heading">
-        <attr name="label" format="string" />
+        <attr name="headingLabel" format="string" />
     </declare-styleable>
 </resources>

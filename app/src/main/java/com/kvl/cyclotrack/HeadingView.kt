@@ -6,7 +6,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 
-class Heading(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
+class HeadingView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
 
     private var labelAttr = "LABEL"
     private lateinit var headingLabelView: TextView

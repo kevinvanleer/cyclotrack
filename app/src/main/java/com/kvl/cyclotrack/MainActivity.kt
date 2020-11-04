@@ -5,9 +5,9 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.navigation.Navigation.findNavController
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -47,9 +47,18 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         setSupportActionBar(findViewById(R.id.toolbar))
         initializeLocationService()
-        //ViewModelProviders.of(this).get(LiveDataViewModel::class.java)
     }
 
+    /*
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putBundle("nav_state", findNavController(this, R.id.cyclotrack_nav_graph).saveState())
+    }
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+       findNavController(this, R.id.cyclotrack_nav_graph).restoreState(savedInstanceState.getBundle("nav_state"))
+    }
+    */
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

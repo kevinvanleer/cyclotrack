@@ -8,6 +8,9 @@ import android.util.Log
 import android.view.MotionEvent
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment.findNavController
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -122,7 +125,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         }
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
+    /*override fun onTouchEvent(event: MotionEvent?): Boolean {
         super.onTouchEvent(event)
         Log.d("TRIP_SUMMARY_CARD", "${tripId} DON'T TOUCH ME!")
         return performClick()
@@ -132,7 +135,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         Log.d("TRIP_SUMMARY_CARD", "${tripId} DON'T CLICK ME!")
 
         return true
-    }
+    }*/
 
     fun onCreateMap(savedInstanceState: Bundle?) {
         mapView.onCreate(savedInstanceState)
