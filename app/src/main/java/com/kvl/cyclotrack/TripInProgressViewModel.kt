@@ -94,7 +94,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         Observer { accumulateDuration(it) }
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
-        if(newSplit != null) {
+        if (newSplit != null) {
             timeAtLastSplit = newSplit.totalDuration
             distanceAtLastSplit = newSplit.totalDistance
         } else {

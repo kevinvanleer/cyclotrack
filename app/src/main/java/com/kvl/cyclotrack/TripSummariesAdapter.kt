@@ -1,29 +1,13 @@
 package com.kvl.cyclotrack
 
-import android.app.Activity
-import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
-import androidx.navigation.NavController
-import androidx.navigation.Navigation
-import androidx.navigation.Navigation.createNavigateOnClickListener
 import androidx.navigation.findNavController
-import androidx.navigation.fragment.NavHostFragment.findNavController
-import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import dagger.hilt.android.AndroidEntryPoint
-import kotlin.math.max
-import kotlin.math.min
 
 class TripSummariesAdapter(
     private val trips: Array<Trip>,
@@ -53,61 +37,23 @@ class TripSummariesAdapter(
         viewModel.getTripMeasurements(tripId).observe(viewLifecycleOwner, { measurements ->
             Log.d("TRIP_SUMMARIES_ADAPTER",
                 "Recorded ${measurements.size} measurements for trip ${tripId}")
-            val path = PolylineOptions()
-            var northeastLat = -91.0
-            var northeastLng = -181.0
-            var southwestLat = 91.0
-            var southwestLng = 181.0
-
-            var totalDistance = 0.0
-            var lastLat = 0.0
-            var lastLng = 0.0
-
-            var maxSpeedAccuracy = 0f
-            var accSpeedAccuracy = 0f
-            var sampleCount = 0
-
-            measurements.forEach {
-                if (it.accuracy < 5) {
-                    if (lastLat != 0.0 && lastLng != 0.0) {
-                        var distanceArray = floatArrayOf(0f)
-                        Location.distanceBetween(lastLat,
-                            lastLng,
-                            it.latitude,
-                            it.longitude,
-                            distanceArray)
-                        totalDistance += distanceArray[0]
-                    }
-                    lastLat = it.latitude
-                    lastLng = it.longitude
-                    path.add(LatLng(it.latitude, it.longitude))
-                    northeastLat = max(northeastLat, it.latitude)
-                    northeastLng = max(northeastLng, it.longitude)
-                    southwestLat = min(southwestLat, it.latitude)
-                    southwestLng = min(southwestLng, it.longitude)
-                    maxSpeedAccuracy = max(maxSpeedAccuracy, it.speedAccuracyMetersPerSecond)
-                    accSpeedAccuracy += it.speedAccuracyMetersPerSecond
-                    sampleCount++
-                }
-            }
-            Log.d("TRIP_SUMMARIES_ADAPTER",
-                "distance=${totalDistance}, maxSpeedAcc=${maxSpeedAccuracy}, avgSpeedAcc=${accSpeedAccuracy / sampleCount}")
-            path.startCap(RoundCap())
-            path.endCap(RoundCap())
-            path.width(5f)
-            path.color(0xff007700.toInt())
-            if (southwestLat < northeastLat) {
-                holder.tripSummaryView.drawPath(path,
-                    LatLngBounds(LatLng(southwestLat, southwestLng),
-                        LatLng(northeastLat, northeastLng)))
+            val mapData = plotPath(measurements)
+            if (mapData.bounds != null) {
+                mapData.path.startCap(RoundCap())
+                mapData.path.endCap(RoundCap())
+                mapData.path.width(5f)
+                mapData.path.color(0xff007700.toInt())
+                holder.tripSummaryView.drawPath(mapData.path, mapData.bounds)
                 holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-                    totalDistance)
+                    trips[position].distance ?: 0.0)
             }
         })
         holder.tripSummaryView.setOnClickListener { view ->
-            view.findNavController().navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+            view.findNavController()
+                .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
         }
-}
+    }
 
-override fun getItemCount() = trips.size
+
+    override fun getItemCount() = trips.size
 }

@@ -5,12 +5,8 @@ import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.util.Log
-import android.view.MotionEvent
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.navigation.NavController
-import androidx.navigation.fragment.NavHostFragment.findNavController
-import androidx.navigation.fragment.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
