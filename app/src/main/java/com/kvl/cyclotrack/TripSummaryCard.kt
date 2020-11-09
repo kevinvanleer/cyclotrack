@@ -102,7 +102,7 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         path = polyline
         bounds = latLngBound
         map.addPolyline(polyline)
-        map.moveCamera(newLatLngBounds(bounds, 5))
+        map.moveCamera(newLatLngBounds(bounds, 1000, 1000, 100))
     }
 
     override fun onFinishInflate() {
@@ -113,31 +113,21 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         durationView = findViewById((R.id.trip_summary_duration))
         mapView = findViewById(R.id.trip_summary_map)
         mapView.onCreate(null)
+        mapView.isClickable = false
         mapView.getMapAsync {
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
-
+            map.uiSettings.setAllGesturesEnabled(false)
+            map.uiSettings.isMapToolbarEnabled = false
         }
     }
-
-    /*override fun onTouchEvent(event: MotionEvent?): Boolean {
-        super.onTouchEvent(event)
-        Log.d("TRIP_SUMMARY_CARD", "${tripId} DON'T TOUCH ME!")
-        return performClick()
-    }
-
-    override fun performClick(): Boolean {
-        Log.d("TRIP_SUMMARY_CARD", "${tripId} DON'T CLICK ME!")
-
-        return true
-    }*/
 
     fun onCreateMap(savedInstanceState: Bundle?) {
         mapView.onCreate(savedInstanceState)
     }
 
-    fun onStartMap() {
+    fun onStart() {
         mapView.onStart()
     }
 

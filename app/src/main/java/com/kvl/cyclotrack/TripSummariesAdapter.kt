@@ -54,6 +54,5 @@ class TripSummariesAdapter(
         }
     }
 
-
     override fun getItemCount() = trips.size
 }
