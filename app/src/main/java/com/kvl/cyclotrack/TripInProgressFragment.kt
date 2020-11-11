@@ -4,9 +4,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Resources
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.Log
+import android.util.TypedValue
 import android.view.*
 import android.view.View.OnClickListener
 import android.widget.Button
@@ -62,7 +64,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private val startTripListener: OnClickListener = OnClickListener {
         viewModel.startTrip()
-        pauseButton.visibility = View.GONE
+        pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
         pauseButton.setOnClickListener(null)
         pauseButton.text = "PAUSE"
         pauseButton.setOnClickListener(pauseTripListener)
@@ -70,7 +72,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private val pauseTripListener: OnClickListener = OnClickListener {
         viewModel.pauseTrip()
-        pauseButton.visibility = View.GONE
+        pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
         resumeButton.visibility = View.VISIBLE
         stopButton.visibility = View.VISIBLE
         resumeButton.setOnClickListener {
@@ -121,11 +123,11 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         view.setOnTouchListener(this)
 
         if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
-            pauseButton.visibility = View.GONE
+            pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
             pauseButton.text = "PAUSE"
             pauseButton.setOnClickListener(pauseTripListener)
         } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
-            pauseButton.visibility = View.GONE
+            pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
             resumeButton.visibility = View.VISIBLE
             stopButton.visibility = View.VISIBLE
             resumeButton.setOnClickListener {
@@ -140,7 +142,6 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         } else {
             pauseButton.setOnClickListener(startTripListener)
             pauseButton.text = "START"
-            pauseButton.visibility = View.VISIBLE
         }
 
         //viewModel.startTrip()
@@ -201,10 +202,13 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private fun performClick(): Boolean {
         Log.d("TIP_FRAG", "CLICK")
-        pauseButton.visibility = View.VISIBLE
+        pauseButton.apply {
+            pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
+            pauseButton.animate().translationY(0f)
+        }
         android.os.Handler().postDelayed(
             Runnable {
-                pauseButton.visibility = View.GONE
+                pauseButton.animate().translationY(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics))
             }, 5000
         )
         return true

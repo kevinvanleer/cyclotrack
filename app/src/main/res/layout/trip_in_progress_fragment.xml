@@ -112,7 +112,6 @@
         android:text="@string/pause_label"
         android:textColor="#FFFFFF"
         android:textSize="36sp"
-        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
