@@ -155,7 +155,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
 
         view.setOnTouchListener(this)
-        view.doOnPreDraw { hideResumeStop()}
+        view.doOnPreDraw { hideResumeStop() }
 
         if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
             hidePause()
@@ -228,18 +228,32 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-        Log.d("TIP_FRAG", "TOUCH")
-        return if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) performClick() else false
+        Log.d("TIP_FRAG", event.toString())
+        return when(event?.action) {
+            MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) handleScreenTouchClick() else false
+            MotionEvent.ACTION_DOWN -> true
+            else -> false
+        }
     }
 
-    private fun performClick(): Boolean {
-        Log.d("TIP_FRAG", "CLICK")
-        pauseButton.animate().setDuration(100).translationY(0f)
-        android.os.Handler().postDelayed(
-            Runnable {
-                pauseButton.animate().setDuration(100).translationY(pauseButton.height.toFloat())
-            }, 5000
-        )
+    private val hidePauseHandler = android.os.Handler()
+    private val hidePauseCallback = Runnable {
+        pauseButton.animate().setDuration(100).translationY(pauseButton.height.toFloat())
+    }
+
+    private fun isPauseButtonHidden() = pauseButton.translationY != 0f
+
+    private fun handleScreenTouchClick(): Boolean {
+        Log.d("TIP_FRAG", "handleTouchClick")
+        if (isPauseButtonHidden()) {
+            pauseButton.animate().setDuration(100).translationY(0f)
+            hidePauseHandler.postDelayed(
+                hidePauseCallback, 5000
+            )
+        } else {
+            hidePauseHandler.removeCallbacks(hidePauseCallback)
+            hidePauseCallback.run()
+        }
         return true
     }
 }
