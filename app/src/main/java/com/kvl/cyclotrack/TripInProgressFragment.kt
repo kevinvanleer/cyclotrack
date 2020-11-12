@@ -4,16 +4,15 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.res.Resources
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.Log
-import android.util.TypedValue
 import android.view.*
 import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
@@ -62,9 +61,46 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         return true
     }
 
+    private fun hidePause() {
+        pauseButton.translationY = pauseButton.height.toFloat()
+    }
+
+    private fun hideResume() {
+        resumeButton.translationX = resumeButton.width.toFloat()
+        //resumeButton.translationX = 10000f
+    }
+
+    private fun hideStop() {
+        stopButton.translationX = -stopButton.width.toFloat()
+        //stopButton.translationX = -10000f
+    }
+
+    private fun hideResumeStop() {
+        hideResume()
+        hideStop()
+    }
+
+    private fun slideResumeOut() {
+        resumeButton.animate().setDuration(100).translationX(resumeButton.width.toFloat())
+    }
+
+    private fun slideStopOut() {
+        stopButton.animate().setDuration(100).translationX(-stopButton.width.toFloat())
+    }
+
+    private fun slideOutResumeStop() {
+        slideResumeOut()
+        slideStopOut()
+    }
+
+    private fun slideInResumeStop() {
+        resumeButton.animate().setDuration(100).translationX(0f)
+        stopButton.animate().setDuration(100).translationX(0f)
+    }
+
     private val startTripListener: OnClickListener = OnClickListener {
         viewModel.startTrip()
-        pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
+        hidePause()
         pauseButton.setOnClickListener(null)
         pauseButton.text = "PAUSE"
         pauseButton.setOnClickListener(pauseTripListener)
@@ -72,13 +108,11 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private val pauseTripListener: OnClickListener = OnClickListener {
         viewModel.pauseTrip()
-        pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
-        resumeButton.visibility = View.VISIBLE
-        stopButton.visibility = View.VISIBLE
+        hidePause()
+        slideInResumeStop()
         resumeButton.setOnClickListener {
             viewModel.resumeTrip()
-            resumeButton.visibility = View.GONE
-            stopButton.visibility = View.GONE
+            slideOutResumeStop()
         }
         stopButton.setOnClickListener {
             viewModel.endTrip()
@@ -121,19 +155,17 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
 
         view.setOnTouchListener(this)
+        view.doOnPreDraw { hideResumeStop()}
 
         if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
-            pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
+            hidePause()
             pauseButton.text = "PAUSE"
             pauseButton.setOnClickListener(pauseTripListener)
         } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
-            pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
-            resumeButton.visibility = View.VISIBLE
-            stopButton.visibility = View.VISIBLE
+            hidePause()
             resumeButton.setOnClickListener {
                 viewModel.resumeTrip()
-                resumeButton.visibility = View.GONE
-                stopButton.visibility = View.GONE
+                slideOutResumeStop()
             }
             stopButton.setOnClickListener {
                 viewModel.endTrip()
@@ -202,13 +234,10 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private fun performClick(): Boolean {
         Log.d("TIP_FRAG", "CLICK")
-        pauseButton.apply {
-            pauseButton.translationY = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics)
-            pauseButton.animate().translationY(0f)
-        }
+        pauseButton.animate().setDuration(100).translationY(0f)
         android.os.Handler().postDelayed(
             Runnable {
-                pauseButton.animate().translationY(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 150f, resources.displayMetrics))
+                pauseButton.animate().setDuration(100).translationY(pauseButton.height.toFloat())
             }, 5000
         )
         return true
