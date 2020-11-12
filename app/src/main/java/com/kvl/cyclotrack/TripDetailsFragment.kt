@@ -9,6 +9,10 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.Entry
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -46,6 +50,7 @@ class TripDetailsFragment : Fragment() {
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
         val durationHeadingView: HeadingView = view.findViewById(R.id.trip_details_time)
         val speedHeadingView: HeadingView = view.findViewById(R.id.trip_details_speed)
+        val speedChartView: LineChart = view.findViewById(R.id.trip_details_speed_chart)
 
         val tripId = args.tripId
         Log.d("TRIP_DETAILS", tripId.toString())
@@ -78,6 +83,15 @@ class TripDetailsFragment : Fragment() {
                 map.addPolyline(mapData.path)
                 map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds, 1000, 1000, 100))
             }
+
+            val entries = ArrayList<Entry>()
+            val startTime = measurements[0].elapsedRealtimeNanos
+
+            measurements.forEach {
+                entries.add(Entry((it.elapsedRealtimeNanos - startTime).toFloat(), it.speed))
+            }
+            speedChartView.data = LineData(LineDataSet(entries, "Speed"))
+            speedChartView.invalidate()
         })
     }
 
