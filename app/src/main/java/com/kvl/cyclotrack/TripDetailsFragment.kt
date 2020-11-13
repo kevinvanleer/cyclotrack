@@ -1,24 +1,29 @@
 package com.kvl.cyclotrack
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.charts.HorizontalBarChart
 import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.data.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.RoundCap
 import dagger.hilt.android.AndroidEntryPoint
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment() {
@@ -47,10 +52,32 @@ class TripDetailsFragment : Fragment() {
             map = it
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
         }
+
+        val titleNameView: TextView = view.findViewById(R.id.trip_details_title_name)
+        val titleDateView: TextView = view.findViewById(R.id.trip_details_title_date)
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
         val durationHeadingView: HeadingView = view.findViewById(R.id.trip_details_time)
         val speedHeadingView: HeadingView = view.findViewById(R.id.trip_details_speed)
         val speedChartView: LineChart = view.findViewById(R.id.trip_details_speed_chart)
+        val splitsChartView: HorizontalBarChart = view.findViewById(R.id.trip_details_splits_chart)
+        val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
+
+        fun configureLineChart(chart: LineChart) {
+            chart.setDrawBorders(true)
+            chart.setBorderColor(Color.GRAY)
+            chart.setNoDataText("No data")
+            chart.legend.isEnabled = false
+        }
+
+        fun configureBarChart(chart: BarChart) {
+            chart.setDrawBorders(true)
+            chart.setBorderColor(Color.GRAY)
+            chart.setNoDataText("No data")
+            chart.legend.isEnabled = false
+        }
+        configureLineChart(speedChartView)
+        configureLineChart(elevationChartView)
+        configureBarChart(splitsChartView)
 
         val tripId = args.tripId
         Log.d("TRIP_DETAILS", tripId.toString())
@@ -65,6 +92,12 @@ class TripDetailsFragment : Fragment() {
                 durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
                 speedHeadingView.value = String.format("%.1f mph", averageSpeed)
 
+                titleNameView.text = overview.name
+                titleDateView.text = String.format("%s: %s - %s",
+                    SimpleDateFormat("MMMM d").format(Date(overview.timestamp)),
+                    SimpleDateFormat("hh:mm").format(Date(overview.timestamp)),
+                    SimpleDateFormat("hh:mm").format(Date(overview.timestamp + (overview.duration?.times(
+                        1000) ?: 0).toLong())))
 
             } else {
                 Log.d("TRIP_DETAILS_FRAG", "overview is null")
@@ -84,14 +117,52 @@ class TripDetailsFragment : Fragment() {
                 map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds, 1000, 1000, 100))
             }
 
-            val entries = ArrayList<Entry>()
-            val startTime = measurements[0].elapsedRealtimeNanos
+            fun makeSpeedLineChart() {
+                val entries = ArrayList<Entry>()
+                val startTime = measurements[0].elapsedRealtimeNanos
 
-            measurements.forEach {
-                entries.add(Entry((it.elapsedRealtimeNanos - startTime).toFloat(), it.speed))
+                measurements.forEach {
+                    entries.add(Entry((it.elapsedRealtimeNanos - startTime).toFloat(),
+                        (it.speed * 2.23694).toFloat()))
+                }
+                val dataset = LineDataSet(entries, "Speed")
+                dataset.setDrawCircles(false)
+                dataset.color = Color.rgb(10, 255, 20)
+                speedChartView.data = LineData(dataset)
+                speedChartView.invalidate()
             }
-            speedChartView.data = LineData(LineDataSet(entries, "Speed"))
-            speedChartView.invalidate()
+            makeSpeedLineChart()
+
+            fun makeElevationLineChart() {
+                val entries = ArrayList<Entry>()
+                val startTime = measurements[0].elapsedRealtimeNanos
+
+                measurements.forEach {
+                    entries.add(Entry((it.elapsedRealtimeNanos - startTime).toFloat(),
+                        (it.altitude).toFloat()))
+                }
+                val dataset = LineDataSet(entries, "Elevation")
+                dataset.setDrawCircles(false)
+                dataset.color = Color.rgb(10, 255, 20)
+                elevationChartView.data = LineData(dataset)
+                elevationChartView.invalidate()
+            }
+            makeElevationLineChart()
+        })
+
+        viewModel.splits().observe(viewLifecycleOwner, Observer { splits ->
+            fun makeSplitsBarChart() {
+                val entries = ArrayList<BarEntry>()
+
+                splits.forEachIndexed { idx, split ->
+                    entries.add(BarEntry(idx.toFloat() * 1.5f, split.duration.toFloat()))
+                }
+
+                val dataset = BarDataSet(entries, "Splits")
+                splitsChartView.data = BarData(dataset)
+                splitsChartView.invalidate()
+            }
+            makeSplitsBarChart()
         })
     }
 

@@ -144,9 +144,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         totalDistance = newDistance,
                         tripId = tripId!!))
                 }
-
-                //timeAtLastSplit = newDuration
-                //distanceAtLastSplit = newDistance
             }
 
             val oldAltitude: Double = old?.location?.altitude ?: 0.0
