@@ -10,7 +10,6 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.ColorUtils
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -195,17 +194,17 @@ class TripDetailsFragment : Fragment() {
 
 
                     val distanceLayout =
-                        GridLayout.LayoutParams(GridLayout.spec(idx + 1), GridLayout.spec(0))
+                        GridLayout.LayoutParams(GridLayout.spec(idx + 1, GridLayout.CENTER),
+                            GridLayout.spec(0))
                     val speedLayout =
                         GridLayout.LayoutParams(GridLayout.spec(idx + 1), GridLayout.spec(1, 100f))
                     val timeLayout =
-                        GridLayout.LayoutParams(GridLayout.spec(idx + 1), GridLayout.spec(2))
+                        GridLayout.LayoutParams(GridLayout.spec(idx + 1, GridLayout.CENTER),
+                            GridLayout.spec(2))
 
                     distanceView.layoutParams = distanceLayout
                     speedView.layoutParams = speedLayout
-                    speedText.setBackgroundColor(ColorUtils.setAlphaComponent(resources.getColor(R.color.colorAccent,
-                        null), (255 * 0.3).toInt()))
-                    speedText.setPadding(20, 10, 0, 10)
+                    speedText.background = resources.getDrawable(R.drawable.rounded_corner, null)
                     speedView.doOnPreDraw {
                         speedText.width = (speedView.width * getUserSpeed(split.distance,
                             split.duration) / maxWidth).toInt()
