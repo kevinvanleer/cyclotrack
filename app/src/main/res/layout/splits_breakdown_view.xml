@@ -1,0 +1,9 @@
+<com.kvl.cyclotrack.SplitsBreakdownView style="@style/Widget.AppTheme.MyView"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="0dp"
+    android:paddingBottom="0dp">
+
+
+</com.kvl.cyclotrack.SplitsBreakdownView>

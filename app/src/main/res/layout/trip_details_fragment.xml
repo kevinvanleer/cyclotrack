@@ -106,13 +106,34 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_speed_chart" />
 
-            <com.github.mikephil.charting.charts.HorizontalBarChart
+            <!--com.github.mikephil.charting.charts.HorizontalBarChart
                 android:id="@+id/trip_details_splits_chart"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_splits" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_splits" /-->
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_splits"
+                android:columnCount="3"
+                android:useDefaultMargins="true"
+                android:id="@+id/trip_details_splits_grid">
+
+                <TextView android:text="Distance" />
+
+                <TextView
+                    android:text="Speed (mph)"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1" />
+
+                <TextView android:text="Trip time" />
+            </GridLayout>
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_elevation"
@@ -121,7 +142,7 @@
                 android:layout_height="wrap_content"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_splits_chart" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_splits_grid" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_elevation_chart"

@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.concurrent.timerTask
 import kotlin.math.abs
-import kotlin.math.floor
 import kotlin.math.max
 
 class TripInProgressViewModel @ViewModelInject constructor(
@@ -130,7 +129,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (crossedSplitThreshold(newDistance, old)
+            if (crossedSplitThreshold(newDistance, old?.distance ?: Double.MAX_VALUE)
             ) {
                 val splitDistance = newDistance - distanceAtLastSplit
                 val splitDuration = newDuration - timeAtLastSplit
@@ -262,12 +261,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
         old: TripProgress?,
     ) = if (durationDelta == 0.0) 0f
     else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()
-
-    private fun crossedSplitThreshold(
-        newDistance: Double,
-        old: TripProgress?,
-    ) = floor(newDistance * 0.000621371) > floor((old?.distance
-        ?: Double.MAX_VALUE) * 0.000621371)
 
     private fun calculateSlope(
         verticalSpeed: Double,

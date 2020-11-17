@@ -45,7 +45,6 @@ class AllDataFragment : Fragment() {
                 val value = TextView(activity)
                 if (prop.parameters.size == 1 && prop.name != "location") {
                     label.text = prop.name
-                    label.width
                     value.text = prop.call(it).toString()
                     value.textSize = 20f
                     grid.addView(label)

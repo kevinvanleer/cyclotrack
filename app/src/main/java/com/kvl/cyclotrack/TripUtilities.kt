@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -97,5 +98,24 @@ fun plotPath(measurements: Array<Measurements>): MapPath {
 
     return MapPath(path, bounds)
 }
+
+const val METERS_TO_FEET = 3.28084
+const val FEET_TO_MILES = 1.0 / 5280
+const val SECONDS_TO_HOURS = 1.0 / 3600
+fun getUserSpeed(meters: Double, seconds: Double): Double {
+    val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
+    return meters / seconds * userConversionFactor
+}
+
+fun getUserDistance(meters: Double): Double {
+    val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES
+    return meters * userConversionFactor
+}
+
+fun crossedSplitThreshold(
+    newDistance: Double,
+    oldDistance: Double,
+) = floor(newDistance * 0.000621371) > floor(oldDistance
+        * 0.000621371)
 
 data class MapPath(val path: PolylineOptions, val bounds: LatLngBounds?)

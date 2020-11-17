@@ -15,7 +15,6 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToInt
 
 class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context, attrs) {
     private lateinit var dateView: TextView
@@ -62,30 +61,6 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
                 value,
                 System.currentTimeMillis(),
                 DateUtils.DAY_IN_MILLIS).toString()
-    }
-
-    private fun formatDuration(value: Double): String {
-        var formattedString = ""
-        if (value < 1.0) {
-            formattedString += "zero seconds"
-        } else if (value < 60) {
-            formattedString += "${value.roundToInt()} sec"
-        } else if (value < 3600) {
-            val minutes = value / 60
-            val minutePart = minutes.toLong()
-            val seconds = (minutes - minutePart) * 60
-            val secondPart = seconds.toLong()
-            formattedString += "${minutePart}m ${secondPart}s"
-        } else {
-            val hours = value / 3600
-            val hourPart = hours.toLong()
-            val minutes = (hours - hourPart) * 60
-            val minutePart = minutes.toLong()
-            val seconds = (minutes - minutePart) * 60
-            val secondPart = seconds.roundToInt()
-            formattedString += "${hourPart}h ${minutePart}m ${secondPart}s"
-        }
-        return formattedString
     }
 
     fun setDuration(value: Double) {
