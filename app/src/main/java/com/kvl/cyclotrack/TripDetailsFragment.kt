@@ -80,31 +80,8 @@ class TripDetailsFragment : Fragment() {
             chart.setDrawGridBackground(false)
         }
 
-        /*
-        fun configureBarChart(chart: BarChart) {
-            chart.setDrawBorders(true)
-            chart.setBorderColor(Color.GRAY)
-            chart.setNoDataText("No data")
-            chart.legend.isEnabled = false
-            chart.setDrawGridBackground(false)
-            chart.setDrawValueAboveBar(true)
-
-            chart.xAxis.setDrawLabels(true)
-            chart.xAxis.axisMinimum = 0f
-            chart.xAxis.setDrawGridLines(false)
-            chart.xAxis.textColor = Color.WHITE
-            chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-            chart.xAxis.granularity = 1f
-
-            chart.axisLeft.axisMinimum = 0f
-            chart.axisLeft.setDrawGridLines(true)
-            chart.axisRight.axisMinimum = 0f
-            chart.axisRight.setDrawGridLines(false)
-        }*/
-
         configureLineChart(speedChartView)
         configureLineChart(elevationChartView)
-        //configureBarChart(splitsChartView)
 
         val tripId = args.tripId
         Log.d("TRIP_DETAILS", tripId.toString())
@@ -185,43 +162,6 @@ class TripDetailsFragment : Fragment() {
                 viewModel.splits().removeObserver(this)
             }
         })
-        /*
-        viewModel.splits().observe(viewLifecycleOwner, Observer
-        { splits ->
-            fun makeSplitsBarChart() {
-                splitsChartView.visibility = View.VISIBLE
-                splitsHeadingView.visibility = View.VISIBLE
-                if (splits.isEmpty()) {
-                    splitsChartView.visibility = View.GONE
-                    splitsHeadingView.visibility = View.GONE
-                    return
-                }
-                val entries = ArrayList<BarEntry>()
-
-                splits.forEachIndexed { idx, split ->
-                    entries.add(BarEntry(idx.toFloat() * 1.1f,
-                        getUserSpeed(split.distance, split.duration).toFloat()))
-                }
-
-                val dataset = BarDataSet(entries, "Splits")
-                dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                dataset.valueTextColor = Color.WHITE
-                dataset.valueTextSize = 10f
-                dataset.valueFormatter = object : ValueFormatter() {
-                    override fun getBarLabel(barEntry: BarEntry?): String {
-                        //return formatDuration(barEntry?.y?.toDouble() ?: 0.0)
-                        return String.format("%.2f mph", barEntry?.y ?: 0.0)
-                    }
-                }
-                splitsChartView.data = BarData(dataset)
-                val layout = splitsChartView.layoutParams
-                layout.height = splits.size * 60
-                splitsChartView.setFitBars(true)
-                splitsChartView.layoutParams = layout
-                splitsChartView.invalidate()
-            }
-            makeSplitsBarChart()
-        })*/
 
         viewModel.splits().observe(viewLifecycleOwner, Observer
         { splits ->
@@ -233,19 +173,6 @@ class TripDetailsFragment : Fragment() {
                     splitsHeadingView.visibility = View.GONE
                     return
                 }
-
-                /*
-                val shrinkCellLeft = GridLayout.spec(GridLayout.LayoutParams.WRAP_CONTENT,
-                    GridLayout.LayoutParams.WRAP_CONTENT, GridLayout.Alignment())
-                val shrinkCellLeft = GridLayout.Spec(GridLayout.LayoutParams.WRAP_CONTENT,
-                    GridLayout.LayoutParams.WRAP_CONTENT, GridLayout.TEXT_ALIGNMENT_TEXT_START)
-                val distanceLayout =
-                    GridLayout.LayoutParams(GridLayout.Spec(GridLayout.LayoutParams.WRAP_CONTENT,
-                        GridLayout.LayoutParams.WRAP_CONTENT)
-                        val speedLayout = GridLayout .LayoutParams (0, GridLayout.LayoutParams.WRAP_CONTENT)
-                val timeLayout = GridLayout.LayoutParams(GridLayout.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT)
-                    */
 
                 var maxSpeed = 0.0
                 splits.forEach {
