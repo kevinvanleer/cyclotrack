@@ -16,9 +16,12 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
 import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.AxisBase
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -77,6 +80,26 @@ class TripDetailsFragment : Fragment() {
             chart.setNoDataText("No data")
             chart.legend.isEnabled = false
             chart.setDrawGridBackground(false)
+
+            chart.xAxis.setDrawLabels(true)
+            chart.xAxis.axisMinimum = 0f
+            chart.xAxis.setDrawGridLines(true)
+            chart.xAxis.textColor = Color.WHITE
+            chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
+            chart.xAxis.valueFormatter = object : ValueFormatter() {
+                override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+                    return if (value == 0f) "" else formatDuration(value.toDouble())
+                }
+            }
+
+            chart.axisLeft.setDrawLabels(true)
+            chart.axisLeft.textColor = Color.WHITE
+            chart.axisLeft.axisMinimum = 0f
+            chart.axisLeft.setDrawGridLines(true)
+            chart.axisRight.setDrawLabels(true)
+            chart.axisRight.textColor = Color.WHITE
+            chart.axisRight.axisMinimum = 0f
+            chart.axisRight.setDrawGridLines(false)
         }
 
         configureLineChart(speedChartView)
@@ -125,7 +148,7 @@ class TripDetailsFragment : Fragment() {
                 val startTime = measurements[0].elapsedRealtimeNanos
 
                 measurements.forEach {
-                    entries.add(Entry((it.elapsedRealtimeNanos - startTime).toFloat(),
+                    entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
                         (it.speed * 2.23694).toFloat()))
                 }
                 val dataset = LineDataSet(entries, "Speed")
@@ -141,7 +164,7 @@ class TripDetailsFragment : Fragment() {
                 val startTime = measurements[0].elapsedRealtimeNanos
 
                 measurements.forEach {
-                    entries.add(Entry((it.elapsedRealtimeNanos - startTime).toFloat(),
+                    entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
                         (it.altitude).toFloat()))
                 }
                 val dataset = LineDataSet(entries, "Elevation")
