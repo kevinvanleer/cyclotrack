@@ -112,10 +112,9 @@ fun getUserDistance(meters: Double): Double {
     return meters * userConversionFactor
 }
 
-fun crossedSplitThreshold(
-    newDistance: Double,
-    oldDistance: Double,
-) = floor(newDistance * 0.000621371) > floor(oldDistance
-        * 0.000621371)
+fun crossedSplitThreshold(newDistance: Double, oldDistance: Double): Boolean {
+    val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES
+    return floor(newDistance * userConversionFactor) > floor(oldDistance * userConversionFactor)
+}
 
 data class MapPath(val path: PolylineOptions, val bounds: LatLngBounds?)

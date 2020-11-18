@@ -13,4 +13,8 @@ class SplitRepository @Inject constructor(private val splitDao: SplitDao) {
     suspend fun addSplits(splits: Array<Split>) {
         splitDao.add(splits)
     }
+
+    suspend fun removeTripSplits(tripId: Long) {
+        splitDao.removeTripSplits(tripId)
+    }
 }

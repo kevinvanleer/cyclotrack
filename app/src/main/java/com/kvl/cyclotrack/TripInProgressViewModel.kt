@@ -367,8 +367,21 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     fun endTrip() {
         if (tripId != null && currentState != TimeStateEnum.STOP) {
+            val old = _currentProgress.value
+            val oldDistance: Double = old?.distance ?: 0.0
+            val newDistance: Double = oldDistance
+            val newDuration = getDuration()
+            val splitDistance = newDistance - distanceAtLastSplit
+            val splitDuration = newDuration - timeAtLastSplit
+
             viewModelScope.launch(Dispatchers.Default) {
                 timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
+                splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
+                    duration = splitDuration,
+                    distance = splitDistance,
+                    totalDuration = newDuration,
+                    totalDistance = newDistance,
+                    tripId = tripId!!))
             }
         }
     }

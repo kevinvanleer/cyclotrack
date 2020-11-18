@@ -34,9 +34,6 @@ import kotlin.collections.ArrayList
 
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment() {
-    /*private val viewModel: TripDetailsViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
-        defaultViewModelProviderFactory
-    }*/
     private val viewModel: TripDetailsViewModel by viewModels()
     private val args: TripDetailsFragmentArgs by navArgs()
     private lateinit var map: GoogleMap
@@ -106,7 +103,7 @@ class TripDetailsFragment : Fragment() {
         configureLineChart(elevationChartView)
 
         val tripId = args.tripId
-        Log.d("TRIP_DETAILS", tripId.toString())
+        Log.d("TRIP_DETAILS_FRAGMENT", String.format("Displaying details for trip %d", tripId))
         viewModel.tripId = tripId
         viewModel.tripOverview().observe(viewLifecycleOwner, Observer { overview ->
             if (overview != null) {
@@ -176,6 +173,7 @@ class TripDetailsFragment : Fragment() {
             makeElevationLineChart()
         })
 
+        //viewModel.clearSplits()
         viewModel.splits().observeForever(object : Observer<Array<Split>> {
             override fun onChanged(splits: Array<Split>) {
                 if (splits.isEmpty()) {

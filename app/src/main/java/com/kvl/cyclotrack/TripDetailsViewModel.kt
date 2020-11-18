@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
@@ -17,6 +18,12 @@ class TripDetailsViewModel @ViewModelInject constructor(
     fun tripOverview() = tripsRepository.getTrip(tripId)
     fun timeState() = timeStateRepository.getTimeStates(tripId)
     fun splits() = splitRepository.getTripSplits(tripId)
+    fun clearSplits() {
+        viewModelScope.launch {
+            splitRepository.removeTripSplits(tripId)
+        }
+    }
+
     fun measurements() = measurementsRepository.getTripMeasurements(tripId)
     fun addSplits() {
         measurements().observeForever(object : Observer<Array<Measurements>> {
@@ -26,6 +33,7 @@ class TripDetailsViewModel @ViewModelInject constructor(
                     var totalDistance = 0.0
                     val startTime = t[0].elapsedRealtimeNanos
 
+                    var prev = t[0]
                     for (index in 1 until t.size) {
                         val lastSplit = if (tripSplits.isEmpty()) Split(0,
                             0.0,
@@ -35,7 +43,6 @@ class TripDetailsViewModel @ViewModelInject constructor(
                             0,
                             0) else tripSplits.last()
                         val curr = t[index]
-                        val prev = t[index - 1]
 
                         if (curr.accuracy < 5 && prev.accuracy < 5) {
                             var distanceArray = floatArrayOf(0f)
@@ -58,10 +65,12 @@ class TripDetailsViewModel @ViewModelInject constructor(
                                     tripId = tripId))
                             }
                         }
+                        if (curr.accuracy < 5) prev = curr
                     }
                     viewModelScope.launch {
+                        Log.d("TRIP_DETAILS_VIEW_MODEL",
+                            "Inserting post-trip computed splits in database")
                         splitRepository.addSplits(tripSplits.toTypedArray())
-                        //nLog.d("TRIP_DETAILS_VIEW_MODEL", tripSplits.toString())
                     }
                     measurements().removeObserver(this)
                 }
