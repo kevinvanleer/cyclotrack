@@ -102,13 +102,20 @@ fun plotPath(measurements: Array<Measurements>): MapPath {
 const val METERS_TO_FEET = 3.28084
 const val FEET_TO_MILES = 1.0 / 5280
 const val SECONDS_TO_HOURS = 1.0 / 3600
-fun getUserSpeed(meters: Double, seconds: Double): Double {
+fun getUserSpeed(meters: Double, seconds: Double): Double = getUserSpeed(meters / seconds)
+
+fun getUserSpeed(speed: Double): Double {
     val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
-    return meters / seconds * userConversionFactor
+    return speed * userConversionFactor
 }
 
 fun getUserDistance(meters: Double): Double {
     val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES
+    return meters * userConversionFactor
+}
+
+fun getUserAltitude(meters: Double): Double {
+    val userConversionFactor = METERS_TO_FEET
     return meters * userConversionFactor
 }
 

@@ -16,6 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/trip_details_title_date"
+        android:layout_marginBottom="0dp"
         android:textSize="24sp" />
 
     <TextView
@@ -24,6 +25,7 @@
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="7dp"
         app:layout_constraintTop_toBottomOf="@id/trip_details_title_name"
         app:layout_constraintBottom_toTopOf="@id/trip_details_scroll_view" />
 
@@ -85,6 +87,7 @@
                 heading_view:headingLabel="Speed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate" />
@@ -102,6 +105,7 @@
                 heading_view:headingLabel="Splits"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_speed_chart" />
@@ -114,12 +118,13 @@
                 app:layout_constraintTop_toBottomOf="@id/trip_details_splits"
                 android:columnCount="3"
                 android:useDefaultMargins="true"
+                android:layout_marginBottom="5dp"
                 android:id="@+id/trip_details_splits_grid">
 
                 <TextView android:text="Distance" />
 
                 <TextView
-                    android:text="Speed (mph)"
+                    android:text="Speed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1" />
@@ -132,6 +137,7 @@
                 heading_view:headingLabel="Elevation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_splits_grid" />

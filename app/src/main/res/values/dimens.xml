@@ -1,4 +1,5 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="tip_measurement_padding">20dp</dimen>
+    <dimen name="tripDetailsHeadingTopMargin">30dp</dimen>
 </resources>

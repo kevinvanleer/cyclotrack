@@ -113,7 +113,7 @@ class TripDetailsFragment : Fragment() {
                 distanceHeadingView.value =
                     String.format("%.2f mi", userDistance)
                 durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
-                speedHeadingView.value = String.format("%.1f mph", averageSpeed)
+                speedHeadingView.value = String.format("%.1f mph (average)", averageSpeed)
 
                 titleNameView.text = overview.name
                 titleDateView.text = String.format("%s: %s - %s",
@@ -142,16 +142,31 @@ class TripDetailsFragment : Fragment() {
 
             fun makeSpeedLineChart() {
                 val entries = ArrayList<Entry>()
+                val trend = ArrayList<Entry>()
                 val startTime = measurements[0].elapsedRealtimeNanos
 
+                var trendLast = getUserSpeed(measurements[0].speed.toDouble())
+                var trendAlpha = 1.0
                 measurements.forEach {
-                    entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                        (it.speed * 2.23694).toFloat()))
+                    if (it.accuracy < 5) {
+                        entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
+                            getUserSpeed(it.speed.toDouble()).toFloat()))
+                        trendLast =
+                            (trendAlpha * getUserSpeed(it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
+                        trend.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
+                            trendLast.toFloat()))
+                        if (trendAlpha > 0.01) trendAlpha -= 0.01
+                    }
                 }
                 val dataset = LineDataSet(entries, "Speed")
+                val trendData = LineDataSet(trend, "Trend")
                 dataset.setDrawCircles(false)
-                dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                speedChartView.data = LineData(dataset)
+                trendData.setDrawCircles(false)
+                dataset.color = Color.rgb(0, 45, 0)
+                dataset.lineWidth = 15f
+                trendData.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
+                trendData.lineWidth = 3f
+                speedChartView.data = LineData(dataset, trendData)
                 speedChartView.invalidate()
             }
             makeSpeedLineChart()
@@ -162,7 +177,7 @@ class TripDetailsFragment : Fragment() {
 
                 measurements.forEach {
                     entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                        (it.altitude).toFloat()))
+                        (getUserAltitude(it.altitude)).toFloat()))
                 }
                 val dataset = LineDataSet(entries, "Elevation")
                 dataset.setDrawCircles(false)
