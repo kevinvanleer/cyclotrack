@@ -118,8 +118,8 @@ class TripDetailsFragment : Fragment() {
                 titleNameView.text = overview.name
                 titleDateView.text = String.format("%s: %s - %s",
                     SimpleDateFormat("MMMM d").format(Date(overview.timestamp)),
-                    SimpleDateFormat("hh:mm").format(Date(overview.timestamp)),
-                    SimpleDateFormat("hh:mm").format(Date(overview.timestamp + (overview.duration?.times(
+                    SimpleDateFormat("h:mm").format(Date(overview.timestamp)),
+                    SimpleDateFormat("h:mm").format(Date(overview.timestamp + (overview.duration?.times(
                         1000) ?: 0).toLong())))
 
             } else {
