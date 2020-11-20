@@ -1,7 +1,9 @@
 package com.kvl.cyclotrack
 
+import android.content.Context
 import android.location.Location
 import android.util.Log
+import androidx.preference.PreferenceManager
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
@@ -100,23 +102,98 @@ fun plotPath(measurements: Array<Measurements>): MapPath {
 }
 
 const val METERS_TO_FEET = 3.28084
+const val METERS_TO_KM = 0.001
 const val FEET_TO_MILES = 1.0 / 5280
 const val SECONDS_TO_HOURS = 1.0 / 3600
-fun getUserSpeed(meters: Double, seconds: Double): Double = getUserSpeed(meters / seconds)
+fun getUserSpeed(context: Context, meters: Double, seconds: Double): Double =
+    getUserSpeed(context, meters / seconds)
 
-fun getUserSpeed(speed: Double): Double {
-    val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
+fun getUserSpeed(context: Context, speed: Double): Double {
+    val userConversionFactor =
+        when (PreferenceManager.getDefaultSharedPreferences(context)
+            .getString("display_units", "US")) {
+            "1" -> METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
+            "2" -> METERS_TO_KM / SECONDS_TO_HOURS
+            else -> 1.0
+        }
+    Log.d("TRIP_UTILITIES", "Speed conversion factor: $userConversionFactor")
     return speed * userConversionFactor
 }
 
-fun getUserDistance(meters: Double): Double {
-    val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES
+fun getUserDistance(context: Context, meters: Double): Double {
+    val userConversionFactor =
+        when (PreferenceManager.getDefaultSharedPreferences(context)
+            .getString("display_units", "US")) {
+            "1" -> METERS_TO_FEET * FEET_TO_MILES
+            "2" -> METERS_TO_KM
+            else -> 1.0
+        }
     return meters * userConversionFactor
 }
 
-fun getUserAltitude(meters: Double): Double {
-    val userConversionFactor = METERS_TO_FEET
+
+fun getUserAltitude(context: Context, meters: Double): Double {
+    val userConversionFactor =
+        when (PreferenceManager.getDefaultSharedPreferences(context)
+            .getString("display_units", "US")) {
+            "1" -> METERS_TO_FEET
+            else -> 1.0
+        }
     return meters * userConversionFactor
+}
+
+fun getUserDistanceUnitShort(context: Context): String {
+    return when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "US")) {
+        "1" -> "mi"
+        "2" -> "km"
+        else -> "mi"
+    }
+}
+
+fun getUserDistanceUnitLong(context: Context): String {
+    return when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "US")) {
+        "1" -> "miles"
+        "2" -> "kilometers"
+        else -> "miles"
+    }
+}
+
+fun getUserSpeedUnitShort(context: Context): String {
+    return when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "US")) {
+        "1" -> "mph"
+        "2" -> "km/h"
+        else -> "mph"
+    }
+}
+
+fun getUserSpeedUnitLong(context: Context): String {
+    return when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "US")) {
+        "1" -> "miles per hour"
+        "2" -> "kilometers per hour"
+        else -> "miles per hour"
+    }
+}
+
+fun getUserAltitudeUnitShort(context: Context): String {
+    return when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "US")) {
+        "1" -> "ft"
+        "2" -> "m"
+        else -> "ft"
+    }
+}
+
+fun getUserAltitudeUnitLong(context: Context): String {
+    return when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "US")) {
+        "1" -> "feet"
+        "2" -> "meters"
+        else -> "feet"
+    }
 }
 
 fun crossedSplitThreshold(newDistance: Double, oldDistance: Double): Boolean {

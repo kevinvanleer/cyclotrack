@@ -70,6 +70,9 @@ class TripDetailsFragment : Fragment() {
         view.findViewById<HeadingView>(R.id.trip_details_heart_rate).visibility = View.GONE
         view.findViewById<HeadingView>(R.id.trip_details_splits).value = ""
         view.findViewById<HeadingView>(R.id.trip_details_elevation).value = ""
+        view.findViewById<HeadingView>(R.id.trip_details_elevation).value =
+            getUserAltitudeUnitLong(requireContext())
+
 
         fun configureLineChart(chart: LineChart) {
             chart.setDrawBorders(true)
@@ -107,13 +110,16 @@ class TripDetailsFragment : Fragment() {
         viewModel.tripId = tripId
         viewModel.tripOverview().observe(viewLifecycleOwner, Observer { overview ->
             if (overview != null) {
-                val userDistance = overview.distance?.times(0.000621371) ?: 0.0
-                val userTime = overview.duration?.div(3600) ?: 0.0
-                val averageSpeed = userDistance / userTime
                 distanceHeadingView.value =
-                    String.format("%.2f mi", userDistance)
+                    String.format("%.2f %s",
+                        getUserDistance(requireContext(), overview?.distance ?: 0.0),
+                        getUserDistanceUnitShort(requireContext()))
                 durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
-                speedHeadingView.value = String.format("%.1f mph (average)", averageSpeed)
+                speedHeadingView.value = String.format("%.1f %s (average)",
+                    getUserSpeed(requireContext(),
+                        overview?.distance ?: 0.0,
+                        overview?.duration ?: 1.0),
+                    getUserSpeedUnitShort(requireContext()))
 
                 titleNameView.text = overview.name
                 titleDateView.text = String.format("%s: %s - %s",
@@ -145,14 +151,15 @@ class TripDetailsFragment : Fragment() {
                 val trend = ArrayList<Entry>()
                 val startTime = measurements[0].elapsedRealtimeNanos
 
-                var trendLast = getUserSpeed(measurements[0].speed.toDouble())
+                var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
                 var trendAlpha = 1.0
                 measurements.forEach {
                     if (it.accuracy < 5) {
                         entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                            getUserSpeed(it.speed.toDouble()).toFloat()))
+                            getUserSpeed(requireContext(), it.speed.toDouble()).toFloat()))
                         trendLast =
-                            (trendAlpha * getUserSpeed(it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
+                            (trendAlpha * getUserSpeed(requireContext(),
+                                it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
                         trend.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
                             trendLast.toFloat()))
                         if (trendAlpha > 0.01) trendAlpha -= 0.01
@@ -177,7 +184,7 @@ class TripDetailsFragment : Fragment() {
 
                 measurements.forEach {
                     entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                        (getUserAltitude(it.altitude)).toFloat()))
+                        (getUserAltitude(requireContext(), it.altitude)).toFloat()))
                 }
                 val dataset = LineDataSet(entries, "Elevation")
                 dataset.setDrawCircles(false)
@@ -211,7 +218,7 @@ class TripDetailsFragment : Fragment() {
 
                 var maxSpeed = 0.0
                 splits.forEach {
-                    val splitSpeed = getUserSpeed(it.distance, it.duration)
+                    val splitSpeed = getUserSpeed(requireContext(), it.distance, it.duration)
                     if (splitSpeed > maxSpeed) maxSpeed = splitSpeed
                 }
                 val maxWidth = (maxSpeed / 10).toInt() * 10 + 10
@@ -222,11 +229,13 @@ class TripDetailsFragment : Fragment() {
                     val speedText = TextView(activity)
                     val timeView = TextView(activity)
 
-                    distanceView.text = String.format("%d mi",
-                        kotlin.math.floor(getUserDistance(split.totalDistance)).toInt())
+                    distanceView.text = String.format("%d %s",
+                        kotlin.math.floor(getUserDistance(requireContext(), split.totalDistance))
+                            .toInt(), getUserDistanceUnitShort(requireContext()))
                     timeView.text = formatDuration(split.totalDuration)
-                    speedText.text = String.format("%.2f mph",
-                        getUserSpeed(split.distance, split.duration).toFloat())
+                    speedText.text = String.format("%.2f %s",
+                        getUserSpeed(requireContext(), split.distance, split.duration).toFloat(),
+                        getUserSpeedUnitShort(requireContext()))
 
 
                     val distanceLayout =
@@ -242,8 +251,9 @@ class TripDetailsFragment : Fragment() {
                     speedView.layoutParams = speedLayout
                     speedText.background = resources.getDrawable(R.drawable.rounded_corner, null)
                     speedView.doOnPreDraw {
-                        speedText.width = (speedView.width * getUserSpeed(split.distance,
-                            split.duration) / maxWidth).toInt()
+                        speedText.width =
+                            (speedView.width * getUserSpeed(requireContext(), split.distance,
+                                split.duration) / maxWidth).toInt()
                     }
                     timeView.layoutParams = timeLayout
 

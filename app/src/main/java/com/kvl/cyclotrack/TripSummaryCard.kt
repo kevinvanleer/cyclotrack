@@ -69,7 +69,10 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
 
     fun setTripDetails(_duration: Double, _distance: Double) {
         duration =
-            "${String.format("%.2f", _distance * 0.000621371)}mi  in  ${formatDuration(_duration)}"
+            "${
+                String.format("%.2f",
+                    getUserDistance(context, _distance))
+            }${getUserDistanceUnitShort(context)}  in  ${formatDuration(_duration)}"
     }
 
     fun drawPath(polyline: PolylineOptions, latLngBound: LatLngBounds) {
