@@ -17,6 +17,9 @@
         <action
             android:id="@+id/action_view_trip_details"
             app:destination="@id/TripDetailsFragment" />
+        <action
+            android:id="@+id/action_go_to_settings"
+            app:destination="@id/AppPreferencesFragment" />
     </fragment>
     <fragment
         android:id="@+id/TripDetailsFragment"
@@ -25,9 +28,12 @@
         tools:layout="@layout/trip_details_fragment">
         <argument
             android:name="tripId"
-            app:argType="long"
-            />
+            app:argType="long" />
     </fragment>
+    <fragment
+        android:id="@+id/AppPreferencesFragment"
+        android:name="com.kvl.cyclotrack.AppPreferencesFragment"
+        android:label="AppPreferencesFragment" />
     <navigation
         android:id="@+id/trip_in_progress_graph"
         app:startDestination="@id/TripInProgressFragment">

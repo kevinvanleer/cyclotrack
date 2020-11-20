@@ -1,0 +1,9 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <DropDownPreference
+        app:key="display_units"
+        app:title="Units"
+        app:summary="TODO: summary %s"
+        app:defaultValue="1"
+        app:entries="@array/systems_of_measurement"
+        app:entryValues="@array/systems_of_measurement_values" />
+</PreferenceScreen>

@@ -2,9 +2,7 @@ package com.kvl.cyclotrack
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
@@ -29,6 +27,7 @@ class TripSummariesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setHasOptionsMenu(true)
         val viewManager = LinearLayoutManager(activity)
 
         viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
@@ -47,4 +46,23 @@ class TripSummariesFragment : Fragment() {
             findNavController().navigate(R.id.action_start_trip)
         }
     }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.menu_main, menu)
+        Log.d("TRIP_SUMMARIES", "Options menu created")
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        Log.d("TRIP_SUMMARIES", "Options menu clicked")
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
+                findNavController().navigate(R.id.action_go_to_settings)
+                return true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
 }
