@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.content.SharedPreferences
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
@@ -20,6 +21,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
+    private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
@@ -129,7 +131,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (crossedSplitThreshold(newDistance, old?.distance ?: Double.MAX_VALUE)
+
+            if (crossedSplitThreshold(sharedPreferences,
+                    newDistance,
+                    old?.distance ?: Double.MAX_VALUE)
             ) {
                 val splitDistance = newDistance - distanceAtLastSplit
                 val splitDuration = newDuration - timeAtLastSplit

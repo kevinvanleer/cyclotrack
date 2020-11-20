@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
+import androidx.preference.PreferenceManager
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
@@ -31,6 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.abs
 
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment() {
@@ -196,18 +198,29 @@ class TripDetailsFragment : Fragment() {
         })
 
         //viewModel.clearSplits()
+        //viewModel.addSplits()
         viewModel.splits().observeForever(object : Observer<Array<Split>> {
+            var called = false
             override fun onChanged(splits: Array<Split>) {
-                if (splits.isEmpty()) {
-                    viewModel.addSplits()
+                if (!called) {
+                    //TODO: Figure out how to do this without LiveData
+                    called = true
+                    var areSplitsInSystem = false
+                    if (splits.isNotEmpty()) areSplitsInSystem =
+                        abs(getSplitThreshold(PreferenceManager.getDefaultSharedPreferences(context)) * splits[0].totalDistance - 1.0) < 0.01
+                    if (splits.isEmpty() || !areSplitsInSystem) {
+                        viewModel.clearSplits()
+                        viewModel.addSplits()
+                    }
+                    viewModel.splits().removeObserver(this)
                 }
-                viewModel.splits().removeObserver(this)
             }
         })
 
         viewModel.splits().observe(viewLifecycleOwner, Observer
         { splits ->
             fun makeSplitsGrid() {
+                splitsGridView.removeAllViews()
                 splitsGridView.visibility = View.VISIBLE
                 splitsHeadingView.visibility = View.VISIBLE
                 if (splits.isEmpty()) {

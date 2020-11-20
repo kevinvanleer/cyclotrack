@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.content.SharedPreferences
 import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.Observer
@@ -12,6 +13,7 @@ class TripDetailsViewModel @ViewModelInject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
+    private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
     var tripId: Long = 0
 
@@ -54,7 +56,10 @@ class TripDetailsViewModel @ViewModelInject constructor(
                             totalDistance += distanceArray[0]
                             val newTotalDuration = (curr.elapsedRealtimeNanos - startTime) / 1e9
 
-                            if (crossedSplitThreshold(totalDistance, lastSplit.totalDistance)) {
+                            if (crossedSplitThreshold(sharedPreferences,
+                                    totalDistance,
+                                    lastSplit.totalDistance)
+                            ) {
                                 val splitDistance = totalDistance - lastSplit.totalDistance
                                 val splitDuration = newTotalDuration - lastSplit.totalDuration
                                 tripSplits.add(Split(timestamp = curr.time,

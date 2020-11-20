@@ -1,6 +1,8 @@
 package com.kvl.cyclotrack
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.preference.PreferenceManager
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -65,5 +67,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideSplitDao(db: TripsDatabase): SplitDao {
         return db.splitDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext appContext: Context): SharedPreferences {
+        return PreferenceManager.getDefaultSharedPreferences(appContext)
     }
 }

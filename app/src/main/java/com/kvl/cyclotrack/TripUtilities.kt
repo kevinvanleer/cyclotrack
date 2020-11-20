@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.location.Location
 import android.util.Log
 import androidx.preference.PreferenceManager
@@ -196,9 +197,38 @@ fun getUserAltitudeUnitLong(context: Context): String {
     }
 }
 
-fun crossedSplitThreshold(newDistance: Double, oldDistance: Double): Boolean {
-    val userConversionFactor = METERS_TO_FEET * FEET_TO_MILES
+fun getSplitThreshold(system: String?): Double {
+    return when (system) {
+        "1" -> METERS_TO_FEET * FEET_TO_MILES
+        "2" -> METERS_TO_KM
+        else -> 1.0
+    }
+}
+
+fun getSplitThreshold(
+    prefs: SharedPreferences,
+): Double {
+    return getSplitThreshold(prefs.getString("display_units", "US"))
+}
+
+fun crossedSplitThreshold(
+    prefs: SharedPreferences,
+    newDistance: Double,
+    oldDistance: Double,
+): Boolean {
+    val userConversionFactor =
+        when (prefs.getString("display_units", "US")) {
+            "1" -> METERS_TO_FEET * FEET_TO_MILES
+            "2" -> METERS_TO_KM
+            else -> 1.0
+        }
     return floor(newDistance * userConversionFactor) > floor(oldDistance * userConversionFactor)
+}
+
+fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Double): Boolean {
+    return crossedSplitThreshold(PreferenceManager.getDefaultSharedPreferences(context),
+        newDistance,
+        oldDistance)
 }
 
 data class MapPath(val path: PolylineOptions, val bounds: LatLngBounds?)
