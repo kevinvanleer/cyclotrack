@@ -141,12 +141,12 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         stopButton = view.findViewById(R.id.stop_button)
         clockView = view.findViewById(R.id.textview_time)
 
-        speedTextView.label = "SPLIT MPH"
-        distanceTextView.label = "MILES"
+        speedTextView.label = "SPLIT ${getUserSpeedUnitShort(requireContext()).toUpperCase()}"
+        distanceTextView.label = getUserDistanceUnitLong(requireContext()).toUpperCase()
         durationTextView.label = "DURATION"
-        averageSpeedTextView.label = "AVG MPH"
+        averageSpeedTextView.label = "AVG ${getUserSpeedUnitShort(requireContext()).toUpperCase()}"
         heartRateTextView.label = "SLOPE"
-        splitSpeedTextView.label = "MPH"
+        splitSpeedTextView.label = getUserSpeedUnitShort(requireContext()).toUpperCase()
 
         accuracyTextView.text = "-.-"
 
@@ -181,19 +181,21 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         viewModel.currentProgress.observe(viewLifecycleOwner,
             { it ->
                 Log.d("UI", "Location observer detected change")
-                val averageSpeed = it.distance / it.duration * 2.23694
-                splitSpeedTextView.value = String.format("%.1f", it.speed * 2.23694)
+                val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
+                splitSpeedTextView.value =
+                    String.format("%.1f", getUserSpeed(requireContext(), it.speed.toDouble()))
                 averageSpeedTextView.value =
                     String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
 
-                distanceTextView.value = "${String.format("%.2f", it.distance * 0.000621371)}"
-                //durationTextView.text = DateUtils.formatElapsedTime((it.duration).toLong())
+                distanceTextView.value =
+                    "${String.format("%.2f", getUserDistance(requireContext(), it.distance))}"
                 heartRateTextView.value =
                     String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
                 trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
                 accuracyTextView.text = String.format("%.2f", it.accuracy)
-                speedTextView.value = String.format("%.1f", it.splitSpeed * 2.23694)
+                speedTextView.value =
+                    String.format("%.1f", getUserSpeed(requireContext(), it.splitSpeed.toDouble()))
             })
         /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
             override fun onChanged(it: SensorModel) {
