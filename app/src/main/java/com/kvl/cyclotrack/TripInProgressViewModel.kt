@@ -39,11 +39,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val _currentTime = MutableLiveData<Double>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer { currentState = it.state }
 
-    private fun tripInProgress() =
-        currentState == TimeStateEnum.START || currentState == TimeStateEnum.RESUME
+    private fun tripInProgress() = isTripInProgress(currentState)
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
-        if (tripInProgress() && tripId != null) {
+        if (tripId != null) {
             viewModelScope.launch {
                 measurementsRepository.insertMeasurements(Measurements(tripId!!,
                     LocationData(newLocation)))
@@ -220,8 +219,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             _currentProgress.value =
                 _currentProgress.value?.copy(
-                    location = new,
                     speed = newSpeed,
+                    location = null,
                     accuracy = new.accuracy,
                     tracking = true)
                     ?: TripProgress(duration = 0.0,
@@ -232,7 +231,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         distance = 0.0,
                         slope = 0.0,
                         splitSpeed = 0f,
-                        location = new,
+                        location = null,
                         accuracy = new.accuracy,
                         tracking = true)
 
@@ -240,6 +239,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
             _currentProgress.value =
                 _currentProgress.value?.copy(
                     accuracy = new.accuracy,
+                    location = null,
                     tracking = false)
                     ?: TripProgress(duration = 0.0,
                         speed = 0f,

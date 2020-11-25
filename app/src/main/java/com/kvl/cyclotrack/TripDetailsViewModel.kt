@@ -28,58 +28,26 @@ class TripDetailsViewModel @ViewModelInject constructor(
 
     fun measurements() = measurementsRepository.getTripMeasurements(tripId)
     fun addSplits() {
-        measurements().observeForever(object : Observer<Array<Measurements>> {
-            override fun onChanged(t: Array<Measurements>) {
-                if (t.isNotEmpty()) {
-                    val tripSplits = arrayListOf<Split>()
-                    var totalDistance = 0.0
-                    val startTime = t[0].elapsedRealtimeNanos
+        val combined = zipLiveData(measurements(), timeState())
+        combined.observeForever(object :
+            Observer<Pair<Array<Measurements>, Array<TimeState>>> {
+            override fun onChanged(pair: Pair<Array<Measurements>, Array<TimeState>>) {
+                val measurements = pair.first
+                val timeStates = pair.second
 
-                    var prev = t[0]
-                    for (index in 1 until t.size) {
-                        val lastSplit = if (tripSplits.isEmpty()) Split(0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0,
-                            0) else tripSplits.last()
-                        val curr = t[index]
+                if (measurements.isNotEmpty()) {
 
-                        if (curr.accuracy < 5 && prev.accuracy < 5) {
-                            var distanceArray = floatArrayOf(0f)
-                            android.location.Location.distanceBetween(curr.latitude,
-                                curr.longitude,
-                                prev.latitude,
-                                prev.longitude,
-                                distanceArray)
-                            totalDistance += distanceArray[0]
-                            val newTotalDuration = (curr.elapsedRealtimeNanos - startTime) / 1e9
 
-                            if (crossedSplitThreshold(sharedPreferences,
-                                    totalDistance,
-                                    lastSplit.totalDistance)
-                            ) {
-                                val splitDistance = totalDistance - lastSplit.totalDistance
-                                val splitDuration = newTotalDuration - lastSplit.totalDuration
-                                tripSplits.add(Split(timestamp = curr.time,
-                                    duration = splitDuration,
-                                    distance = splitDistance,
-                                    totalDuration = newTotalDuration,
-                                    totalDistance = totalDistance,
-                                    tripId = tripId))
-                            }
-                        }
-                        if (curr.accuracy < 5) prev = curr
-                    }
+                    val tripSplits = calculateSplits(measurements, timeStates, sharedPreferences)
                     viewModelScope.launch {
                         Log.d("TRIP_DETAILS_VIEW_MODEL",
                             "Inserting post-trip computed splits in database")
                         splitRepository.addSplits(tripSplits.toTypedArray())
                     }
-                    measurements().removeObserver(this)
+                    combined.removeObserver(this)
                 }
             }
+
         })
     }
 }

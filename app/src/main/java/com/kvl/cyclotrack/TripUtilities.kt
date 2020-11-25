@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.location.Location
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.preference.PreferenceManager
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
@@ -13,6 +15,41 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
+private fun getDistance(
+    curr: Measurements,
+    prev: Measurements,
+): Float {
+    var distanceArray = floatArrayOf(0f)
+    Location.distanceBetween(curr.latitude,
+        curr.longitude,
+        prev.latitude,
+        prev.longitude,
+        distanceArray)
+    return distanceArray[0]
+}
+
+fun <A, B> zipLiveData(a: LiveData<A>, b: LiveData<B>): LiveData<Pair<A, B>> {
+    return MediatorLiveData<Pair<A, B>>().apply {
+        var lastA: A? = null
+        var lastB: B? = null
+
+        fun update() {
+            val localLastA = lastA
+            val localLastB = lastB
+            if (localLastA != null && localLastB != null)
+                this.value = Pair(localLastA, localLastB)
+        }
+
+        addSource(a) {
+            lastA = it
+            update()
+        }
+        addSource(b) {
+            lastB = it
+            update()
+        }
+    }
+}
 
 fun formatDuration(value: Double): String {
     var formattedString = ""
@@ -38,8 +75,121 @@ fun formatDuration(value: Double): String {
     return formattedString
 }
 
-fun plotPath(measurements: Array<Measurements>): MapPath {
-    val path = PolylineOptions()
+fun isTripInProgress(state: TimeStateEnum?) =
+    state == null || state == TimeStateEnum.RESUME || state == TimeStateEnum.START
+
+fun accumulateTripPauses(intervals: Array<LongRange>): Double {
+    var sum = 0L
+    for (idx in 1 until intervals.size) {
+        sum += intervals[idx].first - intervals[idx - 1].last
+    }
+    return sum * 1e-3
+}
+
+fun accumulateTripTime(intervals: Array<LongRange>): Double {
+    var sum = 0L
+    intervals.forEach { interval ->
+        sum += interval.last - interval.first
+    }
+    return sum * 1e-3
+}
+
+fun accumulateTime(intervals: Array<LongRange>): Double {
+    return if (intervals.size <= 1) 0.0 else accumulateTripTime(intervals.sliceArray(IntRange(0,
+        intervals.size - 2))) + accumulateTripPauses(intervals)
+}
+
+fun accumulatedTime(timeStates: Array<TimeState>?): Double {
+    //TODO: Memoize
+    var sum = 0L
+    timeStates?.forEachIndexed { idx, timeState ->
+        if (!isTripInProgress(timeState.state)) {
+            sum += timeState.timestamp - timeStates[idx - 1].timestamp
+        }
+    }
+    return sum * 1e-3
+}
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    measurements: Array<Measurements>? = null,
+): Array<LongRange> {
+//TODO: Don't assume last interval is closed
+    var intervals = ArrayList<LongRange>()
+    timeStates?.forEachIndexed { index, timeState ->
+        if (timeState.state == TimeStateEnum.STOP) return@forEachIndexed
+        if (!isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(timeStates[index - 1].timestamp, timeState.timestamp))
+        }
+    }
+    return if (intervals.isEmpty() and !measurements.isNullOrEmpty()) {
+        arrayOf(LongRange(measurements!!.first().time,
+            measurements!!.last().time))
+    } else intervals.toTypedArray()
+}
+
+fun getTripLegs(
+    measurements: Array<Measurements>,
+    intervals: Array<LongRange>,
+): Array<Array<Measurements>> {
+    val legs = ArrayList<Array<Measurements>>()
+    intervals.forEach { interval ->
+        legs.add(measurements.filter { interval.contains(it.time) }.toTypedArray())
+    }
+    return legs.toTypedArray()
+}
+
+fun getTripLegs(
+    measurements: Array<Measurements>,
+    timeStates: Array<TimeState>?,
+): Array<Array<Measurements>> {
+    var intervals = getTripIntervals(timeStates, measurements)
+    return getTripLegs(measurements, intervals)
+}
+
+/*
+fun getTripLegsLongVersion(
+    measurements: Array<Measurements>,
+    timeStates: Array<TimeState>?,
+): Array<Array<Measurements>> {
+    val legs = ArrayList<Array<Measurements>>()
+    var timeStateIdx = 0
+
+    fun currTimeState(): TimeState? {
+        return try {
+            timeStates?.get(timeStateIdx)
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            null
+        }
+    }
+
+    fun nextTimeState(): TimeState? {
+        return try {
+            timeStates?.get(timeStateIdx + 1)
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            null
+        }
+    }
+
+    var newLeg: ArrayList<Measurements>? = null
+    measurements.forEach {
+        while (it.time > nextTimeState()?.timestamp ?: Long.MAX_VALUE) {
+            if (newLeg != null) {
+                legs.add(newLeg!!.toTypedArray())
+                newLeg = null
+            }
+        }
+        if (isTripInProgress(currTimeState()?.state) && it.accuracy < 5) {
+            if (newLeg == null) newLeg = ArrayList()
+            newLeg!!.add(it)
+        }
+    }
+    return legs.toTypedArray()
+}
+*/
+
+fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeState>?): MapPath {
+    val paths = ArrayList<PolylineOptions>()
     var northeastLat = -91.0
     var northeastLng = -181.0
     var southwestLat = 91.0
@@ -53,8 +203,36 @@ fun plotPath(measurements: Array<Measurements>): MapPath {
     var accSpeedAccuracy = 0f
     var sampleCount = 0
 
+    var timeStateIdx = 0
+    paths.add(PolylineOptions())
+
+    fun currTimeState(): TimeState? {
+        return try {
+            timeStates?.get(timeStateIdx)
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            null
+        }
+    }
+
+    fun nextTimeState(): TimeState? {
+        return try {
+            timeStates?.get(timeStateIdx + 1)
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            null
+        }
+    }
+
     measurements.forEach {
-        if (it.accuracy < 5) {
+        while (it.time > nextTimeState()?.timestamp ?: Long.MAX_VALUE) {
+            ++timeStateIdx
+            if (isTripInProgress(currTimeState()?.state)) {
+                paths.add(PolylineOptions())
+                lastLat = it.latitude
+                lastLng = it.longitude
+            }
+        }
+
+        if (isTripInProgress(currTimeState()?.state) && it.accuracy < 5) {
             if (lastLat != 0.0 && lastLng != 0.0) {
                 var distanceArray = floatArrayOf(0f)
                 Location.distanceBetween(lastLat,
@@ -66,7 +244,7 @@ fun plotPath(measurements: Array<Measurements>): MapPath {
             }
             lastLat = it.latitude
             lastLng = it.longitude
-            path.add(LatLng(it.latitude, it.longitude))
+            paths.last().add(LatLng(it.latitude, it.longitude))
             northeastLat = max(northeastLat, it.latitude)
             northeastLng = max(northeastLng, it.longitude)
             southwestLat = min(southwestLat, it.latitude)
@@ -99,7 +277,7 @@ fun plotPath(measurements: Array<Measurements>): MapPath {
             String.format("Bounds could not be calculated: path size = %d", measurements.size))
     }
 
-    return MapPath(path, bounds)
+    return MapPath(paths.toTypedArray(), bounds)
 }
 
 const val METERS_TO_FEET = 3.28084
@@ -231,4 +409,57 @@ fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Do
         oldDistance)
 }
 
-data class MapPath(val path: PolylineOptions, val bounds: LatLngBounds?)
+fun calculateSplits(
+    measurements: Array<Measurements>,
+    timeStates: Array<TimeState>?,
+    sharedPreferences: SharedPreferences,
+): ArrayList<Split> {
+    val tripSplits = arrayListOf<Split>()
+    var totalDistance = 0.0
+    val tripId = measurements[0].tripId
+    var totalActiveTime: Double
+
+    var intervals = getTripIntervals(timeStates, measurements)
+    val legs = getTripLegs(measurements, intervals)
+
+    legs.forEachIndexed { legIdx, leg ->
+        var prev = leg[0]
+        for (measurementIdx in 1 until leg.size) {
+            val lastSplit = if (tripSplits.isEmpty()) Split(0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0,
+                0) else tripSplits.last()
+            val curr = leg[measurementIdx]
+
+
+            if (curr.accuracy < 5 && prev.accuracy < 5) {
+                totalDistance += getDistance(curr, prev)
+                totalActiveTime =
+                    ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(intervals.sliceArray(
+                        IntRange(0, legIdx - 1)))
+
+                if (crossedSplitThreshold(sharedPreferences,
+                        totalDistance,
+                        lastSplit.totalDistance)
+                ) {
+                    val splitDistance = totalDistance - lastSplit.totalDistance
+                    val splitDuration = totalActiveTime - lastSplit.totalDuration
+                    tripSplits.add(Split(timestamp = curr.time,
+                        duration = splitDuration,
+                        distance = splitDistance,
+                        totalDuration = totalActiveTime,
+                        totalDistance = totalDistance,
+                        tripId = tripId))
+                }
+            }
+            if (curr.accuracy < 5) prev = curr
+        }
+    }
+    return tripSplits
+}
+
+
+data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)

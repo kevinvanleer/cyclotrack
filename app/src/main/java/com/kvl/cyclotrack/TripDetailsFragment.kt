@@ -114,91 +114,160 @@ class TripDetailsFragment : Fragment() {
             if (overview != null) {
                 distanceHeadingView.value =
                     String.format("%.2f %s",
-                        getUserDistance(requireContext(), overview?.distance ?: 0.0),
+                        getUserDistance(requireContext(), overview.distance ?: 0.0),
                         getUserDistanceUnitShort(requireContext()))
                 durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
                 speedHeadingView.value = String.format("%.1f %s (average)",
                     getUserSpeed(requireContext(),
-                        overview?.distance ?: 0.0,
-                        overview?.duration ?: 1.0),
+                        overview.distance ?: 0.0,
+                        overview.duration ?: 1.0),
                     getUserSpeedUnitShort(requireContext()))
 
                 titleNameView.text = overview.name
-                titleDateView.text = String.format("%s: %s - %s",
-                    SimpleDateFormat("MMMM d").format(Date(overview.timestamp)),
-                    SimpleDateFormat("h:mm").format(Date(overview.timestamp)),
-                    SimpleDateFormat("h:mm").format(Date(overview.timestamp + (overview.duration?.times(
-                        1000) ?: 0).toLong())))
 
             } else {
                 Log.d("TRIP_DETAILS_FRAG", "overview is null")
             }
         })
-        viewModel.measurements().observe(viewLifecycleOwner, { measurements ->
-            Log.d("TRIP_DETAILS_FRAGMENT",
-                "Recorded ${measurements.size} measurements for trip ${tripId}")
-            val mapData = plotPath(measurements)
-            if (mapData.bounds != null) {
-                Log.d("TRIP_DETAILS_FRAGMENT", "Plotting path")
-                mapData.path.startCap(RoundCap())
-                mapData.path.endCap(RoundCap())
-                mapData.path.width(5f)
-                mapData.path.color(0xff007700.toInt())
-                map.addPolyline(mapData.path)
-                map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds, 1000, 1000, 100))
-            }
 
-            fun makeSpeedLineChart() {
-                val entries = ArrayList<Entry>()
-                val trend = ArrayList<Entry>()
-                val startTime = measurements[0].elapsedRealtimeNanos
+        zipLiveData(viewModel.measurements(), viewModel.timeState()).observe(viewLifecycleOwner,
+            { pairs ->
+                val measurements = pairs.first
+                val timeStates = pairs.second
 
-                var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
-                var trendAlpha = 1.0
-                measurements.forEach {
-                    if (it.accuracy < 5) {
-                        entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                            getUserSpeed(requireContext(), it.speed.toDouble()).toFloat()))
-                        trendLast =
-                            (trendAlpha * getUserSpeed(requireContext(),
-                                it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
-                        trend.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                            trendLast.toFloat()))
-                        if (trendAlpha > 0.01) trendAlpha -= 0.01
+                Log.d("TRIP_DETAILS_FRAGMENT",
+                    "Recorded ${measurements.size} measurements for trip ${tripId}")
+
+                if (timeStates.isNotEmpty()) titleDateView.text = String.format("%s: %s - %s",
+                    SimpleDateFormat("MMMM d").format(Date(timeStates.first().timestamp)),
+                    SimpleDateFormat("h:mm").format(Date(timeStates.first().timestamp)),
+                    SimpleDateFormat("h:mm").format(Date(timeStates.last().timestamp)))
+
+                val mapData = plotPath(measurements, timeStates)
+                if (mapData.bounds != null) {
+                    Log.d("TRIP_DETAILS_FRAGMENT", "Plotting path")
+                    mapData.paths.forEach { path ->
+                        path.startCap(RoundCap())
+                        path.endCap(RoundCap())
+                        path.width(5f)
+                        path.color(0xff007700.toInt())
+                        map.addPolyline(path)
                     }
+                    map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
+                        1000,
+                        1000,
+                        100))
                 }
-                val dataset = LineDataSet(entries, "Speed")
-                val trendData = LineDataSet(trend, "Trend")
-                dataset.setDrawCircles(false)
-                trendData.setDrawCircles(false)
-                dataset.color = Color.rgb(0, 45, 0)
-                dataset.lineWidth = 15f
-                trendData.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                trendData.lineWidth = 3f
-                speedChartView.data = LineData(dataset, trendData)
-                speedChartView.invalidate()
-            }
-            makeSpeedLineChart()
 
-            fun makeElevationLineChart() {
-                val entries = ArrayList<Entry>()
-                val startTime = measurements[0].elapsedRealtimeNanos
+                fun makeSpeedDataset(
+                    measurements: Array<Measurements>,
+                    intervals: Array<LongRange>,
+                ): Pair<LineDataSet, LineDataSet> {
+                    val entries = ArrayList<Entry>()
+                    val trend = ArrayList<Entry>()
+                    val intervalStart = intervals.last().first
 
-                measurements.forEach {
-                    entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                        (getUserAltitude(requireContext(), it.altitude)).toFloat()))
+                    val accumulatedTime = accumulateTime(intervals)
+
+                    var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
+                    var trendAlpha = 0.01
+                    measurements.forEach {
+                        if (it.accuracy < 5) {
+                            var timestamp =
+                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                            entries.add(Entry(timestamp,
+                                getUserSpeed(requireContext(), it.speed.toDouble()).toFloat()))
+                            trendLast = (trendAlpha * getUserSpeed(requireContext(),
+                                it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
+                            trend.add(Entry(timestamp, trendLast.toFloat()))
+                            if (trendAlpha > 0.01) trendAlpha -= 0.01
+                        }
+                    }
+                    val dataset = LineDataSet(entries, "Speed")
+                    val trendData = LineDataSet(trend, "Trend")
+                    dataset.setDrawCircles(false)
+                    trendData.setDrawCircles(false)
+                    dataset.color = Color.rgb(0, 45, 0)
+                    dataset.lineWidth = 15f
+                    trendData.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
+                    trendData.lineWidth = 3f
+                    return Pair(dataset, trendData)
                 }
-                val dataset = LineDataSet(entries, "Elevation")
-                dataset.setDrawCircles(false)
-                dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                elevationChartView.data = LineData(dataset)
-                elevationChartView.invalidate()
-            }
-            makeElevationLineChart()
-        })
 
-        //viewModel.clearSplits()
-        //viewModel.addSplits()
+                fun makeSpeedLineChart() {
+                    var intervals = getTripIntervals(timeStates, measurements)
+                    val legs = getTripLegs(measurements, intervals)
+                    val data = LineData()
+
+                    legs.forEachIndexed { idx, leg ->
+                        val (raw, trend) = makeSpeedDataset(leg,
+                            intervals.sliceArray(IntRange(0, idx)))
+
+                        data.addDataSet(raw)
+                        data.addDataSet(trend)
+                    }
+                    speedChartView.data = data
+                    speedChartView.invalidate()
+                }
+                makeSpeedLineChart()
+
+                fun makeElevationDataset(
+                    measurements: Array<Measurements>,
+                    intervals: Array<LongRange>,
+                ): LineDataSet {
+                    val entries = ArrayList<Entry>()
+                    val trend = ArrayList<Entry>()
+                    val intervalStart = intervals.last().first
+
+                    val accumulatedTime = accumulateTime(intervals)
+
+                    measurements.forEach {
+                        if (it.accuracy < 5) {
+                            var timestamp =
+                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                            entries.add(Entry(timestamp,
+                                getUserAltitude(requireContext(), it.altitude).toFloat()))
+                        }
+                    }
+                    val dataset = LineDataSet(entries, "Elevation")
+                    dataset.setDrawCircles(false)
+                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
+                    dataset.lineWidth = 3f
+                    return dataset
+                }
+
+                fun makeElevationLineChart() {
+                    var intervals = getTripIntervals(timeStates, measurements)
+                    val legs = getTripLegs(measurements, intervals)
+                    val data = LineData()
+
+                    legs.forEachIndexed { idx, leg ->
+                        data.addDataSet(makeElevationDataset(leg,
+                            intervals.sliceArray(IntRange(0, idx))))
+                    }
+                    elevationChartView.data = data
+                    elevationChartView.invalidate()
+                }
+                makeElevationLineChart()
+                /*
+                fun makeElevationLineChart() {
+                    val entries = ArrayList<Entry>()
+                    val startTime = measurements[0].elapsedRealtimeNanos
+
+                    measurements.forEach {
+                        entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
+                            (getUserAltitude(requireContext(), it.altitude)).toFloat()))
+                    }
+                    val dataset = LineDataSet(entries, "Elevation")
+                    dataset.setDrawCircles(false)
+                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
+                    elevationChartView.data = LineData(dataset)
+                    elevationChartView.invalidate()
+                }
+                makeElevationLineChart()
+                 */
+            })
+
         viewModel.splits().observeForever(object : Observer<Array<Split>> {
             var called = false
             override fun onChanged(splits: Array<Split>) {
@@ -208,10 +277,10 @@ class TripDetailsFragment : Fragment() {
                     var areSplitsInSystem = false
                     if (splits.isNotEmpty()) areSplitsInSystem =
                         abs(getSplitThreshold(PreferenceManager.getDefaultSharedPreferences(context)) * splits[0].totalDistance - 1.0) < 0.01
-                    if (splits.isEmpty() || !areSplitsInSystem) {
-                        viewModel.clearSplits()
-                        viewModel.addSplits()
-                    }
+                    //if (splits.isEmpty() || !areSplitsInSystem) {
+                    viewModel.clearSplits()
+                    viewModel.addSplits()
+                    //}
                     viewModel.splits().removeObserver(this)
                 }
             }

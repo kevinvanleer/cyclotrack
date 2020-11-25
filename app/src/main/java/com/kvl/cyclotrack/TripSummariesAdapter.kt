@@ -34,20 +34,28 @@ class TripSummariesAdapter(
         holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
             trips[position].distance ?: 0.0)
         holder.tripSummaryView.onResumeMap()
-        viewModel.getTripMeasurements(tripId).observe(viewLifecycleOwner, { measurements ->
-            Log.d("TRIP_SUMMARIES_ADAPTER",
-                "Recorded ${measurements.size} measurements for trip ${tripId}")
-            val mapData = plotPath(measurements)
-            if (mapData.bounds != null) {
-                mapData.path.startCap(RoundCap())
-                mapData.path.endCap(RoundCap())
-                mapData.path.width(5f)
-                mapData.path.color(0xff007700.toInt())
-                holder.tripSummaryView.drawPath(mapData.path, mapData.bounds)
-                holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-                    trips[position].distance ?: 0.0)
-            }
-        })
+
+
+        zipLiveData(viewModel.getTripMeasurements(tripId),
+            viewModel.getTripTimeStates(tripId)).observe(viewLifecycleOwner,
+            { pair ->
+                val measurements = pair.first
+                val timeStates = pair.second
+                Log.d("TRIP_SUMMARIES_ADAPTER",
+                    "Recorded ${measurements.size} measurements for trip ${tripId}")
+                val mapData = plotPath(measurements, timeStates)
+                if (mapData.bounds != null) {
+                    mapData.paths.forEach { path ->
+                        path.startCap(RoundCap())
+                        path.endCap(RoundCap())
+                        path.width(5f)
+                        path.color(0xff007700.toInt())
+                        holder.tripSummaryView.drawPath(path, mapData.bounds)
+                    }
+                    holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
+                        trips[position].distance ?: 0.0)
+                }
+            })
         holder.tripSummaryView.setOnClickListener { view ->
             view.findNavController()
                 .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
