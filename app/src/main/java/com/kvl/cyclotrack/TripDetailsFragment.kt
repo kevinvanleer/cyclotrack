@@ -249,23 +249,6 @@ class TripDetailsFragment : Fragment() {
                     elevationChartView.invalidate()
                 }
                 makeElevationLineChart()
-                /*
-                fun makeElevationLineChart() {
-                    val entries = ArrayList<Entry>()
-                    val startTime = measurements[0].elapsedRealtimeNanos
-
-                    measurements.forEach {
-                        entries.add(Entry(((it.elapsedRealtimeNanos - startTime) / 1e9).toFloat(),
-                            (getUserAltitude(requireContext(), it.altitude)).toFloat()))
-                    }
-                    val dataset = LineDataSet(entries, "Elevation")
-                    dataset.setDrawCircles(false)
-                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                    elevationChartView.data = LineData(dataset)
-                    elevationChartView.invalidate()
-                }
-                makeElevationLineChart()
-                 */
             })
 
         viewModel.splits().observeForever(object : Observer<Array<Split>> {

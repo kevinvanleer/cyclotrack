@@ -147,47 +147,6 @@ fun getTripLegs(
     return getTripLegs(measurements, intervals)
 }
 
-/*
-fun getTripLegsLongVersion(
-    measurements: Array<Measurements>,
-    timeStates: Array<TimeState>?,
-): Array<Array<Measurements>> {
-    val legs = ArrayList<Array<Measurements>>()
-    var timeStateIdx = 0
-
-    fun currTimeState(): TimeState? {
-        return try {
-            timeStates?.get(timeStateIdx)
-        } catch (e: ArrayIndexOutOfBoundsException) {
-            null
-        }
-    }
-
-    fun nextTimeState(): TimeState? {
-        return try {
-            timeStates?.get(timeStateIdx + 1)
-        } catch (e: ArrayIndexOutOfBoundsException) {
-            null
-        }
-    }
-
-    var newLeg: ArrayList<Measurements>? = null
-    measurements.forEach {
-        while (it.time > nextTimeState()?.timestamp ?: Long.MAX_VALUE) {
-            if (newLeg != null) {
-                legs.add(newLeg!!.toTypedArray())
-                newLeg = null
-            }
-        }
-        if (isTripInProgress(currTimeState()?.state) && it.accuracy < 5) {
-            if (newLeg == null) newLeg = ArrayList()
-            newLeg!!.add(it)
-        }
-    }
-    return legs.toTypedArray()
-}
-*/
-
 fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeState>?): MapPath {
     val paths = ArrayList<PolylineOptions>()
     var northeastLat = -91.0
