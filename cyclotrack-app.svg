@@ -12,7 +12,7 @@
    version="1.1"
    id="svg126"
    sodipodi:docname="cyclotrack-app.svg"
-   inkscape:export-filename="/Users/kvl/sandbox/Cyclotrack/cyclotrack-app.png"
+   inkscape:export-filename="/Users/kvl/sandbox/Cyclotrack/cyclotrack-full.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"
    inkscape:version="1.0.1 (c497b03c, 2020-09-10)"
@@ -46,7 +46,7 @@
      id="namedview128"
      showgrid="false"
      inkscape:zoom="1.47"
-     inkscape:cx="319.29092"
+     inkscape:cx="200.2433"
      inkscape:cy="217.2517"
      inkscape:window-x="1734"
      inkscape:window-y="284"
@@ -183,11 +183,11 @@
      y2="94.195503"
      id="line122" />
   <line
-     style="stroke:#a8a8a8;stroke-width:25.30849999999999866px;stroke-opacity:1"
-     x1="220.68878"
-     y1="115.72675"
-     x2="-63.647423"
-     y2="317.55453"
+     style="stroke:#a8a8a8;stroke-width:27.9056px;stroke-opacity:1"
+     x1="224.76053"
+     y1="119.43516"
+     x2="-101.0525"
+     y2="333.57401"
      id="line124" />
   <rect
      style="fill:#a8a8a8;fill-opacity:1;stroke-width:0.928136"
@@ -205,4 +205,16 @@
      x2="227.51341"
      y2="135.86813"
      id="line120" />
+  <rect
+     style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:1.04799;stroke-opacity:1"
+     id="rect961"
+     width="80.60408"
+     height="12.976639"
+     x="-95.129486"
+     y="27.289064"
+     ry="6.4883194"
+     transform="matrix(0.99934315,0.03623904,-0.06429346,0.99793103,0,0)"
+     rx="11.250831"
+     inkscape:export-xdpi="96"
+     inkscape:export-ydpi="96" />
 </svg>
