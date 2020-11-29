@@ -21,6 +21,19 @@ function App() {
         transmitted from your device to the developer of Cyclotrack or any third
         party. If you choose to integrate Cyclotrack with a third party app, it
         is your responsibility to protect your data.
+        <h3>Become a beta tester</h3>
+        <a
+          className="App-link"
+          href="https://play.google.com/apps/testing/com.kvl.cyclotrack"
+        >
+          Join beta testing from the web
+        </a>
+        <a
+          className="App-link"
+          href="https://play.google.com/store/apps/details?id=com.kvl.cyclotrack"
+        >
+          Join beta testing from Google Play on Android
+        </a>
       </header>
     </div>
   );

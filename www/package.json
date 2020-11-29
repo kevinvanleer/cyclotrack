@@ -1,8 +1,8 @@
 {
-  "name": "cyclotrack-web",
+  "name": "cyclotrack",
   "version": "0.2.0",
   "private": true,
-  "homepage": "https://kevinvanleer.github.io/cyclotrack-web",
+  "homepage": "https://kevinvanleer.github.io/cyclotrack",
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
@@ -47,11 +47,9 @@
   },
   "devDependencies": {
     "@storybook/addon-actions": "^6.1.8",
-    "@storybook/addon-essentials": "^6.1.8",
     "@storybook/addon-links": "^6.1.8",
     "@storybook/node-logger": "^6.1.8",
     "@storybook/preset-create-react-app": "^3.1.5",
-    "@storybook/react": "^6.1.8",
     "babel-plugin-styled-components": "^1.12.0",
     "eslint-config-prettier": "^6.15.0",
     "eslint-loader": "^4.0.2",
