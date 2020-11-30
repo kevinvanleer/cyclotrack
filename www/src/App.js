@@ -19,6 +19,7 @@ function App() {
           href="https://reactjs.org"
           target="_blank"
           rel="noopener noreferrer"
+          color="#669e58"
         >
           <Flexbox flexDirection="column" alignItems="center">
             <img width="50%" src={logo} alt="logo" />
@@ -36,12 +37,14 @@ function App() {
         <Spacer height="2em" />
         <h3>Become a beta tester</h3>
         <Link
+          color="#669e58"
           className="App-link"
           href="https://play.google.com/apps/testing/com.kvl.cyclotrack"
         >
           Join beta testing from the web
         </Link>
         <Link
+          color="#669e58"
           className="App-link"
           href="https://play.google.com/store/apps/details?id=com.kvl.cyclotrack"
         >
