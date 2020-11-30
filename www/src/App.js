@@ -16,7 +16,7 @@ function App() {
       <Flexbox flexDirection="column" maxWidth="80ch" height="100%">
         <Link
           className="App-link"
-          href="https://reactjs.org"
+          href="https://play.google.com/store/apps/details?id=com.kvl.cyclotrack"
           target="_blank"
           rel="noopener noreferrer"
           color="#669e58"
