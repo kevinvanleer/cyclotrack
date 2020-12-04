@@ -20,10 +20,12 @@ function Privacy() {
         </RouterLink>
         <Spacer height="3em" />
         <h3>Privacy Policy</h3>
-        All data collected by Cyclotrack is stored on your device. No data is
-        transmitted from your device to the developer of Cyclotrack or any third
-        party. If you choose to integrate Cyclotrack with a third party app, it
-        is your responsibility to protect your data.
+        Cyclotrack uses location data from GPS receiver on your device to
+        visualize speed, distance, and map your route. All data collected by
+        Cyclotrack is stored on your device. No data is transmitted from your
+        device to the developer of Cyclotrack or any third party. If you choose
+        to integrate Cyclotrack with a third party app, it is your
+        responsibility to protect your data.
         <Spacer height="2em" />
       </Flexbox>
     </Flexbox>
