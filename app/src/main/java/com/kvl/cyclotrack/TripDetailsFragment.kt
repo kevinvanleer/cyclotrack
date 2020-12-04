@@ -260,10 +260,10 @@ class TripDetailsFragment : Fragment() {
                     var areSplitsInSystem = false
                     if (splits.isNotEmpty()) areSplitsInSystem =
                         abs(getSplitThreshold(PreferenceManager.getDefaultSharedPreferences(context)) * splits[0].totalDistance - 1.0) < 0.01
-                    //if (splits.isEmpty() || !areSplitsInSystem) {
-                    viewModel.clearSplits()
-                    viewModel.addSplits()
-                    //}
+                    if (splits.isEmpty() || !areSplitsInSystem) {
+                        viewModel.clearSplits()
+                        viewModel.addSplits()
+                    }
                     viewModel.splits().removeObserver(this)
                 }
             }

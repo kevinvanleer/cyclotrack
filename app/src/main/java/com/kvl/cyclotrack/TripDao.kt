@@ -38,6 +38,6 @@ interface TripDao {
     @Query("SELECT * from trip")
     fun loadAll(): LiveData<Array<Trip>>
 
-    @Query("SELECT * from trip WHERE distance > 1000 AND duration > 60 ORDER BY id DESC")
+    @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun getRealTrips(): LiveData<Array<Trip>>
 }

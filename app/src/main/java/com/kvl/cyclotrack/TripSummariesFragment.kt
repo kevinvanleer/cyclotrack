@@ -63,7 +63,7 @@ class TripSummariesFragment : Fragment() {
                 val eduDialog: AlertDialog? = activity?.let {
                     val builder = AlertDialog.Builder(it)
                     builder.apply {
-                        setPositiveButton("ALLOW"
+                        setPositiveButton("PROCEED"
                         ) { dialog, id ->
                             // User clicked OK button
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
@@ -80,7 +80,7 @@ class TripSummariesFragment : Fragment() {
                             alertDialog?.show()
                         }
                         setTitle("Grant Location Access")
-                        setMessage("Cyclotrack needs access to GPS location data and background location data to calculate speed and distance traveled during your rides. Data is only recorded while rides are in progress. Data collected is stored on your device for your personal use. Your data is not sent to any third parties, including the developer. Please select ALLOW and then grant Cyclotrack access to location data.")
+                        setMessage("This app collects location data to enable the in-ride dashboard, and post-ride maps and graphs even when the app is closed or not in use.\n\nCyclotrack needs access to GPS location data and background location data to calculate speed and distance traveled during your rides. Data is only collected and recorded while rides are in progress. Data collected is stored on your device for your personal use. Your data is not sent to any third parties, including the developer. Please select PROCEED and then grant Cyclotrack access to location data.")
                     }
 
                     builder.create()
