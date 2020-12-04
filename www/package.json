@@ -1,6 +1,6 @@
 {
   "name": "cyclotrack",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "homepage": "https://kevinvanleer.github.io/cyclotrack",
   "dependencies": {
@@ -16,6 +16,7 @@
     "react": "^17.0.1",
     "react-custom-scrollbars": "^4.2.1",
     "react-dom": "^17.0.1",
+    "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.1",
     "styled-components": "^5.2.1",
     "web-vitals": "^0.2.4"
