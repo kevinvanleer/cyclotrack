@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/cyclotrack/static/css/main.8c8b27cf.chunk.css",
-    "main.js": "/cyclotrack/static/js/main.f53304b7.chunk.js",
-    "main.js.map": "/cyclotrack/static/js/main.f53304b7.chunk.js.map",
+    "main.js": "/cyclotrack/static/js/main.d1331295.chunk.js",
+    "main.js.map": "/cyclotrack/static/js/main.d1331295.chunk.js.map",
     "runtime-main.js": "/cyclotrack/static/js/runtime-main.ac90805e.js",
     "runtime-main.js.map": "/cyclotrack/static/js/runtime-main.ac90805e.js.map",
     "static/js/2.cb341e91.chunk.js": "/cyclotrack/static/js/2.cb341e91.chunk.js",
@@ -18,6 +18,6 @@
     "static/js/runtime-main.ac90805e.js",
     "static/js/2.cb341e91.chunk.js",
     "static/css/main.8c8b27cf.chunk.css",
-    "static/js/main.f53304b7.chunk.js"
+    "static/js/main.d1331295.chunk.js"
   ]
 }
