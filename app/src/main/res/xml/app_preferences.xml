@@ -1,4 +1,5 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <DropDownPreference
         app:key="display_units"
         app:title="Units"
@@ -9,5 +10,9 @@
     <Preference
         app:key="privacy_policy"
         app:title="Privacy policy"
-        app:summary="Tap to view privacy policy" />
+        app:summary="Tap to view privacy policy">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://www.kevinvanleer.com/cyclotrack/#/privacy" />
+    </Preference>
 </PreferenceScreen>
