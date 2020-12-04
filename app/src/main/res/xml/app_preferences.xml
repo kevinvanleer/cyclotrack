@@ -6,4 +6,8 @@
         app:defaultValue="1"
         app:entries="@array/systems_of_measurement"
         app:entryValues="@array/systems_of_measurement_values" />
+    <Preference
+        app:key="privacy_policy"
+        app:title="Privacy policy"
+        app:summary="Tap to view privacy policy" />
 </PreferenceScreen>
