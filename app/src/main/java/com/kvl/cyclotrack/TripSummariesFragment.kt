@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
@@ -22,36 +23,9 @@ class TripSummariesFragment : Fragment() {
     }
 
     private var alertDialog: AlertDialog? = null
+    private lateinit var tripListView: RecyclerView
 
     private fun initializeLocationService() {
-        /*when (PackageManager.PERMISSION_GRANTED) {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ),
-            -> {
-                // You can use the API that requires the permission.
-                //performAction(...)
-                findNavController().navigate(R.id.action_start_trip)
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION),
-            -> {
-                // In an educational UI, explain to the user why your app requires this
-                // permission for a specific feature to behave as expected. In this UI,
-                // include a "cancel" or "no thanks" button that allows the user to
-                // continue using your app without granting the permission.
-                showInContextUI(...)
-            }
-            else -> {
-                // You can directly ask for the permission.
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                        0)
-                }
-            }
-        }*/
         when {
             ContextCompat.checkSelfPermission(
                 requireContext(),
@@ -64,7 +38,7 @@ class TripSummariesFragment : Fragment() {
                     val builder = AlertDialog.Builder(it)
                     builder.apply {
                         setPositiveButton("PROCEED"
-                        ) { dialog, id ->
+                        ) { _, _ ->
                             // User clicked OK button
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
                                 requestPermissions(
@@ -74,7 +48,7 @@ class TripSummariesFragment : Fragment() {
                             }
                         }
                         setNegativeButton("DENY"
-                        ) { dialog, id ->
+                        ) { _, _ ->
                             // User cancelled the dialog
                             Log.d("TRIP_SUMMARIES", "CLICKED DENY")
                             alertDialog?.show()
@@ -144,13 +118,16 @@ class TripSummariesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
         val viewManager = LinearLayoutManager(activity)
+        val listState: Parcelable? = savedInstanceState?.getParcelable("MY_KEY")
+        if (listState != null) viewManager.onRestoreInstanceState(listState)
 
         viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
             Log.d("TRIP_SUMMARIES",
                 "There were ${trips.size} trips returned from the database")
             val viewAdapter =
                 TripSummariesAdapter(trips, viewModel, viewLifecycleOwner, savedInstanceState)
-            view.findViewById<RecyclerView>(R.id.trip_summary_card_list).apply {
+            tripListView = view.findViewById<RecyclerView>(R.id.trip_summary_card_list)
+            tripListView.apply {
                 setHasFixedSize(true)
                 layoutManager = viewManager
                 adapter = viewAdapter
@@ -193,4 +170,21 @@ class TripSummariesFragment : Fragment() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        viewModel.tripListState.putParcelable("MY_KEY",
+            tripListView.layoutManager?.onSaveInstanceState())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (this::tripListView.isInitialized) {
+            tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
+                "MY_KEY"))
+            /*Handler().postDelayed({
+            tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
+                "MY_KEY"))
+        }, 50)*/
+        }
+    }
 }

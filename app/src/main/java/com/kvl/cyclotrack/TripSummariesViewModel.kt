@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.os.Bundle
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ class TripSummariesViewModel @ViewModelInject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
 ) : ViewModel() {
+    val tripListState = Bundle()
     val allTrips = tripsRepository.getAllTrips()
     val realTrips = tripsRepository.getRealTrips()
     fun getTripMeasurements(tripId: Long): LiveData<Array<Measurements>> =
