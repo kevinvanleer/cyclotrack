@@ -132,4 +132,8 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
     fun onMapLowMemory() {
         mapView.onLowMemory()
     }
+
+    fun clearMap() {
+        if (this::map.isInitialized) map.clear()
+    }
 }

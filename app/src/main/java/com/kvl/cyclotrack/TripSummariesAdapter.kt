@@ -34,7 +34,7 @@ class TripSummariesAdapter(
         holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
             trips[position].distance ?: 0.0)
         holder.tripSummaryView.onResumeMap()
-
+        holder.tripSummaryView.clearMap()
 
         zipLiveData(viewModel.getTripMeasurements(tripId),
             viewModel.getTripTimeStates(tripId)).observe(viewLifecycleOwner,
