@@ -124,7 +124,7 @@ fun getTripIntervals(
     }
     return if (intervals.isEmpty() and !measurements.isNullOrEmpty()) {
         arrayOf(LongRange(measurements!!.first().time,
-            measurements!!.last().time))
+            measurements.last().time))
     } else intervals.toTypedArray()
 }
 
