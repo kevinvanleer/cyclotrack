@@ -5,7 +5,7 @@
     android:id="@+id/trip_summary_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="6dp"
+    android:layout_marginBottom="16dp"
     card_view:cardCornerRadius="8dp"
     card_view:contentPadding="0dp">
 
@@ -13,16 +13,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <com.google.android.gms.maps.MapView xmlns:map="http://schemas.android.com/apk/res-auto"
+        <com.google.android.gms.maps.MapView
             android:id="@+id/trip_summary_map"
             android:layout_width="wrap_content"
-            android:layout_height="300dp"
+            android:layout_height="260dp"
             android:contentDescription="@string/trip_summary_image_description"
             app:layout_constraintBottom_toTopOf="@id/trip_summary_details"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/trip_summary_details"

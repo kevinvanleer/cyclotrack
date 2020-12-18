@@ -15,4 +15,5 @@
     <string name="stop_label">STOP</string>
     <string name="resume_label">RESUME</string>
     <string name="label_placeholder">LABEL</string>
+    <string name="start_dashboard_button_description">Touch this button to enter dashboard</string>
 </resources>
