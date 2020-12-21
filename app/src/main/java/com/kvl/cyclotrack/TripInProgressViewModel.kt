@@ -41,6 +41,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     private fun tripInProgress() = isTripInProgress(currentState)
 
+    var gpsEnabled = gpsService.accessGranted
+
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         if (tripId != null) {
             viewModelScope.launch {

@@ -29,12 +29,6 @@ class TripSummariesFragment : Fragment() {
 
     private fun initializeLocationService() {
         when {
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                findNavController().navigate(R.id.action_start_trip)
-            }
             shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
                 val eduDialog: AlertDialog? = activity?.let {
                     val builder = AlertDialog.Builder(it)
@@ -86,8 +80,11 @@ class TripSummariesFragment : Fragment() {
                 if ((grantResults.isNotEmpty() &&
                             grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 ) {
-                    //TODO: SOMETHING WHEN PERMISSION IS GRANTED
-                    findNavController().navigate(R.id.action_start_trip)
+                    try {
+                        findNavController().navigate(R.id.action_start_trip)
+                    } catch (e: IllegalArgumentException) {
+                        Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
+                    }
                 } else {
                     // Explain to the user that the feature is unavailable because
                     // the features requires a permission that the user has denied.
@@ -143,7 +140,19 @@ class TripSummariesFragment : Fragment() {
         })
 
         view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-            initializeLocationService()
+            // TODO: Multiple touches causes fatal exception
+            try {
+                when (PackageManager.PERMISSION_GRANTED) {
+                    ContextCompat.checkSelfPermission(
+                        requireContext(),
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ),
+                    -> findNavController().navigate(R.id.action_start_trip)
+                    else -> initializeLocationService()
+                }
+            } catch (e: IllegalArgumentException) {
+                Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
+            }
         }
         alertDialog = activity?.let {
             val builder = AlertDialog.Builder(it)

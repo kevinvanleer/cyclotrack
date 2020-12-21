@@ -13,18 +13,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.toolbar))
     }
 
-    /*
-    override fun onSaveInstanceState(savedInstanceState: Bundle) {
-        super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putBundle("nav_state", findNavController(this, R.id.cyclotrack_nav_graph).saveState())
-    }
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-       findNavController(this, R.id.cyclotrack_nav_graph).restoreState(savedInstanceState.getBundle("nav_state"))
-    }
-    */
-
-
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         //menuInflater.inflate(R.menu.menu_main, menu)

@@ -176,7 +176,6 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             pauseButton.text = "START"
         }
 
-        //viewModel.startTrip()
         Log.d("TIP", "view created")
         viewModel.currentProgress.observe(viewLifecycleOwner,
             { it ->
@@ -205,6 +204,13 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         })*/
         viewModel.currentTime.observe(viewLifecycleOwner, {
             durationTextView.value = DateUtils.formatElapsedTime((it).toLong())
+        })
+
+        viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->
+            if (!status) {
+                viewModel.endTrip()
+                findNavController().navigate(R.id.action_finish_trip)
+            }
         })
     }
 
