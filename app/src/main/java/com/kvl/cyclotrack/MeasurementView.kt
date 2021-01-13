@@ -7,9 +7,6 @@ import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 
-/**
- * TODO: document your custom view class.
- */
 class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
 
     private var _valueTextSizeAttr = -1f
