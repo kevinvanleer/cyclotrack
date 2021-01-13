@@ -1,10 +1,7 @@
 package com.kvl.cyclotrack
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 
 data class TripInProgress(
     val id: Long,
@@ -40,4 +37,10 @@ interface TripDao {
 
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun getRealTrips(): LiveData<Array<Trip>>
+
+    @Delete(entity = Trip::class)
+    fun removeTrip(id: TripStats)
+
+    @Delete(entity = Trip::class)
+    fun removeTrips(ids: Array<TripStats>)
 }
