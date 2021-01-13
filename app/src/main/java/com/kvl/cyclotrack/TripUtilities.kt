@@ -114,12 +114,15 @@ fun getTripIntervals(
     timeStates: Array<TimeState>?,
     measurements: Array<Measurements>? = null,
 ): Array<LongRange> {
-//TODO: Don't assume last interval is closed
     var intervals = ArrayList<LongRange>()
     timeStates?.forEachIndexed { index, timeState ->
-        if (timeState.state == TimeStateEnum.STOP) return@forEachIndexed
-        if (!isTripInProgress(timeState.state)) {
+        if (!isTripInProgress(timeState.state) && index > 0 && isTripInProgress(timeStates[index - 1].state)) {
             intervals.add(LongRange(timeStates[index - 1].timestamp, timeState.timestamp))
+        }
+    }
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates?.last()?.state) && !measurements.isNullOrEmpty()) {
+        if (timeStates!!.last().timestamp < measurements!!.last().time) {
+            intervals.add(LongRange(timeStates!!.last().timestamp, measurements!!.last().time))
         }
     }
     return if (intervals.isEmpty() and !measurements.isNullOrEmpty()) {
