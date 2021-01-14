@@ -7,6 +7,7 @@ import android.util.AttributeSet
 import android.util.Log
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.navigation.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -95,6 +96,10 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         mapView.getMapAsync {
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it
+            map.setOnMapClickListener {
+                mapView.findNavController()
+                    .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+            }
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
             map.uiSettings.setAllGesturesEnabled(false)
             map.uiSettings.isMapToolbarEnabled = false
