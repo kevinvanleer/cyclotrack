@@ -2,12 +2,16 @@ package com.kvl.cyclotrack
 
 import android.graphics.Color
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.GridLayout
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.doOnPreDraw
@@ -34,12 +38,16 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.abs
 
+
 @AndroidEntryPoint
-class TripDetailsFragment : Fragment() {
+class TripDetailsFragment : Fragment(), View.OnTouchListener {
+    private var startHeight: Int = 0
+    private var startY: Float = 0.0f
     private val viewModel: TripDetailsViewModel by viewModels()
     private val args: TripDetailsFragmentArgs by navArgs()
     private lateinit var map: GoogleMap
-    private var mapView: MapView? = null
+    private lateinit var mapView: MapView
+    private lateinit var titleNameView: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,17 +57,18 @@ class TripDetailsFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
+        super.onViewCreated(view, savedInstanceState)
 
         mapView = view.findViewById(R.id.trip_details_map_view)
-        mapView?.onCreate(savedInstanceState)
-        mapView?.getMapAsync {
+        mapView.onCreate(savedInstanceState)
+        mapView.getMapAsync {
             Log.d("TRIP_DETAILS_FRAGMENT", "GOT MAP")
             map = it
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
         }
 
-        val titleNameView: TextView = view.findViewById(R.id.trip_details_title_name)
+
+        titleNameView = view.findViewById(R.id.trip_details_title_name)
         val titleDateView: TextView = view.findViewById(R.id.trip_details_title_date)
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
         val durationHeadingView: HeadingView = view.findViewById(R.id.trip_details_time)
@@ -68,6 +77,10 @@ class TripDetailsFragment : Fragment() {
         val speedChartView: LineChart = view.findViewById(R.id.trip_details_speed_chart)
         val splitsGridView: GridLayout = view.findViewById(R.id.trip_details_splits_grid)
         val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
+
+        val scrollView = view.findViewById<ScrollView>(R.id.trip_details_scroll_view)
+        scrollView.setOnTouchListener(this)
+
 
         view.findViewById<HeadingView>(R.id.trip_details_heart_rate).visibility = View.GONE
         view.findViewById<HeadingView>(R.id.trip_details_splits).value = ""
@@ -216,7 +229,6 @@ class TripDetailsFragment : Fragment() {
                     intervals: Array<LongRange>,
                 ): LineDataSet {
                     val entries = ArrayList<Entry>()
-                    val trend = ArrayList<Entry>()
                     val intervalStart = intervals.last().first
 
                     val accumulatedTime = accumulateTime(intervals)
@@ -335,41 +347,133 @@ class TripDetailsFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (mapView != null) mapView?.onCreate(savedInstanceState)
+        if (this::mapView.isInitialized) mapView.onCreate(savedInstanceState)
     }
 
     override fun onResume() {
         super.onResume()
-        if (mapView != null) mapView?.onResume()
+        if (this::mapView.isInitialized) mapView.onResume()
     }
 
     override fun onStart() {
         super.onStart()
-        if (mapView != null) mapView?.onStart()
+        if (this::mapView.isInitialized) mapView.onStart()
     }
 
     override fun onPause() {
         super.onPause()
-        if (mapView != null) mapView?.onPause()
+        if (this::mapView.isInitialized) mapView.onPause()
     }
 
     override fun onStop() {
         super.onStop()
-        if (mapView != null) mapView?.onStop()
+        if (this::mapView.isInitialized) mapView.onStop()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        if (mapView != null) mapView?.onDestroy()
+        if (this::mapView.isInitialized) mapView.onDestroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (mapView != null) mapView?.onSaveInstanceState(outState)
+        if (this::mapView.isInitialized) mapView.onSaveInstanceState(outState)
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        if (mapView != null) mapView?.onLowMemory()
+        if (this::mapView.isInitialized) mapView.onLowMemory()
+    }
+
+    private fun toggleMapSize(): Boolean {
+        val dip = 300f
+        val px = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            dip,
+            resources.displayMetrics
+        )
+        val displayMetrics = DisplayMetrics()
+        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+        val height = displayMetrics.heightPixels
+        val hackHeadingHeight = 300
+        if (mapView.height == px.toInt()) {
+            Log.d("height", titleNameView.height.toString())
+            val newParams = mapView.layoutParams
+            newParams.height = height - titleNameView.height - hackHeadingHeight
+            mapView.layoutParams = newParams
+        } else {
+            val newParams = mapView.layoutParams
+            newParams.height = px.toInt()
+            mapView.layoutParams = newParams
+        }
+        return true
+    }
+
+    private fun startTouchSequence(event: MotionEvent?): Boolean {
+        startY = event?.rawY ?: 0f
+        startHeight = mapView.height
+        Log.d("TOUCH_SEQ", "Start sequence: $startY")
+        return true
+    }
+
+    private fun adjustMap(event: MotionEvent?): Boolean {
+        val displayMetrics = DisplayMetrics()
+        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+        val height = displayMetrics.heightPixels
+        val hackHeadingHeight = 300
+        val maxSize = height - titleNameView.height - hackHeadingHeight
+
+        val newHeight =
+            (startHeight + (event?.rawY ?: startY) - startY).toInt()
+
+        Log.d("TOUCH_SEQ", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+        val newParams = mapView.layoutParams
+        newParams.height = newHeight
+        mapView.layoutParams = newParams
+        return true
+    }
+
+    private fun endTouchSequence(event: MotionEvent?): Boolean {
+        var newHeight = 0
+        val minHeight = 1
+        val displayMetrics = DisplayMetrics()
+        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+        val height = displayMetrics.heightPixels
+        val hackHeadingHeight = 300
+        val maxHeight = height - titleNameView.height - hackHeadingHeight
+        val defaultHeight =
+            TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                300f,
+                resources.displayMetrics).toInt()
+
+        val expand = when (startHeight) {
+            minHeight -> defaultHeight
+            else -> maxHeight
+        }
+        val collapse = when (startHeight) {
+            maxHeight -> defaultHeight
+            else -> minHeight
+        }
+        newHeight = when {
+            (event?.rawY ?: startY) - startY > 5 -> expand
+            (event?.rawY ?: startY) - startY < -5 -> collapse
+            else -> startHeight
+        }
+        Log.d("TOUCH_SEQ", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+
+        val newParams = mapView.layoutParams
+        newParams.height = newHeight
+        mapView.layoutParams = newParams
+        return true
+    }
+
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+        return when (event?.action) {
+            MotionEvent.ACTION_UP -> endTouchSequence(event)
+            MotionEvent.ACTION_DOWN -> startTouchSequence(event)
+            MotionEvent.ACTION_MOVE -> adjustMap(event)
+            else -> false
+        }
     }
 }
