@@ -42,12 +42,14 @@ import kotlin.math.abs
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private var startHeight: Int = 0
+    private val minHeight = 1
     private var startY: Float = 0.0f
     private val viewModel: TripDetailsViewModel by viewModels()
     private val args: TripDetailsFragmentArgs by navArgs()
     private lateinit var map: GoogleMap
     private lateinit var mapView: MapView
     private lateinit var titleNameView: TextView
+    private lateinit var scrollView: ScrollView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -67,7 +69,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
         }
 
-
         titleNameView = view.findViewById(R.id.trip_details_title_name)
         val titleDateView: TextView = view.findViewById(R.id.trip_details_title_date)
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
@@ -78,7 +79,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val splitsGridView: GridLayout = view.findViewById(R.id.trip_details_splits_grid)
         val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
 
-        val scrollView = view.findViewById<ScrollView>(R.id.trip_details_scroll_view)
+        scrollView = view.findViewById(R.id.trip_details_scroll_view)
         scrollView.setOnTouchListener(this)
 
 
@@ -90,6 +91,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
 
         fun configureLineChart(chart: LineChart) {
+            chart.setTouchEnabled(false)
             chart.setDrawBorders(true)
             chart.setBorderColor(Color.GRAY)
             chart.setNoDataText("No data")
@@ -419,14 +421,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private fun adjustMap(event: MotionEvent?): Boolean {
         val displayMetrics = DisplayMetrics()
         activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-        val height = displayMetrics.heightPixels
-        val hackHeadingHeight = 300
-        val maxSize = height - titleNameView.height - hackHeadingHeight
 
         val newHeight =
             (startHeight + (event?.rawY ?: startY) - startY).toInt()
 
-        Log.d("TOUCH_SEQ", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+        if (scrollView.scrollY > 0 || (startHeight == minHeight && ((event?.rawY
+                ?: startY) - startY < 0))
+        ) {
+            startY = event?.rawY ?: startY
+            return false
+        }
+
+        Log.d("TOUCH_SEQ_MOVE", "$startHeight, ${event?.rawY}, $startY, $newHeight")
         val newParams = mapView.layoutParams
         newParams.height = newHeight
         mapView.layoutParams = newParams
@@ -434,8 +440,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     }
 
     private fun endTouchSequence(event: MotionEvent?): Boolean {
-        var newHeight = 0
-        val minHeight = 1
         val displayMetrics = DisplayMetrics()
         activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
         val height = displayMetrics.heightPixels
@@ -447,28 +451,33 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 300f,
                 resources.displayMetrics).toInt()
 
-        val expand = when (startHeight) {
-            minHeight -> defaultHeight
+        val expand = when {
+            mapView.height < defaultHeight -> defaultHeight
             else -> maxHeight
         }
-        val collapse = when (startHeight) {
-            maxHeight -> defaultHeight
-            else -> minHeight
+        val collapse = when {
+            mapView.height < defaultHeight -> minHeight
+            else -> defaultHeight
         }
-        newHeight = when {
+        var newHeight = when {
             (event?.rawY ?: startY) - startY > 5 -> expand
             (event?.rawY ?: startY) - startY < -5 -> collapse
             else -> startHeight
         }
-        Log.d("TOUCH_SEQ", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+        Log.d("TOUCH_SEQ_END", "$startHeight, ${event?.rawY}, $startY, $newHeight")
 
         val newParams = mapView.layoutParams
         newParams.height = newHeight
         mapView.layoutParams = newParams
+        when (newHeight) {
+            minHeight -> mapView.visibility = View.INVISIBLE
+            else -> mapView.visibility = View.VISIBLE
+        }
         return true
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+        if (scrollView.scrollY != 0) return false
         return when (event?.action) {
             MotionEvent.ACTION_UP -> endTouchSequence(event)
             MotionEvent.ACTION_DOWN -> startTouchSequence(event)
