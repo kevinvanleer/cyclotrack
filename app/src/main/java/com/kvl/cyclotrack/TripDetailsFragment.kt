@@ -30,9 +30,11 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.RoundCap
 import dagger.hilt.android.AndroidEntryPoint
@@ -56,6 +58,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var maxGuide: View
     private lateinit var defaultGuide: View
     private lateinit var minGuide: View
+    private lateinit var defaultCameraPosition: CameraPosition
+    private lateinit var maxCameraPosition: CameraPosition
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -78,6 +82,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             Log.d("TRIP_DETAILS_FRAGMENT", "GOT MAP")
             map = it
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
+            map.uiSettings.setAllGesturesEnabled(false)
         }
 
         titleNameView = view.findViewById(R.id.trip_details_title_name)
@@ -91,7 +96,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
 
         scrollView = view.findViewById(R.id.trip_details_scroll_view)
-        scrollView.setOnTouchListener(this)
 
 
         view.findViewById<HeadingView>(R.id.trip_details_heart_rate).visibility = View.GONE
@@ -180,9 +184,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         map.addPolyline(path)
                     }
                     map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
-                        1000,
-                        1000,
+                        mapView.width,
+                        scrollView.marginTop,
                         100))
+                    maxCameraPosition = map.cameraPosition
+                    map.moveCamera(CameraUpdateFactory.scrollBy(0f,
+                        (mapView.height - scrollView.marginTop) / 2f))
+                    defaultCameraPosition = map.cameraPosition
                 }
 
                 fun makeSpeedDataset(
@@ -274,6 +282,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     elevationChartView.invalidate()
                 }
                 makeElevationLineChart()
+                scrollView.setOnTouchListener(this)
             })
 
         viewModel.splits().observeForever(object : Observer<Array<Split>> {
@@ -482,6 +491,19 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
         newParams.topMargin = newHeight
         scrollView.layoutParams = newParams
+
+        lateinit var camFactory: CameraUpdate
+        when (newHeight) {
+            maxGuide.top -> {
+                camFactory = CameraUpdateFactory.newCameraPosition(maxCameraPosition)
+                map.uiSettings.setAllGesturesEnabled(true)
+            }
+            else -> {
+                camFactory = CameraUpdateFactory.newCameraPosition(defaultCameraPosition)
+                map.uiSettings.setAllGesturesEnabled(false)
+            }
+        }
+        map.animateCamera(camFactory, 700, null)
 
         return true
     }
