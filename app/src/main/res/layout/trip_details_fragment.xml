@@ -17,13 +17,34 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/trip_details_min_map_guide"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="0dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/trip_details_default_map_guide"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_begin="300dp" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/trip_details_max_map_guide"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_end="64dp" />
+
     <ScrollView
         android:id="@+id/trip_details_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="300dp"
         android:background="@color/colorBackground"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="300dp"
+        app:layout_constraintTop_toTopOf="@id/trip_details_min_map_guide"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -31,6 +52,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">

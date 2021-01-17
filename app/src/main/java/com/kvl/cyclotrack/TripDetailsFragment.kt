@@ -13,6 +13,8 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.marginTop
@@ -43,7 +45,6 @@ import kotlin.math.abs
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private var startHeight: Int = 0
-    private val minHeight = 1
     private var startY: Float = 0.0f
     private val viewModel: TripDetailsViewModel by viewModels()
     private val args: TripDetailsFragmentArgs by navArgs()
@@ -51,6 +52,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var mapView: MapView
     private lateinit var titleNameView: TextView
     private lateinit var scrollView: ScrollView
+    private lateinit var constraintLayout: ConstraintLayout
+    private lateinit var maxGuide: View
+    private lateinit var defaultGuide: View
+    private lateinit var minGuide: View
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -61,6 +66,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        constraintLayout = view.findViewById(R.id.TripDetailsFragment)
+        maxGuide = view.findViewById(R.id.trip_details_max_map_guide)
+        minGuide = view.findViewById(R.id.trip_details_min_map_guide)
+        defaultGuide = view.findViewById(R.id.trip_details_default_map_guide)
 
         mapView = view.findViewById(R.id.trip_details_map_view)
         mapView.onCreate(savedInstanceState)
@@ -388,30 +398,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         if (this::mapView.isInitialized) mapView.onLowMemory()
     }
 
-    private fun toggleMapSize(): Boolean {
-        val dip = 300f
-        val px = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            dip,
-            resources.displayMetrics
-        )
-        val displayMetrics = DisplayMetrics()
-        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-        val height = displayMetrics.heightPixels
-        val hackHeadingHeight = 300
-        if (mapView.height == px.toInt()) {
-            Log.d("height", titleNameView.height.toString())
-            val newParams = mapView.layoutParams
-            newParams.height = height - titleNameView.height - hackHeadingHeight
-            mapView.layoutParams = newParams
-        } else {
-            val newParams = mapView.layoutParams
-            newParams.height = px.toInt()
-            mapView.layoutParams = newParams
-        }
-        return true
-    }
-
     private fun startTouchSequence(event: MotionEvent?): Boolean {
         startY = event?.rawY ?: 0f
         startHeight = scrollView.marginTop
@@ -426,7 +412,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val newHeight =
             (startHeight + (event?.rawY ?: startY) - startY).toInt()
 
-        if (scrollView.scrollY > 0 || (startHeight == minHeight && ((event?.rawY
+        if (scrollView.scrollY > 0 || (startHeight == minGuide.top && ((event?.rawY
                 ?: startY) - startY < 0))
         ) {
             startY = event?.rawY ?: startY
@@ -434,50 +420,97 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         Log.d("TOUCH_SEQ_MOVE", "$startHeight, ${event?.rawY}, $startY, $newHeight")
-        /*val newParams = mapView.layoutParams
-        newParams.height = newHeight
-        mapView.layoutParams = newParams*/
-        val newParams: ViewGroup.MarginLayoutParams =
+        val marginParams: ViewGroup.MarginLayoutParams =
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
-        newParams.topMargin = newHeight
-        scrollView.layoutParams = newParams
+        marginParams.topMargin = newHeight
+        scrollView.layoutParams = marginParams
+
+        return true
+    }
+
+    private fun constraints_adjustMap(event: MotionEvent?): Boolean {
+        val displayMetrics = DisplayMetrics()
+        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+
+        val newHeight =
+            (startHeight + (event?.rawY ?: startY) - startY).toInt()
+
+        if (scrollView.scrollY > 0 || (startHeight == minGuide.top && ((event?.rawY
+                ?: startY) - startY < 0))
+        ) {
+            startY = event?.rawY ?: startY
+            return false
+        }
+
+        Log.d("TOUCH_SEQ_MOVE", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+
+        val constraintSet = ConstraintSet()
+        constraintSet.clone(constraintLayout)
+        constraintSet.connect(R.id.trip_details_scroll_view,
+            ConstraintSet.TOP,
+            R.id.trip_details_min_map_guide,
+            ConstraintSet.TOP,
+            newHeight)
+        constraintSet.applyTo(constraintLayout)
+
         return true
     }
 
     private fun endTouchSequence(event: MotionEvent?): Boolean {
-        val displayMetrics = DisplayMetrics()
-        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-        val height = displayMetrics.heightPixels
-        val hackHeadingHeight = 300
-        val maxHeight = height - titleNameView.height - hackHeadingHeight
-        val defaultHeight =
-            TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                300f,
-                resources.displayMetrics).toInt()
-
+        val thresholdDip = 30f
+        val thresholdPx = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            thresholdDip,
+            resources.displayMetrics
+        )
         val expand = when {
-            scrollView.marginTop < defaultHeight -> defaultHeight
-            else -> maxHeight
+            scrollView.marginTop < defaultGuide.top -> defaultGuide.top
+            else -> maxGuide.top
         }
         val collapse = when {
-            scrollView.marginTop < defaultHeight -> minHeight
-            else -> defaultHeight
+            scrollView.marginTop < defaultGuide.top -> minGuide.top
+            else -> defaultGuide.top
         }
         var newHeight = when {
-            (event?.rawY ?: startY) - startY > 5 -> expand
-            (event?.rawY ?: startY) - startY < -5 -> collapse
+            (event?.rawY ?: startY) - startY > thresholdPx -> expand
+            startY - (event?.rawY ?: startY) > thresholdPx -> collapse
             else -> startHeight
         }
         Log.d("TOUCH_SEQ_END", "$startHeight, ${event?.rawY}, $startY, $newHeight")
 
-        /*val newParams = mapView.layoutParams
-        newParams.height = newHeight
-        mapView.layoutParams = newParams*/
         val newParams: ViewGroup.MarginLayoutParams =
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
         newParams.topMargin = newHeight
         scrollView.layoutParams = newParams
+
+        return true
+    }
+
+    private fun constraints_endTouchSequence(event: MotionEvent?): Boolean {
+        var expand = when {
+            scrollView.marginTop < defaultGuide.top -> R.id.trip_details_default_map_guide
+            else -> R.id.trip_details_max_map_guide
+        }
+        val collapse = when {
+            scrollView.marginTop < defaultGuide.top -> R.id.trip_details_min_map_guide
+            else -> R.id.trip_details_default_map_guide
+        }
+        var newGuide = when {
+            (event?.rawY ?: startY) - startY > 5 -> expand
+            (event?.rawY ?: startY) - startY < -5 -> collapse
+            else -> R.id.trip_details_default_map_guide
+        }
+        Log.d("TOUCH_SEQ_END", "$startHeight, ${event?.rawY}, $startY, $newGuide")
+
+        val constraintSet = ConstraintSet()
+        constraintSet.clone(constraintLayout)
+        constraintSet.connect(R.id.trip_details_scroll_view,
+            ConstraintSet.TOP,
+            newGuide,
+            ConstraintSet.TOP,
+            0)
+        constraintSet.applyTo(constraintLayout)
+
         return true
     }
 
