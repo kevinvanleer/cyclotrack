@@ -97,8 +97,12 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it
             map.setOnMapClickListener {
-                mapView.findNavController()
-                    .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+                try {
+                    mapView.findNavController()
+                        .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+                } catch (e: IllegalArgumentException) {
+                    Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
+                }
             }
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
             map.uiSettings.setAllGesturesEnabled(false)

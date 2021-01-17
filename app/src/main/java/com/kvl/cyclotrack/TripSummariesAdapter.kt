@@ -57,8 +57,12 @@ class TripSummariesAdapter(
                 }
             })
         holder.tripSummaryView.setOnClickListener { view ->
-            view.findNavController()
-                .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+            try {
+                view.findNavController()
+                    .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+            } catch (e: IllegalArgumentException) {
+                Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
+            }
         }
     }
 
