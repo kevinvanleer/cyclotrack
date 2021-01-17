@@ -15,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.marginTop
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -413,7 +414,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     private fun startTouchSequence(event: MotionEvent?): Boolean {
         startY = event?.rawY ?: 0f
-        startHeight = mapView.height
+        startHeight = scrollView.marginTop
         Log.d("TOUCH_SEQ", "Start sequence: $startY")
         return true
     }
@@ -433,9 +434,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         Log.d("TOUCH_SEQ_MOVE", "$startHeight, ${event?.rawY}, $startY, $newHeight")
-        val newParams = mapView.layoutParams
+        /*val newParams = mapView.layoutParams
         newParams.height = newHeight
-        mapView.layoutParams = newParams
+        mapView.layoutParams = newParams*/
+        val newParams: ViewGroup.MarginLayoutParams =
+            scrollView.layoutParams as ViewGroup.MarginLayoutParams
+        newParams.topMargin = newHeight
+        scrollView.layoutParams = newParams
         return true
     }
 
@@ -452,11 +457,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 resources.displayMetrics).toInt()
 
         val expand = when {
-            mapView.height < defaultHeight -> defaultHeight
+            scrollView.marginTop < defaultHeight -> defaultHeight
             else -> maxHeight
         }
         val collapse = when {
-            mapView.height < defaultHeight -> minHeight
+            scrollView.marginTop < defaultHeight -> minHeight
             else -> defaultHeight
         }
         var newHeight = when {
@@ -466,13 +471,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
         Log.d("TOUCH_SEQ_END", "$startHeight, ${event?.rawY}, $startY, $newHeight")
 
-        val newParams = mapView.layoutParams
+        /*val newParams = mapView.layoutParams
         newParams.height = newHeight
-        mapView.layoutParams = newParams
-        when (newHeight) {
-            minHeight -> mapView.visibility = View.INVISIBLE
-            else -> mapView.visibility = View.VISIBLE
-        }
+        mapView.layoutParams = newParams*/
+        val newParams: ViewGroup.MarginLayoutParams =
+            scrollView.layoutParams as ViewGroup.MarginLayoutParams
+        newParams.topMargin = newHeight
+        scrollView.layoutParams = newParams
         return true
     }
 
