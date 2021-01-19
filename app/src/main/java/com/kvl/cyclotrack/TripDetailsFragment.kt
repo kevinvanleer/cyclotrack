@@ -9,6 +9,10 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.Animation
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.Transformation
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -76,6 +80,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         minGuide = view.findViewById(R.id.trip_details_min_map_guide)
         defaultGuide = view.findViewById(R.id.trip_details_default_map_guide)
 
+
         mapView = view.findViewById(R.id.trip_details_map_view)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync {
@@ -96,7 +101,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
 
         scrollView = view.findViewById(R.id.trip_details_scroll_view)
-
 
         view.findViewById<HeadingView>(R.id.trip_details_heart_rate).visibility = View.GONE
         view.findViewById<HeadingView>(R.id.trip_details_splits).value = ""
@@ -428,7 +432,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return false
         }
 
-        Log.d("TOUCH_SEQ_MOVE", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+        Log.d("TOUCH_SEQ_MOVE",
+            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight")
         val marginParams: ViewGroup.MarginLayoutParams =
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
         marginParams.topMargin = newHeight
@@ -451,7 +456,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return false
         }
 
-        Log.d("TOUCH_SEQ_MOVE", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+        Log.d("TOUCH_SEQ_MOVE",
+            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight")
 
         val constraintSet = ConstraintSet()
         constraintSet.clone(constraintLayout)
@@ -466,12 +472,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     }
 
     private fun endTouchSequence(event: MotionEvent?): Boolean {
-        val thresholdDip = 30f
+        val thresholdDip = 100f
         val thresholdPx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             thresholdDip,
             resources.displayMetrics
         )
+
+        val currentHeight = scrollView.marginTop
+
         val expand = when {
             scrollView.marginTop < defaultGuide.top -> defaultGuide.top
             else -> maxGuide.top
@@ -485,12 +494,28 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             startY - (event?.rawY ?: startY) > thresholdPx -> collapse
             else -> startHeight
         }
-        Log.d("TOUCH_SEQ_END", "$startHeight, ${event?.rawY}, $startY, $newHeight")
+        val interpolator = when (newHeight) {
+            startY.toInt() -> AccelerateInterpolator()
+            else -> DecelerateInterpolator()
+        }
 
-        val newParams: ViewGroup.MarginLayoutParams =
-            scrollView.layoutParams as ViewGroup.MarginLayoutParams
-        newParams.topMargin = newHeight
-        scrollView.layoutParams = newParams
+        val delta = newHeight - currentHeight
+        Log.d("TOUCH_SEQ_END",
+            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight, currentHeight:$currentHeight, delta:$delta")
+
+        val marginAnimation = object : Animation() {
+            override fun applyTransformation(interpolatedTime: Float, t: Transformation?) {
+                super.applyTransformation(interpolatedTime, t)
+                val newParams: ViewGroup.MarginLayoutParams =
+                    scrollView.layoutParams as ViewGroup.MarginLayoutParams
+                newParams.topMargin = (newHeight - (delta * (1 - interpolatedTime))).toInt()
+                scrollView.layoutParams = newParams
+            }
+        }
+
+        marginAnimation.duration = 100
+        marginAnimation.interpolator = interpolator
+        scrollView.startAnimation(marginAnimation)
 
         lateinit var camFactory: CameraUpdate
         when (newHeight) {
