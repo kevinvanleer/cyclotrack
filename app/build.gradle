@@ -5,7 +5,19 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 
+def keystorePropertiesFile = rootProject.file("keystore.properties");
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
 android {
+    signingConfigs {
+        Default {
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+            keyPassword keystoreProperties['keyPassword']
+            keyAlias keystoreProperties['keyAlias']
+        }
+    }
     compileSdkVersion 29
 
     defaultConfig {
@@ -35,10 +47,10 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
-        debug {
-            versionNameSuffix 'debug'
+        dev {
             debuggable true
-            applicationIdSuffix 'debug'
+            applicationIdSuffix 'dev'
+            signingConfig signingConfigs.Default
         }
     }
     compileOptions {
