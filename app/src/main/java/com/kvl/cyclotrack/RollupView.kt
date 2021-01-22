@@ -28,8 +28,8 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
             var totalDuration = 0.0
 
             trips.forEach { trip ->
-                totalDistance += trip?.distance ?: 0.0
-                totalDuration += trip?.duration ?: 0.0
+                totalDistance += trip.distance ?: 0.0
+                totalDuration += trip.duration ?: 0.0
             }
             distanceText = String.format("%.2f %s",
                 getUserDistance(context, totalDistance),

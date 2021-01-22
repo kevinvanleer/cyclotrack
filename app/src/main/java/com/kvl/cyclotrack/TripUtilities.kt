@@ -252,7 +252,7 @@ fun getUserSpeed(context: Context, meters: Double, seconds: Double): Double =
 fun getUserSpeed(context: Context, speed: Double): Double {
     val userConversionFactor =
         when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "US")) {
+            .getString("display_units", "1")) {
             "1" -> METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
             "2" -> METERS_TO_KM / SECONDS_TO_HOURS
             else -> 1.0
@@ -264,7 +264,7 @@ fun getUserSpeed(context: Context, speed: Double): Double {
 fun getUserDistance(context: Context, meters: Double): Double {
     val userConversionFactor =
         when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "US")) {
+            .getString("display_units", "1")) {
             "1" -> METERS_TO_FEET * FEET_TO_MILES
             "2" -> METERS_TO_KM
             else -> 1.0
@@ -276,7 +276,7 @@ fun getUserDistance(context: Context, meters: Double): Double {
 fun getUserAltitude(context: Context, meters: Double): Double {
     val userConversionFactor =
         when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "US")) {
+            .getString("display_units", "1")) {
             "1" -> METERS_TO_FEET
             else -> 1.0
         }
@@ -285,7 +285,7 @@ fun getUserAltitude(context: Context, meters: Double): Double {
 
 fun getUserDistanceUnitShort(context: Context): String {
     return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "US")) {
+        .getString("display_units", "1")) {
         "1" -> "mi"
         "2" -> "km"
         else -> "mi"
@@ -294,7 +294,7 @@ fun getUserDistanceUnitShort(context: Context): String {
 
 fun getUserDistanceUnitLong(context: Context): String {
     return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "US")) {
+        .getString("display_units", "1")) {
         "1" -> "miles"
         "2" -> "kilometers"
         else -> "miles"
@@ -303,7 +303,7 @@ fun getUserDistanceUnitLong(context: Context): String {
 
 fun getUserSpeedUnitShort(context: Context): String {
     return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "US")) {
+        .getString("display_units", "1")) {
         "1" -> "mph"
         "2" -> "km/h"
         else -> "mph"
@@ -312,7 +312,7 @@ fun getUserSpeedUnitShort(context: Context): String {
 
 fun getUserSpeedUnitLong(context: Context): String {
     return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "US")) {
+        .getString("display_units", "1")) {
         "1" -> "miles per hour"
         "2" -> "kilometers per hour"
         else -> "miles per hour"
@@ -321,7 +321,7 @@ fun getUserSpeedUnitLong(context: Context): String {
 
 fun getUserAltitudeUnitShort(context: Context): String {
     return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "US")) {
+        .getString("display_units", "1")) {
         "1" -> "ft"
         "2" -> "m"
         else -> "ft"
@@ -330,7 +330,7 @@ fun getUserAltitudeUnitShort(context: Context): String {
 
 fun getUserAltitudeUnitLong(context: Context): String {
     return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "US")) {
+        .getString("display_units", "1")) {
         "1" -> "feet"
         "2" -> "meters"
         else -> "feet"
@@ -348,7 +348,7 @@ fun getSplitThreshold(system: String?): Double {
 fun getSplitThreshold(
     prefs: SharedPreferences,
 ): Double {
-    return getSplitThreshold(prefs.getString("display_units", "US"))
+    return getSplitThreshold(prefs.getString("display_units", "1"))
 }
 
 fun crossedSplitThreshold(
@@ -357,7 +357,7 @@ fun crossedSplitThreshold(
     oldDistance: Double,
 ): Boolean {
     val userConversionFactor =
-        when (prefs.getString("display_units", "US")) {
+        when (prefs.getString("display_units", "1")) {
             "1" -> METERS_TO_FEET * FEET_TO_MILES
             "2" -> METERS_TO_KM
             else -> 1.0
