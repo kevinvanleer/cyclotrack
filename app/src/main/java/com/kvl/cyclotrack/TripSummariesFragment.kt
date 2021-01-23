@@ -52,9 +52,6 @@ class TripSummariesFragment : Fragment() {
                     newRidesDisabledDialog?.show()
                 }
             }
-            if (entry.key == Manifest.permission.ACCESS_BACKGROUND_LOCATION && entry.value == false) {
-                noBackgroudLocationDialog?.show()
-            }
         }
     }
 
@@ -68,8 +65,9 @@ class TripSummariesFragment : Fragment() {
                         ) { _, _ ->
                             // User clicked OK button
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                                requestLocationPermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+                                requestLocationPermissions.launch(arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                ))
                             }
                         }
                         setNegativeButton("DENY"
@@ -90,8 +88,9 @@ class TripSummariesFragment : Fragment() {
                 // You can directly ask for the permission.
                 // The registered ActivityResultCallback gets the result of this request.
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                    requestLocationPermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+                    requestLocationPermissions.launch(arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION
+                    ))
                 }
             }
         }
