@@ -120,9 +120,9 @@ fun getTripIntervals(
             intervals.add(LongRange(timeStates[index - 1].timestamp, timeState.timestamp))
         }
     }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates?.last()?.state) && !measurements.isNullOrEmpty()) {
-        if (timeStates!!.last().timestamp < measurements!!.last().time) {
-            intervals.add(LongRange(timeStates!!.last().timestamp, measurements!!.last().time))
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && !measurements.isNullOrEmpty()) {
+        if (timeStates.last().timestamp < measurements.last().time) {
+            intervals.add(LongRange(timeStates.last().timestamp, measurements.last().time))
         }
     }
     return if (intervals.isEmpty() and !measurements.isNullOrEmpty()) {
