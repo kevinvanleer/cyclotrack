@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import android.view.*
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -23,62 +24,18 @@ class TripSummariesFragment : Fragment() {
         defaultViewModelProviderFactory
     }
 
-    private var alertDialog: AlertDialog? = null
+    private var newRidesDisabledDialog: AlertDialog? = null
+    private var noBackgroudLocationDialog: AlertDialog? = null
     private lateinit var tripListView: RecyclerView
     private lateinit var rollupView: RollupView
 
-    private fun initializeLocationService() {
-        when {
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
-                val eduDialog: AlertDialog? = activity?.let {
-                    val builder = AlertDialog.Builder(it)
-                    builder.apply {
-                        setPositiveButton("PROCEED"
-                        ) { _, _ ->
-                            // User clicked OK button
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                                requestPermissions(
-                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                                    0)
-                            }
-                        }
-                        setNegativeButton("DENY"
-                        ) { _, _ ->
-                            // User cancelled the dialog
-                            Log.d("TRIP_SUMMARIES", "CLICKED DENY")
-                            alertDialog?.show()
-                        }
-                        setTitle("Grant Location Access")
-                        setMessage("This app collects location data to enable the in-ride dashboard, and post-ride maps and graphs even when the app is closed or not in use.\n\nCyclotrack needs access to GPS location data and background location data to calculate speed and distance traveled during your rides. Data is only collected and recorded while rides are in progress. Data collected is stored on your device for your personal use. Your data is not sent to any third parties, including the developer. Please select PROCEED and then grant Cyclotrack access to location data.")
-                    }
+    private val requestLocationPermissions = registerForActivityResult(RequestMultiplePermissions()
+    ) { permissions ->
+        for (entry in permissions.entries) {
 
-                    builder.create()
-                }
-                eduDialog?.show()
-            }
-            else -> {
-                // You can directly ask for the permission.
-                // The registered ActivityResultCallback gets the result of this request.
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                    requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_BACKGROUND_LOCATION),
-                        0)
-                }
-            }
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray,
-    ) {
-        when (requestCode) {
-            0 -> {
-                // If request is cancelled, the result arrays are empty.
-                if ((grantResults.isNotEmpty() &&
-                            grantResults[0] == PackageManager.PERMISSION_GRANTED)
+            Log.d("LOCATION_PERMISSIONS", "${entry.key} = ${entry.value}")
+            if (entry.key == Manifest.permission.ACCESS_FINE_LOCATION) {
+                if (entry.value == true
                 ) {
                     try {
                         findNavController().navigate(R.id.action_start_trip)
@@ -92,15 +49,50 @@ class TripSummariesFragment : Fragment() {
                     // system settings in an effort to convince the user to change
                     // their decision.
 
-                    alertDialog?.show()
+                    newRidesDisabledDialog?.show()
                 }
-                return
             }
+            if (entry.key == Manifest.permission.ACCESS_BACKGROUND_LOCATION && entry.value == false) {
+                noBackgroudLocationDialog?.show()
+            }
+        }
+    }
 
-            // Add other 'when' lines to check for other
-            // permissions this app might request.
+    private fun initializeLocationService() {
+        when {
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
+                val eduDialog: AlertDialog? = activity?.let {
+                    val builder = AlertDialog.Builder(it)
+                    builder.apply {
+                        setPositiveButton("PROCEED"
+                        ) { _, _ ->
+                            // User clicked OK button
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                                requestLocationPermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+                            }
+                        }
+                        setNegativeButton("DENY"
+                        ) { _, _ ->
+                            // User cancelled the dialog
+                            Log.d("TRIP_SUMMARIES", "CLICKED DENY")
+                            newRidesDisabledDialog?.show()
+                        }
+                        setTitle("Grant Location Access")
+                        setMessage("This app collects location data to enable the in-ride dashboard, and post-ride maps and graphs even when the app is closed or not in use.\n\nCyclotrack needs access to GPS location data and background location data to calculate speed and distance traveled during your rides. Data is only collected and recorded while rides are in progress. Data collected is stored on your device for your personal use. Your data is not sent to any third parties, including the developer. Please select PROCEED and then grant Cyclotrack access to location data.")
+                    }
+
+                    builder.create()
+                }
+                eduDialog?.show()
+            }
             else -> {
-                // Ignore all other requests.
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                    requestLocationPermissions.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION))
+                }
             }
         }
     }
@@ -112,7 +104,6 @@ class TripSummariesFragment : Fragment() {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.trip_summaries_fragment, container, false)
     }
-
 
     @ExperimentalTime
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -154,7 +145,20 @@ class TripSummariesFragment : Fragment() {
                 Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
             }
         }
-        alertDialog = activity?.let {
+        noBackgroudLocationDialog = activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("OK"
+                ) { _, _ ->
+                    Log.d("ALERT DIALOG", "CLICKED")
+                }
+                setTitle("For best results")
+                setMessage("Keep phone on and dashboard in view while riding. Cyclotrack will not be able to access location data while it is in the background. This may degrade the accuracy of speed and distance measurements.")
+            }
+
+            builder.create()
+        }
+        newRidesDisabledDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
                 setPositiveButton("OK"
