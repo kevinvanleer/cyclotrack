@@ -9,8 +9,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.components.ApplicationComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -36,7 +36,7 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
 }
 
 @Module
-@InstallIn(ApplicationComponent::class)
+@InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
 
     @Provides
