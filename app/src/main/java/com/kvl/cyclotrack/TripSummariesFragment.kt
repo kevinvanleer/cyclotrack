@@ -25,7 +25,7 @@ class TripSummariesFragment : Fragment() {
     }
 
     private var newRidesDisabledDialog: AlertDialog? = null
-    private var noBackgroudLocationDialog: AlertDialog? = null
+    private var noBackgroundLocationDialog: AlertDialog? = null
     private lateinit var tripListView: RecyclerView
     private lateinit var rollupView: RollupView
 
@@ -144,7 +144,7 @@ class TripSummariesFragment : Fragment() {
                 Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
             }
         }
-        noBackgroudLocationDialog = activity?.let {
+        noBackgroundLocationDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
                 setPositiveButton("OK"

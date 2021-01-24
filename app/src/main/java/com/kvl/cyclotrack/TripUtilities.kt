@@ -10,6 +10,8 @@ import androidx.preference.PreferenceManager
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -150,18 +152,19 @@ fun getTripLegs(
     return getTripLegs(measurements, intervals)
 }
 
-fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeState>?): MapPath {
-    val paths = ArrayList<PolylineOptions>()
-    var northeastLat = -91.0
-    var northeastLng = -181.0
-    var southwestLat = 91.0
-    var southwestLng = 181.0
+suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeState>?): MapPath =
+    withContext(Dispatchers.Default) {
+        val paths = ArrayList<PolylineOptions>()
+        var northeastLat = -91.0
+        var northeastLng = -181.0
+        var southwestLat = 91.0
+        var southwestLng = 181.0
 
-    var totalDistance = 0.0
-    var lastLat = 0.0
-    var lastLng = 0.0
+        var totalDistance = 0.0
+        var lastLat = 0.0
+        var lastLng = 0.0
 
-    var maxSpeedAccuracy = 0f
+        var maxSpeedAccuracy = 0f
     var accSpeedAccuracy = 0f
     var sampleCount = 0
 
@@ -238,8 +241,7 @@ fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeState>?): 
         Log.d("PLOT_PATH",
             String.format("Bounds could not be calculated: path size = %d", measurements.size))
     }
-
-    return MapPath(paths.toTypedArray(), bounds)
+        return@withContext MapPath(paths.toTypedArray(), bounds)
 }
 
 const val METERS_TO_FEET = 3.28084

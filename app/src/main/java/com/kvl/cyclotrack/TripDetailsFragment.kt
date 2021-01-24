@@ -25,6 +25,7 @@ import androidx.core.view.marginTop
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceManager
 import com.github.mikephil.charting.charts.LineChart
@@ -42,6 +43,7 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.RoundCap
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -169,34 +171,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val measurements = pairs.first
                 val timeStates = pairs.second
 
-                Log.d("TRIP_DETAILS_FRAGMENT",
-                    "Recorded ${measurements.size} measurements for trip ${tripId}")
-
-                if (timeStates.isNotEmpty()) titleDateView.text = String.format("%s: %s - %s",
-                    SimpleDateFormat("MMMM d").format(Date(timeStates.first().timestamp)),
-                    SimpleDateFormat("h:mm").format(Date(timeStates.first().timestamp)),
-                    SimpleDateFormat("h:mm").format(Date(timeStates.last().timestamp)))
-
-                val mapData = plotPath(measurements, timeStates)
-                if (mapData.bounds != null) {
-                    Log.d("TRIP_DETAILS_FRAGMENT", "Plotting path")
-                    mapData.paths.forEach { path ->
-                        path.startCap(RoundCap())
-                        path.endCap(RoundCap())
-                        path.width(5f)
-                        path.color(0xff007700.toInt())
-                        map.addPolyline(path)
-                    }
-                    map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
-                        mapView.width,
-                        scrollView.marginTop,
-                        100))
-                    maxCameraPosition = map.cameraPosition
-                    map.moveCamera(CameraUpdateFactory.scrollBy(0f,
-                        (mapView.height - scrollView.marginTop) / 2f))
-                    defaultCameraPosition = map.cameraPosition
-                }
-
                 fun makeSpeedDataset(
                     measurements: Array<Measurements>,
                     intervals: Array<LongRange>,
@@ -247,7 +221,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     speedChartView.data = data
                     speedChartView.invalidate()
                 }
-                makeSpeedLineChart()
 
                 fun makeElevationDataset(
                     measurements: Array<Measurements>,
@@ -285,8 +258,39 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     elevationChartView.data = data
                     elevationChartView.invalidate()
                 }
-                makeElevationLineChart()
-                scrollView.setOnTouchListener(this)
+                Log.d("TRIP_DETAILS_FRAGMENT",
+                    "Recorded ${measurements.size} measurements for trip ${tripId}")
+
+                if (timeStates.isNotEmpty()) titleDateView.text = String.format("%s: %s - %s",
+                    SimpleDateFormat("MMMM d").format(Date(timeStates.first().timestamp)),
+                    SimpleDateFormat("h:mm").format(Date(timeStates.first().timestamp)),
+                    SimpleDateFormat("h:mm").format(Date(timeStates.last().timestamp)))
+
+                val thisFragment = this
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val mapData = plotPath(measurements, timeStates)
+                    if (mapData.bounds != null) {
+                        Log.d("TRIP_DETAILS_FRAGMENT", "Plotting path")
+                        mapData.paths.forEach { path ->
+                            path.startCap(RoundCap())
+                            path.endCap(RoundCap())
+                            path.width(5f)
+                            path.color(0xff007700.toInt())
+                            map.addPolyline(path)
+                        }
+                        map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
+                            mapView.width,
+                            scrollView.marginTop,
+                            100))
+                        maxCameraPosition = map.cameraPosition
+                        map.moveCamera(CameraUpdateFactory.scrollBy(0f,
+                            (mapView.height - scrollView.marginTop) / 2f))
+                        defaultCameraPosition = map.cameraPosition
+                    }
+                    makeSpeedLineChart()
+                    makeElevationLineChart()
+                    scrollView.setOnTouchListener(thisFragment)
+                }
             })
 
         viewModel.splits().observeForever(object : Observer<Array<Split>> {
@@ -517,18 +521,24 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         marginAnimation.interpolator = interpolator
         scrollView.startAnimation(marginAnimation)
 
-        lateinit var camFactory: CameraUpdate
+        var camFactory: CameraUpdate? = null
         when (newHeight) {
             maxGuide.top -> {
-                camFactory = CameraUpdateFactory.newCameraPosition(maxCameraPosition)
+                if (this::maxCameraPosition.isInitialized) {
+                    camFactory = CameraUpdateFactory.newCameraPosition(maxCameraPosition)
+                }
                 map.uiSettings.setAllGesturesEnabled(true)
             }
             else -> {
-                camFactory = CameraUpdateFactory.newCameraPosition(defaultCameraPosition)
+                if (this::maxCameraPosition.isInitialized) {
+                    camFactory = CameraUpdateFactory.newCameraPosition(defaultCameraPosition)
+                }
                 map.uiSettings.setAllGesturesEnabled(false)
             }
         }
-        map.animateCamera(camFactory, 700, null)
+        if (camFactory != null) {
+            map.animateCamera(camFactory, 700, null)
+        }
 
         return true
     }

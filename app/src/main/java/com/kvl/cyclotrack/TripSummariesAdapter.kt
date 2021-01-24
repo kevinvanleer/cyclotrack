@@ -5,9 +5,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.model.RoundCap
+import kotlinx.coroutines.launch
 
 class TripSummariesAdapter(
     private val trips: Array<Trip>,
@@ -43,17 +45,19 @@ class TripSummariesAdapter(
                 val timeStates = pair.second
                 Log.d("TRIP_SUMMARIES_ADAPTER",
                     "Recorded ${measurements.size} measurements for trip ${tripId}")
-                val mapData = plotPath(measurements, timeStates)
-                if (mapData.bounds != null) {
-                    mapData.paths.forEach { path ->
-                        path.startCap(RoundCap())
-                        path.endCap(RoundCap())
-                        path.width(5f)
-                        path.color(0xff007700.toInt())
-                        holder.tripSummaryView.drawPath(path, mapData.bounds)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val mapData = plotPath(measurements, timeStates)
+                    if (mapData.bounds != null) {
+                        mapData.paths.forEach { path ->
+                            path.startCap(RoundCap())
+                            path.endCap(RoundCap())
+                            path.width(5f)
+                            path.color(0xff007700.toInt())
+                            holder.tripSummaryView.drawPath(path, mapData.bounds)
+                        }
+                        holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
+                            trips[position].distance ?: 0.0)
                     }
-                    holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-                        trips[position].distance ?: 0.0)
                 }
             })
         holder.tripSummaryView.setOnClickListener { view ->
