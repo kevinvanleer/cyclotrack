@@ -16,7 +16,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
-import kotlin.time.ExperimentalTime
 
 @AndroidEntryPoint
 class TripSummariesFragment : Fragment() {
@@ -104,7 +103,6 @@ class TripSummariesFragment : Fragment() {
         return inflater.inflate(R.layout.trip_summaries_fragment, container, false)
     }
 
-    @ExperimentalTime
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)

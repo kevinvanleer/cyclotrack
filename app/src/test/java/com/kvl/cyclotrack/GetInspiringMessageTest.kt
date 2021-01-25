@@ -2,10 +2,8 @@ package com.kvl.cyclotrack
 
 import org.junit.Assert
 import org.junit.Test
-import kotlin.time.ExperimentalTime
 
 class GetInspiringMessageTest {
-    @ExperimentalTime
     @Test
     fun getInspiringMessage_greatJob() {
         val expectedMessage = "Great job! Keep up the good work!"
@@ -17,7 +15,6 @@ class GetInspiringMessageTest {
         Assert.assertNotEquals(expectedMessage, getInspiringMessage(-1 * 24 * 3600 * 1000))
     }
 
-    @ExperimentalTime
     @Test
     fun getInspiringMessage_getSomeRest() {
         val expectedMessage =
@@ -29,7 +26,6 @@ class GetInspiringMessageTest {
         Assert.assertNotEquals(expectedMessage, getInspiringMessage(-1 * 24 * 3600 * 1000))
     }
 
-    @ExperimentalTime
     @Test
     fun getInspiringMessage_letsHitTheTrail() {
         val expectedMessage = "Alright! Let's hit the trail!"
@@ -40,13 +36,14 @@ class GetInspiringMessageTest {
         Assert.assertNotEquals(expectedMessage, getInspiringMessage(-1 * 24 * 3600 * 1000))
     }
 
-    @ExperimentalTime
     @Test
     fun getInspiringMessage_default() {
         Assert.assertNotEquals("It has been 0 days since your last ride. Let's make it happen!",
             getInspiringMessage((3.1 * 3600 * 1000).toLong()))
         Assert.assertEquals("It has been 3 days since your last ride. Let's make it happen!",
             getInspiringMessage((3.1 * 24 * 3600 * 1000).toLong()))
+        Assert.assertEquals("It has been 3 days since your last ride. Let's make it happen!",
+            getInspiringMessage((3.9 * 24 * 3600 * 1000).toLong()))
         Assert.assertEquals("It has been 10 days since your last ride. Let's make it happen!",
             getInspiringMessage((10.1 * 24 * 3600 * 1000).toLong()))
         Assert.assertEquals("It has been 100 days since your last ride. Let's make it happen!",

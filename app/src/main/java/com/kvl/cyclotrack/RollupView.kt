@@ -5,7 +5,6 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import kotlin.time.ExperimentalTime
 
 class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
 
@@ -13,8 +12,6 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
     lateinit var totalDurationView: TextView
     lateinit var inspiringMessageView: TextView
 
-
-    @ExperimentalTime
     fun rollupTripData(trips: Array<Trip>) {
         var distanceText = "Welcome to"
         var durationText = "Cyclotrack"
