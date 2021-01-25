@@ -16,6 +16,9 @@ import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.toDuration
 
 private fun getDistance(
     curr: Measurements,
@@ -99,6 +102,19 @@ fun accumulateTripTime(intervals: Array<LongRange>): Double {
 fun accumulateTime(intervals: Array<LongRange>): Double {
     return if (intervals.size <= 1) 0.0 else accumulateTripTime(intervals.sliceArray(IntRange(0,
         intervals.size - 2))) + accumulateTripPauses(intervals)
+}
+
+@ExperimentalTime
+fun getInspiringMessage(duration: Long): String {
+    return when (duration / 24 / 3600000.0) {
+        in 0.0..0.5 -> "Great job! Keep up the good work!"
+        in 0.5..1.5 -> "Get some rest you earned it! Recovery is an important part of fitness."
+        in 1.5..3.0 -> "Alright! Let's hit the trail!"
+        else -> "It has been ${
+            duration.toDuration(
+                DurationUnit.MILLISECONDS).inDays.toInt()
+        } days since your last ride. Let's make it happen!"
+    }
 }
 
 fun accumulatedTime(timeStates: Array<TimeState>?): Double {

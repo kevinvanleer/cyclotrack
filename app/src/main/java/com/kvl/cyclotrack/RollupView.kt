@@ -5,9 +5,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
-import kotlin.time.toDuration
 
 class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
 
@@ -37,15 +35,7 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
             durationText = formatDuration(totalDuration)
 
             inspiringMessage =
-                when ((System.currentTimeMillis() - trips.first().timestamp) / 3600000.0) {
-                    in 0.0..0.5 -> "Great job! Keep up the good work!"
-                    in 0.5..1.5 -> "Get some rest you earned it! Recovery is an important part of fitness."
-                    in 1.5..3.0 -> "Alright! Let's hit the trail!"
-                    else -> "It has been ${
-                        (System.currentTimeMillis() - trips.first().timestamp).toDuration(
-                            DurationUnit.MILLISECONDS).inDays.toInt()
-                    } days since your last ride. Let's make it happen!"
-                }
+                getInspiringMessage(System.currentTimeMillis() - trips.first().timestamp)
         }
         totalDistanceView.text = distanceText
         totalDurationView.text = durationText
