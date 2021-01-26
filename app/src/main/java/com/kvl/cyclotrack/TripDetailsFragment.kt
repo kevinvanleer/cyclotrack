@@ -23,6 +23,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceManager
 import com.github.mikephil.charting.charts.LineChart
@@ -73,17 +74,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.menu_main, menu)
+        inflater.inflate(R.menu.details_menu, menu)
         Log.d("TRIP_SUMMARIES", "Options menu created")
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         Log.d("TRIP_SUMMARIES", "Options menu clicked")
         return when (item.itemId) {
-            R.id.action_settings -> {
-                Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
-                //findNavController().navigate(R.id.action_go_to_settings)
-                return true
+            R.id.details_menu_action_delete -> {
+                Log.d("TRIP_SUMMARIES", "Options menu clicked delete")
+                viewModel.removeTrip()
+                findNavController().navigate(R.id.action_remove_trip)
+                true
             }
             else -> super.onOptionsItemSelected(item)
         }
@@ -197,6 +199,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     val accumulatedTime = accumulateTime(intervals)
 
+                    if (measurements.isNullOrEmpty()) return Pair(LineDataSet(entries, "Speed"),
+                        LineDataSet(trend, "Trend"))
+                    
                     var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
                     var trendAlpha = 0.01
                     measurements.forEach {
@@ -277,6 +282,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d("TRIP_DETAILS_FRAGMENT",
                     "Recorded ${measurements.size} measurements for trip ${tripId}")
 
+                if (measurements.isNullOrEmpty()) return@observe
                 if (timeStates.isNotEmpty()) titleDateView.text = String.format("%s: %s - %s",
                     SimpleDateFormat("MMMM d").format(Date(timeStates.first().timestamp)),
                     SimpleDateFormat("h:mm").format(Date(timeStates.first().timestamp)),

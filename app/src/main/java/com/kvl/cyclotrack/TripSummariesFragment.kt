@@ -113,7 +113,7 @@ class TripSummariesFragment : Fragment() {
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         rollupView = view.findViewById(R.id.trips_rollup)
 
-        viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
+        viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
             Log.d("TRIP_SUMMARIES",
                 "There were ${trips.size} trips returned from the database")
             val viewAdapter =

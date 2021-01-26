@@ -29,6 +29,12 @@
         <argument
             android:name="tripId"
             app:argType="long" />
+        <action
+            android:id="@+id/action_remove_trip"
+            app:destination="@id/TripSummariesFragment"
+            app:launchSingleTop="true"
+            app:popUpTo="@id/cyclotrack_nav_graph"
+            app:popUpToInclusive="true" />
     </fragment>
     <fragment
         android:id="@+id/AppPreferencesFragment"

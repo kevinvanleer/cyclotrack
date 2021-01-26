@@ -8,6 +8,10 @@ data class TripInProgress(
     val inProgress: Boolean,
 )
 
+data class TripId(
+    val id: Long,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
@@ -42,7 +46,7 @@ interface TripDao {
     suspend fun getCleanupTrips(): Array<Trip>
 
     @Delete(entity = Trip::class)
-    suspend fun removeTrip(id: Trip)
+    suspend fun removeTrip(id: TripId)
 
     @Delete(entity = Trip::class)
     suspend fun removeTrips(ids: Array<Trip>)

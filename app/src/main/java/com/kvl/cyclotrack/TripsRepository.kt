@@ -24,6 +24,10 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         return tripDao.save(Trip())
     }
 
+    suspend fun removeTrip(tripId: Long) {
+        return tripDao.removeTrip(TripId(tripId))
+    }
+
     suspend fun removeTrips(trips: Array<Trip>) {
         return tripDao.removeTrips(trips)
     }

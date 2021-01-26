@@ -394,10 +394,16 @@ fun calculateSplits(
     val tripId = measurements[0].tripId
     var totalActiveTime: Double
 
+    if (measurements.isNullOrEmpty()) return tripSplits
+
     var intervals = getTripIntervals(timeStates, measurements)
+    if (intervals.isNullOrEmpty()) return tripSplits
+
     val legs = getTripLegs(measurements, intervals)
+    if (legs.isNullOrEmpty()) return tripSplits
 
     legs.forEachIndexed { legIdx, leg ->
+        if (leg.isNullOrEmpty()) return@forEachIndexed
         var prev = leg[0]
         for (measurementIdx in 1 until leg.size) {
             val lastSplit = if (tripSplits.isEmpty()) Split(0,
@@ -408,7 +414,6 @@ fun calculateSplits(
                 0,
                 0) else tripSplits.last()
             val curr = leg[measurementIdx]
-
 
             if (curr.accuracy < 5 && prev.accuracy < 5) {
                 totalDistance += getDistance(curr, prev)

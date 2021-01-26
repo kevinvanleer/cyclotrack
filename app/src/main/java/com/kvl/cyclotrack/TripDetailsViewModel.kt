@@ -20,11 +20,13 @@ class TripDetailsViewModel @ViewModelInject constructor(
     fun tripOverview() = tripsRepository.getTrip(tripId)
     fun timeState() = timeStateRepository.getTimeStates(tripId)
     fun splits() = splitRepository.getTripSplits(tripId)
-    fun clearSplits() {
+    fun clearSplits() =
         viewModelScope.launch {
             splitRepository.removeTripSplits(tripId)
         }
-    }
+
+    fun removeTrip() =
+        viewModelScope.launch { tripsRepository.removeTrip(tripId) }
 
     fun measurements() = measurementsRepository.getTripMeasurements(tripId)
     fun addSplits() {
