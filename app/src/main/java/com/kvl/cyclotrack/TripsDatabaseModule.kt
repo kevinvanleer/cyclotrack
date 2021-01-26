@@ -35,6 +35,16 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `Split` RENAME TO `Split_4_5`")
+        database.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `totalDistance` REAL NOT NULL, `duration` REAL NOT NULL, `totalDuration` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("INSERT INTO `Split` SELECT * FROM `Split_4_5`")
+        database.execSQL("DROP TABLE `Split_4_5`")
+        database.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -43,7 +53,7 @@ object TripsDatabaseModule {
     @Singleton
     fun provideTripsDatabase(@ApplicationContext appContext: Context): TripsDatabase =
         Room.databaseBuilder(appContext, TripsDatabase::class.java, "trips-cyclotrack-kvl")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
 
     @Provides
     @Singleton

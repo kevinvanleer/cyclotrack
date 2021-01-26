@@ -16,8 +16,16 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         return tripDao.getRealTrips()
     }
 
+    suspend fun getCleanupTrips(): Array<Trip> {
+        return tripDao.getCleanupTrips()
+    }
+
     fun createNewTrip(): Long {
         return tripDao.save(Trip())
+    }
+
+    suspend fun removeTrips(trips: Array<Trip>) {
+        return tripDao.removeTrips(trips)
     }
 
     suspend fun updateTripStats(stats: TripStats) = with(tripDao) { updateStats(stats) }

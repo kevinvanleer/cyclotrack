@@ -113,7 +113,7 @@ class TripSummariesFragment : Fragment() {
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         rollupView = view.findViewById(R.id.trips_rollup)
 
-        viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
+        viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
             Log.d("TRIP_SUMMARIES",
                 "There were ${trips.size} trips returned from the database")
             val viewAdapter =
@@ -182,7 +182,11 @@ class TripSummariesFragment : Fragment() {
             R.id.action_settings -> {
                 Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
                 findNavController().navigate(R.id.action_go_to_settings)
-                return true
+                true
+            }
+            R.id.action_cleanup -> {
+                viewModel.cleanupTrips()
+                true
             }
             else -> super.onOptionsItemSelected(item)
         }

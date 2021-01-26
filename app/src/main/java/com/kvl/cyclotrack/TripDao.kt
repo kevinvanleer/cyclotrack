@@ -32,15 +32,18 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE id = :tripId")
     fun load(tripId: Long): LiveData<Trip>
 
-    @Query("SELECT * from trip")
+    @Query("SELECT * from trip ORDER BY id DESC")
     fun loadAll(): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun getRealTrips(): LiveData<Array<Trip>>
 
-    @Delete(entity = Trip::class)
-    fun removeTrip(id: TripStats)
+    @Query("SELECT * from trip WHERE distance < 1 OR duration < 60")
+    suspend fun getCleanupTrips(): Array<Trip>
 
     @Delete(entity = Trip::class)
-    fun removeTrips(ids: Array<TripStats>)
+    suspend fun removeTrip(id: Trip)
+
+    @Delete(entity = Trip::class)
+    suspend fun removeTrips(ids: Array<Trip>)
 }

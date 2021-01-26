@@ -16,4 +16,5 @@
     <string name="resume_label">RESUME</string>
     <string name="label_placeholder">LABEL</string>
     <string name="start_dashboard_button_description">Touch this button to enter dashboard</string>
+    <string name="action_cleanup">Cleanup</string>
 </resources>

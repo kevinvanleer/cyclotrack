@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 @Entity(foreignKeys = [ForeignKey(entity = Trip::class,
     parentColumns = arrayOf("id"),
     childColumns = arrayOf("tripId"),
-    onDelete = ForeignKey.NO_ACTION)],
+    onDelete = ForeignKey.CASCADE)],
     indices = [Index(value = ["tripId"])])
 data class Split(
     val tripId: Long,
