@@ -25,6 +25,7 @@ class TripSummariesFragment : Fragment() {
 
     private var newRidesDisabledDialog: AlertDialog? = null
     private var noBackgroundLocationDialog: AlertDialog? = null
+    private var tripsCleanupGuardDialog: AlertDialog? = null
     private lateinit var tripListView: RecyclerView
     private lateinit var rollupView: RollupView
 
@@ -113,7 +114,7 @@ class TripSummariesFragment : Fragment() {
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         rollupView = view.findViewById(R.id.trips_rollup)
 
-        viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
+        viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
             Log.d("TRIP_SUMMARIES",
                 "There were ${trips.size} trips returned from the database")
             val viewAdapter =
@@ -172,6 +173,24 @@ class TripSummariesFragment : Fragment() {
 
             builder.create()
         }
+        tripsCleanupGuardDialog = activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("CLEANUP"
+                ) { _, _ ->
+                    Log.d("TRIP_CLEANUP_DIALOG", "CLICKED CLEANUP")
+                    viewModel.cleanupTrips()
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_CLEANUP_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Cleanup rides?")
+                setMessage("You are about to remove all rides less than a minute long or less than a meter in distance. This change cannot be undone.")
+            }
+
+            builder.create()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -189,7 +208,7 @@ class TripSummariesFragment : Fragment() {
                 true
             }
             R.id.action_cleanup -> {
-                viewModel.cleanupTrips()
+                tripsCleanupGuardDialog?.show()
                 true
             }
             else -> super.onOptionsItemSelected(item)

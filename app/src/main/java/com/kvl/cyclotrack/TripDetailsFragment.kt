@@ -14,6 +14,7 @@ import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.res.ResourcesCompat
@@ -83,8 +84,25 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         return when (item.itemId) {
             R.id.details_menu_action_delete -> {
                 Log.d("TRIP_SUMMARIES", "Options menu clicked delete")
-                viewModel.removeTrip()
-                findNavController().navigate(R.id.action_remove_trip)
+                activity?.let {
+                    val builder = AlertDialog.Builder(it)
+                    builder.apply {
+                        setPositiveButton("DELETE"
+                        ) { _, _ ->
+                            Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
+                            viewModel.removeTrip()
+                            findNavController().navigate(R.id.action_remove_trip)
+                        }
+                        setNegativeButton("CANCEL"
+                        ) { _, _ ->
+                            Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
+                        }
+                        setTitle("Delete ride?")
+                        setMessage("You are about to remove this ride from your history. This change cannot be undone.")
+                    }
+
+                    builder.create()
+                }?.show()
                 true
             }
             else -> super.onOptionsItemSelected(item)

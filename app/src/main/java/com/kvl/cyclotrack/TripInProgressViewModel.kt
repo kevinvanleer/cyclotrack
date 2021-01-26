@@ -365,6 +365,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         gpsService.removeObserver(gpsObserver)
         clockTick.cancel()
         if (tripId != null) {
+            Log.d("TIP_VIEW_MODEL", "Removing observers")
             getLatest()?.removeObserver(newMeasurementsObserver)
             timeStateRepository.getLatest(tripId!!).removeObserver(currentTimeStateObserver)
             timeStateRepository.getTimeStates(tripId!!).removeObserver(accumulateDurationObserver)
