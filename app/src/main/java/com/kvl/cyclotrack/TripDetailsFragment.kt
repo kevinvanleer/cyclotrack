@@ -201,7 +201,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     if (measurements.isNullOrEmpty()) return Pair(LineDataSet(entries, "Speed"),
                         LineDataSet(trend, "Trend"))
-                    
+
                     var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
                     var trendAlpha = 0.01
                     measurements.forEach {
@@ -297,7 +297,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             path.startCap(RoundCap())
                             path.endCap(RoundCap())
                             path.width(5f)
-                            path.color(0xff007700.toInt())
+                            //path.color(0xff007700.toInt())
+                            path.color(ResourcesCompat.getColor(resources,
+                                R.color.colorAccent,
+                                null))
                             map.addPolyline(path)
                         }
                         map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,

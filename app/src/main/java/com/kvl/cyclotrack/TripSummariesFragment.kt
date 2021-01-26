@@ -117,7 +117,11 @@ class TripSummariesFragment : Fragment() {
             Log.d("TRIP_SUMMARIES",
                 "There were ${trips.size} trips returned from the database")
             val viewAdapter =
-                TripSummariesAdapter(trips, viewModel, viewLifecycleOwner, savedInstanceState)
+                TripSummariesAdapter(trips,
+                    viewModel,
+                    viewLifecycleOwner,
+                    requireContext(),
+                    savedInstanceState)
             tripListView.apply {
                 setHasFixedSize(true)
                 layoutManager = viewManager

@@ -1,9 +1,11 @@
 package com.kvl.cyclotrack
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
@@ -15,6 +17,7 @@ class TripSummariesAdapter(
     private val trips: Array<Trip>,
     private val viewModel: TripSummariesViewModel,
     private val viewLifecycleOwner: LifecycleOwner,
+    private val context: Context,
     private val savedInstanceState: Bundle?,
 ) :
     RecyclerView.Adapter<TripSummariesAdapter.TripSummaryViewHolder>() {
@@ -52,7 +55,9 @@ class TripSummariesAdapter(
                             path.startCap(RoundCap())
                             path.endCap(RoundCap())
                             path.width(5f)
-                            path.color(0xff007700.toInt())
+                            path.color(ResourcesCompat.getColor(context.resources,
+                                R.color.colorAccent,
+                                null))
                             holder.tripSummaryView.drawPath(path, mapData.bounds)
                         }
                         holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
