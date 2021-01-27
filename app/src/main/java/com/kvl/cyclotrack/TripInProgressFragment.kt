@@ -72,7 +72,6 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private fun hideStop() {
         stopButton.translationX = -stopButton.width.toFloat()
-        //stopButton.translationX = -10000f
     }
 
     private fun hideResumeStop() {
@@ -99,7 +98,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     }
 
     private val startTripListener: OnClickListener = OnClickListener {
-        viewModel.startTrip()
+        viewModel.startTrip(viewLifecycleOwner)
         hidePause()
         pauseButton.setOnClickListener(null)
         pauseButton.text = "PAUSE"

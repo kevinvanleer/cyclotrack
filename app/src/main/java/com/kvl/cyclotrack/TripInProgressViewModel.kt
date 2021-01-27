@@ -37,13 +37,17 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
-    private val currentTimeStateObserver: Observer<TimeState> = Observer { currentState = it.state }
+    private val currentTimeStateObserver: Observer<TimeState> = Observer {
+        Log.d("TIP_VIEW_MODEL", "onChanged current time state observer")
+        if (it != null) currentState = it.state
+    }
 
     private fun tripInProgress() = isTripInProgress(currentState)
 
     var gpsEnabled = gpsService.accessGranted
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
+        Log.d("TIP_VIEW_MODEL", "onChanged gps observer")
         if (tripId != null) {
             viewModelScope.launch {
                 measurementsRepository.insertMeasurements(Measurements(tripId!!,
@@ -53,6 +57,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
+        Log.d("TIP_VIEW_MODEL", "onChanged measurements observer")
         if (newMeasurements == null) {
             Log.d("TIP_VIEW_MODEL", "measurements observation is null")
         } else {
@@ -312,7 +317,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun getDuration() =
         if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
-    fun startTrip(): LiveData<Long> {
+    fun startTrip(lifecycleOwner: LifecycleOwner): LiveData<Long> {
         val tripStarted = MutableLiveData<Long>()
 
         viewModelScope.launch(Dispatchers.Default) {
@@ -321,14 +326,16 @@ class TripInProgressViewModel @ViewModelInject constructor(
             Log.d("TIP_VIEW_MODEL", "created new trip with id ${tripId.toString()}")
             tripStarted.postValue(tripId)
         }
-        gpsService.observeForever(gpsObserver)
+        gpsService.observe(lifecycleOwner, gpsObserver)
         tripStarted.observeForever(object : Observer<Long> {
             override fun onChanged(t: Long?) {
-                getLatest()?.observeForever(newMeasurementsObserver)
-                timeStateRepository.getLatest(tripId!!).observeForever(currentTimeStateObserver)
+                Log.d("TIP_VIEW_MODEL", "Start observing trip ID $tripId $currentTimeStateObserver")
+                getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
+                timeStateRepository.getLatest(tripId!!)
+                    .observe(lifecycleOwner, currentTimeStateObserver)
                 timeStateRepository.getTimeStates(tripId!!)
-                    .observeForever(accumulateDurationObserver)
-                splitRepository.getLastSplit(tripId!!).observeForever(lastSplitObserver)
+                    .observe(lifecycleOwner, accumulateDurationObserver)
+                splitRepository.getLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
                 tripStarted.removeObserver(this)
             }
         })
@@ -362,15 +369,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     private fun cleanup() {
-        gpsService.removeObserver(gpsObserver)
+        gpsService.stopListening()
         clockTick.cancel()
-        if (tripId != null) {
-            Log.d("TIP_VIEW_MODEL", "Removing observers")
-            getLatest()?.removeObserver(newMeasurementsObserver)
-            timeStateRepository.getLatest(tripId!!).removeObserver(currentTimeStateObserver)
-            timeStateRepository.getTimeStates(tripId!!).removeObserver(accumulateDurationObserver)
-            splitRepository.getLastSplit(tripId!!).removeObserver(lastSplitObserver)
-        }
     }
 
     fun endTrip() {
@@ -398,8 +398,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
         Log.d("TIP_VIEW_MODEL", "Called onCleared")
         super.onCleared()
         //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
-        endTrip()
         cleanup()
+        endTrip()
     }
 }
 

@@ -58,6 +58,7 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
         accessGranted.value = ActivityCompat.checkSelfPermission(context,
             Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         startListening()
+        Log.d("GPS_SERVICE", "GPS service initialized")
     }
 
     fun stopListening() {
@@ -80,7 +81,8 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
             accessGranted.value = false;
             return
         }
-        //accessGranted = true;
+
+        //This can safely be called multiple times, will only be registered once
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
             1000L,
             1f,
