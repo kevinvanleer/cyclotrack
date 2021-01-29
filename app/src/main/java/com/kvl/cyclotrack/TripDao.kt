@@ -12,6 +12,12 @@ data class TripId(
     val id: Long,
 )
 
+data class TripStuff(
+    val id: Long,
+    val name: String,
+    val notes: String,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
@@ -33,8 +39,14 @@ interface TripDao {
     @Update(entity = Trip::class)
     suspend fun updateStats(stats: TripStats)
 
+    @Update(entity = Trip::class)
+    suspend fun updateStuff(stats: TripStuff)
+
     @Query("SELECT * FROM trip WHERE id = :tripId")
-    fun load(tripId: Long): LiveData<Trip>
+    fun subscribe(tripId: Long): LiveData<Trip>
+
+    @Query("SELECT * FROM trip WHERE id = :tripId")
+    suspend fun load(tripId: Long): Trip
 
     @Query("SELECT * from trip ORDER BY id DESC")
     fun loadAll(): LiveData<Array<Trip>>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".EditTripFragment"
+    android:id="@+id/EditTripFragment"
+    android:layout_margin="12dp">
+
+    <TextView
+        android:text="Edit ride"
+        android:id="@+id/edit_trip_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/edit_trip_date"
+        app:layout_constraintStart_toStartOf="parent"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/edit_trip_date"
+        app:layout_constraintTop_toBottomOf="@id/edit_trip_title"
+        app:layout_constraintBottom_toTopOf="@id/edit_trip_name"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <EditText
+        android:id="@+id/edit_trip_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        app:layout_constraintTop_toBottomOf="@id/edit_trip_date"
+        app:layout_constraintBottom_toTopOf="@id/edit_trip_notes"
+        app:layout_constraintStart_toStartOf="parent"
+        android:ems="10"
+        android:inputType="textNoSuggestions"
+        android:text="Trip name" />
+
+    <EditText
+        android:id="@+id/edit_trip_notes"
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:layout_marginTop="30dp"
+        app:layout_constraintTop_toBottomOf="@id/edit_trip_name"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:ems="10"
+        android:gravity="start|top"
+        android:inputType="textMultiLine"
+        android:hint="How was your ride?" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

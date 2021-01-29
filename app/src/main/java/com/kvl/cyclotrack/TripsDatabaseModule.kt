@@ -45,6 +45,12 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN notes text")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -53,7 +59,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideTripsDatabase(@ApplicationContext appContext: Context): TripsDatabase =
         Room.databaseBuilder(appContext, TripsDatabase::class.java, "trips-cyclotrack-kvl")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+            .addMigrations(MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6).build()
 
     @Provides
     @Singleton

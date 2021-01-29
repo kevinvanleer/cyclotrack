@@ -17,4 +17,6 @@
     <string name="label_placeholder">LABEL</string>
     <string name="start_dashboard_button_description">Touch this button to enter dashboard</string>
     <string name="action_cleanup">Cleanup</string>
+    <string name="details_menu_title_edit">Edit</string>
+    <string name="details_menu_title_delete">Delete</string>
 </resources>

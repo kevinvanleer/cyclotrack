@@ -28,4 +28,5 @@ data class Trip(
     val inProgress: Boolean = true,
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
+    val notes: String? = null,
 )

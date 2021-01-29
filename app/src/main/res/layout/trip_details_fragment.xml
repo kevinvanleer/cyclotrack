@@ -71,20 +71,30 @@
                 android:id="@+id/trip_details_title_date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintBottom_toTopOf="@id/trip_details_distance"
+                app:layout_constraintBottom_toTopOf="@id/trip_details_notes"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_title_name" />
+
+            <TextView
+                android:id="@+id/trip_details_notes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="7dp"
+                app:layout_constraintBottom_toTopOf="@id/trip_details_distance"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_title_date" />
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_distance"
                 heading_view:headingLabel="Distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
+                android:layout_marginTop="30dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_title_date" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_notes" />
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_time"

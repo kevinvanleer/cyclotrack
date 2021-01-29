@@ -5,6 +5,10 @@ import javax.inject.Inject
 
 class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     fun getTrip(id: Long): LiveData<Trip> {
+        return tripDao.subscribe(id)
+    }
+
+    suspend fun getTripOnce(id: Long): Trip {
         return tripDao.load(id)
     }
 
@@ -33,4 +37,5 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     }
 
     suspend fun updateTripStats(stats: TripStats) = with(tripDao) { updateStats(stats) }
+    suspend fun updateTripStuff(stuff: TripStuff) = with(tripDao) { updateStuff(stuff) }
 }

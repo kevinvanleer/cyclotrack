@@ -35,6 +35,27 @@
             app:launchSingleTop="true"
             app:popUpTo="@id/cyclotrack_nav_graph"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_edit_trip"
+            app:destination="@id/EditTripFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/EditTripFragment"
+        android:name="com.kvl.cyclotrack.EditTripFragment"
+        android:label="EditTripFragment"
+        tools:layout="@layout/edit_trip_fragment">
+        <argument
+            android:name="tripId"
+            app:argType="long" />
+        <argument
+            android:name="tripName"
+            app:argType="string" />
+        <argument
+            android:name="tripDate"
+            app:argType="string" />
+        <argument
+            android:name="tripNotes"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/AppPreferencesFragment"

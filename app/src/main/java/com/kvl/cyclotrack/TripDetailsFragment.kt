@@ -58,6 +58,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var map: GoogleMap
     private lateinit var mapView: MapView
     private lateinit var titleNameView: TextView
+    private lateinit var titleDateView: TextView
+    private lateinit var notesView: TextView
     private lateinit var scrollView: ScrollView
     private lateinit var constraintLayout: ConstraintLayout
     private lateinit var maxGuide: View
@@ -82,6 +84,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         Log.d("TRIP_SUMMARIES", "Options menu clicked")
         return when (item.itemId) {
+            R.id.details_menu_action_edit -> {
+                try {
+                    findNavController()
+                        .navigate(TripDetailsFragmentDirections.actionEditTrip(args.tripId,
+                            titleNameView.text.toString(),
+                            titleDateView.text.toString(),
+                            notesView.text.toString()))
+                } catch (e: IllegalArgumentException) {
+                    Log.e("EDIT_TRIP_FRAGMENT", e.message, e)
+                }
+                true
+            }
             R.id.details_menu_action_delete -> {
                 Log.d("TRIP_SUMMARIES", "Options menu clicked delete")
                 activity?.let {
@@ -129,7 +143,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         titleNameView = view.findViewById(R.id.trip_details_title_name)
-        val titleDateView: TextView = view.findViewById(R.id.trip_details_title_date)
+        titleDateView = view.findViewById(R.id.trip_details_title_date)
+        notesView = view.findViewById(R.id.trip_details_notes)
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
         val durationHeadingView: HeadingView = view.findViewById(R.id.trip_details_time)
         val speedHeadingView: HeadingView = view.findViewById(R.id.trip_details_speed)
@@ -196,6 +211,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     getUserSpeedUnitShort(requireContext()))
 
                 titleNameView.text = overview.name
+                notesView.text = overview.notes
 
             } else {
                 Log.d("TRIP_DETAILS_FRAG", "overview is null")
@@ -238,6 +254,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val trendData = LineDataSet(trend, "Trend")
                     dataset.setDrawCircles(false)
                     trendData.setDrawCircles(false)
+                    //TODO: Use resource for this color
                     dataset.color = Color.rgb(0, 45, 0)
                     dataset.lineWidth = 15f
                     trendData.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
