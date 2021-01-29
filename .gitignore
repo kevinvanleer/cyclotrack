@@ -2,6 +2,7 @@ keystore.properties
 /db-bak
 cyclotrack-keystore
 /app/release
+/app/prod
 
 *.iml
 .gradle

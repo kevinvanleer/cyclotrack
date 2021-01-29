@@ -55,6 +55,9 @@ android {
             applicationIdSuffix 'dev'
             signingConfig signingConfigs.Default
         }
+        prod {
+            signingConfig signingConfigs.Default
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
