@@ -125,6 +125,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         Log.d("UI", "TripInProgressFragment::onViewCreated")
 
         viewModel.startGps()
+        viewModel.startBle()
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
         val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)
@@ -211,13 +212,12 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 findNavController().navigate(R.id.action_finish_trip)
             }
         })
-    }
-
-    private fun formatWallTime(): String {
-        return String.format("%d:%02d %s",
-            Calendar.getInstance().get(Calendar.HOUR),
-            Calendar.getInstance().get(Calendar.MINUTE),
-            if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "am" else "pm")
+        /*
+        viewModel.hrmSensor.observe(viewLifecycleOwner, {
+            Log.d("TIP_FRAGMENT", "hrm battery: ${it.batteryLevel}")
+            Log.d("TIP_FRAGMENT", "hrm bpm: ${it.bpm}")
+        })
+         */
     }
 
     private fun updateClock() {

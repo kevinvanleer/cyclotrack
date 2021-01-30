@@ -21,6 +21,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
+    private val bleService: BleService,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
@@ -45,6 +46,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun tripInProgress() = isTripInProgress(currentState)
 
     var gpsEnabled = gpsService.accessGranted
+    var hrmSensor = bleService.hrmSensor
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         Log.d("TIP_VIEW_MODEL", "onChanged gps observer")
@@ -117,6 +119,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         get() = _currentTime
 
     fun startGps() = gpsService.startListening()
+    fun startBle() = bleService.initialize()
 
     private fun setTripProgress(new: Measurements) {
         val old = _currentProgress.value
