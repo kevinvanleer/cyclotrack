@@ -19,6 +19,8 @@ import androidx.navigation.navGraphViewModels
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 
+fun bleFeatureFlag() = BuildConfig.BUILD_TYPE == "dev"
+
 @AndroidEntryPoint
 class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
@@ -125,7 +127,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         Log.d("UI", "TripInProgressFragment::onViewCreated")
 
         viewModel.startGps()
-        viewModel.startBle()
+        if (bleFeatureFlag()) viewModel.startBle()
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
         val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)
@@ -147,6 +149,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         averageSpeedTextView.label = "AVG ${getUserSpeedUnitShort(requireContext()).toUpperCase()}"
         heartRateTextView.label = "SLOPE"
         splitSpeedTextView.label = getUserSpeedUnitShort(requireContext()).toUpperCase()
+
+        fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
 
         accuracyTextView.text = "-.-"
 
@@ -188,7 +192,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
                 distanceTextView.value =
                     "${String.format("%.2f", getUserDistance(requireContext(), it.distance))}"
-                heartRateTextView.value =
+
+                if (!hasHeartRate()) heartRateTextView.value =
                     String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
                 trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
@@ -212,12 +217,16 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 findNavController().navigate(R.id.action_finish_trip)
             }
         })
-        /*
-        viewModel.hrmSensor.observe(viewLifecycleOwner, {
-            Log.d("TIP_FRAGMENT", "hrm battery: ${it.batteryLevel}")
-            Log.d("TIP_FRAGMENT", "hrm bpm: ${it.bpm}")
-        })
-         */
+        if (bleFeatureFlag()) {
+            viewModel.hrmSensor.observe(viewLifecycleOwner, {
+                Log.d("TIP_FRAGMENT", "hrm battery: ${it.batteryLevel}")
+                Log.d("TIP_FRAGMENT", "hrm bpm: ${it.bpm}")
+                if (it.bpm != null) {
+                    heartRateTextView.label = "HEART RATE"
+                    heartRateTextView.value = it.bpm.toString()
+                }
+            })
+        }
     }
 
     private fun updateClock() {

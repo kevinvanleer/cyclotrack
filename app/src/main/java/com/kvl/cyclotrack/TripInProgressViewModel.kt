@@ -53,7 +53,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         if (tripId != null) {
             viewModelScope.launch {
                 measurementsRepository.insertMeasurements(Measurements(tripId!!,
-                    LocationData(newLocation)))
+                    LocationData(newLocation), hrmSensor.value?.bpm))
             }
         }
     }

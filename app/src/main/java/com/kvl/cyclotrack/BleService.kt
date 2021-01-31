@@ -11,15 +11,15 @@ import androidx.lifecycle.MutableLiveData
 import java.util.*
 import javax.inject.Inject
 
-data class HrmData(var batteryLevel: Int, var bpm: Int)
-data class SpeedData(val batteryLevel: Int, val speed: Int)
-data class CadenceData(val batteryLevel: Int, val cadence: Int)
+data class HrmData(var batteryLevel: Byte?, var bpm: Short?)
+data class SpeedData(val batteryLevel: Byte?, val speed: Int?)
+data class CadenceData(val batteryLevel: Byte?, val cadence: Int?)
 
 class BleService @Inject constructor(context: Application) {
 
-    var hrmSensor = MutableLiveData(HrmData(0, 0))
-    var cadenceSensor = MutableLiveData(CadenceData(0, 0))
-    var speedSensor = MutableLiveData(SpeedData(0, 0))
+    var hrmSensor = MutableLiveData(HrmData(null, null))
+    var cadenceSensor = MutableLiveData(CadenceData(null, null))
+    var speedSensor = MutableLiveData(SpeedData(null, null))
 
     private val TAG = "BLE_SERVICE"
     private val context = context
@@ -203,12 +203,13 @@ class BleService @Inject constructor(context: Application) {
                 }
                 val heartRate = characteristic.getIntValue(format, 1)
                 Log.d(TAG, String.format("Received heart rate: %d", heartRate))
-                hrmSensor.postValue(HrmData(hrmSensor.value?.batteryLevel ?: 0, heartRate))
+                hrmSensor.postValue(HrmData(hrmSensor.value?.batteryLevel ?: 0,
+                    heartRate.toShort()))
                 //intent.putExtra(EXTRA_DATA, (heartRate).toString())
             }
             batteryLevelCharUuid -> {
                 Log.d(TAG, "Battery level: ${characteristic.value[0]}")
-                hrmSensor.postValue(HrmData(characteristic.value[0].toInt(),
+                hrmSensor.postValue(HrmData(characteristic.value[0],
                     hrmSensor.value?.bpm ?: 0))
             }
             else -> {
