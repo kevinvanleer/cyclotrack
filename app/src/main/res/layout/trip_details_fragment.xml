@@ -110,9 +110,18 @@
                 heading_view:headingLabel="Heart rate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_time" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/trip_details_heart_rate_chart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate" />
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_speed"
@@ -122,7 +131,7 @@
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_speed_chart"

@@ -152,15 +152,34 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val speedChartView: LineChart = view.findViewById(R.id.trip_details_speed_chart)
         val splitsGridView: GridLayout = view.findViewById(R.id.trip_details_splits_grid)
         val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
+        val heartRateChartView: LineChart = view.findViewById(R.id.trip_details_heart_rate_chart)
+        val heartRateView: HeadingView = view.findViewById(R.id.trip_details_heart_rate)
 
         scrollView = view.findViewById(R.id.trip_details_scroll_view)
 
-        view.findViewById<HeadingView>(R.id.trip_details_heart_rate).visibility = View.GONE
+        heartRateView.visibility = View.GONE
+        heartRateChartView.visibility = View.GONE
+        notesView.visibility = View.GONE
         view.findViewById<HeadingView>(R.id.trip_details_splits).value = ""
         view.findViewById<HeadingView>(R.id.trip_details_elevation).value = ""
         view.findViewById<HeadingView>(R.id.trip_details_elevation).value =
             getUserAltitudeUnitLong(requireContext())
 
+        fun getAverageHeartRate(measurements: Array<Measurements>): Short? {
+            var sum = 0
+            var count = 0
+            measurements.forEach {
+                if (it.heartRate != null) {
+                    sum += it.heartRate
+                    ++count
+                }
+            }
+            return if (count == 0) {
+                null
+            } else {
+                (sum / count).toShort()
+            }
+        }
 
         fun configureLineChart(chart: LineChart) {
             chart.setTouchEnabled(false)
@@ -191,9 +210,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             chart.axisRight.setDrawGridLines(false)
         }
 
-        configureLineChart(speedChartView)
-        configureLineChart(elevationChartView)
-
         val tripId = args.tripId
         Log.d("TRIP_DETAILS_FRAGMENT", String.format("Displaying details for trip %d", tripId))
         viewModel.tripId = tripId
@@ -211,7 +227,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     getUserSpeedUnitShort(requireContext()))
 
                 titleNameView.text = overview.name
-                notesView.text = overview.notes
+                if (overview.notes != null) {
+                    notesView.visibility = View.VISIBLE
+                    notesView.text = overview.notes
+                }
 
             } else {
                 Log.d("TRIP_DETAILS_FRAG", "overview is null")
@@ -263,6 +282,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
 
                 fun makeSpeedLineChart() {
+                    configureLineChart(speedChartView)
+
                     var intervals = getTripIntervals(timeStates, measurements)
                     val legs = getTripLegs(measurements, intervals)
                     val data = LineData()
@@ -276,6 +297,44 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
                     speedChartView.data = data
                     speedChartView.invalidate()
+                }
+
+                fun makeHeartRateDataset(
+                    measurements: Array<Measurements>,
+                    intervals: Array<LongRange>,
+                ): LineDataSet {
+                    val entries = ArrayList<Entry>()
+                    val intervalStart = intervals.last().first
+
+                    val accumulatedTime = accumulateTime(intervals)
+
+                    measurements.forEach {
+                        if (it.heartRate != null) {
+                            var timestamp =
+                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                            entries.add(Entry(timestamp, it.heartRate.toFloat()))
+                        }
+                    }
+                    val dataset = LineDataSet(entries, "Elevation")
+                    dataset.setDrawCircles(false)
+                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
+                    dataset.lineWidth = 3f
+                    return dataset
+                }
+
+                fun makeHeartRateLineChart() {
+                    configureLineChart(heartRateChartView)
+
+                    var intervals = getTripIntervals(timeStates, measurements)
+                    val legs = getTripLegs(measurements, intervals)
+                    val data = LineData()
+
+                    legs.forEachIndexed { idx, leg ->
+                        data.addDataSet(makeHeartRateDataset(leg,
+                            intervals.sliceArray(IntRange(0, idx))))
+                    }
+                    heartRateChartView.data = data
+                    heartRateChartView.invalidate()
                 }
 
                 fun makeElevationDataset(
@@ -303,6 +362,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
 
                 fun makeElevationLineChart() {
+                    configureLineChart(elevationChartView)
+
                     var intervals = getTripIntervals(timeStates, measurements)
                     val legs = getTripLegs(measurements, intervals)
                     val data = LineData()
@@ -349,6 +410,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
                     makeSpeedLineChart()
                     makeElevationLineChart()
+                    val avgHeartRate = getAverageHeartRate(measurements)
+                    if (avgHeartRate != null) {
+                        heartRateView.visibility = View.VISIBLE
+                        heartRateChartView.visibility = View.VISIBLE
+                        heartRateView.value = "$avgHeartRate bpm"
+                        makeHeartRateLineChart()
+                    }
                     scrollView.setOnTouchListener(thisFragment)
                 }
             })
