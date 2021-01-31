@@ -1,9 +1,6 @@
 package com.kvl.cyclotrack
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.Log
@@ -12,10 +9,15 @@ import android.view.View.OnClickListener
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 
@@ -30,6 +32,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
     private lateinit var clockView: MeasurementView
+    private var gpsEnabled = true
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -99,12 +102,42 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         stopButton.animate().setDuration(100).translationX(0f)
     }
 
+    fun turnOnGps() {
+        val locationRequest = LocationRequest.create()?.apply {
+            interval = 1000
+            fastestInterval = 100
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        val builder =
+            locationRequest?.let { LocationSettingsRequest.Builder().addLocationRequest(it) }
+        val client = LocationServices.getSettingsClient(requireActivity())
+        val task = client.checkLocationSettings(builder?.build())
+        task.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException) {
+                // Location settings are not satisfied, but this can be fixed
+                // by showing the user a dialog.
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    exception.startResolutionForResult(requireActivity(),
+                        1000)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error.
+                }
+            }
+        }
+    }
+
     private val startTripListener: OnClickListener = OnClickListener {
-        viewModel.startTrip(viewLifecycleOwner)
-        hidePause()
-        pauseButton.setOnClickListener(null)
-        pauseButton.text = "PAUSE"
-        pauseButton.setOnClickListener(pauseTripListener)
+        if (!gpsEnabled) {
+            turnOnGps()
+        } else {
+            viewModel.startTrip(viewLifecycleOwner)
+            hidePause()
+            pauseButton.setOnClickListener(null)
+            pauseButton.text = "PAUSE"
+            pauseButton.setOnClickListener(pauseTripListener)
+        }
     }
 
     private val pauseTripListener: OnClickListener = OnClickListener {
@@ -212,9 +245,35 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         })
 
         viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->
-            if (!status) {
-                viewModel.endTrip()
-                findNavController().navigate(R.id.action_finish_trip)
+            if (!status && gpsEnabled) {
+                gpsEnabled = false
+                trackingImage.visibility = View.INVISIBLE
+                accuracyTextView.text = "GPS disabled"
+                Log.d("TIP_FRAGMENT", "Location service access disabled")
+                activity?.let {
+                    val builder = AlertDialog.Builder(it)
+                    builder.apply {
+                        setPositiveButton("ENABLE"
+                        ) { _, _ ->
+                            Log.d("TIP_GPS_DISABLED", "CLICKED ENABLE")
+                            turnOnGps()
+                        }
+                        setNegativeButton("CANCEL"
+                        ) { _, _ ->
+                            Log.d("TIP_GPS_DISABLED", "CLICKED CANCEL")
+                            findNavController().navigate(R.id.action_finish_trip)
+                        }
+                        setTitle("Enable location service")
+                        setMessage("Location service has been disabled. Please enable location services before starting your ride.")
+                    }
+
+                    builder.create()
+                }?.show()
+            } else {
+                if (status) {
+                    gpsEnabled = true
+                    accuracyTextView.text = ""
+                }
             }
         })
         if (bleFeatureFlag()) {
