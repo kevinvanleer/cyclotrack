@@ -21,7 +21,7 @@ import com.google.android.gms.location.LocationSettingsRequest
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 
-fun bleFeatureFlag() = BuildConfig.BUILD_TYPE != "prod"
+fun bleFeatureFlag() = true
 
 @AndroidEntryPoint
 class TripInProgressFragment : Fragment(), View.OnTouchListener {
