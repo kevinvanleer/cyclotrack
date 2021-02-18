@@ -5,9 +5,11 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.edit
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
@@ -16,6 +18,7 @@ import kotlin.math.abs
 import kotlin.math.max
 
 class TripInProgressViewModel @ViewModelInject constructor(
+    coroutineScopeProvider: CoroutineScope?,
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
@@ -25,13 +28,26 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
+    private val TAG = "TIP_VIEW_MODEL"
+    private val coroutineScope = getViewModelScope(coroutineScopeProvider)
+
     var currentState: TimeStateEnum = TimeStateEnum.STOP
+    private val userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
+    private var _autoCircumference: Float? = null
+
+    val autoCircumference: Float?
+        get() = _autoCircumference
+    val circumference: Float?
+        get() = userCircumference ?: _autoCircumference
 
     private var accumulatedDuration = 0.0
     private var tripId: Long? = null
     private var startTime: Double = Double.NaN
     private var timeAtLastSplit: Double = 0.0
     private var distanceAtLastSplit: Double = 0.0
+    private var measuringCircumference = false
+    private var initialMeasureCircRevs = 0
+    private var initialMeasureCircDistance = 0.0
 
     private val clockTick = Timer()
     private val accuracyThreshold = 7.5f
@@ -39,7 +55,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer {
-        Log.d("TIP_VIEW_MODEL", "onChanged current time state observer")
+        Log.d(TAG, "onChanged current time state observer")
         if (it != null) currentState = it.state
     }
 
@@ -47,21 +63,26 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     var gpsEnabled = gpsService.accessGranted
     var hrmSensor = bleService.hrmSensor
+    var cadenceSensor = bleService.cadenceSensor
+    var speedSensor = bleService.speedSensor
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
-        Log.d("TIP_VIEW_MODEL", "onChanged gps observer")
+        Log.d(TAG, "onChanged gps observer")
         if (tripId != null) {
-            viewModelScope.launch {
+            coroutineScope.launch {
                 measurementsRepository.insertMeasurements(Measurements(tripId!!,
-                    LocationData(newLocation), hrmSensor.value?.bpm))
+                    LocationData(newLocation),
+                    hrmSensor.value?.bpm,
+                    cadenceSensor.value,
+                    speedSensor.value))
             }
         }
     }
 
     private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
-        Log.d("TIP_VIEW_MODEL", "onChanged measurements observer")
+        Log.d(TAG, "onChanged measurements observer")
         if (newMeasurements == null) {
-            Log.d("TIP_VIEW_MODEL", "measurements observation is null")
+            Log.d(TAG, "measurements observation is null")
         } else {
             if (currentState == TimeStateEnum.RESUME || currentState == TimeStateEnum.START) {
                 setTripProgress(newMeasurements)
@@ -95,7 +116,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         }
         accumulatedDuration = durationAcc / 1e3
         startTime = localStartTime / 1e3
-        Log.v("TIP_VIEW_MODEL",
+        Log.v(TAG,
             "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}")
     }
 
@@ -120,6 +141,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     fun startGps() = gpsService.startListening()
     fun startBle() = bleService.initialize()
+    fun stopBle() = bleService.disconnect()
 
     private fun setTripProgress(new: Measurements) {
         val old = _currentProgress.value
@@ -131,6 +153,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
         val newDuration = getDuration()
         val durationDelta = getDurationDelta(newDuration, old)
 
+        new.speedRevolutions?.let { revs ->
+            calculateWheelCircumference(new, newDistance,
+                revs, old, oldDistance)
+        }
         if (accurateEnough) {
             val distanceDelta = getDistanceDelta(old, new)
 
@@ -140,7 +166,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-
             if (crossedSplitThreshold(sharedPreferences,
                     newDistance,
                     old?.distance ?: Double.MAX_VALUE)
@@ -149,7 +174,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                 val splitDuration = newDuration - timeAtLastSplit
                 newSplitSpeed =
                     (splitDistance / splitDuration).toFloat()
-                viewModelScope.launch {
+                coroutineScope.launch {
                     splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
                         duration = splitDuration,
                         distance = splitDistance,
@@ -159,7 +184,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                 }
             }
 
-            val oldAltitude: Double = old?.location?.altitude ?: 0.0
+            val oldAltitude: Double = old?.measurements?.altitude ?: 0.0
             val verticalSpeed = abs((new.altitude - oldAltitude) / durationDelta)
 
             var newSlope = calculateSlope(verticalSpeed,
@@ -179,14 +204,17 @@ class TripInProgressViewModel @ViewModelInject constructor(
             Log.d("TIP_MAX_ACCELERATION",
                 max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
-            viewModelScope.launch {
+            coroutineScope.launch {
                 if (tripId != null) tripsRepository.updateTripStats(TripStats(tripId!!,
                     newDistance,
                     newDuration,
-                    (newDistance / newDuration).toFloat()))
+                    (newDistance / newDuration).toFloat(),
+                    userCircumference,
+                    _autoCircumference))
             }
+
             _currentProgress.value =
-                TripProgress(location = new,
+                TripProgress(measurements = new,
                     speed = newSpeed,
                     maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f,
                         old?.maxSpeed ?: 0f),
@@ -213,9 +241,37 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         distance = 0.0,
                         slope = 0.0,
                         splitSpeed = 0f,
-                        location = null,
+                        measurements = null,
                         accuracy = new.accuracy,
                         tracking = false)
+        }
+    }
+
+    private fun calculateWheelCircumference(
+        new: Measurements,
+        newDistance: Double,
+        speedRevolutions: Int,
+        old: TripProgress?,
+        oldDistance: Double,
+    ) {
+        if (new.accuracy < 3.5 && !measuringCircumference && new.speedRevolutions != null && _autoCircumference == null) {
+            measuringCircumference = true
+            initialMeasureCircDistance = newDistance
+            initialMeasureCircRevs = speedRevolutions
+        }
+        if (measuringCircumference && new.accuracy > 3.5) {
+            measuringCircumference = false
+        }
+        if (measuringCircumference && old?.measurements?.accuracy != null && old.measurements.accuracy < 3.5 && (oldDistance - initialMeasureCircDistance) > 1000) {
+            val revs = old.measurements.speedRevolutions?.minus(initialMeasureCircRevs)
+            val dist = newDistance - initialMeasureCircDistance
+            if (revs != null) {
+                measuringCircumference = false
+                _autoCircumference = (dist / revs).toFloat()
+                sharedPreferences.edit {
+                    this.putFloat("auto_circumference", _autoCircumference!!.toFloat())
+                }
+            }
         }
     }
 
@@ -230,7 +286,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
             _currentProgress.value =
                 _currentProgress.value?.copy(
                     speed = newSpeed,
-                    location = null,
+                    measurements = null,
                     accuracy = new.accuracy,
                     tracking = true)
                     ?: TripProgress(duration = 0.0,
@@ -241,7 +297,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         distance = 0.0,
                         slope = 0.0,
                         splitSpeed = 0f,
-                        location = null,
+                        measurements = null,
                         accuracy = new.accuracy,
                         tracking = true)
 
@@ -249,7 +305,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
             _currentProgress.value =
                 _currentProgress.value?.copy(
                     accuracy = new.accuracy,
-                    location = null,
+                    measurements = null,
                     tracking = false)
                     ?: TripProgress(duration = 0.0,
                         speed = 0f,
@@ -259,7 +315,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         distance = 0.0,
                         slope = 0.0,
                         splitSpeed = 0f,
-                        location = null,
+                        measurements = null,
                         accuracy = new.accuracy,
                         tracking = false)
         }
@@ -268,7 +324,12 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun getSpeed(
         new: Measurements,
         speedThreshold: Float,
-    ) = if (new.speed > speedThreshold) new.speed else 0f
+    ): Float {
+        return if (circumference != null && new.speedRpm != null) {
+            val rps = new.speedRpm.div(60)
+            circumference!! * rps
+        } else if (new.speed > speedThreshold) new.speed else 0f
+    }
 
     private fun getAcceleration(
         durationDelta: Double,
@@ -303,8 +364,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
         new: Measurements,
     ): Double {
         var distanceResults = floatArrayOf(0f)
-        Location.distanceBetween(old?.location?.latitude ?: new.latitude,
-            old?.location?.longitude ?: new.longitude,
+        Location.distanceBetween(old?.measurements?.latitude ?: new.latitude,
+            old?.measurements?.longitude ?: new.longitude,
             new.latitude,
             new.longitude,
             distanceResults)
@@ -314,7 +375,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun getDurationDelta(
         newDuration: Double,
         old: TripProgress?,
-    ) = newDuration - if (startTime.isFinite()) ((old?.location?.elapsedRealtimeNanos
+    ) = newDuration - if (startTime.isFinite()) ((old?.measurements?.elapsedRealtimeNanos
         ?: 0L) / 1e9) - startTime else 0.0
 
     private fun getDuration() =
@@ -323,16 +384,17 @@ class TripInProgressViewModel @ViewModelInject constructor(
     fun startTrip(lifecycleOwner: LifecycleOwner): LiveData<Long> {
         val tripStarted = MutableLiveData<Long>()
 
-        viewModelScope.launch(Dispatchers.Default) {
+        //TODO: Add speed revs to time state for distance calculations
+        coroutineScope.launch(Dispatchers.Default) {
             tripId = tripsRepository.createNewTrip()
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
-            Log.d("TIP_VIEW_MODEL", "created new trip with id ${tripId.toString()}")
+            Log.d(TAG, "created new trip with id ${tripId.toString()}")
             tripStarted.postValue(tripId)
         }
         gpsService.observe(lifecycleOwner, gpsObserver)
         tripStarted.observeForever(object : Observer<Long> {
             override fun onChanged(t: Long?) {
-                Log.d("TIP_VIEW_MODEL", "Start observing trip ID $tripId $currentTimeStateObserver")
+                Log.d(TAG, "Start observing trip ID $tripId $currentTimeStateObserver")
                 getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
                 timeStateRepository.getLatest(tripId!!)
                     .observe(lifecycleOwner, currentTimeStateObserver)
@@ -355,13 +417,13 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     fun pauseTrip() {
-        viewModelScope.launch(Dispatchers.Default) {
+        coroutineScope.launch(Dispatchers.Default) {
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.PAUSE))
         }
     }
 
     fun resumeTrip() {
-        viewModelScope.launch(Dispatchers.Default) {
+        coroutineScope.launch(Dispatchers.Default) {
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.RESUME))
         }
     }
@@ -385,7 +447,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
             val splitDistance = newDistance - distanceAtLastSplit
             val splitDuration = newDuration - timeAtLastSplit
 
-            viewModelScope.launch(Dispatchers.Default) {
+            coroutineScope.launch(Dispatchers.Default) {
                 timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))
                 splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
                     duration = splitDuration,
@@ -398,7 +460,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     override fun onCleared() {
-        Log.d("TIP_VIEW_MODEL", "Called onCleared")
+        Log.d(TAG, "Called onCleared")
         super.onCleared()
         //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
         cleanup()
@@ -407,7 +469,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 }
 
 data class TripProgress(
-    val location: Measurements?,
+    val measurements: Measurements?,
     val accuracy: Float,
     val speed: Float,
     val splitSpeed: Float,

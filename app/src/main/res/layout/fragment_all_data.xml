@@ -18,7 +18,7 @@
         <GridLayout
             android:id="@+id/all_data_grid"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:columnCount="2"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"

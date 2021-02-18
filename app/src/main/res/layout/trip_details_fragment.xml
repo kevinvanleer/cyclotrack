@@ -124,6 +124,24 @@
                 app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate" />
 
             <com.kvl.cyclotrack.HeadingView
+                android:id="@+id/trip_details_cadence"
+                heading_view:headingLabel="Cadence"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/trip_details_cadence_chart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_cadence" />
+
+            <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_speed"
                 heading_view:headingLabel="Speed"
                 android:layout_width="match_parent"
@@ -131,7 +149,7 @@
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_cadence_chart" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_speed_chart"

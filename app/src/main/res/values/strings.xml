@@ -19,4 +19,9 @@
     <string name="action_cleanup">Cleanup</string>
     <string name="details_menu_title_edit">Edit</string>
     <string name="details_menu_title_delete">Delete</string>
+    <string name="sharedPrefKey_paired_ble_devices">paired_ble_devices</string>
+    <string name="scanning_for_ble_devices">Scanning for BLE devices...</string>
+    <string name="saved_devices_label">Linked devices</string>
+    <string name="discovered_devices_label">Discovered devices</string>
+    <string name="sensor_linking_instructions">Link up to three devices, each of a unique supported type: cadence, speed, and heart rate.</string>
 </resources>

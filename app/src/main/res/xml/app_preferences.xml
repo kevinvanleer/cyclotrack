@@ -3,10 +3,23 @@
     <DropDownPreference
         app:key="display_units"
         app:title="Units"
-        app:summary="TODO: summary %s"
+        app:summary="Current selection: %s"
         app:defaultValue="1"
         app:entries="@array/systems_of_measurement"
         app:entryValues="@array/systems_of_measurement_values" />
+    <com.kvl.cyclotrack.DiscoverSensorDialogPreference
+        android:dialogLayout="@layout/discovered_sensor_list"
+        android:dialogTitle="Discover and link sensors"
+        android:key="@string/sharedPrefKey_paired_ble_devices"
+        android:title="Link BLE sensors"
+        android:summary="Collect heart rate, cadence, and speed sensor data during your rides" />
+    <EditTextPreference
+        app:key="wheel_circumference"
+        app:title="Wheel circumference (in or mm)"
+        app:defaultValue="81.681"
+        android:inputType="number"
+        android:singleLine="true"
+        app:summary="Used with BLE speed sensor" />
     <Preference
         app:key="privacy_policy"
         app:title="Privacy policy"

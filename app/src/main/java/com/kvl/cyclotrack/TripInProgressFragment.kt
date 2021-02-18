@@ -21,7 +21,7 @@ import com.google.android.gms.location.LocationSettingsRequest
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
 
-fun bleFeatureFlag() = BuildConfig.BUILD_TYPE == "dev"
+fun bleFeatureFlag() = BuildConfig.BUILD_TYPE != "prod"
 
 @AndroidEntryPoint
 class TripInProgressFragment : Fragment(), View.OnTouchListener {
@@ -33,6 +33,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private lateinit var resumeButton: Button
     private lateinit var clockView: MeasurementView
     private var gpsEnabled = true
+    private var isTimeTickRegistered = false
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -154,6 +155,11 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        if (bleFeatureFlag()) viewModel.stopBle()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -171,17 +177,28 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
+        if (BuildConfig.BUILD_TYPE == "prod") {
+            trackingImage.visibility = View.GONE
+            accuracyTextView.visibility = View.GONE
+        }
+
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
         clockView = view.findViewById(R.id.textview_time)
 
-        speedTextView.label = "SPLIT ${getUserSpeedUnitShort(requireContext()).toUpperCase()}"
-        distanceTextView.label = getUserDistanceUnitLong(requireContext()).toUpperCase()
+        speedTextView.label =
+            "SPLIT ${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
+        distanceTextView.label =
+            getUserDistanceUnitLong(requireContext()).toUpperCase(Locale.getDefault())
         durationTextView.label = "DURATION"
-        averageSpeedTextView.label = "AVG ${getUserSpeedUnitShort(requireContext()).toUpperCase()}"
+        averageSpeedTextView.label = "AVG ${
+            getUserSpeedUnitShort(requireContext()).toUpperCase(
+                Locale.getDefault())
+        }"
         heartRateTextView.label = "SLOPE"
-        splitSpeedTextView.label = getUserSpeedUnitShort(requireContext()).toUpperCase()
+        splitSpeedTextView.label =
+            "GPS ${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
 
         fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
 
@@ -190,6 +207,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         updateClock()
 
         context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
+        isTimeTickRegistered = true
 
         view.setOnTouchListener(this)
         view.doOnPreDraw { hideResumeStop() }
@@ -214,26 +232,31 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         }
 
         Log.d("TIP", "view created")
-        viewModel.currentProgress.observe(viewLifecycleOwner,
-            { it ->
-                Log.d("UI", "Location observer detected change")
-                val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
+        viewModel.currentProgress.observe(viewLifecycleOwner, {
+            Log.d("UI", "Location observer detected change")
+            val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
+            if (viewModel.speedSensor.value?.rpm == null || viewModel.circumference == null) {
                 splitSpeedTextView.value =
                     String.format("%.1f", getUserSpeed(requireContext(), it.speed.toDouble()))
-                averageSpeedTextView.value =
-                    String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
+            }
+            averageSpeedTextView.value =
+                String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
 
-                distanceTextView.value =
-                    "${String.format("%.2f", getUserDistance(requireContext(), it.distance))}"
+            distanceTextView.value =
+                String.format("%.2f", getUserDistance(requireContext(), it.distance))
 
-                if (!hasHeartRate()) heartRateTextView.value =
-                    String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
+            if (!hasHeartRate()) heartRateTextView.value =
+                String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
-                trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
-                accuracyTextView.text = String.format("%.2f", it.accuracy)
-                speedTextView.value =
-                    String.format("%.1f", getUserSpeed(requireContext(), it.splitSpeed.toDouble()))
-            })
+            trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
+
+            accuracyTextView.text = when (viewModel.autoCircumference == null) {
+                true -> String.format("%.2f", it.accuracy)
+                else -> String.format("%.2f / C%.3f", it.accuracy, viewModel.autoCircumference)
+            }
+            speedTextView.value =
+                String.format("%.1f", getUserSpeed(requireContext(), it.splitSpeed.toDouble()))
+        })
         /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
             override fun onChanged(it: SensorModel) {
                 Log.d("UI", "Sensor observer detected change")
@@ -281,8 +304,34 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 Log.d("TIP_FRAGMENT", "hrm battery: ${it.batteryLevel}")
                 Log.d("TIP_FRAGMENT", "hrm bpm: ${it.bpm}")
                 if (it.bpm != null) {
-                    heartRateTextView.label = "HEART RATE"
+                    heartRateTextView.label = "BPM"
                     heartRateTextView.value = it.bpm.toString()
+                }
+            })
+            viewModel.cadenceSensor.observe(viewLifecycleOwner, {
+                Log.d("TIP_FRAGMENT", "cadence battery: ${it.batteryLevel}")
+                Log.d("TIP_FRAGMENT", "cadence: ${it.rpm}")
+                if (it.rpm != null) {
+                    if (isTimeTickRegistered) {
+                        isTimeTickRegistered = false
+                        context?.unregisterReceiver(timeTickReceiver)
+                        clockView.label = "RPM"
+                    }
+                    clockView.value = it.rpm.toInt().toString()
+                }
+            })
+            viewModel.speedSensor.observe(viewLifecycleOwner, {
+                Log.d("TIP_FRAGMENT", "speed battery: ${it.batteryLevel}")
+                Log.d("TIP_FRAGMENT", "speed rpm: ${it.rpm}")
+                if (it.rpm != null && viewModel.circumference != null) {
+                    splitSpeedTextView.label =
+                        "${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
+                    splitSpeedTextView.value = when {
+                        it.rpm.isNaN() -> "0.0"
+                        else -> String.format("%.1f",
+                            getUserSpeed(requireContext(),
+                                it.rpm / 60 * viewModel.circumference!!))
+                    }
                 }
             })
         }
@@ -299,13 +348,17 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        context?.unregisterReceiver(timeTickReceiver)
+        if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.d("TIP_FRAG", event.toString())
-        return when(event?.action) {
-            MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) handleScreenTouchClick() else false
+        return when (event?.action) {
+            MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
+                handleScreenTouchClick()
+                v?.performClick()
+                true
+            } else false
             MotionEvent.ACTION_DOWN -> true
             else -> false
         }

@@ -12,6 +12,8 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -21,7 +23,7 @@ private fun getDistance(
     curr: Measurements,
     prev: Measurements,
 ): Float {
-    var distanceArray = floatArrayOf(0f)
+    val distanceArray = floatArrayOf(0f)
     Location.distanceBetween(curr.latitude,
         curr.longitude,
         prev.latitude,
@@ -127,7 +129,7 @@ fun getTripIntervals(
     timeStates: Array<TimeState>?,
     measurements: Array<Measurements>? = null,
 ): Array<LongRange> {
-    var intervals = ArrayList<LongRange>()
+    val intervals = ArrayList<LongRange>()
     timeStates?.forEachIndexed { index, timeState ->
         if (!isTripInProgress(timeState.state) && index > 0 && isTripInProgress(timeStates[index - 1].state)) {
             intervals.add(LongRange(timeStates[index - 1].timestamp, timeState.timestamp))
@@ -159,7 +161,7 @@ fun getTripLegs(
     measurements: Array<Measurements>,
     timeStates: Array<TimeState>?,
 ): Array<Array<Measurements>> {
-    var intervals = getTripIntervals(timeStates, measurements)
+    val intervals = getTripIntervals(timeStates, measurements)
     return getTripLegs(measurements, intervals)
 }
 
@@ -210,7 +212,7 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
 
         if (isTripInProgress(currTimeState()?.state) && it.accuracy < 5) {
             if (lastLat != 0.0 && lastLng != 0.0) {
-                var distanceArray = floatArrayOf(0f)
+                val distanceArray = floatArrayOf(0f)
                 Location.distanceBetween(lastLat,
                     lastLng,
                     it.latitude,
@@ -253,16 +255,21 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
             String.format("Bounds could not be calculated: path size = %d", measurements.size))
     }
         return@withContext MapPath(paths.toTypedArray(), bounds)
-}
+    }
 
 const val METERS_TO_FEET = 3.28084
+const val FEET_TO_METERS = 1 / METERS_TO_FEET
 const val METERS_TO_KM = 0.001
 const val FEET_TO_MILES = 1.0 / 5280
 const val SECONDS_TO_HOURS = 1.0 / 3600
-fun getUserSpeed(context: Context, meters: Double, seconds: Double): Double =
+const val INCHES_TO_FEET = 12.0
+fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
     getUserSpeed(context, meters / seconds)
 
-fun getUserSpeed(context: Context, speed: Double): Double {
+fun getUserSpeed(context: Context, speed: Double): Float =
+    getUserSpeed(context, speed.toFloat())
+
+fun getUserSpeed(context: Context, speed: Float): Float {
     val userConversionFactor =
         when (PreferenceManager.getDefaultSharedPreferences(context)
             .getString("display_units", "1")) {
@@ -271,7 +278,7 @@ fun getUserSpeed(context: Context, speed: Double): Double {
             else -> 1.0
         }
     Log.d("TRIP_UTILITIES", "Speed conversion factor: $userConversionFactor")
-    return speed * userConversionFactor
+    return (speed * userConversionFactor).toFloat()
 }
 
 fun getUserDistance(context: Context, meters: Double): Double {
@@ -285,6 +292,37 @@ fun getUserDistance(context: Context, meters: Double): Double {
     return meters * userConversionFactor
 }
 
+fun getUserCircumference(context: Context): Float = getUserCircumferenceOrNull(context) ?: 0f
+
+fun getUserCircumferenceOrNull(context: Context): Float? {
+    return getUserCircumferenceOrNull(PreferenceManager.getDefaultSharedPreferences(context))
+}
+
+fun getUserCircumferenceOrNull(prefs: SharedPreferences): Float? {
+    val storedCircumference = prefs.getString("wheel_circumference", "2037")
+    Log.d("TRIP_UTILS_PREF", "Wheel circumference preference: ${storedCircumference}")
+    return try {
+        return when (val circumference =
+            storedCircumference?.toFloat() ?: Float.NEGATIVE_INFINITY) {
+            in 0.9f..10f -> {
+                //meters
+                circumference
+            }
+            in 30f..120f -> {
+                //inches
+                (circumference * INCHES_TO_FEET * FEET_TO_METERS).toFloat()
+            }
+            in 900f..10000f -> {
+                //mm
+                circumference / 1000f
+            }
+            else -> null
+        }
+    } catch (e: NumberFormatException) {
+        Log.e("TRIP_UTILS_PREF", "Couldn't parse wheel circumference")
+        null
+    }
+}
 
 fun getUserAltitude(context: Context, meters: Double): Double {
     val userConversionFactor =
@@ -396,7 +434,7 @@ fun calculateSplits(
 
     if (measurements.isNullOrEmpty()) return tripSplits
 
-    var intervals = getTripIntervals(timeStates, measurements)
+    val intervals = getTripIntervals(timeStates, measurements)
     if (intervals.isNullOrEmpty()) return tripSplits
 
     val legs = getTripLegs(measurements, intervals)
@@ -441,5 +479,24 @@ fun calculateSplits(
     return tripSplits
 }
 
+fun getDifferenceRollover(newTime: Int, oldTime: Int, rollover: Int = 65535) =
+    newTime + when (oldTime > newTime) {
+        true -> rollover
+        else -> 0
+    } - oldTime
+
+
+fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
+    //NOTE: Does not handle 32-bit rollover, as the CSC spec states 32-bit values
+    //do not rollover.
+    //return ((rev.toFloat() - revLast) / ((time - timeLast) / 1024f / 60f))
+    return getDifferenceRollover(rev, revLast).toFloat() / getDifferenceRollover(time,
+        timeLast) * 1024 * 60
+}
+
+fun getGattUuid(uuid: String): UUID {
+    val gattUuidSuffix = "0000-1000-8000-00805f9b34fb"
+    return UUID.fromString("0000$uuid-$gattUuidSuffix")
+}
 
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)

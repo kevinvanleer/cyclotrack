@@ -29,4 +29,6 @@ data class Trip(
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
     val notes: String? = null,
+    val userWheelCircumference: Float? = null,
+    val autoWheelCircumference: Float? = null,
 )

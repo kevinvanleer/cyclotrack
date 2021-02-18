@@ -25,6 +25,12 @@ data class Measurements(
     val speedAccuracyMetersPerSecond: Float = 0f,
     val verticalAccuracyMetersPerSecond: Float = 0f,
     val heartRate: Short? = null,
+    val cadenceRevolutions: Int? = null,
+    val cadenceLastEvent: Int? = null,
+    val cadenceRpm: Float? = null,
+    val speedRevolutions: Int? = null,
+    val speedLastEvent: Int? = null,
+    val speedRpm: Float? = null,
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
 ) {
@@ -42,7 +48,17 @@ data class Measurements(
         location.speedAccuracyMetersPerSecond ?: 0f,
         location.verticalAccuracyMetersPerSecond ?: 0f)
 
-    constructor(tripId: Long, location: LocationData, heartRate: Short? = null) : this(tripId,
+    constructor(
+        tripId: Long,
+        location: LocationData,
+        heartRate: Short? = null,
+        cadenceRevolutions: Int? = null,
+        cadenceLastEvent: Int? = null,
+        cadenceRpm: Float? = null,
+        speedRevolutions: Int? = null,
+        speedLastEvent: Int? = null,
+        speedRpm: Float? = null,
+    ) : this(tripId,
         location.accuracy,
         location.altitude,
         location.bearing,
@@ -55,7 +71,40 @@ data class Measurements(
         location.elapsedRealtimeUncertaintyNanos ?: 0.0,
         location.speedAccuracyMetersPerSecond ?: 0f,
         location.verticalAccuracyMetersPerSecond ?: 0f,
-        heartRate)
+        heartRate,
+        cadenceRevolutions,
+        cadenceLastEvent,
+        cadenceRpm,
+        speedRevolutions,
+        speedLastEvent,
+        speedRpm)
+
+    constructor(
+        tripId: Long,
+        location: LocationData,
+        heartRate: Short? = null,
+        cadence: CadenceData? = null,
+        speed: SpeedData? = null,
+    ) : this(tripId,
+        location.accuracy,
+        location.altitude,
+        location.bearing,
+        location.elapsedRealtimeNanos,
+        location.latitude,
+        location.longitude,
+        location.speed,
+        location.time,
+        location.bearingAccuracyDegrees ?: 0f,
+        location.elapsedRealtimeUncertaintyNanos ?: 0.0,
+        location.speedAccuracyMetersPerSecond ?: 0f,
+        location.verticalAccuracyMetersPerSecond ?: 0f,
+        heartRate,
+        cadence?.revolutionCount,
+        cadence?.lastEvent,
+        cadence?.rpm,
+        speed?.revolutionCount,
+        speed?.lastEvent,
+        speed?.rpm)
 
     fun hasAccuracy(): Boolean = accuracy != 0f
     fun hasSpeedAccuracy(): Boolean = speedAccuracyMetersPerSecond != 0f

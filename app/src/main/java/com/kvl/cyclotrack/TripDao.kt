@@ -18,11 +18,19 @@ data class TripStuff(
     val notes: String,
 )
 
+data class TripWheelCircumference(
+    val id: Long,
+    val userWheelCircumference: Float?,
+    val autoWheelCircumference: Float?,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
     val duration: Double?,
     val averageSpeed: Float?,
+    val userWheelCircumference: Float?,
+    val autoWheelCircumference: Float?,
 )
 
 @Dao
@@ -38,6 +46,9 @@ interface TripDao {
 
     @Update(entity = Trip::class)
     suspend fun updateStats(stats: TripStats)
+
+    @Update(entity = Trip::class)
+    suspend fun updateCircumference(stats: TripWheelCircumference)
 
     @Update(entity = Trip::class)
     suspend fun updateStuff(stats: TripStuff)

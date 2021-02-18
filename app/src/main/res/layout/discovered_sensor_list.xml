@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/discovered_sensor_view"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/textview_sensor_linking_instructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="25dp"
+        android:layout_marginEnd="25dp"
+        android:text="@string/sensor_linking_instructions" />
+
+    <TextView
+        android:id="@+id/textview_saved_devices_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/saved_devices_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textview_sensor_linking_instructions"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="25dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/saved_sensor_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textview_saved_devices_label"
+        app:layout_constraintBottom_toTopOf="@id/saved_discovered_device_divider" />
+
+    <TextView
+        android:id="@+id/saved_sensor_empty_recycler_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="40dp"
+        android:layout_marginBottom="10dp"
+        android:visibility="gone"
+        android:text="Choose devices you'd like to link from the list below."
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textview_saved_devices_label"
+        app:layout_constraintBottom_toTopOf="@id/saved_discovered_device_divider" />
+
+    <View
+        android:id="@+id/saved_discovered_device_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="15dp"
+        android:layout_marginEnd="15dp"
+        app:layout_constraintBottom_toTopOf="@id/textview_discovered_devices_label"
+        android:background="?android:attr/listDivider" />
+
+    <TextView
+        android:id="@+id/textview_discovered_devices_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/discovered_devices_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/saved_discovered_device_divider"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="25dp" />
+
+    <ProgressBar
+        android:id="@+id/discover_sensors_scanning_indicator"
+        style="?android:attr/progressBarStyle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textview_discovered_devices_label"
+        app:layout_constraintBottom_toTopOf="@id/discovered_sensor_recycler_view"
+        app:layout_constraintEnd_toStartOf="@id/scanning_message"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginStart="20dp" />
+
+    <TextView
+        android:id="@+id/scanning_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/scanning_for_ble_devices"
+        app:layout_constraintStart_toEndOf="@id/discover_sensors_scanning_indicator"
+        app:layout_constraintTop_toTopOf="@id/discover_sensors_scanning_indicator"
+        app:layout_constraintBottom_toBottomOf="@id/discover_sensors_scanning_indicator"
+        android:layout_marginStart="0dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/discovered_sensor_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/discover_sensors_scanning_indicator"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
