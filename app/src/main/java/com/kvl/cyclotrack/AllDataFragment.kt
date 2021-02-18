@@ -29,7 +29,7 @@ class AllDataFragment : Fragment() {
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
         defaultViewModelProviderFactory
     }
-    //private val viewModel: TripInProgressViewModel by viewModels()
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,

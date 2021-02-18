@@ -50,17 +50,16 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private var initialMeasureCircDistance = 0.0
 
     private val clockTick = Timer()
-    private val accuracyThreshold = 7.5f
+    private val accuracyThreshold = 107.5f
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer {
-        Log.d(TAG, "onChanged current time state observer")
+        Log.d(TAG, "onChanged current time state observer: ${it.state}")
         if (it != null) currentState = it.state
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
-
     var gpsEnabled = gpsService.accessGranted
     var hrmSensor = bleService.hrmSensor
     var cadenceSensor = bleService.cadenceSensor
@@ -381,6 +380,20 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun getDuration() =
         if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
+
+    fun startObserving(lifecycleOwner: LifecycleOwner) {
+        if (tripId != null) {
+            Log.d(TAG, "Start observing trip ID $tripId $currentTimeStateObserver")
+            gpsService.observe(lifecycleOwner, gpsObserver)
+            getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
+            timeStateRepository.getLatest(tripId!!)
+                .observe(lifecycleOwner, currentTimeStateObserver)
+            timeStateRepository.getTimeStates(tripId!!)
+                .observe(lifecycleOwner, accumulateDurationObserver)
+            splitRepository.getLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
+        }
+    }
+
     fun startTrip(lifecycleOwner: LifecycleOwner): LiveData<Long> {
         val tripStarted = MutableLiveData<Long>()
 
@@ -391,16 +404,9 @@ class TripInProgressViewModel @ViewModelInject constructor(
             Log.d(TAG, "created new trip with id ${tripId.toString()}")
             tripStarted.postValue(tripId)
         }
-        gpsService.observe(lifecycleOwner, gpsObserver)
         tripStarted.observeForever(object : Observer<Long> {
             override fun onChanged(t: Long?) {
-                Log.d(TAG, "Start observing trip ID $tripId $currentTimeStateObserver")
-                getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
-                timeStateRepository.getLatest(tripId!!)
-                    .observe(lifecycleOwner, currentTimeStateObserver)
-                timeStateRepository.getTimeStates(tripId!!)
-                    .observe(lifecycleOwner, accumulateDurationObserver)
-                splitRepository.getLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
+                startObserving(lifecycleOwner)
                 tripStarted.removeObserver(this)
             }
         })
@@ -424,6 +430,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     fun resumeTrip() {
         coroutineScope.launch(Dispatchers.Default) {
+            Log.d(TAG, "resumeTrip")
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.RESUME))
         }
     }

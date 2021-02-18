@@ -25,6 +25,7 @@ fun bleFeatureFlag() = true
 
 @AndroidEntryPoint
 class TripInProgressFragment : Fragment(), View.OnTouchListener {
+    val TAG = "DASHBOARD_FRAGMENT"
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
         defaultViewModelProviderFactory
     }
@@ -37,7 +38,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            Log.v("TIP_FRAGMENT", "Received time tick")
+            Log.v(TAG, "Received time tick")
             updateClock()
         }
     }
@@ -55,7 +56,9 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        menu.add(0, R.id.menu_item_show_details, 0, "Details")
+        if (BuildConfig.BUILD_TYPE == "dev") {
+            menu.add(0, R.id.menu_item_show_details, 0, "Debug")
+        }
         super.onCreateOptionsMenu(menu, inflater)
     }
 
@@ -156,6 +159,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "Destroying TIP View")
         super.onDestroy()
         if (bleFeatureFlag()) viewModel.stopBle()
     }
@@ -163,7 +167,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d("UI", "TripInProgressFragment::onViewCreated")
+        Log.d(TAG, "TripInProgressFragment::onViewCreated")
 
         viewModel.startGps()
         if (bleFeatureFlag()) viewModel.startBle()
@@ -210,30 +214,9 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         isTimeTickRegistered = true
 
         view.setOnTouchListener(this)
-        view.doOnPreDraw { hideResumeStop() }
-
-        if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
-            hidePause()
-            pauseButton.text = "PAUSE"
-            pauseButton.setOnClickListener(pauseTripListener)
-        } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
-            hidePause()
-            resumeButton.setOnClickListener {
-                viewModel.resumeTrip()
-                slideOutResumeStop()
-            }
-            stopButton.setOnClickListener {
-                viewModel.endTrip()
-                findNavController().navigate(R.id.action_finish_trip)
-            }
-        } else {
-            pauseButton.setOnClickListener(startTripListener)
-            pauseButton.text = "START"
-        }
-
-        Log.d("TIP", "view created")
+        Log.d(TAG, "view created")
         viewModel.currentProgress.observe(viewLifecycleOwner, {
-            Log.d("UI", "Location observer detected change")
+            Log.d(TAG, "Location observer detected change")
             val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
             if (viewModel.speedSensor.value?.rpm == null || viewModel.circumference == null) {
                 splitSpeedTextView.value =
@@ -259,7 +242,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         })
         /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
             override fun onChanged(it: SensorModel) {
-                Log.d("UI", "Sensor observer detected change")
+                Log.d(TAG, "Sensor observer detected change")
                 //heartRateTextView.text = String.format("%.1f", it.tilt?.get(0))
             }
         })*/
@@ -272,7 +255,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 gpsEnabled = false
                 trackingImage.visibility = View.INVISIBLE
                 accuracyTextView.text = "GPS disabled"
-                Log.d("TIP_FRAGMENT", "Location service access disabled")
+                Log.d(TAG, "Location service access disabled")
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
                     builder.apply {
@@ -301,16 +284,16 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         })
         if (bleFeatureFlag()) {
             viewModel.hrmSensor.observe(viewLifecycleOwner, {
-                Log.d("TIP_FRAGMENT", "hrm battery: ${it.batteryLevel}")
-                Log.d("TIP_FRAGMENT", "hrm bpm: ${it.bpm}")
+                Log.d(TAG, "hrm battery: ${it.batteryLevel}")
+                Log.d(TAG, "hrm bpm: ${it.bpm}")
                 if (it.bpm != null) {
                     heartRateTextView.label = "BPM"
                     heartRateTextView.value = it.bpm.toString()
                 }
             })
             viewModel.cadenceSensor.observe(viewLifecycleOwner, {
-                Log.d("TIP_FRAGMENT", "cadence battery: ${it.batteryLevel}")
-                Log.d("TIP_FRAGMENT", "cadence: ${it.rpm}")
+                Log.d(TAG, "cadence battery: ${it.batteryLevel}")
+                Log.d(TAG, "cadence: ${it.rpm}")
                 if (it.rpm != null) {
                     if (isTimeTickRegistered) {
                         isTimeTickRegistered = false
@@ -321,8 +304,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 }
             })
             viewModel.speedSensor.observe(viewLifecycleOwner, {
-                Log.d("TIP_FRAGMENT", "speed battery: ${it.batteryLevel}")
-                Log.d("TIP_FRAGMENT", "speed rpm: ${it.rpm}")
+                Log.d(TAG, "speed battery: ${it.batteryLevel}")
+                Log.d(TAG, "speed rpm: ${it.rpm}")
                 if (it.rpm != null && viewModel.circumference != null) {
                     splitSpeedTextView.label =
                         "${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
@@ -335,6 +318,35 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 }
             })
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.startObserving(viewLifecycleOwner)
+        Log.d(TAG, "Called onResume: currentState = ${viewModel.currentState}")
+        view?.doOnPreDraw { hideResumeStop() }
+
+        if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
+            view?.doOnPreDraw { hidePause() }
+            pauseButton.text = "PAUSE"
+            pauseButton.setOnClickListener(pauseTripListener)
+        } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
+            view?.doOnPreDraw { hidePause() }
+            pauseButton.setOnClickListener(pauseTripListener)
+            slideInResumeStop()
+            resumeButton.setOnClickListener {
+                viewModel.resumeTrip()
+                slideOutResumeStop()
+            }
+            stopButton.setOnClickListener {
+                viewModel.endTrip()
+                findNavController().navigate(R.id.action_finish_trip)
+            }
+        } else {
+            pauseButton.setOnClickListener(startTripListener)
+            pauseButton.text = "START"
+        }
+
     }
 
     private fun updateClock() {
@@ -353,6 +365,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.d("TIP_FRAG", event.toString())
+        Log.d("TIP_FRAG", "current state = ${viewModel.currentState}")
+
         return when (event?.action) {
             MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
                 handleScreenTouchClick()
