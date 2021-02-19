@@ -1,8 +1,15 @@
 package com.kvl.cyclotrack
 
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.viewModels
@@ -104,6 +111,47 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         savedRecyclerView = view.findViewById(R.id.saved_sensor_recycler_view)!!
         noSavedDevicesMessage = view.findViewById(R.id.saved_sensor_empty_recycler_message)
 
+        val discoverSensorsIndicator: ProgressBar =
+            view.findViewById(R.id.discover_sensors_scanning_indicator)
+        val discoverSensorMessage: TextView = view.findViewById(R.id.scanning_message)
+        val enableBluetoothButton: Button =
+            view.findViewById(R.id.button_discover_sensors_enable_bluetooth)
+        if (!BleService.isBluetoothEnabled()) {
+            discoverSensorsIndicator.visibility = View.GONE
+            discoverSensorMessage.visibility = View.GONE
+            discoveredRecyclerView.visibility = View.GONE
+            enableBluetoothButton.visibility = View.VISIBLE
+            enableBluetoothButton.setOnClickListener {
+                BleService.enableBluetooth()
+            }
+        }
+
+        requireContext().registerReceiver(object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                        when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                            BluetoothAdapter.ERROR)) {
+                            BluetoothAdapter.STATE_ON -> {
+                                discoverSensorsIndicator.visibility = View.VISIBLE
+                                discoverSensorMessage.visibility = View.VISIBLE
+                                discoveredRecyclerView.visibility = View.VISIBLE
+                                enableBluetoothButton.visibility = View.GONE
+                                viewModel.startScan()
+                            }
+                            BluetoothAdapter.STATE_OFF -> {
+                                viewModel.stopScan()
+                                discoverSensorsIndicator.visibility = View.GONE
+                                discoverSensorMessage.visibility = View.GONE
+                                discoveredRecyclerView.visibility = View.GONE
+                                enableBluetoothButton.visibility = View.VISIBLE
+                            }
+                        }
+                    }
+                }
+            }
+        }, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+
         liveDevices =
             MediatorLiveData<Pair<Array<ExternalSensor>, Array<ExternalSensor>>>().apply {
                 var lastDiscovered: Array<ExternalSensor> = arrayOf()
@@ -126,7 +174,6 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
             }
         liveDevices.observeForever(deviceListObserver)
         viewModel.initializeSelectedDevices(discoveredSensorPref().linkedDevices)
-        viewModel.startScan()
         showHideSaved()
     }
 

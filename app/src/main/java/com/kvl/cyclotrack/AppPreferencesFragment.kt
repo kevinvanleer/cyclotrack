@@ -25,6 +25,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         val circumferencePref: EditTextPreference? =
             preferenceManager.findPreference("wheel_circumference")
 
+        if (!BleService.isBluetoothSupported(requireContext())) {
+            val linkDevicesPref: DiscoverSensorDialogPreference? =
+                preferenceManager.findPreference("paired_blue_devices")
+            linkDevicesPref?.isEnabled = false
+        }
+
         circumferencePref?.setOnBindEditTextListener { editText ->
             Log.d("PREFERENCES", "Updating circumference editor")
             editText.inputType = EditorInfo.TYPE_CLASS_NUMBER

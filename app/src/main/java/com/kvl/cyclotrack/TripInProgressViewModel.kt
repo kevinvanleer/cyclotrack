@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.app.Activity
 import android.content.SharedPreferences
 import android.location.Location
 import android.os.Handler
@@ -50,7 +51,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private var initialMeasureCircDistance = 0.0
 
     private val clockTick = Timer()
-    private val accuracyThreshold = 107.5f
+    private val accuracyThreshold = 7.5f
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
@@ -139,7 +140,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         get() = _currentTime
 
     fun startGps() = gpsService.startListening()
-    fun startBle() = bleService.initialize()
+    fun startBle(activity: Activity) = bleService.initialize(activity)
     fun stopBle() = bleService.disconnect()
 
     private fun setTripProgress(new: Measurements) {

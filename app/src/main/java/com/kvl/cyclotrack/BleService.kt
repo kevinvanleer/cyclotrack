@@ -1,10 +1,14 @@
 package com.kvl.cyclotrack
 
+import android.app.Activity
 import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
@@ -352,49 +356,45 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         }
     }
 
-    private fun scanLeDevice() {
-        if (!mScanning) { // Stops scanning after a pre-defined scan period.
-            handler.postDelayed({
-                mScanning = false
-                bluetoothLeScanner.stopScan(leScanCallback)
-                Log.d(TAG, "BLE scan stopped")
-            }, SCAN_PERIOD)
-            mScanning = true
-            bluetoothLeScanner.startScan(leScanCallback)
-            Log.d(TAG, "BLE scan started")
-        } else {
-            mScanning = false
-            bluetoothLeScanner.stopScan(leScanCallback)
-            Log.d(TAG, "BLE scan stopped")
+    companion object {
+        fun isBluetoothSupported(context: Context): Boolean {
+            return (context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))
+        }
+
+        fun isBluetoothEnabled(): Boolean {
+            return BluetoothAdapter.getDefaultAdapter().isEnabled
+        }
+
+        fun enableBluetooth() {
+            BluetoothAdapter.getDefaultAdapter().enable()
+        }
+
+        fun enableBluetooth(context: Context, activity: Activity) {
+            val bluetoothManager =
+                context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+            val bluetoothAdapter = bluetoothManager.adapter
+            if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                activity.startActivity(enableBtIntent)
+            }
         }
     }
 
-    //private val leDeviceListAdapter: LeDeviceListAdapter? = null
-
-
-    fun initialize() {
-        //TODO: Enable bluetooth when disabled
-        /*
-        if (PackageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+    fun initialize(activity: Activity) {
+        if (!isBluetoothSupported(context)) {
             Log.d("BLE_SERVICE", "BLE not supported on this device")
-        }*/
-
-        /*
-        val bluetoothManager =
-            context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        val bluetoothAdapter = bluetoothManager.adapter
-        // Ensures Bluetooth is available on the device and it is enabled. If not,
-        // displays a dialog requesting user permission to enable Bluetooth.
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+            return
         }
-         */
 
-        // Initializes Bluetooth adapter.
-        //scanLeDevice()
+        if (myMacs?.isEmpty() != false) {
+            Log.d("BLE_SERVICE", "No BLE devices have been selected by the user")
+            return
+        }
+
+        enableBluetooth(context, activity)
 
         //HACK: This is required to successfully connect after reboot
+        // Initializes Bluetooth adapter.
         bluetoothLeScanner.startScan(leScanCallback)
         bluetoothLeScanner.stopScan(leScanCallback)
         //END HACK
