@@ -76,7 +76,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
                 //    discoveredSensorPref().pairedDevices.size - removedIndex)
             }
         }
-        showHideSavedDevices()
+        //showHideSavedDevices()
     }
 
     private fun onLinkedItemSelected(checked: Boolean, position: Int, device: ExternalSensor) {
@@ -91,7 +91,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
                 //discoveredRecyclerView.adapter?.notifyItemChanged(bleDevices.indexOf(device))
             }
         }
-        showHideSavedDevices()
+        //showHideSavedDevices()
     }
 
     private val deviceListObserver: Observer<Pair<Array<ExternalSensor>, Array<ExternalSensor>>> =
@@ -229,7 +229,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         manageBluetooth(view)
 
         observeDeviceChanges()
-        showHideSavedDevices()
+        //showHideSavedDevices()
     }
 
     override fun onDialogClosed(positiveResult: Boolean) {
@@ -241,8 +241,5 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         } else {
             discoveredSensorPref().reset()
         }
-        //requireContext().unregisterReceiver(receiveBluetoothStateChanges)
-        //liveDevices.removeObserver(deviceListObserver)
-        //viewModel.stopScan()
     }
 }

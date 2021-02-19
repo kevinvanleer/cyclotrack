@@ -386,7 +386,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             return
         }
 
-        if (myMacs?.isEmpty() != false) {
+        if (myMacs.isNullOrEmpty()) {
             Log.d("BLE_SERVICE", "No BLE devices have been selected by the user")
             return
         }
@@ -399,7 +399,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         bluetoothLeScanner.stopScan(leScanCallback)
         //END HACK
 
-        myMacs?.forEach {
+        myMacs.forEach {
             val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(it.address)
             Log.d(TAG,
                 "Connecting to ${device.name}, ${device.type}: ${device.address}")

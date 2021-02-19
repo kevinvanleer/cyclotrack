@@ -23,6 +23,12 @@ class DiscoveredBleDevice(context: Context, attrs: AttributeSet) :
             deviceDetailsView.text = value
         }
 
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        checkbox.isEnabled = enabled
+        deviceDetailsView.isEnabled = enabled
+    }
+
     var isChecked: Boolean
         get() = checkbox.isChecked
         set(value) {

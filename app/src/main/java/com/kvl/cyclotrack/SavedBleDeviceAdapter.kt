@@ -23,14 +23,21 @@ class SavedBleDeviceAdapter(
     }
 
     override fun onBindViewHolder(holder: SavedBleDeviceViewHolder, position: Int) {
-        val thisDevice = selectedBleDevices[position]
-        holder.bleDeviceView.deviceName = selectedBleDevices[position].name ?: "UNKNOWN"
-        holder.bleDeviceView.deviceDetails = thisDevice.address
-        holder.bleDeviceView.isChecked = true
-        holder.bleDeviceView.setOnCheckedChangedListener { _, checked ->
-            onLinkedItemSelected(checked, position, thisDevice)
+        if (position >= selectedBleDevices.size) {
+            holder.bleDeviceView.deviceName = "EMPTY SLOT"
+            holder.bleDeviceView.deviceDetails = "Select a device from the list below"
+            holder.bleDeviceView.isChecked = false
+            holder.bleDeviceView.isEnabled = false
+        } else {
+            val thisDevice = selectedBleDevices[position]
+            holder.bleDeviceView.deviceName = selectedBleDevices[position].name ?: "UNKNOWN"
+            holder.bleDeviceView.deviceDetails = thisDevice.address
+            holder.bleDeviceView.isChecked = true
+            holder.bleDeviceView.setOnCheckedChangedListener { _, checked ->
+                onLinkedItemSelected(checked, position, thisDevice)
+            }
         }
     }
 
-    override fun getItemCount() = selectedBleDevices.size
+    override fun getItemCount() = 3
 }
