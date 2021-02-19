@@ -16,7 +16,7 @@ class DiscoverSensorViewModel @ViewModelInject constructor(private val sharedPre
     val TAG = "DiscoverSensorViewModel"
     val bleDevices = MutableLiveData<Array<ExternalSensor>>()
     val selectedDevices = MutableLiveData<Set<ExternalSensor>>()
-    private val bluetoothLeScanner: BluetoothLeScanner =
+    private val bluetoothLeScanner: BluetoothLeScanner? =
         BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
 
     fun addToSelectedDevices(device: ExternalSensor) {
@@ -65,11 +65,14 @@ class DiscoverSensorViewModel @ViewModelInject constructor(private val sharedPre
             bleDevices.value = arrayOf()
         }
 
-        bluetoothLeScanner.startScan(scanDevicesCallback)
+        if (BleService.isBluetoothEnabled()) bluetoothLeScanner?.startScan(scanDevicesCallback)
     }
 
-    fun stopScan() = bluetoothLeScanner.stopScan(scanDevicesCallback)
-    override fun onCleared() = stopScan()
+    fun stopScan() = bluetoothLeScanner?.stopScan(scanDevicesCallback)
+    override fun onCleared() {
+        stopScan()
+    }
+
     fun initializeSelectedDevices(linkedDevices: HashSet<ExternalSensor>) {
         selectedDevices.value = linkedDevices.toSet()
     }
