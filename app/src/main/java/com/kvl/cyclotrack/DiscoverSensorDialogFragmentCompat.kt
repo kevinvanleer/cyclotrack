@@ -43,6 +43,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        requireContext().unregisterReceiver(receiveBluetoothStateChanges)
         liveDevices.removeObserver(deviceListObserver)
         viewModel.stopScan()
     }
@@ -164,6 +165,26 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         viewModel.startScan()
     }
 
+    private val receiveBluetoothStateChanges = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                    when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR)) {
+                        BluetoothAdapter.STATE_ON -> {
+                            Log.d(TAG, "Detected Bluetooth ON")
+                            enableBluetoothScan()
+                        }
+                        BluetoothAdapter.STATE_OFF -> {
+                            Log.d(TAG, "Detected Bluetooth OFF")
+                            disableBluetoothScan()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun manageBluetooth(view: View) {
         discoverSensorsIndicator =
             view.findViewById(R.id.discover_sensors_scanning_indicator)
@@ -180,23 +201,8 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
             disableBluetoothScan()
         }
 
-        requireContext().registerReceiver(object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
-                        when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                            BluetoothAdapter.ERROR)) {
-                            BluetoothAdapter.STATE_ON -> {
-                                enableBluetoothScan()
-                            }
-                            BluetoothAdapter.STATE_OFF -> {
-                                disableBluetoothScan()
-                            }
-                        }
-                    }
-                }
-            }
-        }, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+        requireContext().registerReceiver(receiveBluetoothStateChanges,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
     }
 
     private fun showHideSavedDevices() {
@@ -235,7 +241,8 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         } else {
             discoveredSensorPref().reset()
         }
-        liveDevices.removeObserver(deviceListObserver)
-        viewModel.stopScan()
+        //requireContext().unregisterReceiver(receiveBluetoothStateChanges)
+        //liveDevices.removeObserver(deviceListObserver)
+        //viewModel.stopScan()
     }
 }
