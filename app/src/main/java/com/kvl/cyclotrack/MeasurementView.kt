@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 
@@ -14,6 +15,8 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
     private var _labelTextAttr = "LABEL"
     private lateinit var measurementLabelView: TextView
     private lateinit var measurementValueView: TextView
+    private lateinit var measurementExtraInfoTextView: TextView
+    private lateinit var measurementExtraInfoImageView: ImageView
 
     var value: CharSequence
         get() = measurementValueView.text
@@ -25,6 +28,14 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         get() = measurementLabelView.text
         set(newValue) {
             measurementLabelView.text = newValue
+        }
+
+    var extraInfo: CharSequence
+        get() = measurementExtraInfoTextView.text
+        set(newValue) {
+            measurementExtraInfoTextView.visibility = View.VISIBLE
+            measurementExtraInfoImageView.visibility = View.VISIBLE
+            measurementExtraInfoTextView.text = newValue
         }
 
     init {
@@ -48,10 +59,15 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         super.onFinishInflate()
         measurementLabelView = findViewById(R.id.measurement_label)
         measurementValueView = findViewById(R.id.measurement_value)
+        measurementExtraInfoImageView = findViewById(R.id.measurement_extra_info_icon)
+        measurementExtraInfoTextView = findViewById(R.id.measurement_extra_info)
 
         if (_valueTextSizeAttr >= 0) {
             measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_PX, _valueTextSizeAttr)
         }
+
+        measurementExtraInfoTextView.visibility = View.GONE
+        measurementExtraInfoImageView.visibility = View.GONE
 
         value = _valueTextAttr
         label = _labelTextAttr

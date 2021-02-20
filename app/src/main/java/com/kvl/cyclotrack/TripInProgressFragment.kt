@@ -35,6 +35,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private lateinit var clockView: MeasurementView
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
+    private val lowBatteryThreshold = 15
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -290,6 +291,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                     heartRateTextView.label = "BPM"
                     heartRateTextView.value = it.bpm.toString()
                 }
+                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                    "${it.batteryLevel}%"
             })
             viewModel.cadenceSensor.observe(viewLifecycleOwner, {
                 Log.d(TAG, "cadence battery: ${it.batteryLevel}")
@@ -302,6 +305,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                     }
                     clockView.value = it.rpm.toInt().toString()
                 }
+                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                    "${it.batteryLevel}%"
             })
             viewModel.speedSensor.observe(viewLifecycleOwner, {
                 Log.d(TAG, "speed battery: ${it.batteryLevel}")
@@ -316,6 +321,8 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                                 it.rpm / 60 * viewModel.circumference!!))
                     }
                 }
+                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                    "${it.batteryLevel}%"
             })
         }
     }

@@ -30,6 +30,29 @@
             android:textSize="16sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@id/measurement_value"
-            app:layout_constraintStart_toStartOf="@id/measurement_value"
             app:layout_constraintTop_toBottomOf="@id/measurement_value" />
+
+        <TextView
+            android:id="@+id/measurement_extra_info"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="88%"
+            android:textAlignment="textEnd"
+            android:textAppearance="@style/DashboardFontAppearance"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/measurement_extra_info_icon" />
+
+        <ImageView
+            android:id="@+id/measurement_extra_info_icon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:contentDescription="@string/location_fix_obtained"
+            android:src="@drawable/ic_battery_alert_18dp"
+            android:layout_marginEnd="10dp"
+            app:layout_constraintTop_toTopOf="@id/measurement_label"
+            app:layout_constraintBottom_toBottomOf="@id/measurement_label"
+            app:layout_constraintEnd_toStartOf="@id/measurement_label"
+            app:layout_constraintStart_toEndOf="@id/measurement_extra_info" />
 </merge>
