@@ -187,18 +187,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         fun getAverageCadence(measurements: Array<Measurements>): Float? {
-            var sum = 0f
-            var count = 0
-            measurements.forEach {
-                if (it.cadenceRpm != null) {
-                    sum += it.cadenceRpm
-                    ++count
-                }
-            }
-            return if (count == 0) {
+            return try {
+                val cadenceMeasurements = measurements.filter { it.cadenceRevolutions != null }
+                val totalRevs = cadenceMeasurements.last().cadenceRevolutions?.let {
+                    getDifferenceRollover(it,
+                        cadenceMeasurements.first().cadenceRevolutions!!)
+                } ?: null
+                val duration =
+                    (cadenceMeasurements.last().time - cadenceMeasurements.first().time) / 1000 / 60
+
+                totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false } ?: null
+            } catch (e: Exception) {
                 null
-            } else {
-                (sum / count)
             }
         }
 
