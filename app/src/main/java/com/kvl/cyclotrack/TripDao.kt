@@ -16,6 +16,7 @@ data class TripStuff(
     val id: Long,
     val name: String,
     val notes: String,
+    val userWheelCircumference: Float,
 )
 
 data class TripWheelCircumference(

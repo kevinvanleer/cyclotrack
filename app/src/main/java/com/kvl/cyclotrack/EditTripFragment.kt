@@ -35,11 +35,15 @@ class EditTripFragment : Fragment() {
 
         val tripName: EditText = view.findViewById(R.id.edit_trip_name)
         val tripNotes: EditText = view.findViewById(R.id.edit_trip_notes)
+        val tripWheelCirc: EditText = view.findViewById(R.id.edit_trip_wheel_circumference)
         val tripDate: TextView = view.findViewById(R.id.edit_trip_date)
 
         tripName.setText(args.tripName)
         tripNotes.setText(args.tripNotes)
         tripDate.text = args.tripDate
+        viewModel.tripInfo.userWheelCircumference?.let {
+            tripWheelCirc.setText(metersToUserCircumference(requireContext(), it))
+        }
 
         tripName.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(
@@ -54,7 +58,7 @@ class EditTripFragment : Fragment() {
             }
 
             override fun afterTextChanged(s: Editable?) {
-                viewModel.changeDetails(s.toString(), tripNotes.text.toString())
+                viewModel.updateTripName(s.toString())
             }
         })
 
@@ -71,7 +75,24 @@ class EditTripFragment : Fragment() {
             }
 
             override fun afterTextChanged(s: Editable?) {
-                viewModel.changeDetails(tripName.text.toString(), s.toString())
+                viewModel.updateTripNotes(s.toString())
+            }
+        })
+
+        tripWheelCirc.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(
+                s: CharSequence?,
+                start: Int,
+                count: Int,
+                after: Int,
+            ) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+                viewModel.updateTripCircumference(s.toString())
             }
         })
     }

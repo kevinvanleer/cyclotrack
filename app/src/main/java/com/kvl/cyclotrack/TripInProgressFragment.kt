@@ -305,7 +305,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                     }
                     clockView.value = it.rpm.toInt().toString()
                 }
-                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) heartRateTextView.extraInfo =
                     "${it.batteryLevel}%"
             })
             viewModel.speedSensor.observe(viewLifecycleOwner, {
@@ -321,7 +321,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                                 it.rpm / 60 * viewModel.circumference!!))
                     }
                 }
-                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) heartRateTextView.extraInfo =
                     "${it.batteryLevel}%"
             })
         }

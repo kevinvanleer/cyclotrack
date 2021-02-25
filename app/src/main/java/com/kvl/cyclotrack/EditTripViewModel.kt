@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,15 +11,41 @@ class EditTripViewModel @ViewModelInject constructor(
     private val tripsRepository: TripsRepository,
 ) : ViewModel(
 ) {
+    val TAG = "EditTripVm"
     lateinit var tripInfo: Trip
     fun setTrip(tripId: Long) =
         viewModelScope.launch(Dispatchers.IO) {
             tripInfo = tripsRepository.getTripOnce(tripId)
         }
 
-    fun changeDetails(name: String, notes: String) =
+    fun updateTripName(value: String) {
+        try {
+            changeDetails(value, tripInfo.notes!!, tripInfo.userWheelCircumference!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update trip with user edits", e)
+        }
+    }
+
+    fun updateTripNotes(value: String) {
+        try {
+            changeDetails(tripInfo.name!!, value, tripInfo.userWheelCircumference!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update trip with user edits", e)
+        }
+    }
+
+    fun updateTripCircumference(value: String) {
+        try {
+            changeDetails(tripInfo.name!!, tripInfo.notes!!, userCircumferenceToMeters(value)!!)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update trip with user edits", e)
+        }
+    }
+
+
+    private fun changeDetails(name: String, notes: String, circumference: Float) =
         viewModelScope.launch(Dispatchers.IO) {
-            tripsRepository.updateTripStuff(TripStuff(tripInfo.id!!, name, notes))
+            tripsRepository.updateTripStuff(TripStuff(tripInfo.id!!, name, notes, circumference))
             tripInfo = tripsRepository.getTripOnce(tripInfo.id!!)
         }
 }

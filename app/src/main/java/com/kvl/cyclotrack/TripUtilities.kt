@@ -56,27 +56,30 @@ fun <A, B> zipLiveData(a: LiveData<A>, b: LiveData<B>): LiveData<Pair<A, B>> {
 }
 
 fun formatDuration(value: Double): String {
-    var formattedString = ""
-    if (value < 1.0) {
-        formattedString += "zero seconds"
-    } else if (value < 60) {
-        formattedString += "${value.roundToInt()} sec"
-    } else if (value < 3600) {
-        val minutes = value / 60
-        val minutePart = minutes.toLong()
-        val seconds = (minutes - minutePart) * 60
-        val secondPart = seconds.toLong()
-        formattedString += "${minutePart}m ${secondPart}s"
-    } else {
-        val hours = value / 3600
-        val hourPart = hours.toLong()
-        val minutes = (hours - hourPart) * 60
-        val minutePart = minutes.toLong()
-        val seconds = (minutes - minutePart) * 60
-        val secondPart = seconds.roundToInt()
-        formattedString += "${hourPart}h ${minutePart}m ${secondPart}s"
+    return when {
+        value < 1.0 -> {
+            "zero seconds"
+        }
+        value < 60 -> {
+            "${value.roundToInt()} sec"
+        }
+        value < 3600 -> {
+            val minutes = value / 60
+            val minutePart = minutes.toLong()
+            val seconds = (minutes - minutePart) * 60
+            val secondPart = seconds.toLong()
+            "${minutePart}m ${secondPart}s"
+        }
+        else -> {
+            val hours = value / 3600
+            val hourPart = hours.toLong()
+            val minutes = (hours - hourPart) * 60
+            val minutePart = minutes.toLong()
+            val seconds = (minutes - minutePart) * 60
+            val secondPart = seconds.roundToInt()
+            "${hourPart}h ${minutePart}m ${secondPart}s"
+        }
     }
-    return formattedString
 }
 
 fun isTripInProgress(state: TimeStateEnum?) =
@@ -260,9 +263,11 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
 const val METERS_TO_FEET = 3.28084
 const val FEET_TO_METERS = 1 / METERS_TO_FEET
 const val METERS_TO_KM = 0.001
+const val METERS_TO_MM = 1000.0
 const val FEET_TO_MILES = 1.0 / 5280
 const val SECONDS_TO_HOURS = 1.0 / 3600
-const val INCHES_TO_FEET = 12.0
+const val INCHES_TO_FEET = 1 / 12.0
+const val FEET_TO_INCHES = 12.0
 fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
     getUserSpeed(context, meters / seconds)
 
@@ -292,6 +297,17 @@ fun getUserDistance(context: Context, meters: Double): Double {
     return meters * userConversionFactor
 }
 
+fun getUserLength(context: Context, meters: Double): Double {
+    val userConversionFactor =
+        when (PreferenceManager.getDefaultSharedPreferences(context)
+            .getString("display_units", "1")) {
+            "1" -> METERS_TO_FEET * FEET_TO_INCHES
+            "2" -> METERS_TO_MM
+            else -> 1.0
+        }
+    return meters * userConversionFactor
+}
+
 fun getUserCircumference(context: Context): Float = getUserCircumferenceOrNull(context) ?: 0f
 
 fun getUserCircumferenceOrNull(context: Context): Float? {
@@ -301,9 +317,45 @@ fun getUserCircumferenceOrNull(context: Context): Float? {
 fun getUserCircumferenceOrNull(prefs: SharedPreferences): Float? {
     val storedCircumference = prefs.getString("wheel_circumference", "2037")
     Log.d("TRIP_UTILS_PREF", "Wheel circumference preference: ${storedCircumference}")
+    return userCircumferenceToMeters(storedCircumference)
+}
+
+fun metersToUserCircumference(context: Context, meters: Float): String {
+    return metersToUserCircumference(meters, PreferenceManager.getDefaultSharedPreferences(context))
+}
+
+fun metersToUserCircumference(meters: Float, prefs: SharedPreferences): String {
+    val storedCircumference = prefs.getString("wheel_circumference", "2037")
+    return metersToUserCircumference(meters, storedCircumference)
+}
+
+fun metersToUserCircumference(meters: Float, storedCircumference: String?): String {
+    return try {
+        return when (storedCircumference?.toFloat() ?: Float.NEGATIVE_INFINITY) {
+            in 0.9f..10f -> {
+                //meters
+                String.format("%.3f", meters)
+            }
+            in 30f..120f -> {
+                //inches
+                String.format("%.2f", (meters * METERS_TO_FEET * FEET_TO_INCHES))
+            }
+            in 900f..10000f -> {
+                //mm
+                (meters * 1000f).toInt().toString()
+            }
+            else -> String.format("%.3f", meters)
+        }
+    } catch (e: NumberFormatException) {
+        Log.e("TRIP_UTILS_PREF", "Couldn't parse wheel circumference")
+        String.format("%.3f", meters)
+    }
+}
+
+fun userCircumferenceToMeters(input: String?): Float? {
     return try {
         return when (val circumference =
-            storedCircumference?.toFloat() ?: Float.NEGATIVE_INFINITY) {
+            input?.toFloat() ?: Float.NEGATIVE_INFINITY) {
             in 0.9f..10f -> {
                 //meters
                 circumference
@@ -496,7 +548,7 @@ fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
 
 fun getGattUuid(uuid: String): UUID {
     val gattUuidSuffix = "0000-1000-8000-00805f9b34fb"
-    return UUID.fromString("0000$uuid-$gattUuidSuffix")
+    return UUID.fromString("$uuid-$gattUuidSuffix")
 }
 
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)
