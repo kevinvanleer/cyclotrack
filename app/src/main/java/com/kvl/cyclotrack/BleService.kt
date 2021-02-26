@@ -35,6 +35,11 @@ data class CadenceData(
 )
 
 class BleService @Inject constructor(context: Application, sharedPreferences: SharedPreferences) {
+    private val addresses = object {
+        var hrm: String? = null
+        var speed: String? = null
+        var cadence: String? = null
+    }
     private val myMacs =
         sharedPreferences.getStringSet(context.resources.getString(R.string.sharedPrefKey_paired_ble_devices),
             HashSet())?.map {
@@ -107,13 +112,32 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     }
 
     private fun BluetoothGatt.hasCharacteristic(serviceUuid: UUID, charUuid: UUID): Boolean {
-        //NOTE: Cannot use binary operator to compare uuid values
         val thisService = services.find { it.uuid == serviceUuid }
         return null != thisService?.characteristics?.find { it.uuid == charUuid }
     }
 
+    private fun readBatteryLevel(gatt: BluetoothGatt) {
+        val batteryLevelChar = gatt
+            .getService(batteryServiceUuid)?.getCharacteristic(batteryLevelCharUuid)
+        Log.d(TAG, "read battery level characteristic ${batteryLevelChar?.uuid}")
+        batteryLevelChar?.let { gatt.readCharacteristic(it) }
+    }
+
+    private fun enableNotifications(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        enable: Boolean = true,
+    ) {
+        val descriptor =
+            characteristic.getDescriptor(characteristicUpdateNotificationDescriptorUuid)
+        descriptor?.value =
+            if (enable) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else byteArrayOf(0x00,
+                0x00)
+        gatt.writeDescriptor(descriptor)
+    }
+
     // Various callback methods defined by the BLE API.
-    private val gattCallback = object : BluetoothGattCallback() {
+    private val genericGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(
             gatt: BluetoothGatt,
             status: Int,
@@ -132,51 +156,6 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             }
         }
 
-        private fun readBatteryLevel(gatt: BluetoothGatt) {
-            val batteryLevelChar = gatt
-                .getService(batteryServiceUuid)?.getCharacteristic(batteryLevelCharUuid)
-            Log.d(TAG, "read characteristic $batteryLevelChar")
-            gatt.readCharacteristic(batteryLevelChar)
-        }
-
-        private fun prepareHeartRateMeasurement(gatt: BluetoothGatt) {
-
-            val enable = true
-            val heartRateMeasurementChar = gatt
-                .getService(heartRateServiceUuid)?.getCharacteristic(hrmCharacteristicUuid)
-            Log.d(TAG, "write enable notification descriptor for hrm $heartRateMeasurementChar")
-            val descriptor =
-                heartRateMeasurementChar?.getDescriptor(
-                    characteristicUpdateNotificationDescriptorUuid)
-            descriptor?.value =
-                if (enable) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else byteArrayOf(0x00,
-                    0x00)
-            gatt.writeDescriptor(descriptor)
-        }
-
-        private fun enableNotifications(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            enable: Boolean = true,
-        ) {
-            val descriptor =
-                characteristic.getDescriptor(characteristicUpdateNotificationDescriptorUuid)
-            descriptor?.value =
-                if (enable) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else byteArrayOf(0x00,
-                    0x00)
-            gatt.writeDescriptor(descriptor)
-        }
-
-        private fun readHeartRateMeasurement(gatt: BluetoothGatt) {
-            val enable = true
-            val heartRateMeasurementChar = gatt
-                .getService(heartRateServiceUuid)?.getCharacteristic(hrmCharacteristicUuid)
-            Log.d(TAG, "enable characteristic notifications $heartRateMeasurementChar")
-            gatt.setCharacteristicNotification(heartRateMeasurementChar, enable)
-            //TODO: BLE requests cannot be made concurrently
-            readBatteryLevel(gatt)
-        }
-
         override fun onDescriptorWrite(
             gatt: BluetoothGatt?,
             descriptor: BluetoothGattDescriptor?,
@@ -188,9 +167,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                 gatt.setCharacteristicNotification(descriptor.characteristic, true)
                 //TODO: Trigger next stage in pipeline here that would allow setup of
                 // other notifications or reads like battery level below
-                if (gatt.hasCharacteristic(batteryServiceUuid,
-                        batteryLevelCharUuid)
-                ) readBatteryLevel(gatt)
+                // Be careful you can cause an infinite loop!
             }
         }
 
@@ -223,7 +200,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             Log.d(TAG, "onCharacteristicRead")
             when (status) {
                 BluetoothGatt.GATT_SUCCESS -> {
-                    broadcastUpdate(characteristic)
+                    broadcastUpdate(gatt, characteristic)
                 }
             }
         }
@@ -233,7 +210,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             characteristic: BluetoothGattCharacteristic,
         ) {
             Log.d(TAG, "onCharacteristicChanged")
-            broadcastUpdate(characteristic)
+            broadcastUpdate(gatt, characteristic)
         }
     }
 
@@ -253,11 +230,15 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         }
     }
 
-    private fun broadcastUpdate(characteristic: BluetoothGattCharacteristic) {
+    private fun broadcastUpdate(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
         Log.d(TAG, "broadcast update for ${characteristic.uuid}")
 
         when (characteristic.uuid) {
             hrmCharacteristicUuid -> {
+                if (addresses.hrm == null) {
+                    addresses.hrm = gatt.device.address
+                    readBatteryLevel(gatt)
+                }
                 val flag = characteristic.properties
                 val format = when (flag and 0x01) {
                     0x01 -> {
@@ -271,13 +252,25 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                 }
                 val heartRate = characteristic.getIntValue(format, 1)
                 Log.d(TAG, String.format("Received heart rate: %d", heartRate))
-                hrmSensor.postValue(HrmData(hrmSensor.value?.batteryLevel ?: 0,
+                hrmSensor.postValue(HrmData(hrmSensor.value?.batteryLevel,
                     heartRate.toShort()))
             }
             batteryLevelCharUuid -> {
-                Log.d(TAG, "Battery level: ${characteristic.value[0]}")
-                hrmSensor.postValue(HrmData(characteristic.value[0],
-                    hrmSensor.value?.bpm ?: 0))
+                val batteryLevel = characteristic.value[0]
+                Log.d(TAG, "Battery level: $batteryLevel")
+                when (gatt.device.address) {
+                    addresses.hrm -> {
+                        hrmSensor.postValue(hrmSensor.value?.copy(batteryLevel = batteryLevel))
+                    }
+                    addresses.speed -> {
+                        speedSensor.postValue(speedSensor.value?.copy(batteryLevel = batteryLevel))
+                    }
+                    addresses.cadence -> {
+                        cadenceSensor.postValue(cadenceSensor.value?.copy(batteryLevel = batteryLevel))
+                    }
+                    else -> Log.d(TAG,
+                        "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel")
+                }
             }
             cscMeasurementCharacteristicUuid -> {
                 val timeout = 2000
@@ -287,6 +280,10 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                     characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
                 when {
                     (sensorType and speedId > 0) -> {
+                        if (addresses.speed == null) {
+                            addresses.speed = gatt.device.address
+                            readBatteryLevel(gatt)
+                        }
                         //NOTE: I'm surprised this is allowed since a UINT32 should not be written to an INT32
                         //however in all practicality the value required to induce this bug will never be reached.
                         //Additionally the spec states that this value does not rollover.
@@ -309,6 +306,10 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                         }
                     }
                     (sensorType and cadenceId > 0) -> {
+                        if (addresses.cadence == null) {
+                            addresses.cadence = gatt.device.address
+                            readBatteryLevel(gatt)
+                        }
                         val revolutionCount =
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
                         val lastEvent =
@@ -352,7 +353,6 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                     Log.d(TAG, String.format("Received ${characteristic.uuid}: $hexString"))
                 }
             }
-
         }
     }
 
@@ -403,7 +403,8 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(it.address)
             Log.d(TAG,
                 "Connecting to ${device.name}, ${device.type}: ${device.address}")
-            device.connectGatt(context, true, gattCallback)
+            //TODO: Store BLE service for each device and use corresponding callback
+            device.connectGatt(context, true, genericGattCallback)
         }
     }
 
