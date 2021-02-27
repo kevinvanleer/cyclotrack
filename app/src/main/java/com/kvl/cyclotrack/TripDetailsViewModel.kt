@@ -28,12 +28,12 @@ class TripDetailsViewModel @ViewModelInject constructor(
     fun removeTrip() =
         viewModelScope.launch { tripsRepository.removeTrip(tripId) }
 
-    fun measurements() = measurementsRepository.getTripMeasurements(tripId)
+    fun measurements() = measurementsRepository.getTripCriticalMeasurements(tripId)
     fun addSplits() {
         val combined = zipLiveData(measurements(), timeState())
         combined.observeForever(object :
-            Observer<Pair<Array<Measurements>, Array<TimeState>>> {
-            override fun onChanged(pair: Pair<Array<Measurements>, Array<TimeState>>) {
+            Observer<Pair<Array<CriticalMeasurements>, Array<TimeState>>> {
+            override fun onChanged(pair: Pair<Array<CriticalMeasurements>, Array<TimeState>>) {
                 val measurements = pair.first
                 val timeStates = pair.second
 

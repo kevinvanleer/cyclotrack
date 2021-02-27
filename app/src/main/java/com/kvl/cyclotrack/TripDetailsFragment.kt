@@ -172,7 +172,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             getUserAltitudeUnitLong(requireContext())
 
 
-        fun getAverageHeartRate(measurements: Array<Measurements>): Short? {
+        fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
             var sum = 0
             var count = 0
             measurements.forEach {
@@ -188,7 +188,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             }
         }
 
-        fun getAverageCadence(measurements: Array<Measurements>): Float? {
+        fun getAverageCadence(measurements: Array<CriticalMeasurements>): Float? {
             return try {
                 val cadenceMeasurements = measurements.filter { it.cadenceRevolutions != null }
                 val totalRevs = cadenceMeasurements.last().cadenceRevolutions?.let {
@@ -331,7 +331,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     fun getFusedSpeedData(
                         entries: ArrayList<Entry>,
                         trend: ArrayList<Entry>,
-                        measurements: Array<Measurements>,
+                        measurements: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ) {
                         val intervalStart = intervals.last().first
@@ -361,7 +361,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     speed)) + ((1 - trendAlpha) * trendLast)
                                 trend.add(Entry(timestamp, trendLast))
                                 if (trendAlpha > 0.01f) trendAlpha -= 0.01f
-                            } else if (it.accuracy < 5) {
+                            } else {
                                 val timestamp =
                                     (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
                                 entries.add(Entry(timestamp,
@@ -373,12 +373,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 if (trendAlpha > 0.01f) trendAlpha -= 0.01f
                             }
                         }
+                        val avgSpeed = getUserSpeed(requireContext(),
+                            cumSpeed) / measurements.size
                         Log.d(TAG,
-                            "Avg: ${getUserSpeed(requireContext(), cumSpeed) / measurements.size}")
+                            "Avg speed: $avgSpeed")
                     }
 
                     fun makeSpeedDataset(
-                        measurements: Array<Measurements>,
+                        measurements: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ): Pair<LineDataSet, LineDataSet> {
                         val entries = ArrayList<Entry>()
@@ -471,7 +473,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
 
                     fun makeHeartRateDataset(
-                        measurements: Array<Measurements>,
+                        measurements: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ): LineDataSet {
                         val entries = ArrayList<Entry>()
@@ -513,7 +515,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
 
                     fun makeCadenceDataset(
-                        measurements: Array<Measurements>,
+                        measurements: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ): LineDataSet {
                         val entries = ArrayList<Entry>()
@@ -555,7 +557,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
 
                     fun makeElevationDataset(
-                        measurements: Array<Measurements>,
+                        measurements: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ): LineDataSet {
                         val entries = ArrayList<Entry>()
@@ -564,13 +566,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val accumulatedTime = accumulateTime(intervals)
 
                         measurements.forEach {
-                            if (it.accuracy < 5) {
-                                val timestamp =
-                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                                entries.add(Entry(timestamp,
-                                    getUserAltitude(requireContext(),
-                                        it.altitude).toFloat()))
-                            }
+                            val timestamp =
+                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                            entries.add(Entry(timestamp,
+                                getUserAltitude(requireContext(),
+                                    it.altitude).toFloat()))
                         }
                         val dataset = LineDataSet(entries, "Elevation")
                         dataset.setDrawCircles(false)

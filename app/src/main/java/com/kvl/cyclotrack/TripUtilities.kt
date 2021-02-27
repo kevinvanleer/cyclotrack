@@ -20,8 +20,8 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 private fun getDistance(
-    curr: Measurements,
-    prev: Measurements,
+    curr: CriticalMeasurements,
+    prev: CriticalMeasurements,
 ): Float {
     val distanceArray = floatArrayOf(0f)
     Location.distanceBetween(curr.latitude,
@@ -130,7 +130,7 @@ fun accumulatedTime(timeStates: Array<TimeState>?): Double {
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
-    measurements: Array<Measurements>? = null,
+    measurements: Array<CriticalMeasurements>? = null,
 ): Array<LongRange> {
     val intervals = ArrayList<LongRange>()
     timeStates?.forEachIndexed { index, timeState ->
@@ -150,10 +150,10 @@ fun getTripIntervals(
 }
 
 fun getTripLegs(
-    measurements: Array<Measurements>,
+    measurements: Array<CriticalMeasurements>,
     intervals: Array<LongRange>,
-): Array<Array<Measurements>> {
-    val legs = ArrayList<Array<Measurements>>()
+): Array<Array<CriticalMeasurements>> {
+    val legs = ArrayList<Array<CriticalMeasurements>>()
     intervals.forEach { interval ->
         legs.add(measurements.filter { interval.contains(it.time) }.toTypedArray())
     }
@@ -161,14 +161,17 @@ fun getTripLegs(
 }
 
 fun getTripLegs(
-    measurements: Array<Measurements>,
+    measurements: Array<CriticalMeasurements>,
     timeStates: Array<TimeState>?,
-): Array<Array<Measurements>> {
+): Array<Array<CriticalMeasurements>> {
     val intervals = getTripIntervals(timeStates, measurements)
     return getTripLegs(measurements, intervals)
 }
 
-suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeState>?): MapPath =
+suspend fun plotPath(
+    measurements: Array<CriticalMeasurements>,
+    timeStates: Array<TimeState>?,
+): MapPath =
     withContext(Dispatchers.Default) {
         val paths = ArrayList<PolylineOptions>()
         var northeastLat = -91.0
@@ -179,10 +182,6 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
         var totalDistance = 0.0
         var lastLat = 0.0
         var lastLng = 0.0
-
-        var maxSpeedAccuracy = 0f
-    var accSpeedAccuracy = 0f
-    var sampleCount = 0
 
     var timeStateIdx = 0
     paths.add(PolylineOptions())
@@ -213,7 +212,7 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
             }
         }
 
-        if (isTripInProgress(currTimeState()?.state) && it.accuracy < 5) {
+        if (isTripInProgress(currTimeState()?.state)) {
             if (lastLat != 0.0 && lastLng != 0.0) {
                 val distanceArray = floatArrayOf(0f)
                 Location.distanceBetween(lastLat,
@@ -230,13 +229,8 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
             northeastLng = max(northeastLng, it.longitude)
             southwestLat = min(southwestLat, it.latitude)
             southwestLng = min(southwestLng, it.longitude)
-            maxSpeedAccuracy = max(maxSpeedAccuracy, it.speedAccuracyMetersPerSecond)
-            accSpeedAccuracy += it.speedAccuracyMetersPerSecond
-            sampleCount++
         }
     }
-    Log.d("TRIP_SUMMARIES_ADAPTER",
-        "distance=${totalDistance}, maxSpeedAcc=${maxSpeedAccuracy}, avgSpeedAcc=${accSpeedAccuracy / sampleCount}")
     var bounds: LatLngBounds? = null
     try {
         bounds =
@@ -247,10 +241,8 @@ suspend fun plotPath(measurements: Array<Measurements>, timeStates: Array<TimeSt
             var included = false
 
             measurements.forEach {
-                if (it.accuracy < 5) {
                     boundsBuilder.include(LatLng(it.latitude, it.longitude))
                     included = true
-                }
             }
             if (included) bounds = boundsBuilder.build()
         }
@@ -282,7 +274,6 @@ fun getUserSpeed(context: Context, speed: Float): Float {
             "2" -> METERS_TO_KM / SECONDS_TO_HOURS
             else -> 1.0
         }
-    Log.d("TRIP_UTILITIES", "Speed conversion factor: $userConversionFactor")
     return (speed * userConversionFactor).toFloat()
 }
 
@@ -475,13 +466,13 @@ fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Do
 }
 
 fun calculateSplits(
-    measurements: Array<Measurements>,
+    measurements: Array<CriticalMeasurements>,
     timeStates: Array<TimeState>?,
     sharedPreferences: SharedPreferences,
 ): ArrayList<Split> {
     val tripSplits = arrayListOf<Split>()
     var totalDistance = 0.0
-    val tripId = measurements[0].tripId
+    val tripId = timeStates?.get(0)?.tripId
     var totalActiveTime: Double
 
     if (measurements.isNullOrEmpty()) return tripSplits
@@ -505,27 +496,25 @@ fun calculateSplits(
                 0) else tripSplits.last()
             val curr = leg[measurementIdx]
 
-            if (curr.accuracy < 5 && prev.accuracy < 5) {
-                totalDistance += getDistance(curr, prev)
-                totalActiveTime =
-                    ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(intervals.sliceArray(
-                        IntRange(0, legIdx - 1)))
+            totalDistance += getDistance(curr, prev)
+            totalActiveTime =
+                ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(intervals.sliceArray(
+                    IntRange(0, legIdx - 1)))
 
-                if (crossedSplitThreshold(sharedPreferences,
-                        totalDistance,
-                        lastSplit.totalDistance)
-                ) {
-                    val splitDistance = totalDistance - lastSplit.totalDistance
-                    val splitDuration = totalActiveTime - lastSplit.totalDuration
-                    tripSplits.add(Split(timestamp = curr.time,
-                        duration = splitDuration,
-                        distance = splitDistance,
-                        totalDuration = totalActiveTime,
-                        totalDistance = totalDistance,
-                        tripId = tripId))
-                }
+            if (crossedSplitThreshold(sharedPreferences,
+                    totalDistance,
+                    lastSplit.totalDistance)
+            ) {
+                val splitDistance = totalDistance - lastSplit.totalDistance
+                val splitDuration = totalActiveTime - lastSplit.totalDuration
+                tripSplits.add(Split(timestamp = curr.time,
+                    duration = splitDuration,
+                    distance = splitDistance,
+                    totalDuration = totalActiveTime,
+                    totalDistance = totalDistance,
+                    tripId = tripId!!))
             }
-            if (curr.accuracy < 5) prev = curr
+            prev = curr
         }
     }
     return tripSplits

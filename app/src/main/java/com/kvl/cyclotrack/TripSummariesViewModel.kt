@@ -16,8 +16,8 @@ class TripSummariesViewModel @ViewModelInject constructor(
     val tripListState = Bundle()
     val allTrips = tripsRepository.getAllTrips()
     val realTrips = tripsRepository.getRealTrips()
-    fun getTripMeasurements(tripId: Long): LiveData<Array<Measurements>> =
-        measurementsRepository.getTripMeasurements(tripId)
+    fun getTripMeasurements(tripId: Long): LiveData<Array<CriticalMeasurements>> =
+        measurementsRepository.getTripCriticalMeasurements(tripId)
 
     fun getTripTimeStates(tripId: Long): LiveData<Array<TimeState>> =
         timeStateRepository.getTimeStates(tripId)
