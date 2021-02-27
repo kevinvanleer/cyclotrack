@@ -298,11 +298,12 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 Log.d(TAG, "cadence battery: ${it.batteryLevel}")
                 Log.d(TAG, "cadence: ${it.rpm}")
                 if (it.rpm != null) {
-                    if (isTimeTickRegistered) {
+                    /*if (isTimeTickRegistered) {
                         isTimeTickRegistered = false
                         context?.unregisterReceiver(timeTickReceiver)
                         clockView.label = "RPM"
-                    }
+                    }*/
+                    clockView.label = "RPM"
                     clockView.value = it.rpm.toInt().toString()
                 }
                 if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) heartRateTextView.extraInfo =
@@ -359,10 +360,16 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
     private fun updateClock() {
         var hour = Calendar.getInstance().get(Calendar.HOUR)
         if (hour == 0) hour = 12
-        clockView.value = String.format("%d:%02d",
+        val time = String.format("%d:%02d",
             hour,
             Calendar.getInstance().get(Calendar.MINUTE))
-        clockView.label = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
+        val amPm = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
+        if (viewModel.cadenceSensor.value?.rpm == null) {
+            clockView.value = time
+            clockView.label = amPm
+        } else {
+            activity?.title = "$time $amPm"
+        }
     }
 
     override fun onDestroyView() {
