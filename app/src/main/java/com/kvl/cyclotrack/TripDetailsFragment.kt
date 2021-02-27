@@ -264,14 +264,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val timeStates = pairs.second
                     Log.d(TAG, "Observed change to measurements and time state")
 
-                    /*val effectiveCircumference = overview.distance?.let { distance ->
+                    val effectiveCircumference = overview.distance?.let { distance ->
                         tripMeasurements.filter { meas -> meas.speedRevolutions != null }
                             .map { filtered -> filtered.speedRevolutions!! }
                             .let { mapped ->
-                                distance.div(mapped.last().minus(mapped.first().toDouble()))
-                                    .toFloat()
+                                return@let if (mapped.isNotEmpty()) {
+                                    distance.div(mapped.last()
+                                        .minus(mapped.first().toDouble()))
+                                        .toFloat()
+                                } else null
                             }
-                    }*/
+                    }
+                    Log.d(TAG, "Effective circumference: $effectiveCircumference")
                     /*
                 fun getSpeedDataFromGps(
                     entries: ArrayList<Entry>,
@@ -338,7 +342,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         var trendAlpha = 0.01f
 
                         val circumference =
-                            /*effectiveCircumference ?:*/ overview.autoWheelCircumference
+                            effectiveCircumference ?: overview.autoWheelCircumference
                             ?: overview.userWheelCircumference
                             ?: getUserCircumference(requireContext())
                         Log.d(TAG, "Using circumference: $circumference")
