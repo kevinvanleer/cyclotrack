@@ -8,6 +8,10 @@ class MeasurementsRepository @Inject constructor(private val measurementsDao: Me
         return measurementsDao.load(tripId)
     }
 
+    fun getTripCriticalMeasurements(tripId: Long): LiveData<Array<CriticalMeasurements>> {
+        return measurementsDao.loadDetails(tripId)
+    }
+
     suspend fun insertMeasurements(measurements: Measurements): Long {
         return measurementsDao.save(measurements)
     }

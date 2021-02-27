@@ -109,3 +109,16 @@ data class Measurements(
     fun hasAccuracy(): Boolean = accuracy != 0f
     fun hasSpeedAccuracy(): Boolean = speedAccuracyMetersPerSecond != 0f
 }
+
+data class CriticalMeasurements(
+    val altitude: Double,
+    val latitude: Double,
+    val longitude: Double,
+    val speed: Float,
+    val time: Long,
+    val heartRate: Short? = null,
+    val cadenceRpm: Float? = null,
+    val speedRevolutions: Int? = null,
+    val cadenceRevolutions: Int? = null,
+    val speedRpm: Float? = null,
+)
