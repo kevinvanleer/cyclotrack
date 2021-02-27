@@ -51,6 +51,8 @@ import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment(), View.OnTouchListener {
+    val TAG = "TRIP_DETAILS_FRAGMENT"
+
     private var startHeight: Int = 0
     private var startY: Float = 0.0f
     private val viewModel: TripDetailsViewModel by viewModels()
@@ -78,11 +80,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
         inflater.inflate(R.menu.details_menu, menu)
-        Log.d("TRIP_SUMMARIES", "Options menu created")
+        Log.d(TAG, "Options menu created")
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d("TRIP_SUMMARIES", "Options menu clicked")
+        Log.d(TAG, "Options menu clicked")
         return when (item.itemId) {
             R.id.details_menu_action_edit -> {
                 try {
@@ -92,12 +94,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             titleDateView.text.toString(),
                             notesView.text.toString()))
                 } catch (e: IllegalArgumentException) {
-                    Log.e("EDIT_TRIP_FRAGMENT", e.message, e)
+                    Log.e(TAG, e.message, e)
                 }
                 true
             }
             R.id.details_menu_action_delete -> {
-                Log.d("TRIP_SUMMARIES", "Options menu clicked delete")
+                Log.d(TAG, "Options menu clicked delete")
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
                     builder.apply {
@@ -136,7 +138,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         mapView = view.findViewById(R.id.trip_details_map_view)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync {
-            Log.d("TRIP_DETAILS_FRAGMENT", "GOT MAP")
+            Log.d(TAG, "GOT MAP")
             map = it
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
             map.uiSettings.setAllGesturesEnabled(false)
@@ -192,11 +194,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val totalRevs = cadenceMeasurements.last().cadenceRevolutions?.let {
                     getDifferenceRollover(it,
                         cadenceMeasurements.first().cadenceRevolutions!!)
-                } ?: null
+                }
                 val duration =
                     (cadenceMeasurements.last().time - cadenceMeasurements.first().time) / 1000 / 60
 
-                totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false } ?: null
+                totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false }
             } catch (e: Exception) {
                 null
             }
@@ -232,7 +234,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         val tripId = args.tripId
-        Log.d("TRIP_DETAILS_FRAGMENT", String.format("Displaying details for trip %d", tripId))
+        Log.d(TAG, String.format("Displaying details for trip %d", tripId))
         viewModel.tripId = tripId
         viewModel.tripOverview().observe(viewLifecycleOwner, { overview ->
             if (overview != null) {
@@ -254,19 +256,27 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
 
             } else {
-                Log.d("TRIP_DETAILS_FRAG", "overview is null")
+                Log.d(TAG, "overview is null")
             }
-        })
+            zipLiveData(viewModel.measurements(), viewModel.timeState()).observe(viewLifecycleOwner,
+                { pairs ->
+                    val tripMeasurements = pairs.first
+                    val timeStates = pairs.second
+                    Log.d(TAG, "Observed change to measurements and time state")
 
-        zipLiveData(viewModel.measurements(), viewModel.timeState()).observe(viewLifecycleOwner,
-            { pairs ->
-                val measurements = pairs.first
-                val timeStates = pairs.second
-
-                /*
+                    /*val effectiveCircumference = overview.distance?.let { distance ->
+                        tripMeasurements.filter { meas -> meas.speedRevolutions != null }
+                            .map { filtered -> filtered.speedRevolutions!! }
+                            .let { mapped ->
+                                distance.div(mapped.last().minus(mapped.first().toDouble()))
+                                    .toFloat()
+                            }
+                    }*/
+                    /*
                 fun getSpeedDataFromGps(
                     entries: ArrayList<Entry>,
                     trend: ArrayList<Entry>,
+                        measurements: Array<Measurements>,
                     intervals: Array<LongRange>,
                 ) {
                     val intervalStart = intervals.last().first
@@ -290,6 +300,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 fun getSpeedDataFromSensor(
                     entries: ArrayList<Entry>,
                     trend: ArrayList<Entry>,
+                        measurements: Array<Measurements>,
                     intervals: Array<LongRange>,
                 ) {
                     val intervalStart = intervals.last().first
@@ -313,51 +324,68 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
                 */
 
-                fun getFusedSpeedData(
-                    entries: ArrayList<Entry>,
-                    trend: ArrayList<Entry>,
-                    intervals: Array<LongRange>,
-                ) {
-                    val intervalStart = intervals.last().first
-                    val accumulatedTime = accumulateTime(intervals)
-                    var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
-                    var trendAlpha = 0.01f
-                    measurements.forEach {
-                        if (it.speedRpm != null) {
-                            val speed =
-                                it.speedRpm * getUserCircumference(requireContext()) / 60
-                            val timestamp =
-                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                            entries.add(Entry(timestamp,
-                                getUserSpeed(requireContext(), speed)))
-                            trendLast = (trendAlpha * getUserSpeed(requireContext(),
-                                speed)) + ((1 - trendAlpha) * trendLast)
-                            trend.add(Entry(timestamp, trendLast))
-                            if (trendAlpha > 0.01f) trendAlpha -= 0.01f
-                        } else if (it.accuracy < 5) {
-                            val timestamp =
-                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                            entries.add(Entry(timestamp,
-                                getUserSpeed(requireContext(), it.speed.toDouble())))
-                            trendLast = (trendAlpha * getUserSpeed(requireContext(),
-                                it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
-                            trend.add(Entry(timestamp, trendLast))
-                            if (trendAlpha > 0.01f) trendAlpha -= 0.01f
+                    fun getFusedSpeedData(
+                        entries: ArrayList<Entry>,
+                        trend: ArrayList<Entry>,
+                        measurements: Array<Measurements>,
+                        intervals: Array<LongRange>,
+                    ) {
+                        val intervalStart = intervals.last().first
+                        val accumulatedTime = accumulateTime(intervals)
+                        var trendLast =
+                            getUserSpeed(requireContext(),
+                                measurements[0].speed.toDouble())
+                        var trendAlpha = 0.01f
+
+                        val circumference =
+                            /*effectiveCircumference ?:*/ overview.autoWheelCircumference
+                            ?: overview.userWheelCircumference
+                            ?: getUserCircumference(requireContext())
+                        Log.d(TAG, "Using circumference: $circumference")
+
+                        var cumSpeed = 0f
+                        measurements.forEach {
+                            if (it.speedRpm != null) {
+                                val speed = it.speedRpm * circumference / 60
+                                cumSpeed += speed
+                                Log.v(TAG, "$speed")
+                                val timestamp =
+                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                                entries.add(Entry(timestamp,
+                                    getUserSpeed(requireContext(), speed)))
+                                trendLast = (trendAlpha * getUserSpeed(requireContext(),
+                                    speed)) + ((1 - trendAlpha) * trendLast)
+                                trend.add(Entry(timestamp, trendLast))
+                                if (trendAlpha > 0.01f) trendAlpha -= 0.01f
+                            } else if (it.accuracy < 5) {
+                                val timestamp =
+                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                                entries.add(Entry(timestamp,
+                                    getUserSpeed(requireContext(),
+                                        it.speed.toDouble())))
+                                trendLast = (trendAlpha * getUserSpeed(requireContext(),
+                                    it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
+                                trend.add(Entry(timestamp, trendLast))
+                                if (trendAlpha > 0.01f) trendAlpha -= 0.01f
+                            }
                         }
+                        Log.d(TAG,
+                            "Avg: ${getUserSpeed(requireContext(), cumSpeed) / measurements.size}")
                     }
-                }
 
-                fun makeSpeedDataset(
-                    measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ): Pair<LineDataSet, LineDataSet> {
-                    val entries = ArrayList<Entry>()
-                    val trend = ArrayList<Entry>()
+                    fun makeSpeedDataset(
+                        measurements: Array<Measurements>,
+                        intervals: Array<LongRange>,
+                    ): Pair<LineDataSet, LineDataSet> {
+                        val entries = ArrayList<Entry>()
+                        val trend = ArrayList<Entry>()
 
-                    if (measurements.isNullOrEmpty()) return Pair(LineDataSet(entries, "Speed"),
-                        LineDataSet(trend, "Trend"))
+                        if (measurements.isNullOrEmpty()) return Pair(LineDataSet(
+                            entries,
+                            "Speed"),
+                            LineDataSet(trend, "Trend"))
 
-                    /* NOTE: THIS DIDN'T WORK
+                        /* NOTE: THIS DIDN'T WORK
                     var trendLast: Double = viewModel.tripOverview().value?.let {
                         val speed = it.duration?.let { it1 ->
                             it.distance?.div(it1)
@@ -365,24 +393,29 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         getUserSpeed(requireContext(), speed)
                     } ?: getUserSpeed(requireContext(), measurements[20].speed.toDouble())*/
 
-                    //getSpeedDataFromGps(entries, trend, intervals)
-                    getFusedSpeedData(entries, trend, intervals)
-                    val dataset = LineDataSet(entries, "Speed")
-                    dataset.setDrawCircles(false)
-                    dataset.setDrawValues(false)
-                    val trendData = LineDataSet(trend, "Trend")
-                    trendData.setDrawCircles(false)
-                    trendData.setDrawValues(false)
-                    //TODO: Use resource for this color
-                    dataset.color =
-                        ResourcesCompat.getColor(resources, R.color.colorGraphSecondary, null)
-                    dataset.lineWidth = 15f
-                    trendData.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                    trendData.lineWidth = 3f
-                    return Pair(dataset, trendData)
-                }
+                        //getSpeedDataFromGps(entries, trend, measurements, intervals)
+                        getFusedSpeedData(entries, trend, measurements, intervals)
+                        val dataset = LineDataSet(entries, "Speed")
+                        dataset.setDrawCircles(false)
+                        dataset.setDrawValues(false)
+                        val trendData = LineDataSet(trend, "Trend")
+                        trendData.setDrawCircles(false)
+                        trendData.setDrawValues(false)
+                        //TODO: Use resource for this color
+                        dataset.color =
+                            ResourcesCompat.getColor(resources,
+                                R.color.colorGraphSecondary,
+                                null)
+                        dataset.lineWidth = 15f
+                        trendData.color =
+                            ResourcesCompat.getColor(resources,
+                                R.color.colorAccent,
+                                null)
+                        trendData.lineWidth = 3f
+                        return Pair(dataset, trendData)
+                    }
 
-                /*
+                    /*
                 fun makeSensorSpeedDataset(
                     measurements: Array<Measurements>,
                     intervals: Array<LongRange>,
@@ -393,7 +426,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     if (measurements.isNullOrEmpty()) return Pair(LineDataSet(entries, "Speed"),
                         LineDataSet(trend, "Trend"))
 
-                    getSpeedDataFromSensor(entries, trend, intervals)
+                    getSpeedDataFromSensor(entries, trend, measurements, intervals)
                     val dataset = LineDataSet(entries, "Speed")
                     val trendData = LineDataSet(trend, "Trend")
                     dataset.setDrawCircles(false)
@@ -408,281 +441,307 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
                  */
 
-                fun makeSpeedLineChart() {
-                    configureLineChart(speedChartView)
+                    fun makeSpeedLineChart() {
+                        configureLineChart(speedChartView)
 
-                    val intervals = getTripIntervals(timeStates, measurements)
-                    val legs = getTripLegs(measurements, intervals)
-                    val data = LineData()
+                        val intervals = getTripIntervals(timeStates, tripMeasurements)
+                        val legs = getTripLegs(tripMeasurements, intervals)
+                        val data = LineData()
 
-                    legs.forEachIndexed { idx, leg ->
-                        val (raw, trend) = makeSpeedDataset(leg,
-                            intervals.sliceArray(IntRange(0, idx)))
+                        legs.forEachIndexed { idx, leg ->
+                            val (raw, trend) = makeSpeedDataset(leg,
+                                intervals.sliceArray(IntRange(0, idx)))
 
-                        data.addDataSet(raw)
-                        data.addDataSet(trend)
-                    }
-                    /*legs.forEachIndexed { idx, leg ->
+                            data.addDataSet(raw)
+                            data.addDataSet(trend)
+                        }
+                        /*legs.forEachIndexed { idx, leg ->
                         val (raw, trend) = makeSensorSpeedDataset(leg,
                             intervals.sliceArray(IntRange(0, idx)))
 
                         data.addDataSet(raw)
                         data.addDataSet(trend)
                     }*/
-                    speedChartView.data = data
-                    speedChartView.invalidate()
-                }
+                        speedChartView.data = data
+                        speedChartView.invalidate()
+                    }
 
-                fun makeHeartRateDataset(
-                    measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ): LineDataSet {
-                    val entries = ArrayList<Entry>()
-                    val intervalStart = intervals.last().first
+                    fun makeHeartRateDataset(
+                        measurements: Array<Measurements>,
+                        intervals: Array<LongRange>,
+                    ): LineDataSet {
+                        val entries = ArrayList<Entry>()
+                        val intervalStart = intervals.last().first
 
-                    val accumulatedTime = accumulateTime(intervals)
+                        val accumulatedTime = accumulateTime(intervals)
 
-                    measurements.forEach {
-                        if (it.heartRate != null) {
-                            val timestamp =
-                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                            entries.add(Entry(timestamp, it.heartRate.toFloat()))
+                        measurements.forEach {
+                            if (it.heartRate != null) {
+                                val timestamp =
+                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                                entries.add(Entry(timestamp, it.heartRate.toFloat()))
+                            }
                         }
-                    }
-                    val dataset = LineDataSet(entries, "Heart rate")
-                    dataset.setDrawCircles(false)
-                    dataset.setDrawValues(false)
-                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                    dataset.lineWidth = 3f
-                    return dataset
-                }
-
-                fun makeHeartRateLineChart() {
-                    configureLineChart(heartRateChartView, 50f)
-
-                    val intervals = getTripIntervals(timeStates, measurements)
-                    val legs = getTripLegs(measurements, intervals)
-                    val data = LineData()
-
-                    legs.forEachIndexed { idx, leg ->
-                        data.addDataSet(makeHeartRateDataset(leg,
-                            intervals.sliceArray(IntRange(0, idx))))
-                    }
-                    heartRateChartView.data = data
-                    heartRateChartView.invalidate()
-                }
-
-                fun makeCadenceDataset(
-                    measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ): LineDataSet {
-                    val entries = ArrayList<Entry>()
-                    val intervalStart = intervals.last().first
-
-                    val accumulatedTime = accumulateTime(intervals)
-
-                    measurements.forEach {
-                        if (it.cadenceRpm != null) {
-                            val timestamp =
-                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                            entries.add(Entry(timestamp, it.cadenceRpm))
-                        }
-                    }
-                    val dataset = LineDataSet(entries, "Cadence")
-                    dataset.setDrawCircles(false)
-                    dataset.setDrawValues(false)
-                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                    dataset.lineWidth = 3f
-                    return dataset
-                }
-
-                fun makeCadenceLineChart() {
-                    configureLineChart(cadenceChartView)
-
-                    val intervals = getTripIntervals(timeStates, measurements)
-                    val legs = getTripLegs(measurements, intervals)
-                    val data = LineData()
-
-                    legs.forEachIndexed { idx, leg ->
-                        data.addDataSet(makeCadenceDataset(leg,
-                            intervals.sliceArray(IntRange(0, idx))))
-                    }
-                    cadenceChartView.data = data
-                    cadenceChartView.invalidate()
-                }
-
-                fun makeElevationDataset(
-                    measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ): LineDataSet {
-                    val entries = ArrayList<Entry>()
-                    val intervalStart = intervals.last().first
-
-                    val accumulatedTime = accumulateTime(intervals)
-
-                    measurements.forEach {
-                        if (it.accuracy < 5) {
-                            val timestamp =
-                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                            entries.add(Entry(timestamp,
-                                getUserAltitude(requireContext(), it.altitude).toFloat()))
-                        }
-                    }
-                    val dataset = LineDataSet(entries, "Elevation")
-                    dataset.setDrawCircles(false)
-                    dataset.setDrawValues(false)
-                    dataset.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                    dataset.lineWidth = 3f
-                    return dataset
-                }
-
-                fun makeElevationLineChart() {
-                    configureLineChart(elevationChartView)
-
-                    val intervals = getTripIntervals(timeStates, measurements)
-                    val legs = getTripLegs(measurements, intervals)
-                    val data = LineData()
-
-                    legs.forEachIndexed { idx, leg ->
-                        data.addDataSet(makeElevationDataset(leg,
-                            intervals.sliceArray(IntRange(0, idx))))
-                    }
-                    elevationChartView.data = data
-                    elevationChartView.invalidate()
-                }
-                Log.d("TRIP_DETAILS_FRAGMENT",
-                    "Recorded ${measurements.size} measurements for trip ${tripId}")
-
-                if (measurements.isNullOrEmpty()) return@observe
-                if (timeStates.isNotEmpty()) titleDateView.text = String.format("%s: %s - %s",
-                    SimpleDateFormat("MMMM d",
-                        Locale.US).format(Date(timeStates.first().timestamp)),
-                    SimpleDateFormat("h:mm", Locale.US).format(Date(timeStates.first().timestamp)),
-                    SimpleDateFormat("h:mm", Locale.US).format(Date(timeStates.last().timestamp)))
-
-                val thisFragment = this
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val mapData = plotPath(measurements, timeStates)
-                    if (mapData.bounds != null) {
-                        Log.d("TRIP_DETAILS_FRAGMENT", "Plotting path")
-                        mapData.paths.forEach { path ->
-                            path.startCap(RoundCap())
-                            path.endCap(RoundCap())
-                            path.width(5f)
-                            //path.color(0xff007700.toInt())
-                            path.color(ResourcesCompat.getColor(resources,
+                        val dataset = LineDataSet(entries, "Heart rate")
+                        dataset.setDrawCircles(false)
+                        dataset.setDrawValues(false)
+                        dataset.color =
+                            ResourcesCompat.getColor(resources,
                                 R.color.colorAccent,
-                                null))
-                            map.addPolyline(path)
+                                null)
+                        dataset.lineWidth = 3f
+                        return dataset
+                    }
+
+                    fun makeHeartRateLineChart() {
+                        configureLineChart(heartRateChartView, 50f)
+
+                        val intervals = getTripIntervals(timeStates, tripMeasurements)
+                        val legs = getTripLegs(tripMeasurements, intervals)
+                        val data = LineData()
+
+                        legs.forEachIndexed { idx, leg ->
+                            data.addDataSet(makeHeartRateDataset(leg,
+                                intervals.sliceArray(IntRange(0, idx))))
                         }
-                        map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
-                            mapView.width,
-                            scrollView.marginTop,
-                            100))
-                        maxCameraPosition = map.cameraPosition
-                        map.moveCamera(CameraUpdateFactory.scrollBy(0f,
-                            (mapView.height - scrollView.marginTop) / 2f))
-                        defaultCameraPosition = map.cameraPosition
+                        heartRateChartView.data = data
+                        heartRateChartView.invalidate()
                     }
-                    makeSpeedLineChart()
-                    makeElevationLineChart()
-                    val avgHeartRate = getAverageHeartRate(measurements)
-                    if (avgHeartRate != null) {
-                        heartRateView.visibility = View.VISIBLE
-                        heartRateChartView.visibility = View.VISIBLE
-                        heartRateView.value = "$avgHeartRate bpm (average)"
-                        makeHeartRateLineChart()
+
+                    fun makeCadenceDataset(
+                        measurements: Array<Measurements>,
+                        intervals: Array<LongRange>,
+                    ): LineDataSet {
+                        val entries = ArrayList<Entry>()
+                        val intervalStart = intervals.last().first
+
+                        val accumulatedTime = accumulateTime(intervals)
+
+                        measurements.forEach {
+                            if (it.cadenceRpm != null) {
+                                val timestamp =
+                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                                entries.add(Entry(timestamp, it.cadenceRpm))
+                            }
+                        }
+                        val dataset = LineDataSet(entries, "Cadence")
+                        dataset.setDrawCircles(false)
+                        dataset.setDrawValues(false)
+                        dataset.color =
+                            ResourcesCompat.getColor(resources,
+                                R.color.colorAccent,
+                                null)
+                        dataset.lineWidth = 3f
+                        return dataset
                     }
-                    val avgCadence = getAverageCadence(measurements)
-                    if (avgCadence != null) {
-                        cadenceView.visibility = View.VISIBLE
-                        cadenceChartView.visibility = View.VISIBLE
-                        cadenceView.value = "${avgCadence.roundToInt()} rpm (average)"
-                        makeCadenceLineChart()
+
+                    fun makeCadenceLineChart() {
+                        configureLineChart(cadenceChartView)
+
+                        val intervals = getTripIntervals(timeStates, tripMeasurements)
+                        val legs = getTripLegs(tripMeasurements, intervals)
+                        val data = LineData()
+
+                        legs.forEachIndexed { idx, leg ->
+                            data.addDataSet(makeCadenceDataset(leg,
+                                intervals.sliceArray(IntRange(0, idx))))
+                        }
+                        cadenceChartView.data = data
+                        cadenceChartView.invalidate()
                     }
-                    scrollView.setOnTouchListener(thisFragment)
+
+                    fun makeElevationDataset(
+                        measurements: Array<Measurements>,
+                        intervals: Array<LongRange>,
+                    ): LineDataSet {
+                        val entries = ArrayList<Entry>()
+                        val intervalStart = intervals.last().first
+
+                        val accumulatedTime = accumulateTime(intervals)
+
+                        measurements.forEach {
+                            if (it.accuracy < 5) {
+                                val timestamp =
+                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                                entries.add(Entry(timestamp,
+                                    getUserAltitude(requireContext(),
+                                        it.altitude).toFloat()))
+                            }
+                        }
+                        val dataset = LineDataSet(entries, "Elevation")
+                        dataset.setDrawCircles(false)
+                        dataset.setDrawValues(false)
+                        dataset.color =
+                            ResourcesCompat.getColor(resources,
+                                R.color.colorAccent,
+                                null)
+                        dataset.lineWidth = 3f
+                        return dataset
+                    }
+
+                    fun makeElevationLineChart() {
+                        configureLineChart(elevationChartView)
+
+                        val intervals = getTripIntervals(timeStates, tripMeasurements)
+                        val legs = getTripLegs(tripMeasurements, intervals)
+                        val data = LineData()
+
+                        legs.forEachIndexed { idx, leg ->
+                            data.addDataSet(makeElevationDataset(leg,
+                                intervals.sliceArray(IntRange(0, idx))))
+                        }
+                        elevationChartView.data = data
+                        elevationChartView.invalidate()
+                    }
+                    Log.d(TAG,
+                        "Recorded ${tripMeasurements.size} measurements for trip ${tripId}")
+
+                    if (tripMeasurements.isNullOrEmpty()) return@observe
+                    if (timeStates.isNotEmpty()) titleDateView.text =
+                        String.format("%s: %s - %s",
+                            SimpleDateFormat("MMMM d",
+                                Locale.US).format(Date(timeStates.first().timestamp)),
+                            SimpleDateFormat("h:mm",
+                                Locale.US).format(Date(timeStates.first().timestamp)),
+                            SimpleDateFormat("h:mm",
+                                Locale.US).format(Date(timeStates.last().timestamp)))
+
+                    val thisFragment = this
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val mapData = plotPath(tripMeasurements, timeStates)
+                        if (mapData.bounds != null) {
+                            Log.d(TAG, "Plotting path")
+                            mapData.paths.forEach { path ->
+                                path.startCap(RoundCap())
+                                path.endCap(RoundCap())
+                                path.width(5f)
+                                //path.color(0xff007700.toInt())
+                                path.color(ResourcesCompat.getColor(resources,
+                                    R.color.colorAccent,
+                                    null))
+                                map.addPolyline(path)
+                            }
+                            map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
+                                mapView.width,
+                                scrollView.marginTop,
+                                100))
+                            maxCameraPosition = map.cameraPosition
+                            map.moveCamera(CameraUpdateFactory.scrollBy(0f,
+                                (mapView.height - scrollView.marginTop) / 2f))
+                            defaultCameraPosition = map.cameraPosition
+                        }
+                        makeSpeedLineChart()
+                        makeElevationLineChart()
+                        val avgHeartRate = getAverageHeartRate(tripMeasurements)
+                        if (avgHeartRate != null) {
+                            heartRateView.visibility = View.VISIBLE
+                            heartRateChartView.visibility = View.VISIBLE
+                            heartRateView.value = "$avgHeartRate bpm (average)"
+                            makeHeartRateLineChart()
+                        }
+                        val avgCadence = getAverageCadence(tripMeasurements)
+                        if (avgCadence != null) {
+                            cadenceView.visibility = View.VISIBLE
+                            cadenceChartView.visibility = View.VISIBLE
+                            cadenceView.value =
+                                "${avgCadence.roundToInt()} rpm (average)"
+                            makeCadenceLineChart()
+                        }
+                        scrollView.setOnTouchListener(thisFragment)
+                    }
+                })
+
+            viewModel.splits().observeForever(object : Observer<Array<Split>> {
+                var called = false
+                override fun onChanged(splits: Array<Split>) {
+                    if (!called) {
+                        //TODO: Figure out how to do this without LiveData
+                        called = true
+                        var areSplitsInSystem = false
+                        if (splits.isNotEmpty()) areSplitsInSystem =
+                            abs(getSplitThreshold(PreferenceManager.getDefaultSharedPreferences(
+                                context)) * splits[0].totalDistance - 1.0) < 0.01
+                        if (splits.isEmpty() || !areSplitsInSystem) {
+                            viewModel.clearSplits()
+                            viewModel.addSplits()
+                        }
+                        viewModel.splits().removeObserver(this)
+                    }
                 }
             })
 
-        viewModel.splits().observeForever(object : Observer<Array<Split>> {
-            var called = false
-            override fun onChanged(splits: Array<Split>) {
-                if (!called) {
-                    //TODO: Figure out how to do this without LiveData
-                    called = true
-                    var areSplitsInSystem = false
-                    if (splits.isNotEmpty()) areSplitsInSystem =
-                        abs(getSplitThreshold(PreferenceManager.getDefaultSharedPreferences(context)) * splits[0].totalDistance - 1.0) < 0.01
-                    if (splits.isEmpty() || !areSplitsInSystem) {
-                        viewModel.clearSplits()
-                        viewModel.addSplits()
+            viewModel.splits().observe(viewLifecycleOwner, { splits ->
+                fun makeSplitsGrid() {
+                    splitsGridView.removeAllViews()
+                    splitsGridView.visibility = View.VISIBLE
+                    splitsHeadingView.visibility = View.VISIBLE
+                    if (splits.isEmpty()) {
+                        splitsGridView.visibility = View.GONE
+                        splitsHeadingView.visibility = View.GONE
+                        return
                     }
-                    viewModel.splits().removeObserver(this)
-                }
-            }
-        })
 
-        viewModel.splits().observe(viewLifecycleOwner, { splits ->
-            fun makeSplitsGrid() {
-                splitsGridView.removeAllViews()
-                splitsGridView.visibility = View.VISIBLE
-                splitsHeadingView.visibility = View.VISIBLE
-                if (splits.isEmpty()) {
-                    splitsGridView.visibility = View.GONE
-                    splitsHeadingView.visibility = View.GONE
-                    return
-                }
-
-                var maxSpeed = 0.0f
-                splits.forEach {
-                    val splitSpeed = getUserSpeed(requireContext(), it.distance, it.duration)
-                    if (splitSpeed > maxSpeed) maxSpeed = splitSpeed
-                }
-                val maxWidth = (maxSpeed / 10).toInt() * 10 + 10
-
-                splits.forEachIndexed { idx, split ->
-                    val distanceView = TextView(activity)
-                    val speedView = LinearLayout(activity)
-                    val speedText = TextView(activity)
-                    val timeView = TextView(activity)
-
-                    distanceView.text = String.format("%d %s",
-                        kotlin.math.floor(getUserDistance(requireContext(), split.totalDistance))
-                            .toInt(), getUserDistanceUnitShort(requireContext()))
-                    timeView.text = formatDuration(split.totalDuration)
-                    speedText.text = String.format("%.2f %s",
-                        getUserSpeed(requireContext(), split.distance, split.duration),
-                        getUserSpeedUnitShort(requireContext()))
-
-
-                    val distanceLayout =
-                        GridLayout.LayoutParams(GridLayout.spec(idx + 1, GridLayout.CENTER),
-                            GridLayout.spec(0))
-                    val speedLayout =
-                        GridLayout.LayoutParams(GridLayout.spec(idx + 1), GridLayout.spec(1, 100f))
-                    val timeLayout =
-                        GridLayout.LayoutParams(GridLayout.spec(idx + 1, GridLayout.CENTER),
-                            GridLayout.spec(2))
-
-                    distanceView.layoutParams = distanceLayout
-                    speedView.layoutParams = speedLayout
-                    speedText.background =
-                        ResourcesCompat.getDrawable(resources, R.drawable.rounded_corner, null)
-                    speedView.doOnPreDraw {
-                        speedText.width =
-                            (speedView.width * getUserSpeed(requireContext(), split.distance,
-                                split.duration) / maxWidth).toInt()
+                    var maxSpeed = 0.0f
+                    splits.forEach {
+                        val splitSpeed =
+                            getUserSpeed(requireContext(), it.distance, it.duration)
+                        if (splitSpeed > maxSpeed) maxSpeed = splitSpeed
                     }
-                    timeView.layoutParams = timeLayout
+                    val maxWidth = (maxSpeed / 10).toInt() * 10 + 10
+
+                    splits.forEachIndexed { idx, split ->
+                        val distanceView = TextView(activity)
+                        val speedView = LinearLayout(activity)
+                        val speedText = TextView(activity)
+                        val timeView = TextView(activity)
+
+                        distanceView.text = String.format("%d %s",
+                            kotlin.math.floor(getUserDistance(requireContext(),
+                                split.totalDistance))
+                                .toInt(), getUserDistanceUnitShort(requireContext()))
+                        timeView.text = formatDuration(split.totalDuration)
+                        speedText.text = String.format("%.2f %s",
+                            getUserSpeed(requireContext(),
+                                split.distance,
+                                split.duration),
+                            getUserSpeedUnitShort(requireContext()))
 
 
-                    speedView.addView(speedText)
-                    splitsGridView.addView(distanceView)
-                    splitsGridView.addView(speedView)
-                    splitsGridView.addView(timeView)
+                        val distanceLayout =
+                            GridLayout.LayoutParams(GridLayout.spec(idx + 1,
+                                GridLayout.CENTER),
+                                GridLayout.spec(0))
+                        val speedLayout =
+                            GridLayout.LayoutParams(GridLayout.spec(idx + 1),
+                                GridLayout.spec(1, 100f))
+                        val timeLayout =
+                            GridLayout.LayoutParams(GridLayout.spec(idx + 1,
+                                GridLayout.CENTER),
+                                GridLayout.spec(2))
+
+                        distanceView.layoutParams = distanceLayout
+                        speedView.layoutParams = speedLayout
+                        speedText.background =
+                            ResourcesCompat.getDrawable(resources,
+                                R.drawable.rounded_corner,
+                                null)
+                        speedView.doOnPreDraw {
+                            speedText.width =
+                                (speedView.width * getUserSpeed(requireContext(),
+                                    split.distance,
+                                    split.duration) / maxWidth).toInt()
+                        }
+                        timeView.layoutParams = timeLayout
+
+
+                        speedView.addView(speedText)
+                        splitsGridView.addView(distanceView)
+                        splitsGridView.addView(speedView)
+                        splitsGridView.addView(timeView)
+                    }
                 }
-            }
-            makeSplitsGrid()
+                makeSplitsGrid()
+            })
         })
     }
 
