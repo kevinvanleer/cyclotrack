@@ -204,7 +204,7 @@ class SetTripProgressTestPowermock {
             Whitebox.invokeMethod<Void>(viewModelSpy,
                 "setTripProgress",
                 testMeasurements)
-            Assert.assertEquals(1, initCircRevs.getInt(viewModelSpy))
+            Assert.assertEquals(0, initCircRevs.getInt(viewModelSpy))
             Assert.assertEquals(0.0, initCircDist.getDouble(viewModelSpy), 1e-3)
             Assert.assertEquals(null, viewModelSpy.autoCircumference)
 

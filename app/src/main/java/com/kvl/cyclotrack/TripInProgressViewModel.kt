@@ -39,7 +39,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
     val autoCircumference: Float?
         get() = _autoCircumference
     val circumference: Float?
-        get() = userCircumference ?: _autoCircumference
+        get() = _autoCircumference ?: userCircumference
 
     private var accumulatedDuration = 0.0
     private var tripId: Long? = null
@@ -153,9 +153,9 @@ class TripInProgressViewModel @ViewModelInject constructor(
         val newDuration = getDuration()
         val durationDelta = getDurationDelta(newDuration, old)
 
-        new.speedRevolutions?.let { revs ->
-            calculateWheelCircumference(new, newDistance,
-                revs, old, oldDistance)
+        old?.measurements?.speedRevolutions?.let { revs ->
+            calculateWheelCircumference(old.measurements, newDistance,
+                revs)
         }
         if (accurateEnough) {
             val distanceDelta = getDistanceDelta(old, new)
@@ -247,24 +247,30 @@ class TripInProgressViewModel @ViewModelInject constructor(
         }
     }
 
-    private fun calculateWheelCircumference(
-        new: Measurements,
-        newDistance: Double,
+    fun calculateWheelCircumference(
+        progress: Measurements,
+        totalDistance: Double,
         speedRevolutions: Int,
-        old: TripProgress?,
-        oldDistance: Double,
     ) {
-        if (new.accuracy < 3.5 && !measuringCircumference && new.speedRevolutions != null && _autoCircumference == null) {
+        val autoCircumferenceAccThreshold = 5.0
+        val autoCircumferenceSpeedThreshold = 4.0
+        if (progress.accuracy < autoCircumferenceAccThreshold &&
+            progress.speed >= autoCircumferenceSpeedThreshold && !measuringCircumference &&
+            progress.speedRevolutions != null && _autoCircumference == null
+        ) {
             measuringCircumference = true
-            initialMeasureCircDistance = newDistance
+            initialMeasureCircDistance = totalDistance
             initialMeasureCircRevs = speedRevolutions
         }
-        if (measuringCircumference && new.accuracy > 3.5) {
+        if (measuringCircumference && progress.accuracy > autoCircumferenceAccThreshold ||
+            progress.speed < autoCircumferenceSpeedThreshold || _autoCircumference != null
+        ) {
             measuringCircumference = false
         }
-        if (measuringCircumference && old?.measurements?.accuracy != null && old.measurements.accuracy < 3.5 && (oldDistance - initialMeasureCircDistance) > 1000) {
-            val revs = old.measurements.speedRevolutions?.minus(initialMeasureCircRevs)
-            val dist = newDistance - initialMeasureCircDistance
+        if (measuringCircumference && (totalDistance - initialMeasureCircDistance) > 400
+        ) {
+            val revs = progress.speedRevolutions?.minus(initialMeasureCircRevs)
+            val dist = totalDistance - initialMeasureCircDistance
             if (revs != null) {
                 measuringCircumference = false
                 _autoCircumference = (dist / revs).toFloat()
