@@ -43,9 +43,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     private var accumulatedDuration = 0.0
     private var tripId: Long? = null
-    private var startTime: Double = Double.NaN
-    private var timeAtLastSplit: Double = 0.0
-    private var distanceAtLastSplit: Double = 0.0
+    private var startTime = Double.NaN
+    private var lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
     private var measuringCircumference = false
     private var initialMeasureCircRevs = 0
     private var initialMeasureCircDistance = 0.0
@@ -125,11 +124,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
         if (newSplit != null) {
-            timeAtLastSplit = newSplit.totalDuration
-            distanceAtLastSplit = newSplit.totalDistance
-        } else {
-            timeAtLastSplit = 0.0
-            distanceAtLastSplit = 0.0
+            lastSplit = newSplit
         }
     }
 
@@ -162,22 +157,16 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
             val newSpeed = getSpeed(new, speedThreshold)
 
-            var newSplitSpeed = old?.splitSpeed ?: 0f
-
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
             if (crossedSplitThreshold(sharedPreferences,
                     newDistance,
                     old?.distance ?: Double.MAX_VALUE)
             ) {
-                val splitDistance = newDistance - distanceAtLastSplit
-                val splitDuration = newDuration - timeAtLastSplit
-                newSplitSpeed =
-                    (splitDistance / splitDuration).toFloat()
                 coroutineScope.launch {
                     splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
-                        duration = splitDuration,
-                        distance = splitDistance,
+                        duration = newDuration - lastSplit.totalDuration,
+                        distance = newDistance - lastSplit.totalDistance,
                         totalDuration = newDuration,
                         totalDistance = newDistance,
                         tripId = tripId!!))
@@ -225,7 +214,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                     slope = newSlope,
                     duration = newDuration,
                     accuracy = new.accuracy,
-                    splitSpeed = newSplitSpeed,
+                    splitSpeed = (lastSplit.distance / lastSplit.duration.coerceAtLeast(0.0001)).toFloat(),
                     tracking = true)
 
         } else {
@@ -458,8 +447,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
             val oldDistance: Double = old?.distance ?: 0.0
             val newDistance: Double = oldDistance
             val newDuration = getDuration()
-            val splitDistance = newDistance - distanceAtLastSplit
-            val splitDuration = newDuration - timeAtLastSplit
+            val splitDistance = newDistance - lastSplit.totalDistance
+            val splitDuration = newDuration - lastSplit.totalDuration
 
             coroutineScope.launch(Dispatchers.Default) {
                 timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.STOP))

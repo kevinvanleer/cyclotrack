@@ -17,7 +17,7 @@ interface SplitDao {
     @Query("SELECT * FROM split WHERE tripId = :tripId ORDER BY timestamp ASC")
     fun get(tripId: Long): LiveData<Array<Split>>
 
-    @Query("SELECT * FROM split WHERE id = (SELECT max(timestamp) FROM split WHERE tripId = :tripId)")
+    @Query("SELECT * FROM split WHERE id = (SELECT max(id) FROM split WHERE tripId = :tripId)")
     fun getLast(tripId: Long): LiveData<Split>
 
     @Query("DELETE FROM split WHERE tripId = :tripId")
