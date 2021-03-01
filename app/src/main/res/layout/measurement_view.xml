@@ -15,6 +15,7 @@
             android:textAlignment="viewStart"
             android:textAppearance="@style/DashboardFontAppearance"
             android:textSize="40sp"
+            android:singleLine="true"
             app:layout_constraintBottom_toTopOf="@id/measurement_label"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

@@ -2,6 +2,7 @@ package com.kvl.cyclotrack
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.ImageView
@@ -21,7 +22,23 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
     var value: CharSequence
         get() = measurementValueView.text
         set(newValue) {
+            val digitLength = newValue.filter { it.isDigit() }.length
+            val multiplier = (digitLength - 4).coerceAtLeast(0)
+            Log.d("MEASUREMENT_VIEW", "$newValue has a digit length of $digitLength")
+            measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_SP,
+                40f - (multiplier * 4) - (newValue.length - digitLength))
             measurementValueView.text = newValue
+
+            //TODO: Lookup table would be the next iteration. I already derived the values
+            //Length / Size subtract
+            //     6 /  8
+            //     7 / 12
+            //     8 / 15
+            //     9 / 18
+            //    10 / 20
+            // Plus 1 for each colon
+            // Still it is probably better to skip this step and go straight to getTextBounds
+            // https://stackoverflow.com/questions/3630086/how-to-get-string-width-on-android
         }
 
     var label: CharSequence
