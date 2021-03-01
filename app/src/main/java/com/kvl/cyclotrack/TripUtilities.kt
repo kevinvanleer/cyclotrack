@@ -466,13 +466,13 @@ fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Do
 }
 
 fun calculateSplits(
+    tripId: Long,
     measurements: Array<CriticalMeasurements>,
     timeStates: Array<TimeState>?,
     sharedPreferences: SharedPreferences,
 ): ArrayList<Split> {
     val tripSplits = arrayListOf<Split>()
     var totalDistance = 0.0
-    val tripId = timeStates?.get(0)?.tripId
     var totalActiveTime: Double
 
     if (measurements.isNullOrEmpty()) return tripSplits

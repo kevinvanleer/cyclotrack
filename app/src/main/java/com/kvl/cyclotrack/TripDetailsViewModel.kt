@@ -40,7 +40,8 @@ class TripDetailsViewModel @ViewModelInject constructor(
                 if (measurements.isNotEmpty()) {
 
 
-                    val tripSplits = calculateSplits(measurements, timeStates, sharedPreferences)
+                    val tripSplits =
+                        calculateSplits(tripId, measurements, timeStates, sharedPreferences)
                     viewModelScope.launch {
                         Log.d("TRIP_DETAILS_VIEW_MODEL",
                             "Inserting post-trip computed splits in database")
