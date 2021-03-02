@@ -473,7 +473,8 @@ fun calculateSplits(
 ): ArrayList<Split> {
     val tripSplits = arrayListOf<Split>()
     var totalDistance = 0.0
-    var totalActiveTime: Double
+    var totalActiveTime: Double = 0.0
+    var timestamp: Long = 0
 
     if (measurements.isNullOrEmpty()) return tripSplits
 
@@ -487,37 +488,61 @@ fun calculateSplits(
         if (leg.isNullOrEmpty()) return@forEachIndexed
         var prev = leg[0]
         for (measurementIdx in 1 until leg.size) {
-            val lastSplit = if (tripSplits.isEmpty()) Split(0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0,
-                0) else tripSplits.last()
+            val lastSplit = getLastSplit(tripSplits)
             val curr = leg[measurementIdx]
 
             totalDistance += getDistance(curr, prev)
             totalActiveTime =
                 ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(intervals.sliceArray(
                     IntRange(0, legIdx - 1)))
+            timestamp = curr.time
 
             if (crossedSplitThreshold(sharedPreferences,
                     totalDistance,
                     lastSplit.totalDistance)
             ) {
-                val splitDistance = totalDistance - lastSplit.totalDistance
-                val splitDuration = totalActiveTime - lastSplit.totalDuration
-                tripSplits.add(Split(timestamp = curr.time,
-                    duration = splitDuration,
-                    distance = splitDistance,
-                    totalDuration = totalActiveTime,
-                    totalDistance = totalDistance,
-                    tripId = tripId!!))
+                tripSplits.add(makeSplit(tripId,
+                    totalDistance,
+                    totalActiveTime,
+                    lastSplit,
+                    timestamp))
             }
             prev = curr
         }
     }
+    val lastSplit = getLastSplit(tripSplits)
+    if (timestamp != lastSplit.timestamp) {
+        tripSplits.add(makeSplit(tripId,
+            totalDistance,
+            totalActiveTime,
+            lastSplit,
+            timestamp))
+    }
     return tripSplits
+}
+
+fun getLastSplit(tripSplits: ArrayList<Split>) =
+    if (tripSplits.isEmpty()) Split(0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0,
+        0) else tripSplits.last()
+
+fun makeSplit(
+    tripId: Long,
+    totalDistance: Double,
+    totalActiveTime: Double,
+    lastSplit: Split,
+    timestamp: Long,
+): Split {
+    return Split(timestamp = timestamp,
+        duration = totalActiveTime - lastSplit.totalDuration,
+        distance = totalDistance - lastSplit.totalDistance,
+        totalDuration = totalActiveTime,
+        totalDistance = totalDistance,
+        tripId = tripId!!)
 }
 
 fun getDifferenceRollover(newTime: Int, oldTime: Int, rollover: Int = 65535) =

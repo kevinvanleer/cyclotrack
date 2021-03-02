@@ -275,7 +275,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 } else null
                             }
                     }
-                    Log.d(TAG, "Effective circumference: $effectiveCircumference")
+                    Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
                     /*
                 fun getSpeedDataFromGps(
                     entries: ArrayList<Entry>,
@@ -700,9 +700,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val timeView = TextView(activity)
 
                         distanceView.text = String.format("%d %s",
-                            kotlin.math.floor(getUserDistance(requireContext(),
-                                split.totalDistance))
-                                .toInt(), getUserDistanceUnitShort(requireContext()))
+                            idx + 1, getUserDistanceUnitShort(requireContext()))
                         timeView.text = formatDuration(split.totalDuration)
                         speedText.text = String.format("%.2f %s",
                             getUserSpeed(requireContext(),
