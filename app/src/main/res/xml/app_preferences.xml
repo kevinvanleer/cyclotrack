@@ -17,7 +17,6 @@
         app:key="wheel_circumference"
         app:title="Wheel circumference (in or mm)"
         app:defaultValue="81.681"
-        android:inputType="number"
         android:singleLine="true"
         app:summary="Used with BLE speed sensor" />
     <Preference

@@ -33,7 +33,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
 
         circumferencePref?.setOnBindEditTextListener { editText ->
             Log.d("PREFERENCES", "Updating circumference editor")
-            editText.inputType = EditorInfo.TYPE_CLASS_NUMBER
+            editText.inputType = EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
             editText.isSingleLine = true
         }
         return super.onCreateView(inflater, container, savedInstanceState)
