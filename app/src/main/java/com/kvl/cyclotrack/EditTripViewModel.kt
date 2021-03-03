@@ -20,7 +20,7 @@ class EditTripViewModel @ViewModelInject constructor(
 
     fun updateTripName(value: String) {
         try {
-            changeDetails(value, tripInfo.notes!!, tripInfo.userWheelCircumference!!)
+            changeDetails(value, tripInfo.notes, tripInfo.userWheelCircumference)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update trip with user edits", e)
         }
@@ -28,7 +28,7 @@ class EditTripViewModel @ViewModelInject constructor(
 
     fun updateTripNotes(value: String) {
         try {
-            changeDetails(tripInfo.name!!, value, tripInfo.userWheelCircumference!!)
+            changeDetails(tripInfo.name!!, value, tripInfo.userWheelCircumference)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update trip with user edits", e)
         }
@@ -36,14 +36,13 @@ class EditTripViewModel @ViewModelInject constructor(
 
     fun updateTripCircumference(value: String) {
         try {
-            changeDetails(tripInfo.name!!, tripInfo.notes!!, userCircumferenceToMeters(value)!!)
+            changeDetails(tripInfo.name!!, tripInfo.notes, userCircumferenceToMeters(value))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update trip with user edits", e)
         }
     }
 
-
-    private fun changeDetails(name: String, notes: String, circumference: Float) =
+    private fun changeDetails(name: String, notes: String?, circumference: Float?) =
         viewModelScope.launch(Dispatchers.IO) {
             tripsRepository.updateTripStuff(TripStuff(tripInfo.id!!, name, notes, circumference))
             tripInfo = tripsRepository.getTripOnce(tripInfo.id!!)
