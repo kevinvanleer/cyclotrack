@@ -23,8 +23,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 23
         targetSdkVersion 29
-        versionCode 17
-        versionName "1.6.2"
+        versionCode 18
+        versionName "1.6.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
