@@ -173,19 +173,16 @@ class TripInProgressViewModel @ViewModelInject constructor(
                 }
             }
 
-            val oldAltitude: Double = old?.measurements?.altitude ?: 0.0
-            val verticalSpeed = abs((new.altitude - oldAltitude) / durationDelta)
-
-            var newSlope = calculateSlope(verticalSpeed,
+            var newSlope = calculateSlope(
                 newSpeed,
                 distanceDelta,
                 new,
                 speedThreshold,
-                oldAltitude,
-                old)
+                old,
+                durationDelta)
             val newAcceleration = getAcceleration(durationDelta, newSpeed, old)
 
-            Log.v("TIP_VERTICAL_SPEED", verticalSpeed.toString())
+            Log.v("TIP_SLOPE", newSlope.toString())
             Log.d("TIP_DISTANCE_DELTA", distanceDelta.toString())
             Log.d("TIP_DURATION_DELTA", durationDelta.toString())
             Log.v("TIP_UPDATE",
@@ -334,24 +331,23 @@ class TripInProgressViewModel @ViewModelInject constructor(
     else ((newSpeed - (old?.speed ?: 0f)) / durationDelta).toFloat()
 
     private fun calculateSlope(
-        verticalSpeed: Double,
         newSpeed: Float,
         distanceDelta: Double,
         new: Measurements,
         speedThreshold: Float,
-        oldAltitude: Double,
         old: TripProgress?,
+        durationDelta: Double,
     ): Double {
-        var newSlope = 0.0
-        if (verticalSpeed < newSpeed && distanceDelta != 0.0) {
-            val slopeAlpha = 0.5
-            newSlope = slopeAlpha * (
+        val oldAltitude: Double = old?.measurements?.altitude ?: 0.0
+        val verticalSpeed = abs((new.altitude - oldAltitude) / durationDelta)
+
+        val slopeAlpha = 0.5
+        return if (verticalSpeed < newSpeed && distanceDelta != 0.0) {
+            slopeAlpha * (
                     if (new.speed > speedThreshold) ((new.altitude - oldAltitude) / distanceDelta)
                     else (old?.slope ?: 0.0)
                     ) + ((1 - slopeAlpha) * (old?.slope ?: 0.0))
-            Log.v("SLOPE", newSlope.toString())
-        }
-        return newSlope
+        } else 0.0
     }
 
     private fun getDistanceDelta(
