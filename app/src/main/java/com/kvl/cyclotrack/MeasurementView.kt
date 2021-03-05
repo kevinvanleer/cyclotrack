@@ -24,9 +24,21 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         set(newValue) {
             val digitLength = newValue.filter { it.isDigit() }.length
             val multiplier = (digitLength - 4).coerceAtLeast(0)
+            val textSize =
+                if (_valueTextSizeAttr > 0) _valueTextSizeAttr else TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_SP,
+                    40f,
+                    resources.displayMetrics)
+            val factor =
+                TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 4f, resources.displayMetrics)
+            val factorB = if (multiplier > 0) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                (newValue.length - digitLength).toFloat(),
+                resources.displayMetrics) else 0f
+
             Log.d("MEASUREMENT_VIEW", "$newValue has a digit length of $digitLength")
-            measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_SP,
-                40f - (multiplier * 4) - (newValue.length - digitLength))
+            measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                textSize - (multiplier * factor) - factorB)
+
             measurementValueView.text = newValue
 
             //TODO: Lookup table would be the next iteration. I already derived the values
