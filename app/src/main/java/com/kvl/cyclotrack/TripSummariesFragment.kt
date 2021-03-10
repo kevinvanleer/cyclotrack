@@ -111,6 +111,7 @@ class TripSummariesFragment : Fragment() {
         val listState: Parcelable? = savedInstanceState?.getParcelable("MY_KEY")
         if (listState != null) viewManager.onRestoreInstanceState(listState)
 
+        activity?.title = "Cyclotrack"
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         rollupView = view.findViewById(R.id.trips_rollup)
 
