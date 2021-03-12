@@ -1,6 +1,6 @@
 secure.properties
 keystore.properties
-/db-bak
+/db_baks
 cyclotrack-keystore
 /app/release
 /app/prod

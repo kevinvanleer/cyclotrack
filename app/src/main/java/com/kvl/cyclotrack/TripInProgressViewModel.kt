@@ -268,8 +268,8 @@ class TripInProgressViewModel @ViewModelInject constructor(
     }
 
     private fun setTripPaused(new: Measurements) {
-        var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
-        var speedThreshold = defaultSpeedThreshold
+        val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+        val speedThreshold = defaultSpeedThreshold
         if (!startTime.isFinite()) startTime = new.elapsedRealtimeNanos / 1e9
 
         if (accurateEnough) {
@@ -391,7 +391,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
 
         //TODO: Add speed revs to time state for distance calculations
         coroutineScope.launch(Dispatchers.Default) {
-            tripId = tripsRepository.createNewTrip()
+            tripId = tripsRepository.createNewTrip().also { id ->
+                tripsRepository.updateBiometrics(
+                    getBiometrics(id, sharedPreferences))
+            }
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
             Log.d(TAG, "created new trip with id ${tripId.toString()}")
             tripStarted.postValue(tripId)

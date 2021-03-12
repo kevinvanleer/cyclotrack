@@ -34,6 +34,17 @@ data class TripStats(
     val autoWheelCircumference: Float?,
 )
 
+data class Biometrics(
+    val id: Long,
+    val userSex: UserSexEnum? = null,
+    val userWeight: Float? = null,
+    val userHeight: Float? = null,
+    val userAge: Float? = null,
+    val userVo2max: Float? = null,
+    val userRestingHeartRate: Int? = null,
+    val userMaxHeartRate: Int? = null,
+)
+
 @Dao
 interface TripDao {
     @Insert()
@@ -53,6 +64,9 @@ interface TripDao {
 
     @Update(entity = Trip::class)
     suspend fun updateStuff(stats: TripStuff)
+
+    @Update(entity = Trip::class)
+    suspend fun updateBiometrics(biometrics: Biometrics)
 
     @Query("SELECT * FROM trip WHERE id = :tripId")
     fun subscribe(tripId: Long): LiveData<Trip>

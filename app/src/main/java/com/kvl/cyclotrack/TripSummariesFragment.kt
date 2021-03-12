@@ -205,8 +205,11 @@ class TripSummariesFragment : Fragment() {
         return when (item.itemId) {
             R.id.action_settings -> {
                 Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
-                findNavController().navigate(R.id.action_go_to_settings)
-                true
+                findNavController().let {
+                    Log.d("TRIP_SUMMARIES", it.toString())
+                    it.navigate(R.id.action_go_to_settings)
+                    true
+                }
             }
             R.id.action_cleanup -> {
                 tripsCleanupGuardDialog?.show()

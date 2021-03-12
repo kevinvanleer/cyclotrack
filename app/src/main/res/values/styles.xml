@@ -7,6 +7,7 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="android:colorBackground">@color/colorBackground</item>
         <!--item name="android:textColor">@color/colorText</item-->
+        <item name="android:datePickerStyle">@style/DateOfBirthPicker</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
@@ -35,6 +36,12 @@
     <style name="Widget.AppTheme.MyView" parent="">
         <item name="android:background">@color/gray_400</item>
         <item name="exampleColor">@color/light_blue_400</item>
+    </style>
+
+    <style name="DateOfBirthPicker" parent="@android:style/Widget.DeviceDefault.DatePicker">
+        <item name="android:datePickerMode">spinner</item>
+        <item name="android:spinnersShown">true</item>
+        <item name="android:calendarViewShown">false</item>
     </style>
 
 </resources>

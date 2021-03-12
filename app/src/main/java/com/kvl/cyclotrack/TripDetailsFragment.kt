@@ -149,6 +149,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         notesView = view.findViewById(R.id.trip_details_notes)
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
         val durationHeadingView: HeadingView = view.findViewById(R.id.trip_details_time)
+        val caloriesHeadingView: HeadingView = view.findViewById(R.id.trip_details_calories)
         val speedHeadingView: HeadingView = view.findViewById(R.id.trip_details_speed)
         val splitsHeadingView: HeadingView = view.findViewById(R.id.trip_details_splits)
         val speedChartView: LineChart = view.findViewById(R.id.trip_details_speed_chart)
@@ -745,6 +746,35 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 makeSplitsGrid()
             })
         })
+
+        zipLiveData(viewModel.measurements(), viewModel.tripOverview()).observe(
+            viewLifecycleOwner,
+            { pairs ->
+                val measurements = pairs.first
+                val overview = pairs.second
+                Log.d(TAG, "Observed change to measurements and overview")
+
+                try {
+                    val sharedPrefs =
+                        PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    getCaloriesBurned(
+                        overview,
+                        getAverageHeartRate(measurements),
+                        sharedPrefs
+                    )?.let {
+                        caloriesHeadingView.label = getCaloriesBurnedLabel(
+                            overview,
+                            getAverageHeartRate(measurements),
+                            sharedPrefs
+                        )
+                        caloriesHeadingView.visibility = View.VISIBLE
+                        caloriesHeadingView.value = it.toString()
+                    }
+                } catch (e: NullPointerException) {
+                    caloriesHeadingView.visibility = View.GONE
+                    Log.e(tag, "Failed to calculate calories burned", e)
+                }
+            })
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

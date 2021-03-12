@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 9,
-    "identityHash": "9109d165598e0fd3ba1d3b836df3b999",
+    "version": 10,
+    "identityHash": "cd1a9549b297a615d693e58d13692230",
     "entities": [
       {
         "tableName": "Trip",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `distance` REAL, `duration` REAL, `averageSpeed` REAL, `timestamp` INTEGER NOT NULL, `inProgress` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `notes` TEXT, `userWheelCircumference` REAL, `autoWheelCircumference` REAL, `userSex` INTEGER, `userWeight` REAL, `userHeight` REAL, `userAge` INTEGER, `userVo2max` REAL, `userRestingHeartRate` INTEGER, `userMaxHeartRate` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `distance` REAL, `duration` REAL, `averageSpeed` REAL, `timestamp` INTEGER NOT NULL, `inProgress` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `notes` TEXT, `userWheelCircumference` REAL, `autoWheelCircumference` REAL, `userSex` INTEGER, `userWeight` REAL, `userHeight` REAL, `userAge` REAL, `userVo2max` REAL, `userRestingHeartRate` INTEGER, `userMaxHeartRate` INTEGER)",
         "fields": [
           {
             "fieldPath": "name",
@@ -89,7 +89,7 @@
           {
             "fieldPath": "userAge",
             "columnName": "userAge",
-            "affinity": "INTEGER",
+            "affinity": "REAL",
             "notNull": false
           },
           {
@@ -421,7 +421,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9109d165598e0fd3ba1d3b836df3b999')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cd1a9549b297a615d693e58d13692230')"
     ]
   }
 }

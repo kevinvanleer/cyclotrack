@@ -542,7 +542,7 @@ fun makeSplit(
         distance = totalDistance - lastSplit.totalDistance,
         totalDuration = totalActiveTime,
         totalDistance = totalDistance,
-        tripId = tripId!!)
+        tripId = tripId)
 }
 
 fun getDifferenceRollover(newTime: Int, oldTime: Int, rollover: Int = 65535) =

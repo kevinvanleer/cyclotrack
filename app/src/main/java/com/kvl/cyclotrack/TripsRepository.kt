@@ -40,4 +40,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     suspend fun updateTripStuff(stuff: TripStuff) = with(tripDao) { updateStuff(stuff) }
     suspend fun updateWheelCircumference(circ: TripWheelCircumference) =
         with(tripDao) { updateCircumference(circ) }
+
+    suspend fun updateBiometrics(biometrics: Biometrics) {
+        tripDao.updateBiometrics(biometrics)
+    }
 }

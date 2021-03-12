@@ -23,8 +23,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 23
         targetSdkVersion 29
-        versionCode 18
-        versionName "1.6.3"
+        versionCode 19
+        versionName "1.7.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -41,6 +41,10 @@ android {
             file("../secure.properties")?.withInputStream { secureProps.load(it) }
         }
         resValue "string", "maps_api_key", (secureProps.getProperty("MAPS_API_KEY") ?: "")
+    }
+
+    buildFeatures {
+        dataBinding true
     }
 
     buildTypes {
@@ -69,7 +73,9 @@ android {
         jvmTarget = '1.8'
     }
     testOptions {
-        unitTests.returnDefaultValues = true
+        unitTests {
+            returnDefaultValues = true
+        }
     }
 }
 

@@ -106,14 +106,26 @@
                 app:layout_constraintTop_toBottomOf="@id/trip_details_distance" />
 
             <com.kvl.cyclotrack.HeadingView
+                android:id="@+id/trip_details_calories"
+                heading_view:headingLabel="Calories (net)"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_time" />
+
+            <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_heart_rate"
                 heading_view:headingLabel="Heart rate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
+                android:visibility="gone"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_time" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_calories" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_heart_rate_chart"

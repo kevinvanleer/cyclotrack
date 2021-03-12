@@ -2,7 +2,29 @@ package com.kvl.cyclotrack
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
 import java.util.*
+
+enum class UserSexEnum(val value: Int) {
+    MALE(0),
+    FEMALE(1),
+}
+
+class UserSexEnumConverter {
+    @TypeConverter
+    fun fromUserSexEnum(value: UserSexEnum?): Int? {
+        return value?.ordinal
+    }
+
+    @TypeConverter
+    fun toUserSexEnum(value: Int?): UserSexEnum? = value?.let {
+        when (it) {
+            0 -> UserSexEnum.MALE
+            1 -> UserSexEnum.FEMALE
+            else -> UserSexEnum.MALE
+        }
+    }
+}
 
 fun getDefaultTripName(): String {
     val c = Calendar.getInstance()
@@ -31,4 +53,11 @@ data class Trip(
     val notes: String? = null,
     val userWheelCircumference: Float? = null,
     val autoWheelCircumference: Float? = null,
+    val userSex: UserSexEnum? = null,
+    val userWeight: Float? = null,
+    val userHeight: Float? = null,
+    val userAge: Float? = null,
+    val userVo2max: Float? = null,
+    val userRestingHeartRate: Int? = null,
+    val userMaxHeartRate: Int? = null,
 )

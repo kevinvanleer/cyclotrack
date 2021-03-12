@@ -60,7 +60,17 @@
     <fragment
         android:id="@+id/AppPreferencesFragment"
         android:name="com.kvl.cyclotrack.AppPreferencesFragment"
-        android:label="AppPreferencesFragment" />
+        android:label="Preferences"
+        tools:layout="@layout/fragment_app_preferences">
+        <action
+            android:id="@+id/action_edit_biometrics_preferences"
+            app:destination="@id/BiometricsPreferenceFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/BiometricsPreferenceFragment"
+        android:name="com.kvl.cyclotrack.BiometricsPreferenceFragment"
+        android:label="Biometrics"
+        tools:layout="@layout/biometrics_preference_fragment" />
     <navigation
         android:id="@+id/trip_in_progress_graph"
         app:startDestination="@id/TripInProgressFragment">

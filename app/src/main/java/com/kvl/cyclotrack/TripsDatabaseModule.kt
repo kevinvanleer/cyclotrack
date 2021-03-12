@@ -75,6 +75,18 @@ val MIGRATION_8_9 = object : Migration(8, 9) {
     }
 }
 
+val MIGRATION_9_10 = object : Migration(9, 10) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userSex` INTEGER")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userWeight` FLOAT")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userHeight` FLOAT")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userAge` FLOAT")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userVo2max` FLOAT")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userRestingHeartRate` INTEGER")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userMaxHeartRate` INTEGER")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -92,6 +104,7 @@ object TripsDatabaseModule {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
+                MIGRATION_9_10,
             ).build()
 
     @Provides
