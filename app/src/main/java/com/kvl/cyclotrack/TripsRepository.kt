@@ -44,4 +44,6 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     suspend fun updateBiometrics(biometrics: Biometrics) {
         tripDao.updateBiometrics(biometrics)
     }
+
+    suspend fun getDefaultBiometrics(tripId: Long) = tripDao.getDefaultBiometrics(tripId)
 }

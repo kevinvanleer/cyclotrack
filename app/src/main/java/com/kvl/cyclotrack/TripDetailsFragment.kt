@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.util.DisplayMetrics
@@ -747,6 +748,31 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             })
         })
 
+        fun getCaloriesBurned(
+            overview: Trip,
+            measurements: Array<CriticalMeasurements>,
+            sharedPrefs: SharedPreferences,
+        ) {
+            try {
+                getCaloriesBurned(
+                    overview,
+                    getAverageHeartRate(measurements),
+                    sharedPrefs
+                )?.let {
+                    caloriesHeadingView.label = getCaloriesBurnedLabel(
+                        overview,
+                        getAverageHeartRate(measurements),
+                        sharedPrefs
+                    )
+                    caloriesHeadingView.visibility = View.VISIBLE
+                    caloriesHeadingView.value = it.toString()
+                }
+
+            } catch (e: NullPointerException) {
+                caloriesHeadingView.visibility = View.GONE
+                Log.e(tag, "Failed to calculate calories burned", e)
+            }
+        }
         zipLiveData(viewModel.measurements(), viewModel.tripOverview()).observe(
             viewLifecycleOwner,
             { pairs ->
@@ -754,25 +780,25 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val overview = pairs.second
                 Log.d(TAG, "Observed change to measurements and overview")
 
-                try {
-                    val sharedPrefs =
-                        PreferenceManager.getDefaultSharedPreferences(requireContext())
-                    getCaloriesBurned(
-                        overview,
-                        getAverageHeartRate(measurements),
-                        sharedPrefs
-                    )?.let {
-                        caloriesHeadingView.label = getCaloriesBurnedLabel(
-                            overview,
-                            getAverageHeartRate(measurements),
-                            sharedPrefs
-                        )
-                        caloriesHeadingView.visibility = View.VISIBLE
-                        caloriesHeadingView.value = it.toString()
+                val sharedPrefs =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext())
+                if (overview.userWeight == null) {
+                    Log.d(TAG, "Looking up default biometrics")
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        viewModel.getDefaultBiometrics()?.let { biometrics ->
+                                getCaloriesBurned(overview.copy(userWeight = biometrics.userWeight,
+                                    userHeight = biometrics.userHeight,
+                                    userSex = biometrics.userSex,
+                                    userAge = biometrics.userAge,
+                                    userVo2max = biometrics.userVo2max,
+                                    userRestingHeartRate = biometrics.userRestingHeartRate,
+                                    userMaxHeartRate = biometrics.userMaxHeartRate),
+                                    measurements,
+                                    sharedPrefs)
+                        } ?: getCaloriesBurned(overview, measurements, sharedPrefs)
                     }
-                } catch (e: NullPointerException) {
-                    caloriesHeadingView.visibility = View.GONE
-                    Log.e(tag, "Failed to calculate calories burned", e)
+                } else {
+                    getCaloriesBurned(overview, measurements, sharedPrefs)
                 }
             })
     }
