@@ -526,11 +526,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val accumulatedTime = accumulateTime(intervals)
 
                         measurements.forEach {
-                            if (it.cadenceRpm != null) {
-                                val timestamp =
-                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                                entries.add(Entry(timestamp, it.cadenceRpm))
-                            }
+                            entries.add(Entry((accumulatedTime + (it.time - intervalStart) / 1e3).toFloat(),
+                                it.cadenceRpm ?: 0f))
                         }
                         val dataset = LineDataSet(entries, "Cadence")
                         dataset.setDrawCircles(false)
