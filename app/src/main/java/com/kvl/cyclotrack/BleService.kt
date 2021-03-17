@@ -51,6 +51,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             }
         }?.filter { it.address != "REMOVE_INVALID_SENSOR" }?.toTypedArray()
 
+    private var scanCallbacks = ArrayList<ScanCallback>()
     private var gatts = ArrayList<BluetoothGatt>()
 
     var hrmSensor = MutableLiveData(HrmData(null, null))
@@ -211,6 +212,22 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         ) {
             Log.d(TAG, "onCharacteristicChanged")
             broadcastUpdate(gatt, characteristic)
+        }
+    }
+
+    // Device scan callback.
+    private fun scanForDevice(mac: String): ScanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            super.onScanResult(callbackType, result)
+            Log.d(TAG,
+                "Found device ${result.device.name}, ${result.device.type}: ${result.device}")
+            if (result.device.address == mac) {
+                Log.d(TAG,
+                    "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}")
+                result.device.connectGatt(context, true, genericGattCallback)
+                bluetoothLeScanner.stopScan(this)
+                scanCallbacks.remove(this)
+            }
         }
     }
 
@@ -393,22 +410,38 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
 
         enableBluetooth(context, activity)
 
-        //HACK: This is required to successfully connect after reboot
-        // Initializes Bluetooth adapter.
-        bluetoothLeScanner.startScan(leScanCallback)
-        bluetoothLeScanner.stopScan(leScanCallback)
-        //END HACK
-
         myMacs.forEach {
             val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(it.address)
-            Log.d(TAG,
-                "Connecting to ${device.name}, ${device.type}: ${device.address}")
-            //TODO: Store BLE service for each device and use corresponding callback
-            device.connectGatt(context, true, genericGattCallback)
+            if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+                Log.d(TAG,
+                    "Scanning for uncached device: ${device.address}")
+                val callback = scanForDevice(device.address)
+                scanCallbacks.add(callback)
+                bluetoothLeScanner.startScan(callback)
+            } else {
+                Log.d(TAG,
+                    "Connecting to ${device.name}, ${device.type}: ${device.address}")
+                //TODO: Store BLE service for each device and use corresponding callback
+                device.connectGatt(context, true, genericGattCallback)
+            }
+        }
+        if (scanCallbacks.isNotEmpty()) {
+            Handler().postDelayed({
+                stopAllScans()
+            }, 5 * 60 * 1000)
         }
     }
 
+    fun stopAllScans() {
+        scanCallbacks?.forEach {
+            Log.d(TAG, "Stopping device scan")
+            bluetoothLeScanner.stopScan(it)
+        }
+        scanCallbacks.clear()
+    }
+
     fun disconnect() {
+        stopAllScans()
         gatts.forEach { gatt ->
             Log.d(TAG, "Disconnecting ${gatt.device.address}")
             gatt.disconnect()
