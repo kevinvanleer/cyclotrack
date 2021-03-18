@@ -53,6 +53,18 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         savedInstanceState: Bundle?,
     ): View? {
         setHasOptionsMenu(true)
+
+        activity?.window?.apply {
+            val params = attributes
+            getBrightnessPreference(context).let { brightness ->
+                Log.d(TAG, "User brightness $brightness")
+                if (params.screenBrightness < brightness) {
+                    params.screenBrightness = brightness
+                    attributes = params
+                }
+            }
+        }
+
         return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
     }
 
@@ -163,6 +175,11 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         Log.d(TAG, "Destroying TIP View")
         super.onDestroy()
         if (bleFeatureFlag()) viewModel.stopBle()
+        activity?.window?.apply {
+            val params = attributes
+            params.screenBrightness = -1f
+            attributes = params
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

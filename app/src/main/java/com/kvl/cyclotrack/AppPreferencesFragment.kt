@@ -9,10 +9,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
-import androidx.preference.EditTextPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
+import androidx.preference.*
 
 class AppPreferencesFragment : PreferenceFragmentCompat(),
     PreferenceFragmentCompat.OnPreferenceDisplayDialogCallback {
@@ -29,8 +26,17 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             }
         }
 
+        val brightnessToggle =
+            findPreference<SwitchPreference>(getString(R.string.preferences_dashboard_brightness_toggle_key))
+        findPreference<SeekBarPreference>(getString(R.string.preferences_dashboard_brightness_key))?.apply {
+            setOnPreferenceChangeListener { _, _ ->
+                brightnessToggle?.isChecked = true
+                true
+            }
+        }
+
         if (BuildConfig.BUILD_TYPE == "dev") {
-            findPreference<Preference>(getString(R.string.preferences_clear_preferences))?.apply {
+            findPreference<Preference>(getString(R.string.preferences_clear_preferences_key))?.apply {
                 isVisible = true
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {

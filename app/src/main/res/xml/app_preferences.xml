@@ -1,20 +1,28 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
     <DropDownPreference
-        app:key="display_units"
+        app:key="@string/preferences_system_of_measurement_key"
         app:title="Units"
         app:summary="Current selection: %s"
         app:defaultValue="1"
         app:entries="@array/systems_of_measurement"
         app:entryValues="@array/systems_of_measurement_values" />
+    <SwitchPreference
+        app:key="@string/preferences_dashboard_brightness_toggle_key"
+        app:title="Dashboard brightness"
+        app:summary="Increase screen brightness during rides for better visibility"
+        app:defaultValue="true" />
+    <SeekBarPreference
+        app:key="@string/preferences_dashboard_brightness_key"
+        app:defaultValue="50" />
     <com.kvl.cyclotrack.DiscoverSensorDialogPreference
         android:dialogLayout="@layout/discovered_sensor_list"
         android:dialogTitle="Discover and link sensors"
-        android:key="@string/sharedPrefKey_paired_ble_devices"
+        android:key="@string/preferences_paired_ble_devices_key"
         android:title="Link BLE sensors"
         android:summary="Collect heart rate, cadence, and speed sensor data during your rides" />
     <EditTextPreference
-        app:key="wheel_circumference"
+        app:key="@string/preferences_wheel_circumference_key"
         app:title="Wheel circumference (in or mm)"
         app:defaultValue="81.681"
         android:singleLine="true"
@@ -22,9 +30,9 @@
     <Preference
         app:key="@string/preferences_biometrics_key"
         app:title="Biometrics"
-        app:summary="Height, weight, age, and other information"></Preference>
+        app:summary="Height, weight, age, and other information" />
     <Preference
-        app:key="privacy_policy"
+        app:key="@string/preferences_privacy_policy_key"
         app:title="Privacy policy"
         app:summary="Tap to view privacy policy">
         <intent
@@ -32,7 +40,7 @@
             android:data="https://www.kevinvanleer.com/cyclotrack/#/privacy" />
     </Preference>
         <Preference
-            app:key="@string/preferences_clear_preferences"
+            app:key="@string/preferences_clear_preferences_key"
             app:title="Clear preferences"
             app:summary="DEV ENV ONLY: Touch to clear all preferences"
             app:allowDividerAbove="true"

@@ -41,7 +41,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         var cadence: String? = null
     }
     private val myMacs =
-        sharedPreferences.getStringSet(context.resources.getString(R.string.sharedPrefKey_paired_ble_devices),
+        sharedPreferences.getStringSet(context.resources.getString(R.string.preferences_paired_ble_devices_key),
             HashSet())?.map {
             try {
                 Gson().fromJson(it, ExternalSensor::class.java)

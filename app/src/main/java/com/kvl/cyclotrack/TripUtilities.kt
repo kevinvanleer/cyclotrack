@@ -260,6 +260,17 @@ const val FEET_TO_MILES = 1.0 / 5280
 const val SECONDS_TO_HOURS = 1.0 / 3600
 const val INCHES_TO_FEET = 1 / 12.0
 const val FEET_TO_INCHES = 12.0
+
+fun getBrightnessPreference(context: Context): Float {
+    return if (PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean(context.getString(R.string.preferences_dashboard_brightness_toggle_key),
+                true)
+    ) {
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .getInt(context.getString(R.string.preferences_dashboard_brightness_key), 50) / 100f
+    } else -1f
+}
+
 fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
     getUserSpeed(context, meters / seconds)
 

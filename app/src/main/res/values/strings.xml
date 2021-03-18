@@ -19,7 +19,7 @@
     <string name="action_cleanup">Cleanup</string>
     <string name="details_menu_title_edit">Edit</string>
     <string name="details_menu_title_delete">Delete</string>
-    <string name="sharedPrefKey_paired_ble_devices">paired_ble_devices</string>
+    <string name="preferences_paired_ble_devices_key">paired_ble_devices</string>
     <string name="scanning_for_ble_devices">Scanning for BLE devices...</string>
     <string name="saved_devices_label">Linked devices</string>
     <string name="discovered_devices_label">Discovered devices</string>
@@ -35,7 +35,7 @@
     <string name="preference_key_system_of_measurement">display_units</string>
     <string name="preference_key_biometrics_user_dob">preference_key_biometrics_user_date_of_birth</string>
     <string name="date_format_patten_dob">yyyy-MM-dd</string>
-    <string name="preferences_clear_preferences">preferences_clear_preferences</string>
+    <string name="preferences_clear_preferences_key">preferences_clear_preferences</string>
     <string name="preference_biometrics_instruction_text">This information is used to estimate Calorie burn during rides.</string>
     <string name="preference_biometrics_instruction_text_verbose">This information is used to estimate Calorie burn during rides. Fill in your weight to get a METs-based Calorie estimate. If you have linked a heart rate monitor, fill in your sex, date of birth (age), and VO2Max for a more accurate estimate.</string>
     <string name="preference_biometrics_hrm_calorie_instruction_text">If you have a heart rate monitor linked, specify your sex, date of birth, and resting heart rate to enable heart rate based estimates.</string>
@@ -49,4 +49,9 @@
     <string name="biometrics_preferences_weight_only_hint">Calorie burn will be estimated based on average speed.</string>
     <string name="biometrics_preferences_gross_calories_hint">Heart rate data will be used to estimate gross calorie burn when available.</string>
     <string name="biometric_resources_net_calories_hint">Heart rate data will be used to estimate net calorie burn when available.</string>
+    <string name="preferences_dashboard_brightness_key">preference_dashboard_brightness</string>
+    <string name="preferences_dashboard_brightness_toggle_key">dashboard_brightness_toggle</string>
+    <string name="preferences_system_of_measurement_key">display_units</string>
+    <string name="preferences_privacy_policy_key">privacy_policy</string>
+    <string name="preferences_wheel_circumference_key">wheel_circumference</string>
 </resources>
