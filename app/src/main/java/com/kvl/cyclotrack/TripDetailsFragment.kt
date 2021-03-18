@@ -190,6 +190,22 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             }
         }
 
+        fun getAverageSpeedRpm(measurements: Array<CriticalMeasurements>): Float? {
+            return try {
+                val speedMeasurements = measurements.filter { it.speedRevolutions != null }
+                val totalRevs = speedMeasurements.last().speedRevolutions?.let {
+                    getDifferenceRollover(it,
+                        speedMeasurements.first().speedRevolutions!!)
+                }
+                val duration =
+                    (speedMeasurements.last().time - speedMeasurements.first().time) / 1000 / 60
+
+                totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false }
+            } catch (e: Exception) {
+                null
+            }
+        }
+
         fun getAverageCadence(measurements: Array<CriticalMeasurements>): Float? {
             return try {
                 val cadenceMeasurements = measurements.filter { it.cadenceRevolutions != null }
@@ -278,19 +294,19 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             }
                     }
                     Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
-                    /*
-                fun getSpeedDataFromGps(
-                    entries: ArrayList<Entry>,
-                    trend: ArrayList<Entry>,
-                        measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ) {
-                    val intervalStart = intervals.last().first
-                    val accumulatedTime = accumulateTime(intervals)
-                    var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
-                    var trendAlpha = 0.01f
-                    measurements.forEach {
-                        if (it.accuracy < 5) {
+
+                    fun getSpeedDataFromGps(
+                        entries: ArrayList<Entry>,
+                        trend: ArrayList<Entry>,
+                        measurements: Array<CriticalMeasurements>,
+                        intervals: Array<LongRange>,
+                    ) {
+                        val intervalStart = intervals.last().first
+                        val accumulatedTime = accumulateTime(intervals)
+                        var trendLast =
+                            getUserSpeed(requireContext(), measurements[0].speed.toDouble())
+                        var trendAlpha = 0.01f
+                        measurements.forEach {
                             val timestamp =
                                 (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
                             entries.add(Entry(timestamp,
@@ -301,22 +317,28 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             if (trendAlpha > 0.01f) trendAlpha -= 0.01f
                         }
                     }
-                }
 
-                fun getSpeedDataFromSensor(
-                    entries: ArrayList<Entry>,
-                    trend: ArrayList<Entry>,
-                        measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ) {
-                    val intervalStart = intervals.last().first
-                    val accumulatedTime = accumulateTime(intervals)
-                    var trendLast = getUserSpeed(requireContext(), measurements[0].speed.toDouble())
-                    var trendAlpha = 0.01f
-                    measurements.forEach {
-                        if (it.speedRpm != null) {
+                    fun getSpeedDataFromSensor(
+                        entries: ArrayList<Entry>,
+                        trend: ArrayList<Entry>,
+                        measurements: Array<CriticalMeasurements>,
+                        intervals: Array<LongRange>,
+                    ) {
+                        val intervalStart = intervals.last().first
+                        val accumulatedTime = accumulateTime(intervals)
+                        var trendLast =
+                            getUserSpeed(requireContext(), measurements[0].speed.toDouble())
+                        var trendAlpha = 0.01f
+
+                        val circumference =
+                            effectiveCircumference ?: overview.autoWheelCircumference
+                            ?: overview.userWheelCircumference
+                            ?: getUserCircumference(requireContext())
+                        Log.d(TAG, "Using circumference: $circumference")
+
+                        measurements.forEach {
                             val speed =
-                                it.speedRpm * getUserCircumference(requireContext()) / 60
+                                it.speedRpm ?: 0f * circumference / 60
                             val timestamp =
                                 (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
                             entries.add(Entry(timestamp,
@@ -326,59 +348,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             trend.add(Entry(timestamp, trendLast))
                             if (trendAlpha > 0.01f) trendAlpha -= 0.01f
                         }
-                    }
-                }
-                */
-
-                    fun getFusedSpeedData(
-                        entries: ArrayList<Entry>,
-                        trend: ArrayList<Entry>,
-                        measurements: Array<CriticalMeasurements>,
-                        intervals: Array<LongRange>,
-                    ) {
-                        val intervalStart = intervals.last().first
-                        val accumulatedTime = accumulateTime(intervals)
-                        var trendLast =
-                            getUserSpeed(requireContext(),
-                                measurements[0].speed.toDouble())
-                        var trendAlpha = 0.01f
-
-                        val circumference =
-                            effectiveCircumference ?: overview.autoWheelCircumference
-                            ?: overview.userWheelCircumference
-                            ?: getUserCircumference(requireContext())
-                        Log.d(TAG, "Using circumference: $circumference")
-
-                        var cumSpeed = 0f
-                        measurements.forEach {
-                            if (it.speedRpm != null) {
-                                val speed = it.speedRpm * circumference / 60
-                                cumSpeed += speed
-                                Log.v(TAG, "$speed")
-                                val timestamp =
-                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                                entries.add(Entry(timestamp,
-                                    getUserSpeed(requireContext(), speed)))
-                                trendLast = (trendAlpha * getUserSpeed(requireContext(),
-                                    speed)) + ((1 - trendAlpha) * trendLast)
-                                trend.add(Entry(timestamp, trendLast))
-                                if (trendAlpha > 0.01f) trendAlpha -= 0.01f
-                            } else {
-                                val timestamp =
-                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                                entries.add(Entry(timestamp,
-                                    getUserSpeed(requireContext(),
-                                        it.speed.toDouble())))
-                                trendLast = (trendAlpha * getUserSpeed(requireContext(),
-                                    it.speed.toDouble())) + ((1 - trendAlpha) * trendLast)
-                                trend.add(Entry(timestamp, trendLast))
-                                if (trendAlpha > 0.01f) trendAlpha -= 0.01f
-                            }
-                        }
-                        val avgSpeed = getUserSpeed(requireContext(),
-                            cumSpeed) / measurements.size
-                        Log.d(TAG,
-                            "Avg speed: $avgSpeed")
                     }
 
                     fun makeSpeedDataset(
@@ -393,23 +362,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             "Speed"),
                             LineDataSet(trend, "Trend"))
 
-                        /* NOTE: THIS DIDN'T WORK
-                    var trendLast: Double = viewModel.tripOverview().value?.let {
-                        val speed = it.duration?.let { it1 ->
-                            it.distance?.div(it1)
-                        } ?: measurements[20].speed.toDouble()
-                        getUserSpeed(requireContext(), speed)
-                    } ?: getUserSpeed(requireContext(), measurements[20].speed.toDouble())*/
-
-                        //getSpeedDataFromGps(entries, trend, measurements, intervals)
-                        getFusedSpeedData(entries, trend, measurements, intervals)
+                        if (getAverageSpeedRpm(measurements) == null) {
+                            getSpeedDataFromGps(entries, trend, measurements, intervals)
+                        } else {
+                            getSpeedDataFromSensor(entries, trend, measurements, intervals)
+                        }
                         val dataset = LineDataSet(entries, "Speed")
                         dataset.setDrawCircles(false)
                         dataset.setDrawValues(false)
                         val trendData = LineDataSet(trend, "Trend")
                         trendData.setDrawCircles(false)
                         trendData.setDrawValues(false)
-                        //TODO: Use resource for this color
                         dataset.color =
                             ResourcesCompat.getColor(resources,
                                 R.color.colorGraphSecondary,
@@ -422,32 +385,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         trendData.lineWidth = 3f
                         return Pair(dataset, trendData)
                     }
-
-                    /*
-                fun makeSensorSpeedDataset(
-                    measurements: Array<Measurements>,
-                    intervals: Array<LongRange>,
-                ): Pair<LineDataSet, LineDataSet> {
-                    val entries = ArrayList<Entry>()
-                    val trend = ArrayList<Entry>()
-
-                    if (measurements.isNullOrEmpty()) return Pair(LineDataSet(entries, "Speed"),
-                        LineDataSet(trend, "Trend"))
-
-                    getSpeedDataFromSensor(entries, trend, measurements, intervals)
-                    val dataset = LineDataSet(entries, "Speed")
-                    val trendData = LineDataSet(trend, "Trend")
-                    dataset.setDrawCircles(false)
-                    trendData.setDrawCircles(false)
-                    //TODO: Use resource for this color
-                    dataset.color = Color.rgb(0, 0, 45)
-                    dataset.lineWidth = 15f
-                    trendData.color = Color.rgb(0, 0, 200)
-                    //trendData.color = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-                    trendData.lineWidth = 3f
-                    return Pair(dataset, trendData)
-                }
-                 */
 
                     fun makeSpeedLineChart() {
                         configureLineChart(speedChartView)
@@ -463,13 +400,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             data.addDataSet(raw)
                             data.addDataSet(trend)
                         }
-                        /*legs.forEachIndexed { idx, leg ->
-                        val (raw, trend) = makeSensorSpeedDataset(leg,
-                            intervals.sliceArray(IntRange(0, idx)))
 
-                        data.addDataSet(raw)
-                        data.addDataSet(trend)
-                    }*/
                         speedChartView.data = data
                         speedChartView.invalidate()
                     }
