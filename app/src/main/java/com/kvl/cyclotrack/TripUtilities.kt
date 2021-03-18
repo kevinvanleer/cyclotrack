@@ -555,9 +555,10 @@ fun getDifferenceRollover(newTime: Int, oldTime: Int, rollover: Int = 65535) =
 fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
     //NOTE: Does not handle 32-bit rollover, as the CSC spec states 32-bit values
     //do not rollover.
-    //return ((rev.toFloat() - revLast) / ((time - timeLast) / 1024f / 60f))
-    return getDifferenceRollover(rev, revLast).toFloat() / getDifferenceRollover(time,
-        timeLast) * 1024 * 60
+    return getDifferenceRollover(rev, revLast).toFloat().let {
+        if (it == 0f) 0f else it / getDifferenceRollover(time,
+            timeLast) * 1024 * 60
+    }
 }
 
 fun getGattUuid(uuid: String): UUID {

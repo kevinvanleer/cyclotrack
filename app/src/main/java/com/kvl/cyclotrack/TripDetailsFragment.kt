@@ -294,6 +294,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             }
                     }
                     Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
+                    Log.d(TAG,
+                        "Auto circumference trip $tripId: ${overview.autoWheelCircumference}")
+                    Log.d(TAG,
+                        "User circumference trip $tripId: ${overview.userWheelCircumference}")
 
                     fun getSpeedDataFromGps(
                         entries: ArrayList<Entry>,

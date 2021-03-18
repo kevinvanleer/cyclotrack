@@ -6,11 +6,18 @@ import org.junit.Test
 class GetRpmTest {
     @Test
     fun getRpm_divideByZero() {
-        Assert.assertEquals(Float.NaN, getRpm(0, 0, 0, 0))
         Assert.assertEquals(Float.POSITIVE_INFINITY, getRpm(10, 0, 0, 0))
         Assert.assertEquals(Float.POSITIVE_INFINITY, getRpm(10, 5, 0, 0))
-        Assert.assertEquals(Float.NaN, getRpm(0, 0, 5, 5))
         Assert.assertEquals(Float.POSITIVE_INFINITY, getRpm(10, 5, 5, 5))
+    }
+
+    @Test
+    fun getRpm_stationary() {
+        Assert.assertEquals(0f, getRpm(0, 0, 0, 0))
+        Assert.assertEquals(0f, getRpm(0, 0, 5, 5))
+        Assert.assertEquals(0f, getRpm(123123, 123123, 9834, 9834))
+        Assert.assertEquals(0f, getRpm(123123, 123123, 9834, 8234))
+        Assert.assertEquals(0f, getRpm(123123, 123123, 2834, 8234))
     }
 
     @Test
