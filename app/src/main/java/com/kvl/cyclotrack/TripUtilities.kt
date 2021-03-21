@@ -6,7 +6,6 @@ import android.location.Location
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
-import androidx.preference.PreferenceManager
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
@@ -261,16 +260,6 @@ const val SECONDS_TO_HOURS = 1.0 / 3600
 const val INCHES_TO_FEET = 1 / 12.0
 const val FEET_TO_INCHES = 12.0
 
-fun getBrightnessPreference(context: Context): Float {
-    return if (PreferenceManager.getDefaultSharedPreferences(context)
-            .getBoolean(context.getString(R.string.preferences_dashboard_brightness_toggle_key),
-                true)
-    ) {
-        PreferenceManager.getDefaultSharedPreferences(context)
-            .getInt(context.getString(R.string.preferences_dashboard_brightness_key), 50) / 100f
-    } else -1f
-}
-
 fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
     getUserSpeed(context, meters / seconds)
 
@@ -279,8 +268,7 @@ fun getUserSpeed(context: Context, speed: Double): Float =
 
 fun getUserSpeed(context: Context, speed: Float): Float {
     val userConversionFactor =
-        when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "1")) {
+        when (getSystemOfMeasurement(context)) {
             "1" -> METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
             "2" -> METERS_TO_KM / SECONDS_TO_HOURS
             else -> 1.0
@@ -290,8 +278,7 @@ fun getUserSpeed(context: Context, speed: Float): Float {
 
 fun getUserDistance(context: Context, meters: Double): Double {
     val userConversionFactor =
-        when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "1")) {
+        when (getSystemOfMeasurement(context)) {
             "1" -> METERS_TO_FEET * FEET_TO_MILES
             "2" -> METERS_TO_KM
             else -> 1.0
@@ -301,34 +288,12 @@ fun getUserDistance(context: Context, meters: Double): Double {
 
 fun getUserLength(context: Context, meters: Double): Double {
     val userConversionFactor =
-        when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "1")) {
+        when (getSystemOfMeasurement(context)) {
             "1" -> METERS_TO_FEET * FEET_TO_INCHES
             "2" -> METERS_TO_MM
             else -> 1.0
         }
     return meters * userConversionFactor
-}
-
-fun getUserCircumference(context: Context): Float = getUserCircumferenceOrNull(context) ?: 0f
-
-fun getUserCircumferenceOrNull(context: Context): Float? {
-    return getUserCircumferenceOrNull(PreferenceManager.getDefaultSharedPreferences(context))
-}
-
-fun getUserCircumferenceOrNull(prefs: SharedPreferences): Float? {
-    val storedCircumference = prefs.getString("wheel_circumference", "2037")
-    Log.d("TRIP_UTILS_PREF", "Wheel circumference preference: ${storedCircumference}")
-    return userCircumferenceToMeters(storedCircumference)
-}
-
-fun metersToUserCircumference(context: Context, meters: Float): String {
-    return metersToUserCircumference(meters, PreferenceManager.getDefaultSharedPreferences(context))
-}
-
-fun metersToUserCircumference(meters: Float, prefs: SharedPreferences): String {
-    val storedCircumference = prefs.getString("wheel_circumference", "2037")
-    return metersToUserCircumference(meters, storedCircumference)
 }
 
 fun metersToUserCircumference(meters: Float, storedCircumference: String?): String {
@@ -380,8 +345,7 @@ fun userCircumferenceToMeters(input: String?): Float? {
 
 fun getUserAltitude(context: Context, meters: Double): Double {
     val userConversionFactor =
-        when (PreferenceManager.getDefaultSharedPreferences(context)
-            .getString("display_units", "1")) {
+        when (getSystemOfMeasurement(context)) {
             "1" -> METERS_TO_FEET
             else -> 1.0
         }
@@ -389,8 +353,7 @@ fun getUserAltitude(context: Context, meters: Double): Double {
 }
 
 fun getUserDistanceUnitShort(context: Context): String {
-    return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "1")) {
+    return when (getSystemOfMeasurement(context)) {
         "1" -> "mi"
         "2" -> "km"
         else -> "mi"
@@ -398,8 +361,7 @@ fun getUserDistanceUnitShort(context: Context): String {
 }
 
 fun getUserDistanceUnitLong(context: Context): String {
-    return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "1")) {
+    return when (getSystemOfMeasurement(context)) {
         "1" -> "miles"
         "2" -> "kilometers"
         else -> "miles"
@@ -407,8 +369,7 @@ fun getUserDistanceUnitLong(context: Context): String {
 }
 
 fun getUserSpeedUnitShort(context: Context): String {
-    return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "1")) {
+    return when (getSystemOfMeasurement(context)) {
         "1" -> "mph"
         "2" -> "km/h"
         else -> "mph"
@@ -416,8 +377,7 @@ fun getUserSpeedUnitShort(context: Context): String {
 }
 
 fun getUserSpeedUnitLong(context: Context): String {
-    return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "1")) {
+    return when (getSystemOfMeasurement(context)) {
         "1" -> "miles per hour"
         "2" -> "kilometers per hour"
         else -> "miles per hour"
@@ -425,8 +385,7 @@ fun getUserSpeedUnitLong(context: Context): String {
 }
 
 fun getUserAltitudeUnitShort(context: Context): String {
-    return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "1")) {
+    return when (getSystemOfMeasurement(context)) {
         "1" -> "ft"
         "2" -> "m"
         else -> "ft"
@@ -434,8 +393,7 @@ fun getUserAltitudeUnitShort(context: Context): String {
 }
 
 fun getUserAltitudeUnitLong(context: Context): String {
-    return when (PreferenceManager.getDefaultSharedPreferences(context)
-        .getString("display_units", "1")) {
+    return when (getSystemOfMeasurement(context)) {
         "1" -> "feet"
         "2" -> "meters"
         else -> "feet"
@@ -471,7 +429,7 @@ fun crossedSplitThreshold(
 }
 
 fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Double): Boolean {
-    return crossedSplitThreshold(PreferenceManager.getDefaultSharedPreferences(context),
+    return crossedSplitThreshold(getPreferences(context),
         newDistance,
         oldDistance)
 }
