@@ -24,8 +24,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
+    private val sensorsRepository: OnboardSensorsRepository,
     private val gpsService: GpsService,
     private val bleService: BleService,
+    private val onboardSensors: SensorLiveData,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
@@ -88,6 +90,12 @@ class TripInProgressViewModel @ViewModelInject constructor(
             } else {
                 setTripPaused(newMeasurements)
             }
+        }
+    }
+
+    private val sensorObserver: Observer<SensorModel> = Observer { newData ->
+        coroutineScope.launch {
+            sensorsRepository.insertMeasurements(tripId!!, newData)
         }
     }
 
@@ -383,6 +391,10 @@ class TripInProgressViewModel @ViewModelInject constructor(
             timeStateRepository.getTimeStates(tripId!!)
                 .observe(lifecycleOwner, accumulateDurationObserver)
             splitRepository.getLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
+
+            if (BuildConfig.BUILD_TYPE != "prod") {
+                onboardSensors.observe(lifecycleOwner, sensorObserver)
+            }
         }
     }
 

@@ -9,8 +9,11 @@ import android.hardware.SensorManager
 import android.util.Log
 import androidx.annotation.Keep
 import androidx.lifecycle.LiveData
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
-class SensorLiveData(context: Context) : LiveData<SensorModel>() {
+class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
+    LiveData<SensorModel>() {
     private var sensorManager: SensorManager =
         context.getSystemService(SENSOR_SERVICE) as SensorManager
     private var accelerometer: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)

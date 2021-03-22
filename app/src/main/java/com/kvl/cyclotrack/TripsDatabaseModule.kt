@@ -87,6 +87,14 @@ val MIGRATION_9_10 = object : Migration(9, 10) {
     }
 }
 
+val MIGRATION_10_11 = object : Migration(10, 11) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` INTEGER NOT NULL, `accelerometerX` FLOAT,`accelerometerY` FLOAT,`accelerometerZ` FLOAT, `accelerometerAverageX` FLOAT,`accelerometerAverageY` FLOAT,`accelerometerAverageZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `gyroscopeAverageX` FLOAT,`gyroscopeAverageY` FLOAT,`gyroscopeAverageZ` FLOAT,`tiltX` FLOAT,`tiltY` FLOAT,`tiltZ` FLOAT,`id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
+    }
+}
+
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -105,6 +113,7 @@ object TripsDatabaseModule {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
+                MIGRATION_10_11,
             ).build()
 
     @Provides
@@ -129,6 +138,12 @@ object TripsDatabaseModule {
     @Singleton
     fun provideSplitDao(db: TripsDatabase): SplitDao {
         return db.splitDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnboardSensorsDao(db: TripsDatabase): OnboardSensorsDao {
+        return db.onboardSensorsDao()
     }
 
     @Provides
