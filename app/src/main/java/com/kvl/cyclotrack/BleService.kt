@@ -433,7 +433,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     }
 
     fun stopAllScans() {
-        scanCallbacks?.forEach {
+        scanCallbacks.forEach {
             Log.d(TAG, "Stopping device scan")
             bluetoothLeScanner.stopScan(it)
         }

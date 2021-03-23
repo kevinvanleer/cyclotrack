@@ -37,10 +37,12 @@ class BiometricsPreferenceFragment : Fragment() {
             Log.d(tag, "on click layout")
         }
         binding.preferenceBiometricsDob.setOnClickListener {
-            val dob = viewModel?.dob?.let {
+            val dob = viewModel.dob?.let {
                 try {
-                    SimpleDateFormat(getString(R.string.date_format_patten_dob), Locale.US).parse(
-                        viewModel.dob)
+                    viewModel.dob?.let {
+                        SimpleDateFormat(getString(R.string.date_format_patten_dob),
+                            Locale.US).parse(it)
+                    }
                 } catch (e: ParseException) {
                     Log.e(tag, "Could not parse preference data", e)
                     null
@@ -64,7 +66,7 @@ class BiometricsPreferenceFragment : Fragment() {
             val datePicker = DatePicker(context)
             datePicker.updateDate(year, month, day)
             context?.let { thisContext ->
-                AlertDialog.Builder(thisContext)?.apply {
+                AlertDialog.Builder(thisContext).apply {
                     setTitle("Date of birth")
                     setView(datePicker)
                     setPositiveButton("OK") { _, _ ->

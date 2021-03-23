@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.content.SharedPreferences
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.roundToInt
 
 const val POUNDS_TO_KG = 0.453592
@@ -55,13 +56,17 @@ fun getUserHeight(sharedPreferences: SharedPreferences): Float? =
 
     }?.toFloat()
 
-fun getUserAge(sharedPreferences: SharedPreferences) =
+fun getUserAge(sharedPreferences: SharedPreferences): Float? =
     try {
-        ((System.currentTimeMillis() - SimpleDateFormat(CyclotrackApp.instance.getString(R.string.date_format_patten_dob)).parse(
-            sharedPreferences.getString(
-                CyclotrackApp.instance
-                    .getString(R.string.preference_key_biometrics_user_dob),
-                "")).time) / 1000f / 3600f / 24f / 365f)
+        sharedPreferences.getString(
+            CyclotrackApp.instance
+                .getString(R.string.preference_key_biometrics_user_dob),
+            "")?.let { dateString ->
+            SimpleDateFormat(CyclotrackApp.instance.getString(R.string.date_format_patten_dob),
+                Locale.US).parse(dateString
+            )
+                ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+        }
     } catch (e: ParseException) {
         null
     }

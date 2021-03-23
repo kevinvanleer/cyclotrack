@@ -277,7 +277,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d(TAG, "overview is null")
             }
             zipLiveData(viewModel.measurements(), viewModel.timeState()).observe(viewLifecycleOwner,
-                { pairs ->
+                ZipLiveData@{ pairs ->
                     val tripMeasurements = pairs.first
                     val timeStates = pairs.second
                     Log.d(TAG, "Observed change to measurements and time state")
@@ -286,7 +286,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         tripMeasurements.filter { meas -> meas.speedRevolutions != null }
                             .map { filtered -> filtered.speedRevolutions!! }
                             .let { mapped ->
-                                return@let if (mapped.isNotEmpty()) {
+                                if (mapped.isNotEmpty()) {
                                     distance.div(mapped.last()
                                         .minus(mapped.first().toDouble()))
                                         .toFloat()
@@ -534,7 +534,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     Log.d(TAG,
                         "Recorded ${tripMeasurements.size} measurements for trip ${tripId}")
 
-                    if (tripMeasurements.isNullOrEmpty()) return@observe
+                    if (tripMeasurements.isNullOrEmpty()) return@ZipLiveData
                     if (timeStates.isNotEmpty()) titleDateView.text =
                         String.format("%s: %s - %s",
                             SimpleDateFormat("MMMM d",
