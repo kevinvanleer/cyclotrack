@@ -104,6 +104,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             getString(R.string.notification_export_trip_in_progress_id))
             .setSmallIcon(R.drawable.ic_cyclotrack_notification)
             .setContentTitle("Export in progress...")
+            .setProgress(1, 0, true)
             .setStyle(NotificationCompat.BigTextStyle()
                 .bigText("Data export \"${getFileName()}\" will finish soon."))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
