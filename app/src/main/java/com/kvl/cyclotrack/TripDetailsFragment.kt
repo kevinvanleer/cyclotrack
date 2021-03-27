@@ -1,8 +1,13 @@
 package com.kvl.cyclotrack
 
+import android.app.PendingIntent
+import android.content.ContentResolver
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
@@ -11,12 +16,12 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.Animation
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Transformation
-import android.widget.GridLayout
-import android.widget.LinearLayout
-import android.widget.ScrollView
-import android.widget.TextView
+import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.marginTop
@@ -70,6 +75,118 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var minGuide: View
     private lateinit var defaultCameraPosition: CameraPosition
     private lateinit var maxCameraPosition: CameraPosition
+    private val requestCreateExport =
+        registerForActivityResult(ActivityResultContracts.CreateDocument()) { uri ->
+            if (uri != null) {
+                exportTripData(requireContext().contentResolver, uri)
+            }
+        }
+
+
+    private fun exportTripData(contentResolver: ContentResolver, uri: Uri) {
+        fun getFileName(): String? {
+            return if (uri.scheme == "content") {
+                contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor != null && cursor.moveToFirst()) {
+                        return cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                    } else null
+                }
+            } else {
+                var result = uri.path
+                val cut = result!!.lastIndexOf('/')
+                if (cut != -1) {
+                    result.substring(cut + 1)
+                } else null
+            }
+        }
+
+        val inProgressBuilder = NotificationCompat.Builder(requireContext(),
+            getString(R.string.notification_export_trip_in_progress_id))
+            .setSmallIcon(R.drawable.ic_cyclotrack_notification)
+            .setContentTitle("Export in progress...")
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("Data export \"${getFileName()}\" will finish soon."))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        with(NotificationManagerCompat.from(requireContext())) {
+            notify(0, inProgressBuilder.build())
+        }
+        Toast.makeText(requireContext(),
+            "You'll be notified when the export is complete.",
+            Toast.LENGTH_SHORT).show()
+        val exporter = viewModel.exportData()
+        exporter.observe(viewLifecycleOwner,
+            object : Observer<TripDetailsViewModel.ExportData> {
+                override fun onChanged(exportData: TripDetailsViewModel.ExportData?) {
+                    if (exportData?.summary != null &&
+                        exportData.measurements != null &&
+                        exportData.timeStates != null &&
+                        exportData.splits != null
+                    ) {
+                        Log.d(TAG,
+                            "Exporting trip to CSV")
+                        Log.d(TAG, "${getFileName()}")
+
+                        exportRideToXlsx(contentResolver,
+                            uri,
+                            exportData!!)
+                        exporter.removeObserver(this)
+
+                        //val exportMimeType = "application/zip"
+                        val exportMimeType =
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        val viewFileIntent = Intent().apply {
+                            action = Intent.ACTION_VIEW
+                            setDataAndType(uri, exportMimeType)
+                            flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        }
+                        val viewFilePendingIntent = PendingIntent.getActivity(requireContext(),
+                            0,
+                            viewFileIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT)
+
+                        val chooserIntent = Intent.createChooser(Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            type = exportMimeType
+                            flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
+                        }, "title")
+                        val sharePendingIntent = PendingIntent.getActivity(requireContext(),
+                            0, chooserIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+                        val deleteIntent = Intent(requireContext(),
+                            DeleteExportBroadcastReceiver::class.java).apply {
+                            action = getString(R.string.intent_action_delete_exported_data)
+                            putExtra("TRIP_ID", exportData.summary?.id)
+                            data = uri
+                        }
+                        val deletePendingIntent = PendingIntent.getBroadcast(requireContext(),
+                            0,
+                            deleteIntent,
+                            PendingIntent.FLAG_ONE_SHOT)
+                        val builder = NotificationCompat.Builder(requireContext(),
+                            getString(R.string.notification_export_trip_id))
+                            .setSmallIcon(R.drawable.ic_cyclotrack_notification)
+                            .setContentTitle("Export complete!")
+                            .setContentIntent(viewFilePendingIntent)
+                            .setAutoCancel(true)
+                            .setStyle(NotificationCompat.BigTextStyle()
+                                .bigText("Data export \"${getFileName()}\" is ready in your downloads folder."))
+                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                            .addAction(0,
+                                "SHARE",
+                                sharePendingIntent)
+                            .addAction(0,
+                                "DELETE",
+                                deletePendingIntent)
+                        with(NotificationManagerCompat.from(requireContext())) {
+                            cancel(0)
+                            notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
+                        }
+                    }
+                }
+            })
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -120,6 +237,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     builder.create()
                 }?.show()
+                true
+            }
+            R.id.details_menu_action_export -> {
+                viewModel.tripOverview().observe(viewLifecycleOwner, object : Observer<Trip> {
+                    override fun onChanged(t: Trip) {
+                        requestCreateExport.launch("cyclotrack_${
+                            String.format("%06d", t.id)
+                        }_${t.name?.replace(" ", "-") ?: "unknown"}.xlsx")
+                        viewModel.tripOverview().removeObserver(this)
+                    }
+                })
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -718,15 +846,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     Log.d(TAG, "Looking up default biometrics")
                     viewLifecycleOwner.lifecycleScope.launch {
                         viewModel.getDefaultBiometrics()?.let { biometrics ->
-                                getCaloriesBurned(overview.copy(userWeight = biometrics.userWeight,
-                                    userHeight = biometrics.userHeight,
-                                    userSex = biometrics.userSex,
-                                    userAge = biometrics.userAge,
-                                    userVo2max = biometrics.userVo2max,
-                                    userRestingHeartRate = biometrics.userRestingHeartRate,
-                                    userMaxHeartRate = biometrics.userMaxHeartRate),
-                                    measurements,
-                                    sharedPrefs)
+                            getCaloriesBurned(overview.copy(userWeight = biometrics.userWeight,
+                                userHeight = biometrics.userHeight,
+                                userSex = biometrics.userSex,
+                                userAge = biometrics.userAge,
+                                userVo2max = biometrics.userVo2max,
+                                userRestingHeartRate = biometrics.userRestingHeartRate,
+                                userMaxHeartRate = biometrics.userMaxHeartRate),
+                                measurements,
+                                sharedPrefs)
                         } ?: getCaloriesBurned(overview, measurements, sharedPrefs)
                     }
                 } else {
@@ -734,6 +862,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
             })
     }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

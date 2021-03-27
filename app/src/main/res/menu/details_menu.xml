@@ -11,4 +11,8 @@
         android:id="@+id/details_menu_action_delete"
         android:title="@string/details_menu_title_delete"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/details_menu_action_export"
+        android:title="@string/details_menu_title_export"
+        app:showAsAction="never" />
 </menu>

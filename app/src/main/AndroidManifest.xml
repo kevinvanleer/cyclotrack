@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <uses-feature android:name="android.hardware.location.gps" />
     <uses-feature android:name="android.hardware.sensor.accelerometer" />
@@ -21,6 +22,14 @@
         android:roundIcon="@mipmap/cyclotrack_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        <receiver
+            android:name=".DeleteExportBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.kvl.cyclotrack.action.DELETE_EXPORTED_DATA" />
+            </intent-filter>
+        </receiver>
 
         <activity
             android:name=".MainActivity"
