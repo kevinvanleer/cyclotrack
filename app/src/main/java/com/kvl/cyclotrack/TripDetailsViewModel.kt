@@ -56,7 +56,7 @@ class TripDetailsViewModel @ViewModelInject constructor(
             value = value?.copy(timeStates = it)
         }
         addSource(splits()) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export timeStates")
+            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export splits")
             value = value?.copy(splits = it)
         }
     }
