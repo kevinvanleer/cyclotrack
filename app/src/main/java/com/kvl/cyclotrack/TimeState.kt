@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import androidx.annotation.Keep
 import androidx.room.*
 
 enum class TimeStateEnum(val value: Int) {
@@ -32,6 +33,7 @@ class TimeStateEnumConverter {
     childColumns = arrayOf("tripId"),
     onDelete = ForeignKey.CASCADE)],
     indices = [Index(value = ["tripId"])])
+@Keep
 data class TimeState(
     val tripId: Long,
     val state: TimeStateEnum,

@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
@@ -41,6 +42,7 @@ fun getDefaultTripName(): String {
 }
 
 @Entity
+@Keep
 data class Trip(
     val name: String? = getDefaultTripName(),
     val distance: Double? = 0.0,

@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -10,6 +11,7 @@ import androidx.room.PrimaryKey
     childColumns = arrayOf("tripId"),
     onDelete = ForeignKey.CASCADE)],
     indices = [Index(value = ["tripId"])])
+@Keep
 data class Split(
     val tripId: Long,
     val duration: Double,

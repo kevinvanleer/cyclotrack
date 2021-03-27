@@ -7,6 +7,7 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.util.Log
+import androidx.annotation.Keep
 import androidx.lifecycle.LiveData
 
 class SensorLiveData(context: Context) : LiveData<SensorModel>() {
@@ -85,6 +86,7 @@ class SensorLiveData(context: Context) : LiveData<SensorModel>() {
     }
 }
 
+@Keep
 data class SensorModel(
     val accelerometer: SensorEvent?,
     val accelerometerAverage: FloatArray?,

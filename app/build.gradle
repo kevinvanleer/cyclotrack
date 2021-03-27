@@ -97,6 +97,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     implementation group: 'org.apache.poi', name: 'poi', version: '3.9'
     implementation group: 'org.apache.poi', name: 'poi-ooxml', version: '3.9'
+    implementation group: 'org.dhatim', name: 'fastexcel', version: '0.12.7'
 
 
     implementation "androidx.room:room-runtime:$room_version"
