@@ -126,7 +126,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     if (exportData?.summary != null &&
                         exportData.measurements != null &&
                         exportData.timeStates != null &&
-                        exportData.splits != null
+                        exportData.splits != null &&
+                        exportData.onboardSensors != null
                     ) {
                         Log.d(TAG,
                             "Exporting trip...")

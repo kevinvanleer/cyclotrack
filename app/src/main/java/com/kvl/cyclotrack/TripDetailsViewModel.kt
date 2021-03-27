@@ -14,6 +14,7 @@ class TripDetailsViewModel @ViewModelInject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
+    private val onboardSensorsRepository: OnboardSensorsRepository,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
     var tripId: Long = 0
@@ -33,12 +34,14 @@ class TripDetailsViewModel @ViewModelInject constructor(
 
     fun measurements() = measurementsRepository.getTripCriticalMeasurements(tripId)
     fun exportMeasurements() = measurementsRepository.getTripMeasurements(tripId)
+    fun onboardSensors() = onboardSensorsRepository.getTripMeasurements(tripId)
 
     data class ExportData(
         var summary: Trip? = null,
         var measurements: Array<Measurements>? = null,
         var timeStates: Array<TimeState>? = null,
         var splits: Array<Split>? = null,
+        var onboardSensors: Array<OnboardSensors>? = null,
     )
 
     fun exportData() = MediatorLiveData<ExportData>().apply {
@@ -58,6 +61,10 @@ class TripDetailsViewModel @ViewModelInject constructor(
         addSource(splits()) {
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export splits")
             value = value?.copy(splits = it)
+        }
+        addSource(onboardSensors()) {
+            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export onboardSensors")
+            value = value?.copy(onboardSensors = it)
         }
     }
 
