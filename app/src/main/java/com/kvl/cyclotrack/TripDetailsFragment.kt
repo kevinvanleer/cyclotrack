@@ -112,9 +112,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             .setStyle(NotificationCompat.BigTextStyle()
                 .bigText("Data export \"${getFileName()}\" will finish soon."))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        //TODO: Use URI to generate unique ID for this notification
+        val inProgressId = getUriFilePart()?.toIntOrNull() ?: 0
         with(NotificationManagerCompat.from(requireContext())) {
-            notify(getUriFilePart()?.toIntOrNull() ?: 0, inProgressBuilder.build())
+            notify(inProgressId, inProgressBuilder.build())
         }
         Toast.makeText(requireContext(),
             "You'll be notified when the export is complete.",
@@ -186,7 +186,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 "DELETE",
                                 deletePendingIntent)
                         with(NotificationManagerCompat.from(requireContext())) {
-                            cancel(0)
+                            cancel(inProgressId)
                             notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
                         }
                     }
