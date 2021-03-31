@@ -16,7 +16,7 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
     LiveData<SensorModel>() {
     private var sensorManager: SensorManager =
         context.getSystemService(SENSOR_SERVICE) as SensorManager
-    private var accelerometer: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    private var accelerometer: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
     private var gyroscope: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val accListener = AccelerometerEventListener()
     private val gyroListener = GyroscopeEventListener()
