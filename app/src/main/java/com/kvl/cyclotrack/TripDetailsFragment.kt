@@ -476,7 +476,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         measurements.forEach {
                             val speed =
-                                it.speedRpm ?: 0f * circumference / 60
+                                (it.speedRpm ?: 0f) * circumference / 60
                             val timestamp =
                                 (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
                             entries.add(Entry(timestamp,
