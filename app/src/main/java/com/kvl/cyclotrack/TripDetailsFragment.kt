@@ -84,6 +84,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
 
     private fun exportTripData(contentResolver: ContentResolver, uri: Uri) {
+        fun getUriFilePart(): String? {
+            var result = uri.path
+            val cut = result!!.lastIndexOf('/')
+            return if (cut != -1) {
+                result.substring(cut + 1)
+            } else null
+        }
+
         fun getFileName(): String? {
             return if (uri.scheme == "content") {
                 contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -92,11 +100,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     } else null
                 }
             } else {
-                var result = uri.path
-                val cut = result!!.lastIndexOf('/')
-                if (cut != -1) {
-                    result.substring(cut + 1)
-                } else null
+                getUriFilePart()
             }
         }
 
@@ -108,8 +112,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             .setStyle(NotificationCompat.BigTextStyle()
                 .bigText("Data export \"${getFileName()}\" will finish soon."))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        val inProgressId = getUriFilePart()?.toIntOrNull() ?: 0
         with(NotificationManagerCompat.from(requireContext())) {
-            notify(0, inProgressBuilder.build())
+            notify(inProgressId, inProgressBuilder.build())
         }
         Toast.makeText(requireContext(),
             "You'll be notified when the export is complete.",
@@ -124,7 +129,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         exportData.splits != null
                     ) {
                         Log.d(TAG,
-                            "Exporting trip to CSV")
+                            "Exporting trip...")
                         Log.d(TAG, "${getFileName()}")
 
                         exportRideToXlsx(contentResolver,
@@ -183,7 +188,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 "DELETE",
                                 deletePendingIntent)
                         with(NotificationManagerCompat.from(requireContext())) {
-                            cancel(0)
+                            cancel(inProgressId)
                             notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
                         }
                     }
