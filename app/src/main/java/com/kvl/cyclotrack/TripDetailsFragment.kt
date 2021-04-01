@@ -115,7 +115,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             "You'll be notified when the export is complete.",
             Toast.LENGTH_SHORT).show()
         val exporter = viewModel.exportData()
-        exporter.observe(viewLifecycleOwner,
+        exporter.observeForever(
             object : Observer<TripDetailsViewModel.ExportData> {
                 override fun onChanged(exportData: TripDetailsViewModel.ExportData?) {
                     if (exportData?.summary != null &&
@@ -142,18 +142,20 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
                         }
                         val viewFilePendingIntent = PendingIntent.getActivity(requireContext(),
-                            0,
+                            getUriFilePart()?.toIntOrNull() ?: 0,
                             viewFileIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT)
+                            PendingIntent.FLAG_IMMUTABLE)
 
                         val chooserIntent = Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
                             putExtra(Intent.EXTRA_STREAM, uri)
-                            type = exportMimeType
+                            setDataAndType(uri, exportMimeType)
                             flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
                         }, "title")
                         val sharePendingIntent = PendingIntent.getActivity(requireContext(),
-                            0, chooserIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+                            getUriFilePart()?.toIntOrNull() ?: 0,
+                            chooserIntent,
+                            PendingIntent.FLAG_IMMUTABLE)
 
                         val deleteIntent = Intent(requireContext(),
                             DeleteExportBroadcastReceiver::class.java).apply {
@@ -162,7 +164,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             data = uri
                         }
                         val deletePendingIntent = PendingIntent.getBroadcast(requireContext(),
-                            0,
+                            getUriFilePart()?.toIntOrNull() ?: 0,
                             deleteIntent,
                             PendingIntent.FLAG_ONE_SHOT)
                         val builder = NotificationCompat.Builder(requireContext(),
