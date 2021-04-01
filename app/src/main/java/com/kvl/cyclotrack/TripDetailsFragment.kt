@@ -95,7 +95,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         fun getFileName(): String? {
             return if (uri.scheme == "content") {
                 contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-                    if (cursor != null && cursor.moveToFirst()) {
+                    if (cursor.moveToFirst()) {
                         return cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME))
                     } else null
                 }
@@ -134,7 +134,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         exportRideToXlsx(contentResolver,
                             uri,
-                            exportData!!)
+                            exportData)
                         exporter.removeObserver(this)
 
                         //val exportMimeType = "application/zip"

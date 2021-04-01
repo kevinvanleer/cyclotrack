@@ -13,7 +13,7 @@ class DeleteExportBroadcastReceiver : BroadcastReceiver() {
         Log.d("DELETE_EXPORT_RCVR", "${intent?.data?.toString()}")
         DocumentsContract.deleteDocument(context?.contentResolver!!, intent?.data!!)
         with(NotificationManagerCompat.from(context)) {
-            cancel(intent?.getLongExtra("TRIP_ID", 0).toInt())
+            cancel(intent.getLongExtra("TRIP_ID", 0).toInt())
         }
     }
 }
