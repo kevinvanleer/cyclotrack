@@ -83,6 +83,14 @@ fun exportRideToCsv(
             }
             stream.closeEntry()
 
+            stream.putNextEntry(ZipEntry("${
+                String.format("%06d",
+                    exportData.summary!!.id)
+            }_onboardSensors.csv"))
+            getDataCsv(exportData.onboardSensors!!).forEach { row ->
+                stream.write("$row\n".toByteArray())
+            }
+            stream.closeEntry()
 
             stream.putNextEntry(ZipEntry("${
                 String.format("%06d",
@@ -150,6 +158,7 @@ fun exportRideToPoi(
     addDataToSheet(workbook.createSheet("measurements"), exportData.measurements!!)
     addDataToSheet(workbook.createSheet("timeStates"), exportData.timeStates!!)
     addDataToSheet(workbook.createSheet("splits"), exportData.splits!!)
+    addDataToSheet(workbook.createSheet("onboardSensors"), exportData.onboardSensors!!)
 
     contentResolver.openFileDescriptor(filePath, "w")?.use {
         FileOutputStream(it.fileDescriptor).use { stream ->
@@ -212,6 +221,9 @@ fun exportRideToFastExcel(
             addDataToSheet(workbook.newWorksheet("measurements"), exportData.measurements!!)
             addDataToSheet(workbook.newWorksheet("timeStates"), exportData.timeStates!!)
             addDataToSheet(workbook.newWorksheet("splits"), exportData.splits!!)
+            if (exportData.onboardSensors?.isNotEmpty() == true) {
+                addDataToSheet(workbook.newWorksheet("onboardSensors"), exportData.onboardSensors!!)
+            }
             workbook.setCompressionLevel(9)
             workbook.finish()
             stream.close()

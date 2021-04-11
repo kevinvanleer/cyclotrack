@@ -9,13 +9,18 @@ import android.hardware.SensorManager
 import android.util.Log
 import androidx.annotation.Keep
 import androidx.lifecycle.LiveData
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
-class SensorLiveData(context: Context) : LiveData<SensorModel>() {
+class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
+    LiveData<SensorModel>() {
     private var sensorManager: SensorManager =
         context.getSystemService(SENSOR_SERVICE) as SensorManager
     private var accelerometer: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    private var gravity: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
     private var gyroscope: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val accListener = AccelerometerEventListener()
+    private val gravityListener = GravityEventListener()
     private val gyroListener = GyroscopeEventListener()
 
     inner class AccelerometerEventListener : SensorEventListener {
@@ -31,11 +36,30 @@ class SensorLiveData(context: Context) : LiveData<SensorModel>() {
                 newAccelerometerAverage[i] =
                     alpha * event.values[i] + (1 - alpha) * newAccelerometerAverage[i]
             }
-            value = SensorModel(gyroscope = value?.gyroscope,
+            value = SensorModel(gravity = value?.gravity,
+                gyroscope = value?.gyroscope,
                 gyroscopeAverage = value?.gyroscopeAverage,
                 tilt = value?.tilt,
                 accelerometer = event,
                 accelerometerAverage = newAccelerometerAverage)
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            Log.v("SENSOR", "${sensor?.name} accuracy changed: $accuracy")
+        }
+    }
+
+    inner class GravityEventListener : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            Log.v("SENSOR",
+                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}")
+
+            value = value?.copy(gravity = event) ?: SensorModel(gravity = event,
+                gyroscope = null,
+                accelerometer = null,
+                gyroscopeAverage = null,
+                accelerometerAverage = null,
+                tilt = null)
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -61,6 +85,7 @@ class SensorLiveData(context: Context) : LiveData<SensorModel>() {
 
             value = SensorModel(accelerometer = value?.accelerometer,
                 accelerometerAverage = value?.accelerometerAverage,
+                gravity = value?.gravity,
                 gyroscope = event,
                 gyroscopeAverage = newGyroscopeAverage,
                 tilt = newTiltArray)
@@ -73,15 +98,13 @@ class SensorLiveData(context: Context) : LiveData<SensorModel>() {
 
     override fun onActive() {
         Log.d("UI", "Activating sensor live data")
-        sensorManager.registerListener(accListener,
-            accelerometer,
-            SensorManager.SENSOR_DELAY_NORMAL)
+        sensorManager.registerListener(gravityListener, gravity, SensorManager.SENSOR_DELAY_NORMAL)
         sensorManager.registerListener(gyroListener, gyroscope, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
     override fun onInactive() {
         super.onInactive()
-        sensorManager.unregisterListener(accListener)
+        sensorManager.unregisterListener(gravityListener)
         sensorManager.unregisterListener(gyroListener)
     }
 }
@@ -90,6 +113,7 @@ class SensorLiveData(context: Context) : LiveData<SensorModel>() {
 data class SensorModel(
     val accelerometer: SensorEvent?,
     val accelerometerAverage: FloatArray?,
+    val gravity: SensorEvent?,
     val gyroscopeAverage: FloatArray?,
     val gyroscope: SensorEvent?,
     val tilt: FloatArray?,
