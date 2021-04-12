@@ -25,7 +25,7 @@ data class Measurements(
     val bearingAccuracyDegrees: Float = 0f,
     val elapsedRealtimeUncertaintyNanos: Double = 0.0,
     val speedAccuracyMetersPerSecond: Float = 0f,
-    val verticalAccuracyMetersPerSecond: Float = 0f,
+    val verticalAccuracyMeters: Float = 0f,
     val heartRate: Short? = null,
     val cadenceRevolutions: Int? = null,
     val cadenceLastEvent: Int? = null,
@@ -48,7 +48,7 @@ data class Measurements(
         location.bearingAccuracyDegrees ?: 0f,
         location.elapsedRealtimeUncertaintyNanos ?: 0.0,
         location.speedAccuracyMetersPerSecond ?: 0f,
-        location.verticalAccuracyMetersPerSecond ?: 0f)
+        location.verticalAccuracyMeters ?: 0f)
 
     constructor(
         tripId: Long,
@@ -72,7 +72,7 @@ data class Measurements(
         location.bearingAccuracyDegrees ?: 0f,
         location.elapsedRealtimeUncertaintyNanos ?: 0.0,
         location.speedAccuracyMetersPerSecond ?: 0f,
-        location.verticalAccuracyMetersPerSecond ?: 0f,
+        location.verticalAccuracyMeters ?: 0f,
         heartRate,
         cadenceRevolutions,
         cadenceLastEvent,
@@ -99,7 +99,7 @@ data class Measurements(
         location.bearingAccuracyDegrees ?: 0f,
         location.elapsedRealtimeUncertaintyNanos ?: 0.0,
         location.speedAccuracyMetersPerSecond ?: 0f,
-        location.verticalAccuracyMetersPerSecond ?: 0f,
+        location.verticalAccuracyMeters ?: 0f,
         heartRate,
         cadence?.revolutionCount,
         cadence?.lastEvent,

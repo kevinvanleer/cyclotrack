@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(entities = [Trip::class, Measurements::class, TimeState::class, Split::class, OnboardSensors::class],
-    version = 12)
+    version = 13)
 @TypeConverters(TimeStateEnumConverter::class, UserSexEnumConverter::class)
 abstract class TripsDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao

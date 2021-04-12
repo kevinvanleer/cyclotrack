@@ -93,6 +93,7 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
         database.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
     }
 }
+
 val MIGRATION_11_12 = object : Migration(11, 12) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("DROP TABLE `OnboardSensors`")
@@ -101,6 +102,15 @@ val MIGRATION_11_12 = object : Migration(11, 12) {
     }
 }
 
+val MIGRATION_12_13 = object : Migration(12, 13) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE IF NOT EXISTS `measurements_schema12_to_13`(`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `heartRate` INTEGER, `cadenceRevolutions` INTEGER, `cadenceLastEvent` INTEGER, `cadenceRpm` REAL, `speedRevolutions` INTEGER, `speedLastEvent` INTEGER, `speedRpm` REAL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("INSERT INTO `measurements_schema12_to_13`(tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, heartRate, cadenceRevolutions, cadenceLastEvent, cadenceRpm, speedRevolutions, speedLastEvent, speedRpm, id) SELECT tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMetersPerSecond, heartRate, cadenceRevolutions, cadenceLastEvent, cadenceRpm, speedRevolutions, speedLastEvent, speedRpm, id FROM Measurements")
+        database.execSQL("DROP TABLE `Measurements`")
+        database.execSQL("ALTER TABLE `measurements_schema12_to_13` RENAME TO `Measurements`")
+        database.execSQL("CREATE INDEX index_Measurements_tripId on Measurements(`tripId`)")
+    }
+}
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -122,6 +132,7 @@ object TripsDatabaseModule {
                 MIGRATION_9_10,
                 MIGRATION_10_11,
                 MIGRATION_11_12,
+                MIGRATION_12_13,
             ).build()
 
     @Provides

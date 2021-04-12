@@ -14,7 +14,7 @@ data class LocationData(
     var bearingAccuracyDegrees: Float? = null,
     var elapsedRealtimeUncertaintyNanos: Double? = null,
     var speedAccuracyMetersPerSecond: Float? = null,
-    var verticalAccuracyMetersPerSecond: Float? = null,
+    var verticalAccuracyMeters: Float? = null,
 ) {
     constructor(location: Location) : this(location.accuracy,
         location.altitude,
@@ -27,7 +27,7 @@ data class LocationData(
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             this.bearingAccuracyDegrees = location.bearingAccuracyDegrees
             this.speedAccuracyMetersPerSecond = location.speedAccuracyMetersPerSecond
-            this.verticalAccuracyMetersPerSecond = location.verticalAccuracyMeters
+            this.verticalAccuracyMeters = location.verticalAccuracyMeters
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
