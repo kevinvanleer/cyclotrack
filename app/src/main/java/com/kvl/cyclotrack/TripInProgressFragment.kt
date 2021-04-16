@@ -167,7 +167,9 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         }
         stopButton.setOnClickListener {
             viewModel.endTrip()
-            findNavController().navigate(R.id.action_finish_trip)
+            //findNavController().navigate(R.id.action_finish_trip)
+            findNavController()
+                .navigate(TripInProgressFragmentDirections.actionFinishTrip(viewModel.tripId!!))
         }
     }
 

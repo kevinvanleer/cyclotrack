@@ -44,7 +44,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
         get() = _autoCircumference ?: userCircumference
 
     private var accumulatedDuration = 0.0
-    private var tripId: Long? = null
+    var tripId: Long? = null
     private var startTime = Double.NaN
     private var lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
     private var measuringCircumference = false

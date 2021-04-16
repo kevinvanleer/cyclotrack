@@ -84,10 +84,9 @@
                 app:destination="@id/AllDataFragment" />
             <action
                 android:id="@+id/action_finish_trip"
-                app:destination="@id/TripSummariesFragment"
+                app:destination="@id/TripDetailsFragment"
                 app:launchSingleTop="true"
-                app:popUpTo="@id/cyclotrack_nav_graph"
-                app:popUpToInclusive="true" />
+                app:popUpTo="@id/TripSummariesFragment" />
         </fragment>
         <fragment
             android:id="@+id/AllDataFragment"
