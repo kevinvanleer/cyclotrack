@@ -254,8 +254,11 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
 
             accuracyTextView.text = when (viewModel.autoCircumference == null) {
-                true -> String.format("%.2f", it.accuracy)
-                else -> String.format("%.2f / C%.3f", it.accuracy, viewModel.autoCircumference)
+                true -> String.format("%.2f / %d°", it.accuracy, it.bearing.toInt())
+                else -> String.format("%.2f / C%.3f / %d°",
+                    it.accuracy,
+                    viewModel.autoCircumference,
+                    it.bearing.toInt())
             }
             speedTextView.value =
                 String.format("%.1f", getUserSpeed(requireContext(), it.splitSpeed.toDouble()))

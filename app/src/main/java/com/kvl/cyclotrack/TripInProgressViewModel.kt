@@ -219,6 +219,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                     slope = newSlope,
                     duration = newDuration,
                     accuracy = new.accuracy,
+                    bearing = new.bearing,
                     splitSpeed = (lastSplit.distance / lastSplit.duration.coerceAtLeast(0.0001)).toFloat(),
                     tracking = true)
 
@@ -237,6 +238,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         splitSpeed = 0f,
                         measurements = null,
                         accuracy = new.accuracy,
+                        bearing = new.bearing,
                         tracking = false)
         }
     }
@@ -299,6 +301,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         splitSpeed = 0f,
                         measurements = null,
                         accuracy = new.accuracy,
+                        bearing = new.bearing,
                         tracking = true)
 
         } else {
@@ -317,6 +320,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
                         splitSpeed = 0f,
                         measurements = null,
                         accuracy = new.accuracy,
+                        bearing = new.bearing,
                         tracking = false)
         }
     }
@@ -485,6 +489,7 @@ class TripInProgressViewModel @ViewModelInject constructor(
 data class TripProgress(
     val measurements: Measurements?,
     val accuracy: Float,
+    val bearing: Float,
     val speed: Float,
     val splitSpeed: Float,
     val maxSpeed: Float,
