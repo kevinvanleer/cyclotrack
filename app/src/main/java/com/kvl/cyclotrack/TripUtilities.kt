@@ -535,4 +535,29 @@ fun getGattUuid(uuid: String): UUID {
     return UUID.fromString("$uuid-$gattUuidSuffix")
 }
 
+fun degreesToCardinal(degrees: Float): String {
+    //val directions = arrayOf("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")
+    return when (degrees) {
+        in 0f..11.25f -> "N"
+        in 11.25f..33.75f -> "NNE"
+        in 33.75f..56.25f -> "NE"
+        in 56.25f..78.75f -> "ENE"
+        in 78.75f..101.25f -> "E"
+        in 101.25f..123.75f -> "ESE"
+        in 123.75f..145.25f -> "SE"
+        in 145.25f..167.75f -> "SSE"
+        in 167.75f..190.25f -> "S"
+        in 190.25f..212.75f -> "SSW"
+        in 212.75f..235.25f -> "SW"
+        in 235.25f..257.75f -> "WSW"
+        in 257.75f..281.25f -> "W"
+        in 281.25f..303.75f -> "WNW"
+        in 303.75f..326.25f -> "NW"
+        in 326.25f..348.75f -> "NNW"
+        in 348.75f..360.0f -> "N"
+        else -> "UNK"
+
+    }
+}
+
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)

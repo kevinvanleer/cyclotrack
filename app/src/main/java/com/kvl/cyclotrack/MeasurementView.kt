@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.res.ResourcesCompat
 
 class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
 
@@ -66,6 +67,10 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
             measurementExtraInfoImageView.visibility = View.VISIBLE
             measurementExtraInfoTextView.text = newValue
         }
+
+    fun setIcon(drawableId: Int) =
+        measurementExtraInfoImageView.setImageDrawable(ResourcesCompat.getDrawable(resources,
+            drawableId, null))
 
     init {
         View.inflate(context, R.layout.measurement_view, this)

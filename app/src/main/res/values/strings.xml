@@ -61,4 +61,5 @@
     <string name="notification_export_trip_name">Export ride data complete</string>
     <string name="notification_channel_description_export_trip">Indicates that data has been exported.</string>
     <string name="intent_action_delete_exported_data">com.kvl.cyclotrack.action.DELETE_EXPORTED_DATA</string>
+    <string name="bearing_icon_description">Bearing icon</string>
 </resources>

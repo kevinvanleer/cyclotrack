@@ -198,6 +198,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         val averageSpeedTextView: MeasurementView = view.findViewById(R.id.textview_average_speed)
         val heartRateTextView: MeasurementView = view.findViewById(R.id.textview_heart_rate)
         val splitSpeedTextView: MeasurementView = view.findViewById(R.id.textview_split_speed)
+        val bearingTextView: TextView = view.findViewById(R.id.textview_bearing)
 
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
         val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
@@ -242,6 +243,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 splitSpeedTextView.value =
                     String.format("%.1f", getUserSpeed(requireContext(), it.speed.toDouble()))
             }
+            bearingTextView.text = degreesToCardinal(it.bearing)
             averageSpeedTextView.value =
                 String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
 

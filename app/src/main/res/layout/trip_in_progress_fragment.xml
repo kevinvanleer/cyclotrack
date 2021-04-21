@@ -104,6 +104,30 @@
         app:layout_constraintStart_toEndOf="@id/image_tracking"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <TextView
+        android:id="@+id/textview_bearing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/orbitron_medium"
+        android:textAppearance="@style/DashboardFontAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:layout_marginBottom="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/compass_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="1dp"
+        android:contentDescription="@string/bearing_icon_description"
+        android:src="@drawable/baseline_explore_24"
+        app:layout_constraintEnd_toStartOf="@id/textview_bearing"
+        app:layout_constraintBottom_toBottomOf="@id/textview_bearing" />
+
     <Button
         android:id="@+id/pause_button"
         android:layout_width="match_parent"
