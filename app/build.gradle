@@ -16,6 +16,12 @@ android {
             keyPassword keystoreProperties['keyPassword']
             keyAlias keystoreProperties['keyAlias']
         }
+        debug {
+            storeFile file("/Users/kvl/.android/debug.keystore")
+            storePassword "android"
+            keyPassword "android"
+            keyAlias "androiddebugkey"
+        }
     }
     compileSdkVersion 29
 
@@ -57,7 +63,7 @@ android {
         dev {
             debuggable true
             applicationIdSuffix 'dev'
-            signingConfig signingConfigs.Default
+            signingConfig signingConfigs.debug
         }
         prod {
             minifyEnabled true
