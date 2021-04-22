@@ -3,9 +3,6 @@ package com.kvl.cyclotrack
 import android.content.ContentResolver
 import android.net.Uri
 import android.util.Log
-import org.apache.poi.ss.usermodel.Row
-import org.apache.poi.ss.usermodel.Sheet
-import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.dhatim.fastexcel.Workbook
 import org.dhatim.fastexcel.Worksheet
 import java.io.BufferedOutputStream
@@ -107,67 +104,6 @@ fun exportRideToCsv(
     }
 }
 
-inline fun <reified T : Any> getDataHeaderRowXlsx(headerRow: Row) {
-    val reflection: KClass<T> = T::class
-    for (prop in reflection.declaredMemberProperties) {
-        headerRow.createCell(headerRow.count()).setCellValue(prop.name)
-    }
-}
-
-inline fun <reified T : Any> addDataToSheet(sheet: Sheet, data: Array<T>) {
-    getDataHeaderRowXlsx<T>(sheet.createRow(0))
-    val reflection: KClass<T> = T::class
-
-    data.forEach { measurement ->
-        populateRow(sheet, reflection, measurement)
-    }
-}
-
-inline fun <reified T : Any> addDataToSheet(sheet: Sheet, data: T) {
-    val reflection: KClass<T> = T::class
-
-    getDataHeaderRowXlsx<T>(sheet.createRow(0))
-    populateRow(sheet, reflection, data)
-}
-
-inline fun <reified T : Any> populateRow(
-    sheet: Sheet,
-    reflection: KClass<T>,
-    data: T,
-) {
-    val row = sheet.createRow(sheet.count())
-    for (prop in reflection.declaredMemberProperties) {
-        prop.get(data).toString().let { stringVal ->
-            stringVal.toDoubleOrNull()?.let { doubleVal ->
-                row.createCell(row.count())
-                    .setCellValue(doubleVal)
-            } ?: row.createCell(row.count())
-                .setCellValue(stringVal)
-        }
-    }
-}
-
-fun exportRideToPoi(
-    contentResolver: ContentResolver,
-    filePath: Uri,
-    exportData: TripDetailsViewModel.ExportData,
-) {
-    val workbook = XSSFWorkbook()
-
-    addDataToSheet(workbook.createSheet("summary"), exportData.summary!!)
-    addDataToSheet(workbook.createSheet("measurements"), exportData.measurements!!)
-    addDataToSheet(workbook.createSheet("timeStates"), exportData.timeStates!!)
-    addDataToSheet(workbook.createSheet("splits"), exportData.splits!!)
-    addDataToSheet(workbook.createSheet("onboardSensors"), exportData.onboardSensors!!)
-
-    contentResolver.openFileDescriptor(filePath, "w")?.use {
-        FileOutputStream(it.fileDescriptor).use { stream ->
-            workbook.write(stream)
-            stream.close()
-        }
-    }
-}
-
 inline fun <reified T : Any> populateRow(
     sheet: Worksheet,
     rowIdx: Int,
@@ -239,22 +175,3 @@ fun exportRideToXlsx(
 ) {
     exportRideToFastExcel(contentResolver, filePath, exportData)
 }
-/*
-fun exportRideToXlsx(
-    contentResolver: ContentResolver,
-    filePath: Uri,
-    exportData: TripDetailsViewModel.ExportData,
-) {
-    val workbook: Workbook = XSSFWorkbook()
-
-    for (prop in TripDetailsViewModel.ExportData::class.declaredMemberProperties) {
-        addDataToSheet(workbook.createSheet(prop.name), prop.get(exportData) as prop.returnType)
-    }
-
-    contentResolver.openFileDescriptor(filePath, "w")?.use {
-        FileOutputStream(it.fileDescriptor).use { stream ->
-            workbook.write(stream)
-        }
-    }
-}
-*/
