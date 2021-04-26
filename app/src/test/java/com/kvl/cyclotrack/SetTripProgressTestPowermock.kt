@@ -39,9 +39,11 @@ class SetTripProgressTestPowermock {
     private val mockTripsRepository = mock(TripsRepository::class.java)
     private val mockMeasurementsRepository = mock(MeasurementsRepository::class.java)
     private val mockTimeStateRepository = mock(TimeStateRepository::class.java)
+    private val mockOnboardSensorsRepository = mock(OnboardSensorsRepository::class.java)
     private val mockSplitRepository = mock(SplitRepository::class.java)
     private val mockGpsService = mock(GpsService::class.java)
     private val mockBleService = mock(BleService::class.java)
+    private val mockSensorLiveData = mock(SensorLiveData::class.java)
     private val mockSharedPreferences = mock(SharedPreferences::class.java)
 
     @Before
@@ -52,8 +54,10 @@ class SetTripProgressTestPowermock {
             mockMeasurementsRepository,
             mockTimeStateRepository,
             mockSplitRepository,
+            mockOnboardSensorsRepository,
             mockGpsService,
             mockBleService,
+            mockSensorLiveData,
             mockSharedPreferences
         )
 
@@ -129,9 +133,10 @@ class SetTripProgressTestPowermock {
             SpeedData(75, 321, 1234, 150f))
         val expectedTripProgress = TripProgress(testMeasurements,
             testLocationData.accuracy,
-            testLocationData.speed,
+            10f,
+            5f,
             0f,
-            testLocationData.speed,
+            5f,
             0f,
             0f,
             0.0,
@@ -219,9 +224,10 @@ class SetTripProgressTestPowermock {
                 testLocationData.speed,
                 0f,
                 0f,
-                101.0,
+                101.0f,
                 0.0,
                 60.0,
+                0.0,
                 true)
 
             doReturn(1001.0).`when`(viewModelSpy, "getDistanceDelta", any(), any())

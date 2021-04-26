@@ -10,7 +10,7 @@ class ExportRideTest {
         val result = getRideMeasurementsCsv(measurements = testArray.toTypedArray())
         Assert.assertEquals(1, result.size)
         Assert.assertArrayEquals(
-            arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMetersPerSecond,"),
+            arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMeters,"),
             result)
     }
 
@@ -30,7 +30,7 @@ class ExportRideTest {
             bearingAccuracyDegrees = 0.1f,
             elapsedRealtimeUncertaintyNanos = 1.0,
             speedAccuracyMetersPerSecond = 0.01f,
-            verticalAccuracyMetersPerSecond = 0.01f,
+            verticalAccuracyMeters = 0.01f,
             heartRate = 62,
             cadenceRevolutions = 12345,
             cadenceLastEvent = 2352,
@@ -46,7 +46,7 @@ class ExportRideTest {
         testArray.add(testMeasurements)
         var result = getRideMeasurementsCsv(measurements = testArray.toTypedArray())
         Assert.assertEquals(2, result.size)
-        Assert.assertArrayEquals(arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMetersPerSecond,",
+        Assert.assertArrayEquals(arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMeters,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,1,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,"),
             result)
 
@@ -57,7 +57,7 @@ class ExportRideTest {
         result = getRideMeasurementsCsv(measurements = testArray.toTypedArray())
         Assert.assertEquals(11, result.size)
         Assert.assertArrayEquals(arrayOf(
-            "accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMetersPerSecond,",
+            "accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMeters,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,0,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,1,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,2,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,",
@@ -78,7 +78,7 @@ class ExportRideTest {
         val result = getDataCsv(measurements = testArray.toTypedArray())
         Assert.assertEquals(1, result.size)
         Assert.assertArrayEquals(
-            arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMetersPerSecond,"),
+            arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMeters,"),
             result)
     }
 
@@ -98,7 +98,7 @@ class ExportRideTest {
             bearingAccuracyDegrees = 0.1f,
             elapsedRealtimeUncertaintyNanos = 1.0,
             speedAccuracyMetersPerSecond = 0.01f,
-            verticalAccuracyMetersPerSecond = 0.01f,
+            verticalAccuracyMeters = 0.01f,
             heartRate = 62,
             cadenceRevolutions = 12345,
             cadenceLastEvent = 2352,
@@ -118,7 +118,7 @@ class ExportRideTest {
         testArray.add(testMeasurements)
         var result = getDataCsv(measurements = testArray.toTypedArray())
         Assert.assertEquals(2, result.size)
-        Assert.assertArrayEquals(arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMetersPerSecond,",
+        Assert.assertArrayEquals(arrayOf("accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMeters,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,1,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,"),
             result)
 
@@ -129,7 +129,7 @@ class ExportRideTest {
         result = getDataCsv(measurements = testArray.toTypedArray())
         Assert.assertEquals(11, result.size)
         Assert.assertArrayEquals(arrayOf(
-            "accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMetersPerSecond,",
+            "accuracy,altitude,bearing,bearingAccuracyDegrees,cadenceLastEvent,cadenceRevolutions,cadenceRpm,elapsedRealtimeNanos,elapsedRealtimeUncertaintyNanos,heartRate,id,latitude,longitude,speed,speedAccuracyMetersPerSecond,speedLastEvent,speedRevolutions,speedRpm,time,tripId,verticalAccuracyMeters,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,0,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,1,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,",
             "1.0,100.0,0.0,0.1,2352,12345,70.0,123456,1.0,62,2,123.123,321.321,11.11,0.01,4564,5432,15.0,98765432,1,0.01,",

@@ -1,7 +1,7 @@
 package com.kvl.cyclotrack
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -10,7 +10,7 @@ class GetCaloriesBurnedTests {
     @Test
     fun getCaloriesBurned_success() {
         val testTrip = Trip(userSex = UserSexEnum.MALE,
-            userAge = 40,
+            userAge = 40f,
             userWeight = 86f,
             userHeight = 1.82f,
             userVo2max = 51f,
@@ -29,6 +29,6 @@ class GetCaloriesBurnedTests {
             this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_vo2max),
                 "50")
         }
-        Assert.assertEquals(600, getCaloriesBurned(testTrip, heartRate, testPrefs))
+        assertEquals(600, getCaloriesBurned(testTrip, heartRate, testPrefs))
     }
 }
