@@ -3,10 +3,7 @@ package com.kvl.cyclotrack
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import kotlinx.coroutines.launch
 
 class TripDetailsViewModel @ViewModelInject constructor(
@@ -15,8 +12,10 @@ class TripDetailsViewModel @ViewModelInject constructor(
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val onboardSensorsRepository: OnboardSensorsRepository,
+    private val googleFitApiService: GoogleFitApiService,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
+    val logTag = "TRIP_DETAILS_VIEW_MODEL"
     var tripId: Long = 0
 
     fun tripOverview() = tripsRepository.getTrip(tripId)
@@ -27,14 +26,61 @@ class TripDetailsViewModel @ViewModelInject constructor(
             splitRepository.removeTripSplits(tripId)
         }
 
+    fun googleFitWeight(timestamp: Long) =
+        googleFitApiService.getLatestWeight(timestamp)
+
+    fun googleFitHeight(timestamp: Long) =
+        googleFitApiService.getLatestHeight(timestamp)
+
+    fun googleFitRestingHeartRate(timestamp: Long) =
+        googleFitApiService.getLatestRestingHeartRate(timestamp)
+
     fun removeTrip() =
         viewModelScope.launch { tripsRepository.removeTrip(tripId) }
 
-    suspend fun getDefaultBiometrics() = tripsRepository.getDefaultBiometrics(tripId)
+    suspend fun getTripBiometrics() = tripsRepository.getDefaultBiometrics(tripId)
 
     fun measurements() = measurementsRepository.getTripCriticalMeasurements(tripId)
     fun exportMeasurements() = measurementsRepository.getTripMeasurements(tripId)
     fun onboardSensors() = onboardSensorsRepository.getTripMeasurements(tripId)
+
+    fun getCombinedBiometrics(timestamp: Long) = MediatorLiveData<Biometrics>().apply {
+        var tripBiometrics = MutableLiveData<Biometrics>(null)
+        viewModelScope.launch { tripBiometrics.postValue(getTripBiometrics()) }
+        value = getBiometrics(0, sharedPreferences)
+
+        if (googleFitApiService.hasPermission()) {
+            addSource(googleFitWeight(timestamp)) {
+                Log.d(logTag, "Using Google Fit weight: ${it}")
+                value = value?.copy(userWeight = it)
+            }
+
+            addSource(googleFitHeight(timestamp)) {
+                Log.d(logTag, "Using Google Fit height: ${it}")
+                value = value?.copy(userHeight = it)
+            }
+
+            addSource(googleFitRestingHeartRate(timestamp)) {
+                Log.d(logTag, "Using Google Fit resting HR: ${it}")
+                value = value?.copy(userRestingHeartRate = it)
+            }
+        }
+
+        addSource(tripBiometrics) {
+            if (it != null) {
+                value = it.copy(
+                    userSex = it.userSex ?: value?.userSex,
+                    userHeight = it.userHeight ?: value?.userHeight,
+                    userWeight = it.userWeight ?: value?.userWeight,
+                    userAge = it.userAge ?: value?.userAge,
+                    userVo2max = it.userVo2max ?: value?.userVo2max,
+                    userRestingHeartRate = it.userRestingHeartRate ?: value?.userRestingHeartRate,
+                    userMaxHeartRate = it.userMaxHeartRate ?: value?.userMaxHeartRate,
+                )
+            }
+        }
+
+    }
 
     data class ExportData(
         var summary: Trip? = null,

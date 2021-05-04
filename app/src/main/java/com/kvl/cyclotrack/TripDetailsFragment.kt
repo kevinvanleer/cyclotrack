@@ -825,15 +825,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             measurements: Array<CriticalMeasurements>,
             sharedPrefs: SharedPreferences,
         ) {
+            Log.d(TAG, "User weight: ${overview.userWeight}")
+            val avgHr = getAverageHeartRate(measurements)
             try {
                 getCaloriesBurned(
                     overview,
-                    getAverageHeartRate(measurements),
+                    avgHr,
                     sharedPrefs
                 )?.let {
                     caloriesHeadingView.label = getCaloriesBurnedLabel(
                         overview,
-                        getAverageHeartRate(measurements),
+                        avgHr,
                         sharedPrefs
                     )
                     caloriesHeadingView.visibility = View.VISIBLE
@@ -851,13 +853,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val measurements = pairs.first
                 val overview = pairs.second
                 Log.d(TAG, "Observed change to measurements and overview")
-
-                val sharedPrefs =
-                    PreferenceManager.getDefaultSharedPreferences(requireContext())
-                if (overview.userWeight == null) {
-                    Log.d(TAG, "Looking up default biometrics")
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        viewModel.getDefaultBiometrics()?.let { biometrics ->
+                viewModel.getCombinedBiometrics(overview.timestamp)
+                    .observe(viewLifecycleOwner, { biometrics ->
+                        val sharedPrefs =
+                            PreferenceManager.getDefaultSharedPreferences(requireContext())
+                        if (biometrics.userWeight != null) {
+                            Log.d(TAG, "Calculating calories burned")
                             getCaloriesBurned(overview.copy(userWeight = biometrics.userWeight,
                                 userHeight = biometrics.userHeight,
                                 userSex = biometrics.userSex,
@@ -867,11 +868,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 userMaxHeartRate = biometrics.userMaxHeartRate),
                                 measurements,
                                 sharedPrefs)
-                        } ?: getCaloriesBurned(overview, measurements, sharedPrefs)
-                    }
-                } else {
-                    getCaloriesBurned(overview, measurements, sharedPrefs)
-                }
+                        }
+                    })
             })
     }
 
