@@ -129,36 +129,29 @@ fun getCaloriesEstimateType(
 }
 
 fun getCaloriesBurnedLabel(
+    biometrics: Biometrics,
     overview: Trip,
     heartRate: Short?,
-    sharedPrefs: SharedPreferences,
 ): String {
-    fun getSex(value: UserSexEnum?) = value?.name ?: getUserSex(sharedPrefs)?.name
-    fun getAge(value: Float?) = (value ?: getUserAge(sharedPrefs))?.roundToInt()
-    fun getWeight(value: Float?) = value ?: getUserWeight(sharedPrefs)
-    fun getHeight(value: Float?) = value ?: getUserHeight(sharedPrefs)
-    fun getVo2max(value: Float?) = value ?: getUserVo2max(sharedPrefs)
-    fun getRestingHeartRate(value: Int?) = value ?: getUserRestingHeartRate(sharedPrefs)
-    fun getMaxHeartRate(value: Int?) = value ?: getUserMaxHeartRate(sharedPrefs)
 
     var label =
         "Calories (${speedToMets((overview.distance!! / overview.duration!!).toFloat())} METs)"
 
-    val estVo2max = getVo2max(overview.userVo2max)
-        ?: getRestingHeartRate(overview.userRestingHeartRate)?.let {
+    val estVo2max = biometrics.userVo2max
+        ?: biometrics.userRestingHeartRate?.let {
             estimateVo2Max(it,
-                getMaxHeartRate(overview.userMaxHeartRate),
-                getAge(overview.userAge))
+                biometrics.userMaxHeartRate,
+                biometrics.userAge?.roundToInt())
         }
 
-    if (getWeight(overview.userWeight) != null) {
+    if (biometrics.userWeight != null) {
         if (heartRate != null) {
             if (estVo2max != null &&
-                getSex(overview.userSex) != null &&
-                getAge(overview.userAge) != null
+                biometrics.userSex != null &&
+                biometrics.userAge != null
             ) {
                 label = "Calories (gross)"
-                if (getHeight(overview.userHeight) != null) {
+                if (biometrics.userHeight != null) {
                     label = "Calories (net)"
                 }
             }
@@ -166,6 +159,49 @@ fun getCaloriesBurnedLabel(
     }
 
     return label
+}
+
+fun getCaloriesBurnedLabel(
+    overview: Trip,
+    heartRate: Short?,
+    sharedPrefs: SharedPreferences,
+): String {
+    fun getSex(value: UserSexEnum?) = value ?: getUserSex(sharedPrefs)
+    fun getAge(value: Float?) = (value ?: getUserAge(sharedPrefs))
+    fun getWeight(value: Float?) = value ?: getUserWeight(sharedPrefs)
+    fun getHeight(value: Float?) = value ?: getUserHeight(sharedPrefs)
+    fun getVo2max(value: Float?) = value ?: getUserVo2max(sharedPrefs)
+    fun getRestingHeartRate(value: Int?) = value ?: getUserRestingHeartRate(sharedPrefs)
+    fun getMaxHeartRate(value: Int?) = value ?: getUserMaxHeartRate(sharedPrefs)
+
+    return getCaloriesBurnedLabel(Biometrics(
+        0,
+        userAge = getAge(overview.userAge),
+        userSex = getSex(overview.userSex),
+        userWeight = getWeight(overview.userWeight),
+        userHeight = getHeight(overview.userHeight),
+        userVo2max = getVo2max(overview.userVo2max),
+        userRestingHeartRate = getRestingHeartRate(overview.userRestingHeartRate),
+        userMaxHeartRate = getMaxHeartRate(overview.userMaxHeartRate),
+    ), overview, heartRate)
+}
+
+fun getCaloriesBurned(
+    biometrics: Biometrics,
+    overview: Trip,
+    heartRate: Short?,
+): Int? {
+
+    return estimateCaloriesBurned(biometrics.userSex?.name,
+        biometrics.userAge?.roundToInt(),
+        biometrics.userWeight!!,
+        biometrics.userHeight,
+        biometrics.userVo2max,
+        biometrics.userRestingHeartRate,
+        biometrics.userMaxHeartRate,
+        overview.duration?.toFloat()!!,
+        overview.distance?.toFloat()!!,
+        heartRate)
 }
 
 fun getCaloriesBurned(

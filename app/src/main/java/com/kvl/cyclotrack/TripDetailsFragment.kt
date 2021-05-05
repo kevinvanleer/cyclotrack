@@ -3,7 +3,6 @@ package com.kvl.cyclotrack
 import android.app.PendingIntent
 import android.content.ContentResolver
 import android.content.Intent
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -821,22 +820,22 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         })
 
         fun getCaloriesBurned(
+            biometrics: Biometrics,
             overview: Trip,
             measurements: Array<CriticalMeasurements>,
-            sharedPrefs: SharedPreferences,
         ) {
             Log.d(TAG, "User weight: ${overview.userWeight}")
             val avgHr = getAverageHeartRate(measurements)
             try {
                 getCaloriesBurned(
+                    biometrics,
                     overview,
                     avgHr,
-                    sharedPrefs
                 )?.let {
                     caloriesHeadingView.label = getCaloriesBurnedLabel(
+                        biometrics,
                         overview,
                         avgHr,
-                        sharedPrefs
                     )
                     caloriesHeadingView.visibility = View.VISIBLE
                     caloriesHeadingView.value = it.toString()
@@ -853,13 +852,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val measurements = pairs.first
                 val overview = pairs.second
                 Log.d(TAG, "Observed change to measurements and overview")
-                viewModel.getCombinedBiometrics(overview.timestamp)
-                    .observe(viewLifecycleOwner, { biometrics ->
-                        val sharedPrefs =
-                            PreferenceManager.getDefaultSharedPreferences(requireContext())
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.getCombinedBiometrics(overview.timestamp).let { biometrics ->
+                        Log.d(TAG, "biometrics: ${biometrics}")
                         if (biometrics.userWeight != null) {
                             Log.d(TAG, "Calculating calories burned")
-                            getCaloriesBurned(overview.copy(userWeight = biometrics.userWeight,
+                            /*getCaloriesBurned(overview.copy(userWeight = biometrics.userWeight,
                                 userHeight = biometrics.userHeight,
                                 userSex = biometrics.userSex,
                                 userAge = biometrics.userAge,
@@ -867,9 +865,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 userRestingHeartRate = biometrics.userRestingHeartRate,
                                 userMaxHeartRate = biometrics.userMaxHeartRate),
                                 measurements,
-                                sharedPrefs)
+                                sharedPrefs)*/
+                            getCaloriesBurned(biometrics, overview, measurements)
                         }
-                    })
+                    }
+                }
             })
     }
 

@@ -3,7 +3,11 @@ package com.kvl.cyclotrack
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.hilt.lifecycle.ViewModelInject
-import androidx.lifecycle.*
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 
 class TripDetailsViewModel @ViewModelInject constructor(
@@ -26,60 +30,55 @@ class TripDetailsViewModel @ViewModelInject constructor(
             splitRepository.removeTripSplits(tripId)
         }
 
-    fun googleFitWeight(timestamp: Long) =
-        googleFitApiService.getLatestWeight(timestamp)
-
-    fun googleFitHeight(timestamp: Long) =
-        googleFitApiService.getLatestHeight(timestamp)
-
-    fun googleFitRestingHeartRate(timestamp: Long) =
-        googleFitApiService.getLatestRestingHeartRate(timestamp)
-
     fun removeTrip() =
         viewModelScope.launch { tripsRepository.removeTrip(tripId) }
-
-    suspend fun getTripBiometrics() = tripsRepository.getDefaultBiometrics(tripId)
 
     fun measurements() = measurementsRepository.getTripCriticalMeasurements(tripId)
     fun exportMeasurements() = measurementsRepository.getTripMeasurements(tripId)
     fun onboardSensors() = onboardSensorsRepository.getTripMeasurements(tripId)
 
-    fun getCombinedBiometrics(timestamp: Long) = MediatorLiveData<Biometrics>().apply {
-        var tripBiometrics = MutableLiveData<Biometrics>(null)
-        viewModelScope.launch { tripBiometrics.postValue(getTripBiometrics()) }
-        value = getBiometrics(0, sharedPreferences)
+    suspend fun getCombinedBiometrics(timestamp: Long): Biometrics {
+        var biometrics = getBiometrics(0, sharedPreferences)
+        Log.d(logTag, "biometrics prefs: ${biometrics}")
 
-        if (googleFitApiService.hasPermission()) {
-            addSource(googleFitWeight(timestamp)) {
-                Log.d(logTag, "Using Google Fit weight: ${it}")
-                value = value?.copy(userWeight = it)
+        viewModelScope.launch {
+            val tripBiometrics = tripsRepository.getDefaultBiometrics(tripId)
+            Log.d(logTag, "trip biometrics for ${tripId}: ${tripBiometrics}")
+            biometrics = biometrics.copy(
+                userSex = tripBiometrics?.userSex ?: biometrics?.userSex,
+                userHeight = tripBiometrics?.userHeight ?: biometrics?.userHeight,
+                userWeight = tripBiometrics?.userWeight ?: biometrics?.userWeight,
+                userAge = tripBiometrics?.userAge ?: biometrics?.userAge,
+                userVo2max = tripBiometrics?.userVo2max ?: biometrics?.userVo2max,
+                userRestingHeartRate = tripBiometrics?.userRestingHeartRate
+                    ?: biometrics?.userRestingHeartRate,
+                userMaxHeartRate = tripBiometrics?.userMaxHeartRate
+                    ?: biometrics?.userMaxHeartRate,
+            )
+            Log.d(logTag, "biometrics after trip: ${biometrics}")
+            if (googleFitApiService.hasPermission()) {
+                val weightDeferred = async { googleFitApiService.getLatestWeight(timestamp) }
+                val heightDeferred = async { googleFitApiService.getLatestHeight(timestamp) }
+                val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate(timestamp) }
+
+                weightDeferred.await().let {
+                    Log.d(logTag, "google weight: ${it}")
+                    biometrics = biometrics.copy(userWeight = it)
+                }
+                heightDeferred.await().let {
+                    Log.d(logTag, "google height: ${it}")
+                    biometrics = biometrics.copy(userHeight = it)
+                }
+                hrDeferred.await().let {
+                    Log.d(logTag, "google resting hr: ${it}")
+                    biometrics = biometrics.copy(userRestingHeartRate = it)
+                }
+                Log.d(logTag, "biometrics google: ${biometrics}")
             }
+        }.join()
 
-            addSource(googleFitHeight(timestamp)) {
-                Log.d(logTag, "Using Google Fit height: ${it}")
-                value = value?.copy(userHeight = it)
-            }
-
-            addSource(googleFitRestingHeartRate(timestamp)) {
-                Log.d(logTag, "Using Google Fit resting HR: ${it}")
-                value = value?.copy(userRestingHeartRate = it)
-            }
-        }
-
-        addSource(tripBiometrics) {
-            if (it != null) {
-                value = it.copy(
-                    userSex = it.userSex ?: value?.userSex,
-                    userHeight = it.userHeight ?: value?.userHeight,
-                    userWeight = it.userWeight ?: value?.userWeight,
-                    userAge = it.userAge ?: value?.userAge,
-                    userVo2max = it.userVo2max ?: value?.userVo2max,
-                    userRestingHeartRate = it.userRestingHeartRate ?: value?.userRestingHeartRate,
-                    userMaxHeartRate = it.userMaxHeartRate ?: value?.userMaxHeartRate,
-                )
-            }
-        }
-
+        Log.d(logTag, "biometrics: ${biometrics}")
+        return biometrics
     }
 
     data class ExportData(
