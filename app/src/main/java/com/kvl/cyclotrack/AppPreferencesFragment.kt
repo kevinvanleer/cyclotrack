@@ -1,6 +1,10 @@
 package com.kvl.cyclotrack
 
 import android.app.AlertDialog
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.fragment.app.Fragment
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.preference.*
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -40,6 +45,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
 
         if (BuildConfig.BUILD_TYPE == "dev") {
             configureClearPreferences()
+        }
+        if (BuildConfig.BUILD_TYPE != "prod") {
             if (GoogleSignIn.hasPermissions(getGoogleAccount(requireContext()), fitnessOptions)) {
                 accessGoogleFit(requireActivity())
             }
@@ -47,17 +54,19 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         }
     }
 
-
     private fun configureGoogleFitPreference() {
         findPreference<Preference>(getString(R.string.preferences_key_google_fit))?.apply {
             if (GoogleSignIn.hasPermissions(getGoogleAccount(requireContext()), fitnessOptions)) {
-                this.title = "Disconnect from Google Fit"
-                this.summary = "Stop syncing data between Cyclotrack and Google Fit"
+                this.title = getString(R.string.preferences_disconnect_google_fit_title)
+                this.summary = getString(R.string.preferences_disconnect_google_fit_summary)
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         setPositiveButton("DISCONNECT") { _, _ ->
                             GoogleSignIn.getClient(requireContext(),
                                 GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
+                                .addOnSuccessListener {
+                                    configureGoogleFitPreference()
+                                }
                         }
                         setTitle("Disconnect from Google Fit")
                         setMessage("Logout from Google Account and stop sharing data with Google. Probably for the best!")
@@ -65,6 +74,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                     true
                 }
             } else {
+                this.title = getString(R.string.preferences_sync_with_google_fit_title)
+                this.summary = getString(R.string.preferences_sync_with_google_fit_summary)
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         setPositiveButton("SYNC") { _, _ ->
@@ -78,6 +89,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             }
             isVisible = true
         }
+
     }
 
     private fun configureClearPreferences() {
@@ -116,6 +128,13 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             editText.inputType = EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
             editText.isSingleLine = true
         }
+
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    configureGoogleFitPreference()
+                }
+            }, IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
 
         activity?.title = "Settings"
         return super.onCreateView(inflater, container, savedInstanceState)
