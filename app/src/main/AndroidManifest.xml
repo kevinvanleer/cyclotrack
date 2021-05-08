@@ -26,9 +26,6 @@
         <receiver
             android:name=".DeleteExportBroadcastReceiver"
             android:exported="true">
-            <intent-filter>
-                <action android:name="com.kvl.cyclotrack.action.DELETE_EXPORTED_DATA" />
-            </intent-filter>
         </receiver>
 
         <activity
