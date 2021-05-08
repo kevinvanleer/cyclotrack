@@ -85,7 +85,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     private fun exportTripData(contentResolver: ContentResolver, uri: Uri) {
         fun getUriFilePart(): String? {
-            var result = uri.path
+            val result = uri.path
             val cut = result!!.lastIndexOf('/')
             return if (cut != -1) {
                 result.substring(cut + 1)
