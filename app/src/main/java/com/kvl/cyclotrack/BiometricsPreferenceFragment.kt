@@ -29,7 +29,8 @@ class BiometricsPreferenceFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View? {
         viewModel =
-            BiometricsViewModel(PreferenceManager.getDefaultSharedPreferences(requireContext()))
+            BiometricsViewModel(GoogleFitApiService(requireActivity()),
+                PreferenceManager.getDefaultSharedPreferences(requireContext()))
         binding = BiometricsPreferenceFragmentBinding.inflate(inflater, container, false)
         binding.viewmodel = viewModel
 
