@@ -103,6 +103,12 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     implementation group: 'org.dhatim', name: 'fastexcel', version: '0.12.7'
 
+    // WorkManager
+    def work_version = "2.5.0"
+    implementation "androidx.work:work-runtime-ktx:$work_version"
+    implementation 'androidx.hilt:hilt-work:1.0.0'
+    kapt 'androidx.hilt:hilt-compiler:1.0.0'
+    androidTestImplementation "androidx.work:work-testing:$work_version"
 
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
