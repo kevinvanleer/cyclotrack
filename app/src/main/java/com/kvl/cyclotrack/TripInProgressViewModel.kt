@@ -384,7 +384,6 @@ class TripInProgressViewModel @ViewModelInject constructor(
     private fun getDuration() =
         if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
-
     fun startObserving(lifecycleOwner: LifecycleOwner) {
         if (tripId != null) {
             Log.d(TAG, "Start observing trip ID $tripId $currentTimeStateObserver")
