@@ -2,14 +2,16 @@ package com.kvl.cyclotrack
 
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class TripDetailsViewModel @ViewModelInject constructor(
+@HiltViewModel
+class TripDetailsViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,

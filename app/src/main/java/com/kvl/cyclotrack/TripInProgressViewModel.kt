@@ -7,18 +7,20 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.edit
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
+import javax.inject.Inject
 import kotlin.concurrent.timerTask
 import kotlin.math.abs
 import kotlin.math.max
 
-class TripInProgressViewModel @ViewModelInject constructor(
+@HiltViewModel
+class TripInProgressViewModel @Inject constructor(
     coroutineScopeProvider: CoroutineScope?,
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,

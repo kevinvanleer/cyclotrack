@@ -7,11 +7,13 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.hilt.lifecycle.ViewModelInject
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class DiscoverSensorViewModel @ViewModelInject constructor(private val sharedPreferences: SharedPreferences) :
+@HiltViewModel
+class DiscoverSensorViewModel @Inject constructor(private val sharedPreferences: SharedPreferences) :
     ViewModel() {
     val TAG = "DiscoverSensorViewModel"
     val bleDevices = MutableLiveData<Array<ExternalSensor>>()

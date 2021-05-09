@@ -5,10 +5,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 @HiltAndroidApp
-class CyclotrackApp : Application() {
+class CyclotrackApp : Application(), Configuration.Provider {
     companion object {
         lateinit var instance: CyclotrackApp private set
     }
@@ -42,4 +45,9 @@ class CyclotrackApp : Application() {
         instance = this
         createNotificationChannel()
     }
+
+    @Inject
+    lateinit var workFactory: HiltWorkerFactory
+    override fun getWorkManagerConfiguration() =
+        Configuration.Builder().setWorkerFactory(workFactory).build()
 }
