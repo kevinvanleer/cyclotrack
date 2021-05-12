@@ -1,12 +1,14 @@
 package com.kvl.cyclotrack
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.content.res.ResourcesCompat
 import androidx.navigation.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
@@ -18,6 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context, attrs) {
+    private lateinit var defaultBackgroundColor: ColorStateList
     private lateinit var dateView: TextView
     private lateinit var titleView: TextView
     private lateinit var startTimeView: TextView
@@ -28,6 +31,17 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
     private var bounds: LatLngBounds? = null
 
     var tripId: Long = 0L
+    var showSelectionIndicator = false
+
+    override fun setSelected(selected: Boolean) {
+        when (selected) {
+            true -> setCardBackgroundColor(ResourcesCompat.getColor(context.resources,
+                R.color.colorAccent, null))
+            else -> if (this::defaultBackgroundColor.isInitialized) setCardBackgroundColor(
+                defaultBackgroundColor)
+        }
+        super.setSelected(selected)
+    }
 
     var title: String
         get() = titleView.text.toString()
@@ -93,6 +107,10 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         mapView = findViewById(R.id.trip_summary_map)
         mapView.onCreate(null)
         mapView.isClickable = false
+
+        defaultBackgroundColor = cardBackgroundColor
+
+
         mapView.getMapAsync {
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it

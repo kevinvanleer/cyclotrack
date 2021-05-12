@@ -1,22 +1,21 @@
 package com.kvl.cyclotrack
 
-import androidx.lifecycle.LiveData
 import javax.inject.Inject
 
 class MeasurementsRepository @Inject constructor(private val measurementsDao: MeasurementsDao) {
-    fun getTripMeasurements(tripId: Long): LiveData<Array<Measurements>> {
-        return measurementsDao.load(tripId)
-    }
+    suspend fun get(tripId: Long) = measurementsDao.load(tripId)
 
-    fun getTripCriticalMeasurements(tripId: Long): LiveData<Array<CriticalMeasurements>> {
-        return measurementsDao.loadDetails(tripId)
-    }
+    fun observe(tripId: Long) = measurementsDao.subscribe(tripId)
 
-    suspend fun insertMeasurements(measurements: Measurements): Long {
-        return measurementsDao.save(measurements)
-    }
+    fun observeCritical(tripId: Long) = measurementsDao.subscribeCritical(tripId)
+    suspend fun getCritical(tripId: Long) = measurementsDao.loadCritical(tripId)
 
-    fun getLatestMeasurements(tripId: Long): LiveData<Measurements> {
-        return measurementsDao.getLastMeasurement(tripId)
-    }
+    suspend fun insertMeasurements(measurements: Measurements) = measurementsDao.save(measurements)
+
+    fun observeLatest(tripId: Long) = measurementsDao.subscribeLatest(tripId)
+
+    fun update(measurements: Measurements) = measurementsDao.update(measurements)
+
+    suspend fun changeTrip(tripId: Long, newTripId: Long) =
+        measurementsDao.changeTrip(tripId, newTripId)
 }

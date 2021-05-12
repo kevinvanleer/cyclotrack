@@ -21,9 +21,9 @@ class TripDetailsViewModel @Inject constructor(
 ) : ViewModel() {
     var tripId: Long = 0
 
-    fun tripOverview() = tripsRepository.getTrip(tripId)
-    fun timeState() = timeStateRepository.getTimeStates(tripId)
-    fun splits() = splitRepository.getTripSplits(tripId)
+    fun tripOverview() = tripsRepository.observe(tripId)
+    fun timeState() = timeStateRepository.observeTimeStates(tripId)
+    fun splits() = splitRepository.observeTripSplits(tripId)
     fun clearSplits() =
         viewModelScope.launch {
             splitRepository.removeTripSplits(tripId)
@@ -34,9 +34,9 @@ class TripDetailsViewModel @Inject constructor(
 
     suspend fun getDefaultBiometrics() = tripsRepository.getDefaultBiometrics(tripId)
 
-    fun measurements() = measurementsRepository.getTripCriticalMeasurements(tripId)
-    fun exportMeasurements() = measurementsRepository.getTripMeasurements(tripId)
-    fun onboardSensors() = onboardSensorsRepository.getTripMeasurements(tripId)
+    fun measurements() = measurementsRepository.observeCritical(tripId)
+    fun exportMeasurements() = measurementsRepository.observe(tripId)
+    fun onboardSensors() = onboardSensorsRepository.observeDecimated(tripId)
 
     data class ExportData(
         var summary: Trip? = null,

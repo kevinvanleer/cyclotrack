@@ -132,9 +132,13 @@ fun getTripIntervals(
     measurements: Array<CriticalMeasurements>? = null,
 ): Array<LongRange> {
     val intervals = ArrayList<LongRange>()
-    timeStates?.forEachIndexed { index, timeState ->
-        if (!isTripInProgress(timeState.state) && index > 0 && isTripInProgress(timeStates[index - 1].state)) {
-            intervals.add(LongRange(timeStates[index - 1].timestamp, timeState.timestamp))
+    var intervalStart = -1L
+    timeStates?.forEach { timeState ->
+        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
+            timeState.timestamp
+        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervalStart = -1L
         }
     }
     if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && !measurements.isNullOrEmpty()) {

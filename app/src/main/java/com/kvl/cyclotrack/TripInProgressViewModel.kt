@@ -391,11 +391,11 @@ class TripInProgressViewModel @Inject constructor(
             Log.d(TAG, "Start observing trip ID $tripId $currentTimeStateObserver")
             gpsService.observe(lifecycleOwner, gpsObserver)
             getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
-            timeStateRepository.getLatest(tripId!!)
+            timeStateRepository.observeLatest(tripId!!)
                 .observe(lifecycleOwner, currentTimeStateObserver)
-            timeStateRepository.getTimeStates(tripId!!)
+            timeStateRepository.observeTimeStates(tripId!!)
                 .observe(lifecycleOwner, accumulateDurationObserver)
-            splitRepository.getLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
+            splitRepository.observeLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
 
             if (BuildConfig.BUILD_TYPE != "prod") {
                 onboardSensors.observe(lifecycleOwner, sensorObserver)
@@ -449,7 +449,7 @@ class TripInProgressViewModel @Inject constructor(
 
     fun getLatest(): LiveData<Measurements>? {
         if (tripId == null) throw UninitializedPropertyAccessException()
-        return measurementsRepository.getLatestMeasurements(tripId!!)
+        return measurementsRepository.observeLatest(tripId!!)
     }
 
     private fun cleanup() {

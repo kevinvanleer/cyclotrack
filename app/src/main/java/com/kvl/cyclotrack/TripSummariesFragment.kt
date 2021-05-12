@@ -14,6 +14,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -25,9 +28,9 @@ class TripSummariesFragment : Fragment() {
 
     private var newRidesDisabledDialog: AlertDialog? = null
     private var noBackgroundLocationDialog: AlertDialog? = null
-    private var tripsCleanupGuardDialog: AlertDialog? = null
     private lateinit var tripListView: RecyclerView
     private lateinit var rollupView: RollupView
+    private lateinit var menu: Menu
 
     private val requestLocationPermissions = registerForActivityResult(RequestMultiplePermissions()
     ) { permissions ->
@@ -104,6 +107,14 @@ class TripSummariesFragment : Fragment() {
         return inflater.inflate(R.layout.trip_summaries_fragment, container, false)
     }
 
+    private val enableMultiSelectControls: (enable: Boolean) -> Unit = { enable ->
+        (menu.findItem(R.id.action_clear_multiselect) as MenuItem).isVisible = enable
+        (menu.findItem(R.id.action_stitch) as MenuItem).isVisible = enable
+        if (BuildConfig.BUILD_TYPE == "dev") {
+            (menu.findItem(R.id.action_delete) as MenuItem).isVisible = enable
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
@@ -123,6 +134,7 @@ class TripSummariesFragment : Fragment() {
                     viewModel,
                     viewLifecycleOwner,
                     requireContext(),
+                    enableMultiSelectControls,
                     savedInstanceState)
             tripListView.apply {
                 setHasFixedSize(true)
@@ -174,7 +186,101 @@ class TripSummariesFragment : Fragment() {
 
             builder.create()
         }
-        tripsCleanupGuardDialog = activity?.let {
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        this.menu = menu
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.menu_main, menu)
+        Log.d("TRIP_SUMMARIES", "Options menu created")
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        Log.d("TRIP_SUMMARIES", "Options menu clicked")
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
+                findNavController().let {
+                    Log.d("TRIP_SUMMARIES", it.toString())
+                    it.navigate(R.id.action_go_to_settings)
+                    true
+                }
+            }
+            R.id.action_stitch -> {
+                stitchSelectedTrips()
+                true
+            }
+            R.id.action_delete -> {
+                deleteSelectedTrips()
+                true
+            }
+            R.id.action_cleanup -> {
+                cleanupTrips()
+
+                true
+            }
+            R.id.action_clear_multiselect -> {
+                (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun stitchSelectedTrips() {
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                val selectedTrips =
+                    (tripListView.adapter as TripSummariesAdapter).selectedTrips.toTypedArray()
+                setPositiveButton("MERGE"
+                ) { _, _ ->
+                    Log.d("TRIP_STITCH_DIALOG", "CLICKED STITCH")
+                    WorkManager.getInstance(requireContext())
+                        .enqueue(OneTimeWorkRequestBuilder<StitchWorker>()
+                            .setInputData(workDataOf("tripIds" to selectedTrips))
+                            .build())
+                    (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_STITCH_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Merge rides?")
+                setMessage("You are about to combine ${selectedTrips.size} rides into a single ride. This change cannot be undone.")
+            }.show()
+
+            builder.create()
+        }
+    }
+
+    private fun deleteSelectedTrips() {
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                val selectedTrips =
+                    (tripListView.adapter as TripSummariesAdapter).selectedTrips.toTypedArray()
+                setPositiveButton("DELETE"
+                ) { _, _ ->
+                    Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
+                    viewModel.removeTrips(selectedTrips)
+                    (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Delete rides?")
+                setMessage("You are about to remove ${selectedTrips.size} rides. This change cannot be undone.")
+            }.show()
+
+            builder.create()
+        }
+    }
+
+    private fun cleanupTrips() {
+        activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
                 setPositiveButton("CLEANUP"
@@ -194,31 +300,6 @@ class TripSummariesFragment : Fragment() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.menu_main, menu)
-        Log.d("TRIP_SUMMARIES", "Options menu created")
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d("TRIP_SUMMARIES", "Options menu clicked")
-        return when (item.itemId) {
-            R.id.action_settings -> {
-                Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
-                findNavController().let {
-                    Log.d("TRIP_SUMMARIES", it.toString())
-                    it.navigate(R.id.action_go_to_settings)
-                    true
-                }
-            }
-            R.id.action_cleanup -> {
-                tripsCleanupGuardDialog?.show()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
     override fun onPause() {
         super.onPause()
         viewModel.tripListState.putParcelable("MY_KEY",
@@ -230,10 +311,6 @@ class TripSummariesFragment : Fragment() {
         if (this::tripListView.isInitialized) {
             tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
                 "MY_KEY"))
-            /*Handler().postDelayed({
-            tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
-                "MY_KEY"))
-        }, 50)*/
         }
     }
 }

@@ -4,20 +4,20 @@ import androidx.lifecycle.LiveData
 import javax.inject.Inject
 
 class TripsRepository @Inject constructor(private val tripDao: TripDao) {
-    fun getTrip(id: Long): LiveData<Trip> {
+    fun observe(id: Long): LiveData<Trip> {
         return tripDao.subscribe(id)
     }
 
-    suspend fun getTripOnce(id: Long): Trip {
+    suspend fun get(id: Long): Trip {
         return tripDao.load(id)
     }
 
-    fun getAllTrips(): LiveData<Array<Trip>> {
-        return tripDao.loadAll()
+    fun observeAll(): LiveData<Array<Trip>> {
+        return tripDao.susbscribeAll()
     }
 
-    fun getRealTrips(): LiveData<Array<Trip>> {
-        return tripDao.getRealTrips()
+    fun observeRealTrips(): LiveData<Array<Trip>> {
+        return tripDao.subscribeRealTrips()
     }
 
     suspend fun getCleanupTrips(): Array<Trip> {

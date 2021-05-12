@@ -18,9 +18,25 @@ class TripSummariesAdapter(
     private val viewModel: TripSummariesViewModel,
     private val viewLifecycleOwner: LifecycleOwner,
     private val context: Context,
+    private val multiSelectModeCallback: (Boolean) -> Unit,
     private val savedInstanceState: Bundle?,
 ) :
     RecyclerView.Adapter<TripSummariesAdapter.TripSummaryViewHolder>() {
+
+    var multiSelectMode = false
+        set(value) {
+            field = value
+            val changedTrips = selectedTrips.toTypedArray()
+            selectedTrips.clear()
+            multiSelectModeCallback(value)
+            if (!value) {
+                changedTrips.forEach { tripId ->
+                    notifyItemChanged(trips.indexOf(trips.find { it.id == tripId }))
+                }
+            }
+        }
+    var selectedTrips = ArrayList<Long>()
+
     class TripSummaryViewHolder(val tripSummaryView: TripSummaryCard) :
         RecyclerView.ViewHolder(tripSummaryView)
 
@@ -32,6 +48,7 @@ class TripSummariesAdapter(
 
     override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
         val tripId = trips[position].id ?: 0L
+
         holder.tripSummaryView.tripId = tripId
         holder.tripSummaryView.title = trips[position].name ?: "Unnamed trip"
         holder.tripSummaryView.setStartTime(trips[position].timestamp)
@@ -40,7 +57,45 @@ class TripSummariesAdapter(
             trips[position].distance ?: 0.0)
         holder.tripSummaryView.onResumeMap()
         holder.tripSummaryView.clearMap()
+        holder.tripSummaryView.showSelectionIndicator = multiSelectMode
+        holder.tripSummaryView.isSelected =
+            multiSelectMode && selectedTrips.contains(tripId)
 
+        buildView(tripId, holder, position)
+        holder.tripSummaryView.setOnClickListener { view ->
+            if (multiSelectMode) {
+                view.isSelected = !view.isSelected
+                if (view.isSelected) {
+                    selectedTrips.add(tripId)
+                } else {
+                    selectedTrips.remove(tripId)
+                }
+            } else {
+                try {
+                    view.findNavController()
+                        .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+                } catch (e: IllegalArgumentException) {
+                    Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
+                }
+            }
+        }
+
+        if (BuildConfig.BUILD_TYPE != "prod") {
+            holder.tripSummaryView.setOnLongClickListener { view ->
+                multiSelectMode = true
+                multiSelectModeCallback(true)
+                selectedTrips.add(tripId)
+                view.isSelected = true
+                true
+            }
+        }
+    }
+
+    private fun buildView(
+        tripId: Long,
+        holder: TripSummaryViewHolder,
+        position: Int,
+    ) {
         zipLiveData(viewModel.getTripMeasurements(tripId),
             viewModel.getTripTimeStates(tripId)).observe(viewLifecycleOwner,
             { pair ->
@@ -65,14 +120,6 @@ class TripSummariesAdapter(
                     }
                 }
             })
-        holder.tripSummaryView.setOnClickListener { view ->
-            try {
-                view.findNavController()
-                    .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
-            } catch (e: IllegalArgumentException) {
-                Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
-            }
-        }
     }
 
     override fun getItemCount() = trips.size

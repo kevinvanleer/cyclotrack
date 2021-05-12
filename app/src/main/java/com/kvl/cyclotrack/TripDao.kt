@@ -75,10 +75,10 @@ interface TripDao {
     suspend fun load(tripId: Long): Trip
 
     @Query("SELECT * from trip ORDER BY id DESC")
-    fun loadAll(): LiveData<Array<Trip>>
+    fun susbscribeAll(): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
-    fun getRealTrips(): LiveData<Array<Trip>>
+    fun subscribeRealTrips(): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip WHERE distance < 1 OR duration < 60")
     suspend fun getCleanupTrips(): Array<Trip>

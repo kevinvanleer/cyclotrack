@@ -1,22 +1,32 @@
 package com.kvl.cyclotrack
 
 import androidx.lifecycle.LiveData
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 
 @Dao
 interface MeasurementsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(measurements: Measurements): Long
 
+    @Update
+    fun update(measurements: Measurements)
+
     @Query("SELECT * FROM measurements WHERE tripId = :tripId")
-    fun load(tripId: Long): LiveData<Array<Measurements>>
+    suspend fun load(tripId: Long): Array<Measurements>
+
+    @Query("SELECT * FROM measurements WHERE tripId = :tripId")
+    fun subscribe(tripId: Long): LiveData<Array<Measurements>>
 
     @Query("SELECT time,speed,heartRate,speedRevolutions,speedRpm,cadenceRevolutions,cadenceRpm,latitude,longitude,altitude FROM measurements WHERE tripId = :tripId and accuracy < 5")
-    fun loadDetails(tripId: Long): LiveData<Array<CriticalMeasurements>>
+    suspend fun loadCritical(tripId: Long): Array<CriticalMeasurements>
+
+    @Query("SELECT time,speed,heartRate,speedRevolutions,speedRpm,cadenceRevolutions,cadenceRpm,latitude,longitude,altitude FROM measurements WHERE tripId = :tripId and accuracy < 5")
+    fun subscribeCritical(tripId: Long): LiveData<Array<CriticalMeasurements>>
 
     @Query("SELECT * FROM measurements WHERE id = (SELECT max(id) FROM measurements WHERE tripId = :tripId)")
-    fun getLastMeasurement(tripId: Long): LiveData<Measurements>
+    fun subscribeLatest(tripId: Long): LiveData<Measurements>
+
+    @Query("UPDATE Measurements SET tripId = :newTripId WHERE tripId = :tripId")
+    suspend fun changeTrip(tripId: Long, newTripId: Long)
+
 }

@@ -62,4 +62,8 @@
     <string name="notification_channel_description_export_trip">Indicates that data has been exported.</string>
     <string name="intent_action_delete_exported_data">com.kvl.cyclotrack.action.DELETE_EXPORTED_DATA</string>
     <string name="bearing_icon_description">Bearing icon</string>
+    <string name="action_stitch">Stitch</string>
+    <string name="action_summaryview_multiselect_enabled">com.kvl.cyclotrack.action_summaryview_multiselect_enabled</string>
+    <string name="action_clear_multiselect">Cancel</string>
+    <string name="action_delete">Delete</string>
 </resources>

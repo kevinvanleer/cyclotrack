@@ -15,10 +15,13 @@ interface SplitDao {
     suspend fun add(splits: Array<Split>)
 
     @Query("SELECT * FROM split WHERE tripId = :tripId ORDER BY timestamp ASC")
-    fun get(tripId: Long): LiveData<Array<Split>>
+    suspend fun load(tripId: Long): Array<Split>
+
+    @Query("SELECT * FROM split WHERE tripId = :tripId ORDER BY timestamp ASC")
+    fun subscribe(tripId: Long): LiveData<Array<Split>>
 
     @Query("SELECT * FROM split WHERE id = (SELECT max(id) FROM split WHERE tripId = :tripId)")
-    fun getLast(tripId: Long): LiveData<Split>
+    fun subscribeLast(tripId: Long): LiveData<Split>
 
     @Query("DELETE FROM split WHERE tripId = :tripId")
     suspend fun removeTripSplits(tripId: Long)

@@ -17,7 +17,7 @@ class EditTripViewModel @Inject constructor(
     lateinit var tripInfo: Trip
     fun setTrip(tripId: Long) =
         viewModelScope.launch(Dispatchers.IO) {
-            tripInfo = tripsRepository.getTripOnce(tripId)
+            tripInfo = tripsRepository.get(tripId)
         }
 
     fun updateTripName(value: String) {
@@ -47,6 +47,6 @@ class EditTripViewModel @Inject constructor(
     private fun changeDetails(name: String, notes: String?, circumference: Float?) =
         viewModelScope.launch(Dispatchers.IO) {
             tripsRepository.updateTripStuff(TripStuff(tripInfo.id!!, name, notes, circumference))
-            tripInfo = tripsRepository.getTripOnce(tripInfo.id!!)
+            tripInfo = tripsRepository.get(tripInfo.id!!)
         }
 }

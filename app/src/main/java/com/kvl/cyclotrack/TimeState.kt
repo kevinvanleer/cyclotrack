@@ -40,4 +40,5 @@ data class TimeState(
     val timestamp: Long = System.currentTimeMillis(),
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
+    val originalTripId: Long? = tripId,
 )
