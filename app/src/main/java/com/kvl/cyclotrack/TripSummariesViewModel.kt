@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.os.Bundle
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,11 +17,14 @@ class TripSummariesViewModel @Inject constructor(
     val tripListState = Bundle()
     val allTrips = tripsRepository.observeAll()
     val realTrips = tripsRepository.observeRealTrips()
-    fun getTripMeasurements(tripId: Long): LiveData<Array<CriticalMeasurements>> =
+    fun observeTripMeasurements(tripId: Long) =
         measurementsRepository.observeCritical(tripId)
 
-    fun getTripTimeStates(tripId: Long): LiveData<Array<TimeState>> =
-        timeStateRepository.observeTimeStates(tripId)
+    suspend fun getTripMeasurements(tripId: Long) =
+        measurementsRepository.getCritical(tripId)
+
+    suspend fun getTripTimeStates(tripId: Long): Array<TimeState> =
+        timeStateRepository.getTimeStates(tripId)
 
     fun removeTrips(trips: Array<Long>) {
         viewModelScope.launch {

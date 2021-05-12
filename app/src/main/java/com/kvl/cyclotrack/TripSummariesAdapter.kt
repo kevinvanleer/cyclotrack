@@ -23,6 +23,7 @@ class TripSummariesAdapter(
 ) :
     RecyclerView.Adapter<TripSummariesAdapter.TripSummaryViewHolder>() {
 
+    private val logTag = "TRIP_SUMMARIES_ADAPTER"
     var multiSelectMode = false
         set(value) {
             field = value
@@ -49,19 +50,8 @@ class TripSummariesAdapter(
     override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
         val tripId = trips[position].id ?: 0L
 
-        holder.tripSummaryView.tripId = tripId
-        holder.tripSummaryView.title = trips[position].name ?: "Unnamed trip"
-        holder.tripSummaryView.setStartTime(trips[position].timestamp)
-        holder.tripSummaryView.setDate(trips[position].timestamp)
-        holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-            trips[position].distance ?: 0.0)
-        holder.tripSummaryView.onResumeMap()
-        holder.tripSummaryView.clearMap()
-        holder.tripSummaryView.showSelectionIndicator = multiSelectMode
-        holder.tripSummaryView.isSelected =
-            multiSelectMode && selectedTrips.contains(tripId)
-
         buildView(tripId, holder, position)
+
         holder.tripSummaryView.setOnClickListener { view ->
             if (multiSelectMode) {
                 view.isSelected = !view.isSelected
@@ -96,30 +86,39 @@ class TripSummariesAdapter(
         holder: TripSummaryViewHolder,
         position: Int,
     ) {
-        zipLiveData(viewModel.getTripMeasurements(tripId),
-            viewModel.getTripTimeStates(tripId)).observe(viewLifecycleOwner,
-            { pair ->
-                val measurements = pair.first
-                val timeStates = pair.second
-                Log.d("TRIP_SUMMARIES_ADAPTER",
-                    "Recorded ${measurements.size} measurements for trip ${tripId}")
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val mapData = plotPath(measurements, timeStates)
-                    if (mapData.bounds != null) {
-                        mapData.paths.forEach { path ->
-                            path.startCap(RoundCap())
-                            path.endCap(RoundCap())
-                            path.width(5f)
-                            path.color(ResourcesCompat.getColor(context.resources,
-                                R.color.colorAccent,
-                                null))
-                            holder.tripSummaryView.drawPath(path, mapData.bounds)
-                        }
-                        holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-                            trips[position].distance ?: 0.0)
-                    }
+        Log.d(logTag, "Building view for ${tripId}:${position}")
+        holder.tripSummaryView.tripId = tripId
+        holder.tripSummaryView.title = trips[position].name ?: "Unnamed trip"
+        holder.tripSummaryView.setStartTime(trips[position].timestamp)
+        holder.tripSummaryView.setDate(trips[position].timestamp)
+        holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
+            trips[position].distance ?: 0.0)
+        holder.tripSummaryView.onResumeMap()
+        holder.tripSummaryView.clearMap()
+        holder.tripSummaryView.showSelectionIndicator = multiSelectMode
+        holder.tripSummaryView.isSelected =
+            multiSelectMode && selectedTrips.contains(tripId)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            Log.d(logTag, "Updating view for ${tripId}:${position}")
+            val measurements = viewModel.getTripMeasurements(tripId)
+            val timeStates = viewModel.getTripTimeStates(tripId)
+            Log.d(logTag, "Retrieved data for ${tripId}:${position}")
+            val mapData = plotPath(measurements, timeStates)
+            Log.d(logTag, "Plotted path for ${tripId}:${position}")
+            if (mapData.bounds != null) {
+                mapData.paths.forEach { path ->
+                    path.startCap(RoundCap())
+                    path.endCap(RoundCap())
+                    path.width(5f)
+                    path.color(ResourcesCompat.getColor(context.resources,
+                        R.color.colorAccent,
+                        null))
+                    holder.tripSummaryView.drawPath(path, mapData.bounds)
                 }
-            })
+            }
+            Log.d(logTag, "Updated view for ${tripId}:${position}")
+        }
     }
 
     override fun getItemCount() = trips.size

@@ -175,7 +175,7 @@ suspend fun plotPath(
     measurements: Array<CriticalMeasurements>,
     timeStates: Array<TimeState>?,
 ): MapPath =
-    withContext(Dispatchers.Default) {
+    withContext(Dispatchers.IO) {
         val paths = ArrayList<PolylineOptions>()
         var northeastLat = -91.0
         var northeastLng = -181.0
@@ -186,7 +186,7 @@ suspend fun plotPath(
         var lastLat = 0.0
         var lastLng = 0.0
 
-    var timeStateIdx = 0
+        var timeStateIdx = 0
     paths.add(PolylineOptions())
 
     fun currTimeState(): TimeState? {
