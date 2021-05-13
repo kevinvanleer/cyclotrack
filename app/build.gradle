@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 
-def keystorePropertiesFile = rootProject.file("keystore.properties");
+def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
@@ -62,7 +62,7 @@ android {
         }
         dev {
             debuggable true
-            applicationIdSuffix 'dev'
+            applicationIdSuffix '.dev'
             signingConfig signingConfigs.debug
         }
         prod {

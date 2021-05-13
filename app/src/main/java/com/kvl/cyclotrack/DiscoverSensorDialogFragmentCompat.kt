@@ -23,7 +23,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
     private lateinit var liveDevices: MediatorLiveData<Pair<Array<ExternalSensor>, Array<ExternalSensor>>>
-    val TAG = "BLE_DEVICE_PREF"
+    val logTag = "BLE_DEVICE_PREF"
     private lateinit var discoveredRecyclerView: RecyclerView
     private lateinit var savedRecyclerView: RecyclerView
     private lateinit var noSavedDevicesMessage: TextView
@@ -51,58 +51,44 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
     override fun getView() = theView
 
     private fun onDiscoveredItemSelected(checked: Boolean, position: Int, device: ExternalSensor) {
+        Log.d(logTag, "onDiscoveredItemSelected; position: ${position}")
         when (checked) {
             true -> {
-                Log.d(TAG, "Adding device")
+                Log.d(logTag, "Adding device")
                 viewModel.addToSelectedDevices(device)
                 if (viewModel.selectedDevices.value?.let { it.size > 3 } == true) {
-                    Log.d(TAG, "User tried to add a fourth device")
+                    Log.d(logTag, "User tried to add a fourth device")
                     Toast.makeText(context,
                         "Too many linked devices. Please remove a linked device to link this one.",
                         Toast.LENGTH_SHORT).show()
                     viewModel.removeFromSelectedDevices(device)
                 }
-                //discoveredRecyclerView.adapter?.notifyItemRemoved(position)
-                //savedRecyclerView.adapter?.notifyDataSetChanged()
-                //savedRecyclerView.adapter?.notifyItemInserted(discoveredSensorPref().pairedDevices.size - 1)
             }
             false -> {
-                Log.d(TAG, "Removing device from discovered list")
-                //val removedIndex = discoveredSensorPref().pairedDevices.indexOf(device)
-                //discoveredSensorPref().removeDevice(device)
+                Log.d(logTag, "Removing device from discovered list")
                 viewModel.removeFromSelectedDevices(device)
-                //savedRecyclerView.adapter?.notifyItemRemoved(removedIndex)
-                //savedRecyclerView.adapter?.notifyItemRangeChanged(removedIndex,
-                //    discoveredSensorPref().pairedDevices.size - removedIndex)
             }
         }
-        //showHideSavedDevices()
     }
 
     private fun onLinkedItemSelected(checked: Boolean, position: Int, device: ExternalSensor) {
+        Log.d(logTag, "onLinkedItemSelected; position: ${position}")
         when (checked) {
             false -> {
-                Log.d(TAG, "Removing device from linked list")
-                //discoveredSensorPref().removeDevice(device)
+                Log.d(logTag, "Removing device from linked list")
                 viewModel.removeFromSelectedDevices(device)
-                //savedRecyclerView.adapter?.notifyItemRemoved(position)
-                //savedRecyclerView.adapter?.notifyItemRangeChanged(position,
-                //    discoveredSensorPref().pairedDevices.size - position)
-                //discoveredRecyclerView.adapter?.notifyItemChanged(bleDevices.indexOf(device))
             }
         }
-        //showHideSavedDevices()
     }
 
     private val deviceListObserver: Observer<Pair<Array<ExternalSensor>, Array<ExternalSensor>>> =
         Observer { pair ->
-            Log.d(TAG, "Observing device update")
+            Log.d(logTag, "Observing device update")
             val discoveredDevices = pair.first
             val selectedDevices = pair.second
 
             discoveredRecyclerView.let { it ->
                 it.apply {
-                    //setHasFixedSize(true)
                     layoutManager = LinearLayoutManager(activity)
                     adapter =
                         DiscoveredBleDeviceAdapter(discoveredDevices.filter { discovered ->
@@ -116,7 +102,6 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
 
             savedRecyclerView.let {
                 it.apply {
-                    //setHasFixedSize(true)
                     layoutManager = LinearLayoutManager(activity)
                     adapter =
                         SavedBleDeviceAdapter(selectedDevices, ::onLinkedItemSelected)
@@ -172,11 +157,11 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
                     when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                         BluetoothAdapter.ERROR)) {
                         BluetoothAdapter.STATE_ON -> {
-                            Log.d(TAG, "Detected Bluetooth ON")
+                            Log.d(logTag, "Detected Bluetooth ON")
                             enableBluetoothScan()
                         }
                         BluetoothAdapter.STATE_OFF -> {
-                            Log.d(TAG, "Detected Bluetooth OFF")
+                            Log.d(logTag, "Detected Bluetooth OFF")
                             disableBluetoothScan()
                         }
                     }
@@ -221,7 +206,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
     override fun onBindDialogView(view: View?) {
         super.onBindDialogView(view)
 
-        Log.d(TAG, "Binding view")
+        Log.d(logTag, "Binding view")
         discoveredRecyclerView = view?.findViewById(R.id.discovered_sensor_recycler_view)!!
         savedRecyclerView = view.findViewById(R.id.saved_sensor_recycler_view)!!
         noSavedDevicesMessage = view.findViewById(R.id.saved_sensor_empty_recycler_message)
@@ -229,13 +214,12 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         manageBluetooth(view)
 
         observeDeviceChanges()
-        //showHideSavedDevices()
     }
 
     override fun onDialogClosed(positiveResult: Boolean) {
-        Log.d(TAG, "Closing discover/save device dialog")
+        Log.d(logTag, "Closing discover/save device dialog")
         if (positiveResult) {
-            Log.d(TAG, "save preference ${viewModel.selectedDevices.value}")
+            Log.d(logTag, "save preference ${viewModel.selectedDevices.value}")
             viewModel.selectedDevices.value?.toSet()?.let { discoveredSensorPref().persist(it) }
                 ?: discoveredSensorPref().clear()
         } else {

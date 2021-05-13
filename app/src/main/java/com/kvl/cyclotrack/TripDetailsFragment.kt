@@ -945,37 +945,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         return true
     }
 
-    /*
-    private fun constraints_adjustMap(event: MotionEvent?): Boolean {
-        val displayMetrics = DisplayMetrics()
-        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-
-        val newHeight =
-            (startHeight + (event?.rawY ?: startY) - startY).toInt()
-
-        if (scrollView.scrollY > 0 || (startHeight == minGuide.top && ((event?.rawY
-                ?: startY) - startY < 0))
-        ) {
-            startY = event?.rawY ?: startY
-            return false
-        }
-
-        Log.d("TOUCH_SEQ_MOVE",
-            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight")
-
-        val constraintSet = ConstraintSet()
-        constraintSet.clone(constraintLayout)
-        constraintSet.connect(R.id.trip_details_scroll_view,
-            ConstraintSet.TOP,
-            R.id.trip_details_min_map_guide,
-            ConstraintSet.TOP,
-            newHeight)
-        constraintSet.applyTo(constraintLayout)
-
-        return true
-    }
-     */
-
     private fun endTouchSequence(event: MotionEvent?): Boolean {
         val thresholdDip = 100f
         val thresholdPx = TypedValue.applyDimension(
@@ -1043,36 +1012,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
         return true
     }
-
-    /*
-    private fun constraints_endTouchSequence(event: MotionEvent?): Boolean {
-        val expand = when {
-            scrollView.marginTop < defaultGuide.top -> R.id.trip_details_default_map_guide
-            else -> R.id.trip_details_max_map_guide
-        }
-        val collapse = when {
-            scrollView.marginTop < defaultGuide.top -> R.id.trip_details_min_map_guide
-            else -> R.id.trip_details_default_map_guide
-        }
-        val newGuide = when {
-            (event?.rawY ?: startY) - startY > 5 -> expand
-            (event?.rawY ?: startY) - startY < -5 -> collapse
-            else -> R.id.trip_details_default_map_guide
-        }
-        Log.d("TOUCH_SEQ_END", "$startHeight, ${event?.rawY}, $startY, $newGuide")
-
-        val constraintSet = ConstraintSet()
-        constraintSet.clone(constraintLayout)
-        constraintSet.connect(R.id.trip_details_scroll_view,
-            ConstraintSet.TOP,
-            newGuide,
-            ConstraintSet.TOP,
-            0)
-        constraintSet.applyTo(constraintLayout)
-
-        return true
-    }
-     */
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         if (scrollView.scrollY != 0) return false
