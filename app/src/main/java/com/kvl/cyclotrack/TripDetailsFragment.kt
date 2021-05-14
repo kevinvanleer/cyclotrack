@@ -265,6 +265,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
+        activity?.title = "Cyclotrack"
 
         constraintLayout = view.findViewById(R.id.TripDetailsFragment)
         maxGuide = view.findViewById(R.id.trip_details_max_map_guide)
