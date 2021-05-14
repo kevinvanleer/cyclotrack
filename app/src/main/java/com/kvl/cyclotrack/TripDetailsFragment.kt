@@ -147,7 +147,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
                         }
                         val viewFilePendingIntent = PendingIntent.getActivity(requireContext(),
-                            getUriFilePart()?.toIntOrNull() ?: 0,
+                            uri.hashCode() * 100 + 1,
                             viewFileIntent,
                             PendingIntent.FLAG_IMMUTABLE)
 
@@ -158,7 +158,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
                         }, "title")
                         val sharePendingIntent = PendingIntent.getActivity(requireContext(),
-                            getUriFilePart()?.toIntOrNull() ?: 0,
+                            uri.hashCode() * 100 + 2,
                             chooserIntent,
                             PendingIntent.FLAG_IMMUTABLE)
 
@@ -169,7 +169,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             data = uri
                         }
                         val deletePendingIntent = PendingIntent.getBroadcast(requireContext(),
-                            getUriFilePart()?.toIntOrNull() ?: 0,
+                            uri.hashCode() * 100 + 3,
                             deleteIntent,
                             PendingIntent.FLAG_ONE_SHOT)
                         val builder = NotificationCompat.Builder(requireContext(),
