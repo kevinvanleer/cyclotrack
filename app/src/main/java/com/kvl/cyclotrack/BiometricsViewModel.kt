@@ -5,10 +5,13 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
+import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlin.reflect.KProperty
 
-class BiometricsViewModel(
+
+class BiometricsViewModel @Inject constructor(
+    private val googleFitApiService: GoogleFitApiService,
     private val sharedPreferences: SharedPreferences,
 ) : BaseObservable() {
     private val tag = "BIOMETRICS_VM"
@@ -133,4 +136,8 @@ class BiometricsViewModel(
     @get:Bindable
     val instructionText: String
         get() = getCaloriesEstimateType(sharedPreferences)
+
+    @get:Bindable
+    val isEditable: Boolean
+        get() = !googleFitApiService.hasPermission()
 }

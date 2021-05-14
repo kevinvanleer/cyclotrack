@@ -12,6 +12,7 @@ import androidx.lifecycle.Observer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -33,7 +34,7 @@ class TripInProgressViewModel @Inject constructor(
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
-    private val TAG = "TIP_VIEW_MODEL"
+    private val logTag = "TIP_VIEW_MODEL"
     private val coroutineScope = getViewModelScope(coroutineScopeProvider)
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
@@ -59,7 +60,7 @@ class TripInProgressViewModel @Inject constructor(
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer {
-        Log.d(TAG, "onChanged current time state observer: ${it.state}")
+        Log.d(logTag, "onChanged current time state observer: ${it.state}")
         if (it != null) currentState = it.state
     }
 
@@ -70,7 +71,7 @@ class TripInProgressViewModel @Inject constructor(
     var speedSensor = bleService.speedSensor
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
-        Log.d(TAG, "onChanged gps observer")
+        Log.d(logTag, "onChanged gps observer")
         if (tripId != null) {
             coroutineScope.launch {
                 measurementsRepository.insertMeasurements(Measurements(tripId!!,
@@ -83,9 +84,9 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
-        Log.d(TAG, "onChanged measurements observer")
+        Log.d(logTag, "onChanged measurements observer")
         if (newMeasurements == null) {
-            Log.d(TAG, "measurements observation is null")
+            Log.d(logTag, "measurements observation is null")
         } else {
             if (currentState == TimeStateEnum.RESUME || currentState == TimeStateEnum.START) {
                 setTripProgress(newMeasurements)
@@ -125,7 +126,7 @@ class TripInProgressViewModel @Inject constructor(
         }
         accumulatedDuration = durationAcc / 1e3
         startTime = localStartTime / 1e3
-        Log.v(TAG,
+        Log.v(logTag,
             "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}")
     }
 
@@ -388,7 +389,7 @@ class TripInProgressViewModel @Inject constructor(
 
     fun startObserving(lifecycleOwner: LifecycleOwner) {
         if (tripId != null) {
-            Log.d(TAG, "Start observing trip ID $tripId $currentTimeStateObserver")
+            Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
             gpsService.observe(lifecycleOwner, gpsObserver)
             getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
             timeStateRepository.observeLatest(tripId!!)
@@ -403,6 +404,37 @@ class TripInProgressViewModel @Inject constructor(
         }
     }
 
+    suspend fun getCombinedBiometrics(id: Long): Biometrics {
+        var biometrics = getBiometrics(id, sharedPreferences)
+        Log.d(logTag, "biometrics prefs: ${biometrics}")
+
+        viewModelScope.launch {
+            val googleFitApiService = GoogleFitApiService.instance
+            if (googleFitApiService.hasPermission()) {
+                val weightDeferred = async { googleFitApiService.getLatestWeight() }
+                val heightDeferred = async { googleFitApiService.getLatestHeight() }
+                val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate() }
+
+                weightDeferred.await().let {
+                    Log.d(logTag, "google weight: ${it}")
+                    biometrics = biometrics.copy(userWeight = it)
+                }
+                heightDeferred.await().let {
+                    Log.d(logTag, "google height: ${it}")
+                    biometrics = biometrics.copy(userHeight = it)
+                }
+                hrDeferred.await().let {
+                    Log.d(logTag, "google resting hr: ${it}")
+                    biometrics = biometrics.copy(userRestingHeartRate = it)
+                }
+                Log.d(logTag, "biometrics google: ${biometrics}")
+            }
+        }.join()
+
+        Log.d(logTag, "biometrics: ${biometrics}")
+        return biometrics
+    }
+
     fun startTrip(lifecycleOwner: LifecycleOwner): LiveData<Long> {
         val tripStarted = MutableLiveData<Long>()
 
@@ -410,10 +442,11 @@ class TripInProgressViewModel @Inject constructor(
         coroutineScope.launch(Dispatchers.Default) {
             tripId = tripsRepository.createNewTrip().also { id ->
                 tripsRepository.updateBiometrics(
-                    getBiometrics(id, sharedPreferences))
+                    getCombinedBiometrics(id))
+
             }
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
-            Log.d(TAG, "created new trip with id ${tripId.toString()}")
+            Log.d(logTag, "created new trip with id ${tripId.toString()}")
             tripStarted.postValue(tripId)
         }
         tripStarted.observeForever(object : Observer<Long> {
@@ -442,7 +475,7 @@ class TripInProgressViewModel @Inject constructor(
 
     fun resumeTrip() {
         coroutineScope.launch(Dispatchers.Default) {
-            Log.d(TAG, "resumeTrip")
+            Log.d(logTag, "resumeTrip")
             timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.RESUME))
         }
     }
@@ -479,7 +512,7 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        Log.d(TAG, "Called onCleared")
+        Log.d(logTag, "Called onCleared")
         super.onCleared()
         //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
         cleanup()

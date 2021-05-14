@@ -66,4 +66,10 @@
     <string name="action_summaryview_multiselect_enabled">com.kvl.cyclotrack.action_summaryview_multiselect_enabled</string>
     <string name="action_clear_multiselect">Cancel</string>
     <string name="action_delete">Delete</string>
+    <string name="preferences_key_google_fit">preferences_key_google_fit</string>
+    <string name="preferences_sync_with_google_fit_title">Sync with Google Fit</string>
+    <string name="preferences_sync_with_google_fit_summary">Sign in to Google Fit to sync your workouts</string>
+    <string name="preferences_disconnect_google_fit_title">Disconnect from Google Fit</string>
+    <string name="preferences_disconnect_google_fit_summary">Stop syncing data between Cyclotrack and Google Fit</string>
+    <string name="intent_action_google_fit_access_granted">com.kvl.cyclotrack.google_fit_access_granted</string>
 </resources>

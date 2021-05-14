@@ -36,20 +36,48 @@ fun <A, B> zipLiveData(a: LiveData<A>, b: LiveData<B>): LiveData<Pair<A, B>> {
         var lastA: A? = null
         var lastB: B? = null
 
-        fun update() {
-            val localLastA = lastA
-            val localLastB = lastB
-            if (localLastA != null && localLastB != null)
-                this.value = Pair(localLastA, localLastB)
+        fun update(a: A?, b: B?) {
+            if (a != null && b != null)
+                value = Pair(a, b)
         }
 
         addSource(a) {
             lastA = it
-            update()
+            update(lastA, lastB)
         }
         addSource(b) {
             lastB = it
-            update()
+            update(lastA, lastB)
+        }
+    }
+}
+
+fun <A, B, C> zipLiveData(
+    a: LiveData<A>,
+    b: LiveData<B>,
+    c: LiveData<C>,
+): LiveData<Triple<A, B, C>> {
+    return MediatorLiveData<Triple<A, B, C>>().apply {
+        var lastA: A? = null
+        var lastB: B? = null
+        var lastC: C? = null
+
+        fun update(a: A?, b: B?, c: C?) {
+            if (a != null && b != null && c != null)
+                value = Triple(a, b, c)
+        }
+
+        addSource(a) {
+            lastA = it
+            update(lastA, lastB, lastC)
+        }
+        addSource(b) {
+            lastB = it
+            update(lastA, lastB, lastC)
+        }
+        addSource(c) {
+            lastC = it
+            update(lastA, lastB, lastC)
         }
     }
 }

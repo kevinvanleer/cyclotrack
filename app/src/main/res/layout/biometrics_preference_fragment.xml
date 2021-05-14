@@ -41,6 +41,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
+                    android:enabled="@{viewmodel.isEditable}"
                     android:text="@={viewmodel.weight}"
                     android:inputType="numberDecimal" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -196,6 +197,7 @@
                     android:layout_height="wrap_content"
                     android:ems="10"
                     android:text="@={viewmodel.height}"
+                    android:enabled="@{viewmodel.isEditable}"
                     android:inputType="numberDecimal" />
             </com.google.android.material.textfield.TextInputLayout>
 

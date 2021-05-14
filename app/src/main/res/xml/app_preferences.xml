@@ -32,6 +32,11 @@
         app:title="Biometrics"
         app:summary="Height, weight, age, and other information" />
     <Preference
+        app:key="@string/preferences_key_google_fit"
+        app:title="@string/preferences_sync_with_google_fit_title"
+        app:summary="@string/preferences_sync_with_google_fit_summary"
+        app:isPreferenceVisible="false" />
+    <Preference
         app:key="@string/preferences_privacy_policy_key"
         app:title="Privacy policy"
         app:summary="Tap to view privacy policy">
@@ -39,10 +44,10 @@
             android:action="android.intent.action.VIEW"
             android:data="https://www.kevinvanleer.com/cyclotrack/#/privacy" />
     </Preference>
-        <Preference
-            app:key="@string/preferences_clear_preferences_key"
-            app:title="Clear preferences"
-            app:summary="DEV ENV ONLY: Touch to clear all preferences"
-            app:allowDividerAbove="true"
-            app:isPreferenceVisible="false" />
+    <Preference
+        app:key="@string/preferences_clear_preferences_key"
+        app:title="Clear preferences"
+        app:summary="DEV ENV ONLY: Touch to clear all preferences"
+        app:allowDividerAbove="true"
+        app:isPreferenceVisible="false" />
 </PreferenceScreen>
