@@ -334,10 +334,10 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                     splitSpeedTextView.label =
                         "${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
                     splitSpeedTextView.value = when {
-                        it.rpm.isNaN() -> "0.0"
-                        else -> String.format("%.1f",
+                        it.rpm.isFinite() -> String.format("%.1f",
                             getUserSpeed(requireContext(),
                                 it.rpm / 60 * viewModel.circumference!!))
+                        else -> "0.0"
                     }
                 }
                 if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
