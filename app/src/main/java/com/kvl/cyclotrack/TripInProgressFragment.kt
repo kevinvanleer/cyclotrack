@@ -322,7 +322,10 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 Log.d(TAG, "cadence: ${it.rpm}")
                 if (it.rpm != null) {
                     clockView.label = "RPM"
-                    clockView.value = it.rpm.toInt().toString()
+                    clockView.value = when {
+                        it.rpm.isFinite() -> it.rpm.toInt().toString()
+                        else -> "0"
+                    }
                 }
                 if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
                     "${it.batteryLevel}%"
