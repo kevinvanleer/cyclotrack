@@ -321,15 +321,10 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                 Log.d(TAG, "cadence battery: ${it.batteryLevel}")
                 Log.d(TAG, "cadence: ${it.rpm}")
                 if (it.rpm != null) {
-                    /*if (isTimeTickRegistered) {
-                        isTimeTickRegistered = false
-                        context?.unregisterReceiver(timeTickReceiver)
-                        clockView.label = "RPM"
-                    }*/
                     clockView.label = "RPM"
                     clockView.value = it.rpm.toInt().toString()
                 }
-                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) heartRateTextView.extraInfo =
+                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
                     "${it.batteryLevel}%"
             })
             viewModel.speedSensor.observe(viewLifecycleOwner, {
@@ -345,7 +340,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
                                 it.rpm / 60 * viewModel.circumference!!))
                     }
                 }
-                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) heartRateTextView.extraInfo =
+                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
                     "${it.batteryLevel}%"
             })
         }
