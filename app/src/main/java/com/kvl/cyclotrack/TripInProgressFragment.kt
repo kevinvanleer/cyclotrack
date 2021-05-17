@@ -161,15 +161,18 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         viewModel.pauseTrip()
         hidePause()
         slideInResumeStop()
-        resumeButton.setOnClickListener {
-            viewModel.resumeTrip()
-            slideOutResumeStop()
-        }
-        stopButton.setOnClickListener {
-            viewModel.endTrip()
-            findNavController()
-                .navigate(TripInProgressFragmentDirections.actionFinishTrip(viewModel.tripId!!))
-        }
+        resumeButton.setOnClickListener(resumeTripListener)
+        stopButton.setOnClickListener(stopTripListener)
+    }
+
+    private val resumeTripListener: OnClickListener = OnClickListener {
+        viewModel.resumeTrip()
+        slideOutResumeStop()
+    }
+    private val stopTripListener: OnClickListener = OnClickListener {
+        viewModel.endTrip()
+        findNavController()
+            .navigate(TripInProgressFragmentDirections.actionFinishTrip(viewModel.tripId!!))
     }
 
     override fun onDestroy() {
@@ -361,16 +364,10 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
             pauseButton.setOnClickListener(pauseTripListener)
         } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
             view?.doOnPreDraw { hidePause() }
-            pauseButton.setOnClickListener(pauseTripListener)
             slideInResumeStop()
-            resumeButton.setOnClickListener {
-                viewModel.resumeTrip()
-                slideOutResumeStop()
-            }
-            stopButton.setOnClickListener {
-                viewModel.endTrip()
-                findNavController().navigate(R.id.action_finish_trip)
-            }
+            pauseButton.setOnClickListener(pauseTripListener)
+            resumeButton.setOnClickListener(resumeTripListener)
+            stopButton.setOnClickListener(stopTripListener)
         } else {
             pauseButton.setOnClickListener(startTripListener)
             pauseButton.text = "START"
