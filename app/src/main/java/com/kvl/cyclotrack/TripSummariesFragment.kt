@@ -217,7 +217,6 @@ class TripSummariesFragment : Fragment() {
             }
             R.id.action_cleanup -> {
                 cleanupTrips()
-
                 true
             }
             R.id.action_clear_multiselect -> {
@@ -294,7 +293,7 @@ class TripSummariesFragment : Fragment() {
                 }
                 setTitle("Cleanup rides?")
                 setMessage("You are about to remove all rides less than a minute long or less than a meter in distance. This change cannot be undone.")
-            }
+            }.show()
 
             builder.create()
         }
