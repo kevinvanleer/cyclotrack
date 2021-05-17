@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.ImageView
@@ -36,7 +35,6 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
                 (newValue.length - digitLength).toFloat(),
                 resources.displayMetrics) else 0f
 
-            Log.d("MEASUREMENT_VIEW", "$newValue has a digit length of $digitLength")
             measurementValueView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                 textSize - (multiplier * factor) - factorB)
 
