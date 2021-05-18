@@ -27,10 +27,10 @@ class GoogleFitApiService constructor(private val context: Context) {
         timestamp: Long = System.currentTimeMillis(),
     ): Float? {
         var height: Float? = null
-        Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-            .readData(DataReadRequest.Builder().read(DataType.TYPE_HEIGHT).setLimit(1)
-                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build()).await()
-            .dataSets.forEach { dataset ->
+        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+            ?.readData(DataReadRequest.Builder().read(DataType.TYPE_HEIGHT).setLimit(1)
+                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())?.await()
+            ?.dataSets?.forEach { dataset ->
                 dataset.dataPoints.forEach { dataPoint ->
                     when (dataPoint.dataType) {
                         DataType.TYPE_HEIGHT ->
@@ -45,10 +45,10 @@ class GoogleFitApiService constructor(private val context: Context) {
         timestamp: Long = System.currentTimeMillis(),
     ): Float? {
         var weight: Float? = null
-        Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-            .readData(DataReadRequest.Builder().read(DataType.TYPE_WEIGHT).setLimit(1)
-                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build()).await()
-            .dataSets.forEach { dataset ->
+        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+            ?.readData(DataReadRequest.Builder().read(DataType.TYPE_WEIGHT).setLimit(1)
+                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())?.await()
+            ?.dataSets?.forEach { dataset ->
                 dataset.dataPoints.forEach { dataPoint ->
                     when (dataPoint.dataType) {
                         DataType.TYPE_WEIGHT ->
@@ -63,11 +63,11 @@ class GoogleFitApiService constructor(private val context: Context) {
         val end = timestamp / 1000
         val start = end - 60 * 60 * 24 * 30
         var hr: Int? = null
-        Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-            .readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
+        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+            ?.readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
                 .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
-                .setTimeRange(start, end, TimeUnit.SECONDS).build()).await()
-            .buckets.forEach { bucket ->
+                .setTimeRange(start, end, TimeUnit.SECONDS).build())?.await()
+            ?.buckets?.forEach { bucket ->
                 bucket.dataSets.forEach { dataset ->
                     dataset.dataPoints.forEach { dataPoint ->
                         hr = dataPoint.getValue(Field.FIELD_MIN).asFloat().roundToInt()

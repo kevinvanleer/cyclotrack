@@ -133,28 +133,31 @@ fun getActivities(activity: Activity, start: Long, end: Long) {
         .setTimeRange(start, end, TimeUnit.SECONDS)
         .bucketByActivitySegment(30, TimeUnit.MINUTES)
         .build()
-    Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-        .readData(readRequest)
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "OnSuccess()")
-            Log.d(logTag, "DataSet: ${response.getDataSet(DataType.AGGREGATE_ACTIVITY_SUMMARY)}")
-            response.buckets.forEachIndexed { idx, it ->
-                if (it.activity == "biking") {
-                    Log.d(logTag, "index: ${idx}")
-                    Log.d(logTag, "activity: ${it.activity}")
-                    Log.d(logTag, "startTime: ${it.getStartTime(TimeUnit.SECONDS)}")
-                    Log.d(logTag, "endTime: ${it.getEndTime(TimeUnit.SECONDS)}")
-                    it.dataSets.forEach { dataset ->
-                        /*dataset.dataPoints.forEach { dataPoint ->
-                            Log.d(logTag, "${dataPoint}")
-                        }*/
-                        Log.d(logTag, "dataset: ${dataset}")
+    getGoogleAccount(activity)?.let {
+        Fitness.getHistoryClient(activity, it)
+            .readData(readRequest)
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "OnSuccess()")
+                Log.d(logTag,
+                    "DataSet: ${response.getDataSet(DataType.AGGREGATE_ACTIVITY_SUMMARY)}")
+                response.buckets.forEachIndexed { idx, it ->
+                    if (it.activity == "biking") {
+                        Log.d(logTag, "index: ${idx}")
+                        Log.d(logTag, "activity: ${it.activity}")
+                        Log.d(logTag, "startTime: ${it.getStartTime(TimeUnit.SECONDS)}")
+                        Log.d(logTag, "endTime: ${it.getEndTime(TimeUnit.SECONDS)}")
+                        it.dataSets.forEach { dataset ->
+                            /*dataset.dataPoints.forEach { dataPoint ->
+                                Log.d(logTag, "${dataPoint}")
+                            }*/
+                            Log.d(logTag, "dataset: ${dataset}")
+                        }
                     }
                 }
             }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
 }
 
 fun getLatestWeight(
@@ -162,62 +165,67 @@ fun getLatestWeight(
     type: DataType,
     timestamp: Long = System.currentTimeMillis(),
 ) {
-    Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-        .readData(DataReadRequest.Builder().read(type).setLimit(1)
-            .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "getLatest")
-            response.dataSets.forEach { dataset ->
-                dataset.dataPoints.forEach { dataPoint ->
-                    when (dataPoint.dataType) {
-                        DataType.TYPE_WEIGHT -> {
-                            dataPoint.getValue(Field.FIELD_WEIGHT).asFloat()
+    getGoogleAccount(activity)?.let {
+        Fitness.getHistoryClient(activity, it)
+            .readData(DataReadRequest.Builder().read(type).setLimit(1)
+                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getLatest")
+                response.dataSets.forEach { dataset ->
+                    dataset.dataPoints.forEach { dataPoint ->
+                        when (dataPoint.dataType) {
+                            DataType.TYPE_WEIGHT -> {
+                                dataPoint.getValue(Field.FIELD_WEIGHT).asFloat()
+                            }
                         }
                     }
                 }
             }
-        }
-        .addOnFailureListener { e ->
-            Log.d(logTag, "OnFailure()", e)
-            null
-        }
+            .addOnFailureListener { e ->
+                Log.d(logTag, "OnFailure()", e)
+            }
+    }
 }
 
 fun getLatest(activity: Activity, type: DataType, timestamp: Long = System.currentTimeMillis()) {
-    Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-        .readData(DataReadRequest.Builder().read(type).setLimit(1)
-            .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "getLatest")
-            response.dataSets.forEach { dataset ->
-                dataset.dataPoints.forEach { dataPoint ->
-                    printDataPoint(dataPoint)
-                }
-            }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
-}
-
-fun getLatestHeartRate(activity: Activity) {
-    val end = System.currentTimeMillis() / 1000
-    val start = end - 60 * 60 * 24 * 30
-    Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-        .readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
-            .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
-            .setTimeRange(start, end, TimeUnit.SECONDS).build())
-        .addOnSuccessListener { response ->
-            Log.d(logTag, "getLatestHeartRate")
-            response.buckets.forEach { bucket ->
-                bucket.dataSets.forEach { dataset ->
+    getGoogleAccount(activity)?.let {
+        Fitness.getHistoryClient(activity, it)
+            .readData(DataReadRequest.Builder().read(type).setLimit(1)
+                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getLatest")
+                response.dataSets.forEach { dataset ->
                     dataset.dataPoints.forEach { dataPoint ->
                         printDataPoint(dataPoint)
                     }
                 }
             }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
+}
+
+fun getLatestHeartRate(activity: Activity) {
+    getGoogleAccount(activity)?.let {
+        val end = System.currentTimeMillis() / 1000
+        val start = end - 60 * 60 * 24 * 30
+        Fitness.getHistoryClient(activity, it)
+            .readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
+                .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
+                .setTimeRange(start, end, TimeUnit.SECONDS).build())
+            .addOnSuccessListener { response ->
+                Log.d(logTag, "getLatestHeartRate")
+                response.buckets.forEach { bucket ->
+                    bucket.dataSets.forEach { dataset ->
+                        dataset.dataPoints.forEach { dataPoint ->
+                            printDataPoint(dataPoint)
+                        }
+                    }
+                }
+            }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
 }
 
 fun getBiometricsHistory(activity: Activity, start: Long, end: Long) {
@@ -230,20 +238,22 @@ fun getBiometricsHistory(activity: Activity, start: Long, end: Long) {
         //.bucketByActivitySegment(30, TimeUnit.MINUTES)
         //.setLimit(1)
         .build()
-    Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-        .readData(readRequest)
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "getBiometricHistory")
-            response.buckets.forEachIndexed { idx, bucket ->
-                bucket.dataSets.forEach { dataset ->
-                    dataset.dataPoints.forEach { dataPoint ->
-                        printDataPoint(dataPoint)
+    getGoogleAccount(activity)?.let {
+        Fitness.getHistoryClient(activity, it)
+            .readData(readRequest)
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getBiometricHistory")
+                response.buckets.forEach { bucket ->
+                    bucket.dataSets.forEach { dataset ->
+                        dataset.dataPoints.forEach { dataPoint ->
+                            printDataPoint(dataPoint)
+                        }
                     }
                 }
             }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
 }
 
 fun getSession(activity: Activity, start: Long, end: Long) {
@@ -262,23 +272,25 @@ fun getSession(activity: Activity, start: Long, end: Long) {
         .excludePackage("com.kvl.cyclotrack")
         .setTimeInterval(start, end, TimeUnit.SECONDS)
         .build()
-    Fitness.getSessionsClient(activity, getGoogleAccount(activity))
-        .readSession(readRequest)
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "getSessions found ${response.sessions.size} sessions")
-            response.sessions.forEachIndexed { idx, session ->
-                Log.d(logTag, "Session name: ${session.name}")
-                Log.d(logTag, "Session description: ${session.description}")
-                Log.d(logTag, "Activity type: ${session.activity}")
-                response.getDataSet(session).forEach { dataSet ->
-                    dataSet.dataPoints.forEach { dataPoint ->
-                        printDataPoint(dataPoint)
+    getGoogleAccount(activity)?.let {
+        Fitness.getSessionsClient(activity, it)
+            .readSession(readRequest)
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getSessions found ${response.sessions.size} sessions")
+                response.sessions.forEach { session ->
+                    Log.d(logTag, "Session name: ${session.name}")
+                    Log.d(logTag, "Session description: ${session.description}")
+                    Log.d(logTag, "Activity type: ${session.activity}")
+                    response.getDataSet(session).forEach { dataSet ->
+                        dataSet.dataPoints.forEach { dataPoint ->
+                            printDataPoint(dataPoint)
+                        }
                     }
                 }
             }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
 }
 
 fun getBikingSessions(activity: Activity, start: Long, end: Long) {
@@ -297,25 +309,27 @@ fun getBikingSessions(activity: Activity, start: Long, end: Long) {
         .excludePackage("com.kvl.cyclotrack")
         .setTimeInterval(start, end, TimeUnit.SECONDS)
         .build()
-    Fitness.getSessionsClient(activity, getGoogleAccount(activity))
-        .readSession(readRequest)
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "getSessions found ${response.sessions.size} sessions")
-            response.sessions.forEachIndexed { idx, session ->
-                if (session.activity == "biking") {
-                    Log.d(logTag, "Session name: ${session.name}")
-                    Log.d(logTag, "Session description: ${session.description}")
-                    Log.d(logTag, "Activity type: ${session.activity}")
-                    response.getDataSet(session).forEach { dataSet ->
-                        dataSet.dataPoints.forEach { dataPoint ->
-                            printDataPoint(dataPoint)
+    getGoogleAccount(activity)?.let {
+        Fitness.getSessionsClient(activity, it)
+            .readSession(readRequest)
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getSessions found ${response.sessions.size} sessions")
+                response.sessions.forEach { session ->
+                    if (session.activity == "biking") {
+                        Log.d(logTag, "Session name: ${session.name}")
+                        Log.d(logTag, "Session description: ${session.description}")
+                        Log.d(logTag, "Activity type: ${session.activity}")
+                        response.getDataSet(session).forEach { dataSet ->
+                            dataSet.dataPoints.forEach { dataPoint ->
+                                printDataPoint(dataPoint)
+                            }
                         }
                     }
                 }
             }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
 }
 
 fun getAggBiometrics(activity: Activity, start: Long, end: Long) {
@@ -329,26 +343,28 @@ fun getAggBiometrics(activity: Activity, start: Long, end: Long) {
         //.bucketByActivitySegment(30, TimeUnit.MINUTES)
         //.setLimit(1)
         .build()
-    Fitness.getHistoryClient(activity, getGoogleAccount(activity))
-        .readData(readRequest)
-        .addOnSuccessListener { response ->
-            // Use response data here
-            Log.d(logTag, "getAggBiometrics")
-            response.buckets.forEachIndexed { idx, bucket ->
-                bucket.dataSets.forEach { dataset ->
-                    dataset.dataPoints.forEach { dataPoint ->
-                        printDataPoint(dataPoint)
+    getGoogleAccount(activity)?.let {
+        Fitness.getHistoryClient(activity, it)
+            .readData(readRequest)
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getAggBiometrics")
+                response.buckets.forEach { bucket ->
+                    bucket.dataSets.forEach { dataset ->
+                        dataset.dataPoints.forEach { dataPoint ->
+                            printDataPoint(dataPoint)
+                        }
                     }
                 }
             }
-        }
-        .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+    }
 }
 
 fun accessGoogleFit(activity: Activity) {
     Log.d(logTag, "accessGoogleFit()")
-    val end = System.currentTimeMillis() / 1000
-    val start = end - 60 * 60 * 24 * 30
+    //val end = System.currentTimeMillis() / 1000
+    //val start = end - 60 * 60 * 24 * 30
 
     val startCal = GregorianCalendar.getInstance()
     val endCal = GregorianCalendar.getInstance()
@@ -380,12 +396,6 @@ fun accessGoogleFit(activity: Activity) {
 
 fun configureGoogleFit(activity: Activity) {
     with(activity) {
-        if (getGoogleAccount(this) == null) {
-            Log.d(logTag, "Google account is null")
-        } else {
-            Log.d(logTag, "Google account is valid")
-        }
-
         if (!GoogleSignIn.hasPermissions(getGoogleAccount(this), fitnessOptions)) {
             Log.d(logTag, "Syncing with Google Fit")
             GoogleSignIn.requestPermissions(this,
@@ -394,7 +404,6 @@ fun configureGoogleFit(activity: Activity) {
                 fitnessOptions)
         } else {
             Log.d(logTag, "Already logged in to Google Fit")
-            accessGoogleFit(this)
         }
     }
 }
