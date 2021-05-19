@@ -3,12 +3,12 @@ package com.kvl.cyclotrack
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.location.Location
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
@@ -16,6 +16,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavDeepLinkBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,7 +26,7 @@ import javax.inject.Singleton
 @Singleton
 class TripInProgressService @Inject constructor() : LifecycleService() {
     private val logTag = "TripInProgressService"
-    private var tripId: Long? = null
+    var tripId: Long? = null
 
     @Inject
     lateinit var measurementsRepository: MeasurementsRepository
@@ -57,9 +58,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
-        if (tripId != null) {
+        tripId?.let { id ->
             lifecycleScope.launch {
-                measurementsRepository.insertMeasurements(Measurements(tripId!!,
+                measurementsRepository.insertMeasurements(Measurements(id,
                     LocationData(newLocation),
                     hrmSensor().value?.bpm,
                     cadenceSensor().value,
@@ -69,37 +70,16 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     }
 
     private val sensorObserver: Observer<SensorModel> = Observer { newData ->
-        lifecycleScope.launch {
-            sensorsRepository.insertMeasurements(tripId!!, newData)
+        tripId?.let { id ->
+            lifecycleScope.launch {
+                sensorsRepository.insertMeasurements(id, newData)
+            }
         }
-    }
-
-    private fun start(tripId: Long) {
-        this.tripId = tripId
-        Log.d(logTag, "Start trip service for ID $this.tripId")
-        gpsService.observe(this, gpsObserver)
-
-        if (BuildConfig.BUILD_TYPE != "prod") {
-            onboardSensors.observe(this, sensorObserver)
-        }
-
-
-        /*startForeground(tripId.toInt(), NotificationCompat.Builder(this,
-            getString(R.string.notification_id_trip_in_progress))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setContentTitle(getText(R.string.notification_trip_in_progress_title))
-            .setContentText(getText(R.string.notification_export_trip_in_progress_message))
-            .setSmallIcon(R.drawable.ic_cyclotrack_notification)
-            .setContentIntent(pendingIntent)
-            .setTicker("Important ride information that is displayed here and is too long to fit")
-            .build())*/
-        startForegroundCompat()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String {
+        //TODO: MAKE THIS YOUR OWN -- COPIED FROM POST
         val channel = NotificationChannel(channelId,
             channelName, NotificationManager.IMPORTANCE_NONE)
         channel.lightColor = Color.BLUE
@@ -119,10 +99,17 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             getString(R.string.notification_id_trip_in_progress)
         }
 
-        val pendingIntent: PendingIntent =
+        /*val pendingIntent =
             Intent(this, TripInProgressFragment::class.java).let { notificationIntent ->
-                PendingIntent.getActivity(this, 0, notificationIntent, 0)
-            }
+                notificationIntent.putExtra("destinationView", TripInProgressFragment.toString())
+                notificationIntent.putExtra("tripId", tripId)
+                PendingIntent.getActivity(this, tripId?.toInt() ?: 0, notificationIntent, 0)
+            }*/
+        val pendingIntent = NavDeepLinkBuilder(this)
+            .setGraph(R.navigation.cyclotrack_nav_graph)
+            .setDestination(R.id.TripInProgressFragment)
+            .setArguments(Bundle().apply { putLong("tripId", tripId ?: 0) })
+            .createPendingIntent()
 
         startForeground(tripId?.toInt() ?: 0, NotificationCompat.Builder(this, channelId)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -138,6 +125,21 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+        //TODO: REMOVE ACTIVITY FROM BLE SERVICE. BROADCAST INTENT TO ACTIVITY.
+        //startGps()
+        //startBle(requ)
+    }
+
+    private fun start(tripId: Long) {
+        this.tripId = tripId
+        Log.d(logTag, "Start trip service for ID $this.tripId")
+        gpsService.observe(this, gpsObserver)
+
+        if (BuildConfig.BUILD_TYPE != "prod") {
+            onboardSensors.observe(this, sensorObserver)
+        }
+
+        startForegroundCompat()
     }
 
     private fun pause(tripId: Long) {
@@ -162,6 +164,8 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             timeStateRepository.appendTimeState(TimeState(tripId = tripId,
                 state = TimeStateEnum.STOP))
         }
+        //TODO: I DO NOT SEEM TO GET THE SAME SERVICE OBJECT ON REENTRY
+        this.tripId = null
         stopSelf()
     }
 

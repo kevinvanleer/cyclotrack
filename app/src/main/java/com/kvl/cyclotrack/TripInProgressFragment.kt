@@ -206,8 +206,6 @@ class TripInProgressFragment :
         pauseTrip(viewModel.tripId!!)
         hidePause()
         slideInResumeStop()
-        resumeButton.setOnClickListener(resumeTripListener)
-        stopButton.setOnClickListener(stopTripListener)
     }
 
     private val resumeTripListener: OnClickListener = OnClickListener {
@@ -236,8 +234,18 @@ class TripInProgressFragment :
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
 
-        tipService.startGps()
-        if (bleFeatureFlag()) tipService.startBle()
+        arguments?.getLong("tripId", 0)?.takeIf { it != 0L }?.let { tripId ->
+            Log.d(logTag, "Received trip ID argument $tripId")
+            Log.d(logTag, "Resuming trip $tripId")
+            viewModel.resumeTrip(tripId, viewLifecycleOwner)
+            tipService.tripId = tripId
+        }
+        if (tipService.tripId == null) {
+            //TODO: THIS SHOULD MOVE TO TripInProgressService::start
+            Log.d(logTag, "Starting new trip")
+            tipService.startGps()
+            if (bleFeatureFlag()) tipService.startBle()
+        }
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
         val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)
@@ -258,6 +266,10 @@ class TripInProgressFragment :
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
         clockView = view.findViewById(R.id.textview_time)
+
+        pauseButton.setOnClickListener(pauseTripListener)
+        resumeButton.setOnClickListener(resumeTripListener)
+        stopButton.setOnClickListener(stopTripListener)
 
         speedTextView.label =
             "SPLIT ${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
@@ -406,13 +418,9 @@ class TripInProgressFragment :
         if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
             view?.doOnPreDraw { hidePause() }
             pauseButton.text = "PAUSE"
-            pauseButton.setOnClickListener(pauseTripListener)
         } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
             view?.doOnPreDraw { hidePause() }
             slideInResumeStop()
-            pauseButton.setOnClickListener(pauseTripListener)
-            resumeButton.setOnClickListener(resumeTripListener)
-            stopButton.setOnClickListener(stopTripListener)
         } else {
             pauseButton.setOnClickListener(startTripListener)
             pauseButton.text = "START"

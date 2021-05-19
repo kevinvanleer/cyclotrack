@@ -436,6 +436,12 @@ class TripInProgressViewModel @Inject constructor(
             }
         })
 
+        startClock()
+
+        return tripStarted
+    }
+
+    private fun startClock() {
         clockTick.scheduleAtFixedRate(timerTask {
             val timeHandler = Handler(Looper.getMainLooper())
             timeHandler.post {
@@ -443,8 +449,6 @@ class TripInProgressViewModel @Inject constructor(
                 _currentTime.value = getDuration()
             }
         }, 1000 - System.currentTimeMillis() % 1000, 500)
-
-        return tripStarted
     }
 
     fun pauseTrip() {
@@ -453,10 +457,18 @@ class TripInProgressViewModel @Inject constructor(
         }
     }
 
+    fun resumeTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
+        Log.d(logTag, "Resuming trip $tripId")
+        this.tripId = tripId
+        startObserving(lifecycleOwner)
+        startClock()
+    }
+
     fun resumeTrip() {
         coroutineScope.launch(Dispatchers.Default) {
             Log.d(logTag, "resumeTrip")
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.RESUME))
+            timeStateRepository.appendTimeState(TimeState(this@TripInProgressViewModel.tripId!!,
+                TimeStateEnum.RESUME))
         }
     }
 
