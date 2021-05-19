@@ -33,7 +33,7 @@
 
         <receiver
             android:name=".DeleteExportBroadcastReceiver"
-            android:exported="true"></receiver>
+            android:exported="true" />
 
         <activity
             android:name=".MainActivity"
@@ -52,6 +52,10 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/maps_api_key" />
+
+        <service
+            android:name=".TripInProgressService"
+            android:foregroundServiceType="location" />
     </application>
 
 </manifest>

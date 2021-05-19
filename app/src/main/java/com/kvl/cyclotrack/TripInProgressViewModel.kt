@@ -29,7 +29,6 @@ class TripInProgressViewModel @Inject constructor(
     private val sensorsRepository: OnboardSensorsRepository,
     private val gpsService: GpsService,
     private val bleService: BleService,
-    private val onboardSensors: SensorLiveData,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
@@ -68,19 +67,6 @@ class TripInProgressViewModel @Inject constructor(
     var hrmSensor = bleService.hrmSensor
     var cadenceSensor = bleService.cadenceSensor
     var speedSensor = bleService.speedSensor
-
-    private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
-        Log.d(logTag, "onChanged gps observer")
-        if (tripId != null) {
-            coroutineScope.launch {
-                measurementsRepository.insertMeasurements(Measurements(tripId!!,
-                    LocationData(newLocation),
-                    hrmSensor.value?.bpm,
-                    cadenceSensor.value,
-                    speedSensor.value))
-            }
-        }
-    }
 
     private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
         Log.d(logTag, "onChanged measurements observer")
@@ -389,17 +375,12 @@ class TripInProgressViewModel @Inject constructor(
     fun startObserving(lifecycleOwner: LifecycleOwner) {
         if (tripId != null) {
             Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
-            gpsService.observe(lifecycleOwner, gpsObserver)
             getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
             timeStateRepository.observeLatest(tripId!!)
                 .observe(lifecycleOwner, currentTimeStateObserver)
             timeStateRepository.observeTimeStates(tripId!!)
                 .observe(lifecycleOwner, accumulateDurationObserver)
             splitRepository.observeLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
-
-            if (BuildConfig.BUILD_TYPE != "prod") {
-                onboardSensors.observe(lifecycleOwner, sensorObserver)
-            }
         }
     }
 
@@ -514,8 +495,8 @@ class TripInProgressViewModel @Inject constructor(
         Log.d(logTag, "Called onCleared")
         super.onCleared()
         //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
-        cleanup()
-        endTrip()
+        //cleanup()
+        //endTrip()
     }
 }
 
