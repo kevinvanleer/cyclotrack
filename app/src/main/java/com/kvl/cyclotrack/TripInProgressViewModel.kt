@@ -130,6 +130,8 @@ class TripInProgressViewModel @Inject constructor(
     val currentTime: LiveData<Double>
         get() = _currentTime
 
+    fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
+
     fun startGps() = gpsService.startListening()
     fun startBle() = bleService.initialize()
     fun stopBle() = bleService.disconnect()

@@ -183,14 +183,31 @@ class TripInProgressFragment :
         })
     }
 
+    private fun handleTimeStateChanges(tripId: Long) =
+        viewModel.currentTimeState(tripId)?.observe(viewLifecycleOwner, { currentState ->
+            Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
+            if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
+                view?.doOnPreDraw { hideResumeStop() }
+                view?.doOnPreDraw { hidePause() }
+                pauseButton.text = "PAUSE"
+            } else if (currentState.state == TimeStateEnum.PAUSE) {
+                view?.doOnPreDraw { hidePause() }
+                slideInResumeStop()
+            } else {
+                pauseButton.setOnClickListener(startTripListener)
+                pauseButton.text = "START"
+            }
+        })
+
     private val startTripListener: OnClickListener = OnClickListener {
         if (!gpsEnabled) {
             turnOnGps()
         } else {
             viewModel.startTrip(viewLifecycleOwner).let { liveData ->
                 liveData.observeForever(object : Observer<Long> {
-                    override fun onChanged(t: Long) {
-                        startTrip(t)
+                    override fun onChanged(tripId: Long) {
+                        startTrip(tripId)
+                        handleTimeStateChanges(tripId)
                         liveData.removeObserver(this)
                     }
                 })
@@ -234,9 +251,10 @@ class TripInProgressFragment :
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
 
-        arguments?.getLong("tripId", 0)?.takeIf { it != 0L }?.let { tripId ->
+        arguments?.getLong("tripId", -1L)?.takeIf { it != -1L }?.let { tripId ->
             Log.d(logTag, "Received trip ID argument $tripId")
             Log.d(logTag, "Resuming trip $tripId")
+            handleTimeStateChanges(tripId)
             viewModel.resumeTrip(tripId, viewLifecycleOwner)
             tipService.tripId = tripId
         }
@@ -413,19 +431,16 @@ class TripInProgressFragment :
         super.onResume()
         viewModel.startObserving(viewLifecycleOwner)
         Log.d(logTag, "Called onResume: currentState = ${viewModel.currentState}")
-        view?.doOnPreDraw { hideResumeStop() }
 
-        if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
-            view?.doOnPreDraw { hidePause() }
-            pauseButton.text = "PAUSE"
-        } else if (viewModel.currentState == TimeStateEnum.PAUSE) {
-            view?.doOnPreDraw { hidePause() }
-            slideInResumeStop()
-        } else {
+        if (viewModel.tripId == null) {
+            Log.d(logTag, "onResume: Trip null")
+            view?.doOnPreDraw { hideResumeStop() }
             pauseButton.setOnClickListener(startTripListener)
             pauseButton.text = "START"
+        } else {
+            Log.d(logTag, "onResume: use observer")
+            handleTimeStateChanges(viewModel.tripId!!)
         }
-
     }
 
     private fun updateClock() {
