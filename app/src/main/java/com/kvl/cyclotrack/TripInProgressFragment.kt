@@ -157,6 +157,7 @@ class TripInProgressFragment :
             this.action = getString(R.string.action_start_trip_service)
             this.putExtra("tripId", tripId)
         })
+        tipService.currentTripId = tripId
     }
 
     private fun pauseTrip(tripId: Long) {
@@ -181,6 +182,7 @@ class TripInProgressFragment :
             this.action = getString(R.string.action_stop_trip_service)
             this.putExtra("tripId", tripId)
         })
+        tipService.currentTripId = null
     }
 
     private fun handleTimeStateChanges(tripId: Long) =
@@ -256,9 +258,9 @@ class TripInProgressFragment :
             Log.d(logTag, "Resuming trip $tripId")
             handleTimeStateChanges(tripId)
             viewModel.resumeTrip(tripId, viewLifecycleOwner)
-            tipService.tripId = tripId
+            tipService.currentTripId = tripId
         }
-        if (tipService.tripId == null) {
+        if (tipService.currentTripId == null) {
             //TODO: THIS SHOULD MOVE TO TripInProgressService::start
             Log.d(logTag, "Starting new trip")
             tipService.startGps()
@@ -431,6 +433,8 @@ class TripInProgressFragment :
         super.onResume()
         viewModel.startObserving(viewLifecycleOwner)
         Log.d(logTag, "Called onResume: currentState = ${viewModel.currentState}")
+        Log.d(logTag, "Called onResume: tipService = $tipService")
+        Log.d(logTag, "Called onResume: tipService.tripId = ${tipService.currentTripId}")
 
         if (viewModel.tripId == null) {
             Log.d(logTag, "onResume: Trip null")
@@ -444,6 +448,8 @@ class TripInProgressFragment :
     }
 
     private fun updateClock() {
+        Log.d(logTag,
+            "updateClock: tipService=$tipService; tipService.tripId = ${tipService.currentTripId}")
         var hour = Calendar.getInstance().get(Calendar.HOUR)
         if (hour == 0) hour = 12
         val time = String.format("%d:%02d",

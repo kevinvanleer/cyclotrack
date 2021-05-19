@@ -26,7 +26,7 @@ import javax.inject.Singleton
 @Singleton
 class TripInProgressService @Inject constructor() : LifecycleService() {
     private val logTag = "TripInProgressService"
-    var tripId: Long? = null
+    var currentTripId: Long? = null
 
     @Inject
     lateinit var measurementsRepository: MeasurementsRepository
@@ -58,7 +58,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
-        tripId?.let { id ->
+        currentTripId?.let { id ->
             lifecycleScope.launch {
                 measurementsRepository.insertMeasurements(Measurements(id,
                     LocationData(newLocation),
@@ -70,7 +70,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     }
 
     private val sensorObserver: Observer<SensorModel> = Observer { newData ->
-        tripId?.let { id ->
+        currentTripId?.let { id ->
             lifecycleScope.launch {
                 sensorsRepository.insertMeasurements(id, newData)
             }
@@ -99,19 +99,13 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             getString(R.string.notification_id_trip_in_progress)
         }
 
-        /*val pendingIntent =
-            Intent(this, TripInProgressFragment::class.java).let { notificationIntent ->
-                notificationIntent.putExtra("destinationView", TripInProgressFragment.toString())
-                notificationIntent.putExtra("tripId", tripId)
-                PendingIntent.getActivity(this, tripId?.toInt() ?: 0, notificationIntent, 0)
-            }*/
         val pendingIntent = NavDeepLinkBuilder(this)
             .setGraph(R.navigation.cyclotrack_nav_graph)
             .setDestination(R.id.TripInProgressFragment)
-            .setArguments(Bundle().apply { putLong("tripId", tripId ?: 0) })
+            .setArguments(Bundle().apply { putLong("tripId", currentTripId ?: 0) })
             .createPendingIntent()
 
-        startForeground(tripId?.toInt() ?: 0, NotificationCompat.Builder(this, channelId)
+        startForeground(currentTripId?.toInt() ?: 0, NotificationCompat.Builder(this, channelId)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -126,13 +120,14 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
         //TODO: REMOVE ACTIVITY FROM BLE SERVICE. BROADCAST INTENT TO ACTIVITY.
+        Log.d(logTag, "::onCreate; this=$this; tripId=$currentTripId")
         //startGps()
         //startBle(requ)
     }
 
     private fun start(tripId: Long) {
-        this.tripId = tripId
-        Log.d(logTag, "Start trip service for ID $this.tripId")
+        currentTripId = tripId
+        Log.d(logTag, "Start trip service for ID ${currentTripId}; this=$this")
         gpsService.observe(this, gpsObserver)
 
         if (BuildConfig.BUILD_TYPE != "prod") {
@@ -165,7 +160,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
                 state = TimeStateEnum.STOP))
         }
         //TODO: I DO NOT SEEM TO GET THE SAME SERVICE OBJECT ON REENTRY
-        this.tripId = null
+        currentTripId = null
         stopSelf()
     }
 

@@ -23,6 +23,7 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class TripSummariesFragment @Inject constructor() : Fragment() {
+    private val logTag = "TripSummariesFragment"
     private val viewModel: TripSummariesViewModel by navGraphViewModels(R.id.cyclotrack_nav_graph) {
         defaultViewModelProviderFactory
     }
@@ -103,6 +104,27 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
     }
 
+    private val handleFabClick: View.OnClickListener = View.OnClickListener {
+        // TODO: Multiple touches causes fatal exception
+        Log.d(logTag, "Start dashboard with trip ${tipService.currentTripId}")
+        try {
+            when (PackageManager.PERMISSION_GRANTED) {
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                -> findNavController().navigate(R.id.action_start_trip,
+                    Bundle().apply {
+                        Log.d(logTag, "Start dashboard with trip ${tipService.currentTripId}")
+                        putLong("tripId", tipService.currentTripId ?: -1L)
+                    })
+                else -> initializeLocationService()
+            }
+        } catch (e: IllegalArgumentException) {
+            Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
@@ -149,22 +171,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             rollupView.rollupTripData(trips)
         })
 
-        view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-            // TODO: Multiple touches causes fatal exception
-            try {
-                when (PackageManager.PERMISSION_GRANTED) {
-                    ContextCompat.checkSelfPermission(
-                        requireContext(),
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ),
-                    -> findNavController().navigate(R.id.action_start_trip,
-                        Bundle().apply { putLong("tripId", tipService.tripId ?: -1L) })
-                    else -> initializeLocationService()
-                }
-            } catch (e: IllegalArgumentException) {
-                Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
-            }
-        }
+        view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener(handleFabClick)
         noBackgroundLocationDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
@@ -312,6 +319,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        Log.d(logTag,
+            "Resumed summaries frag with tipService $tipService tripId = ${tipService.currentTripId}")
         if (this::tripListView.isInitialized) {
             tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
                 "MY_KEY"))
