@@ -19,9 +19,10 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
-class TripSummariesFragment : Fragment() {
+class TripSummariesFragment @Inject constructor() : Fragment() {
     private val viewModel: TripSummariesViewModel by navGraphViewModels(R.id.cyclotrack_nav_graph) {
         defaultViewModelProviderFactory
     }
@@ -31,6 +32,9 @@ class TripSummariesFragment : Fragment() {
     private lateinit var tripListView: RecyclerView
     private lateinit var rollupView: RollupView
     private lateinit var menu: Menu
+
+    @Inject
+    lateinit var tipService: TripInProgressService
 
     private val requestLocationPermissions = registerForActivityResult(RequestMultiplePermissions()
     ) { permissions ->
@@ -153,7 +157,8 @@ class TripSummariesFragment : Fragment() {
                         requireContext(),
                         Manifest.permission.ACCESS_FINE_LOCATION
                     ),
-                    -> findNavController().navigate(R.id.action_start_trip)
+                    -> findNavController().navigate(R.id.action_start_trip,
+                        Bundle().apply { putLong("tripId", tipService.tripId ?: -1L) })
                     else -> initializeLocationService()
                 }
             } catch (e: IllegalArgumentException) {
