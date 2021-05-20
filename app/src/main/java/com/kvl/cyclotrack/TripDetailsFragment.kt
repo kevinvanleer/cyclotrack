@@ -30,7 +30,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.preference.PreferenceManager
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
@@ -50,7 +49,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 
@@ -727,24 +725,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
                 })
 
-            viewModel.splits().observeForever(object : Observer<Array<Split>> {
-                var called = false
-                override fun onChanged(splits: Array<Split>) {
-                    if (!called) {
-                        //TODO: Figure out how to do this without LiveData
-                        called = true
-                        var areSplitsInSystem = false
-                        if (splits.isNotEmpty()) areSplitsInSystem =
-                            abs(getSplitThreshold(PreferenceManager.getDefaultSharedPreferences(
-                                context)) * splits[0].totalDistance - 1.0) < 0.01
-                        if (true || splits.isEmpty() || !areSplitsInSystem) {
-                            viewModel.clearSplits()
-                            viewModel.addSplits()
-                        }
-                        viewModel.splits().removeObserver(this)
-                    }
-                }
-            })
+            viewModel.updateSplits()
 
             viewModel.splits().observe(viewLifecycleOwner, { splits ->
                 fun makeSplitsGrid() {

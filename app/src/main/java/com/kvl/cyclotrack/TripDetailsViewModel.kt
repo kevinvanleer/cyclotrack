@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.abs
 
 @HiltViewModel
 class TripDetailsViewModel @Inject constructor(
@@ -26,6 +27,18 @@ class TripDetailsViewModel @Inject constructor(
     fun tripOverview() = tripsRepository.observe(tripId)
     fun timeState() = timeStateRepository.observeTimeStates(tripId)
     fun splits() = splitRepository.observeTripSplits(tripId)
+    fun updateSplits() = viewModelScope.launch {
+        val splits = splitRepository.getTripSplits(tripId)
+        var areSplitsInSystem = false
+        if (splits.isNotEmpty()) areSplitsInSystem =
+            abs(getSplitThreshold(sharedPreferences) * splits[0].totalDistance - 1.0) < 0.01
+        if (true || splits.isEmpty() || !areSplitsInSystem) {
+            Log.d(logTag, "Recomputing splits")
+            clearSplits()
+            addSplits()
+        }
+    }
+
     fun clearSplits() =
         viewModelScope.launch {
             splitRepository.removeTripSplits(tripId)
