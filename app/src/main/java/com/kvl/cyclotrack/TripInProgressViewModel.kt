@@ -36,7 +36,7 @@ class TripInProgressViewModel @Inject constructor(
     private val coroutineScope = getViewModelScope(coroutineScopeProvider)
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
-    private val userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
+    private var userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
     private var _autoCircumference: Float? = null
 
     val autoCircumference: Float?
@@ -462,7 +462,28 @@ class TripInProgressViewModel @Inject constructor(
     fun resumeTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         Log.d(logTag, "Resuming trip $tripId")
         this.tripId = tripId
-        startObserving(lifecycleOwner)
+        coroutineScope.launch {
+            val tripState = tripsRepository.get(tripId)
+            val currentMeasurement = measurementsRepository.get(tripId).last()
+            userCircumference = tripState.userWheelCircumference
+            _autoCircumference = tripState.autoWheelCircumference
+
+            _currentProgress.value = TripProgress(
+                measurements = currentMeasurement,
+                distance = tripState.distance ?: 0.0,
+                duration = tripState.duration ?: 0.0,
+                speed = currentMeasurement.speed,
+                accuracy = currentMeasurement.accuracy,
+                bearing = currentMeasurement.bearing,
+                acceleration = 0f,
+                maxAcceleration = 0f,
+                maxSpeed = 0f,
+                slope = 0.0,
+                splitSpeed = 0f,
+                tracking = true,
+            )
+            startObserving(lifecycleOwner)
+        }
         startClock()
     }
 

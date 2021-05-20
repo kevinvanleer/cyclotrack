@@ -81,7 +81,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     private fun createNotificationChannel(channelId: String, channelName: String): String {
         //TODO: MAKE THIS YOUR OWN -- COPIED FROM POST
         val channel = NotificationChannel(channelId,
-            channelName, NotificationManager.IMPORTANCE_NONE)
+            channelName, NotificationManager.IMPORTANCE_HIGH)
         channel.lightColor = Color.BLUE
         channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -93,28 +93,28 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel(
                 getString(R.string.notification_id_trip_in_progress),
-                "Cyclotrack: in ride"
+                getString(R.string.notification_channel_name_trip_in_progress)
             )
         } else {
             getString(R.string.notification_id_trip_in_progress)
         }
 
-        val pendingIntent = NavDeepLinkBuilder(this)
-            .setGraph(R.navigation.cyclotrack_nav_graph)
-            .setDestination(R.id.TripInProgressFragment)
-            .setArguments(Bundle().apply { putLong("tripId", currentTripId ?: 0) })
-            .createPendingIntent()
+        val pendingIntent = NavDeepLinkBuilder(this).apply {
+            setGraph(R.navigation.cyclotrack_nav_graph)
+            setDestination(R.id.TripInProgressFragment)
+            setArguments(Bundle().apply { putLong("tripId", currentTripId ?: 0) })
+        }.createPendingIntent()
 
-        startForeground(currentTripId?.toInt() ?: 0, NotificationCompat.Builder(this, channelId)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setContentTitle(getText(R.string.notification_trip_in_progress_title))
-            .setContentText(getText(R.string.notification_export_trip_in_progress_message))
-            .setSmallIcon(R.drawable.ic_cyclotrack_notification)
-            .setContentIntent(pendingIntent)
-            .setTicker("Important ride information that is displayed here and is too long to fit")
-            .build())
+        startForeground(currentTripId?.toInt() ?: 0,
+            NotificationCompat.Builder(this, channelId).apply {
+                priority = NotificationCompat.PRIORITY_MAX
+                setOngoing(true)
+                setShowWhen(false)
+                setContentTitle(getText(R.string.notification_trip_in_progress_title))
+                setContentText(getText(R.string.notification_export_trip_in_progress_message))
+                setSmallIcon(R.drawable.ic_cyclotrack_notification)
+                setContentIntent(pendingIntent)
+            }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT })
     }
 
     override fun onCreate() {
