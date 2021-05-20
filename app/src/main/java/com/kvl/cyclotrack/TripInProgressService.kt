@@ -50,7 +50,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     fun cadenceSensor() = bleService.cadenceSensor
     fun speedSensor() = bleService.speedSensor
 
-    fun gpsEnabled() = gpsService.accessGranted
+    //fun gpsEnabled() = gpsService.accessGranted
 
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
@@ -113,13 +113,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT })
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        Log.d(logTag, "::onCreate; this=$this; tripId=$currentTripId")
-        gpsService.startListening()
-        bleService.initialize()
-    }
-
     private fun start(tripId: Long) {
         currentTripId = tripId
         Log.d(logTag, "Start trip service for ID ${currentTripId}; this=$this")
@@ -164,6 +157,8 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
+                getString(R.string.action_initialize_trip_service) -> Log.d(logTag,
+                    "Initialize trip service")
                 getString(R.string.action_start_trip_service) -> start(it.getLongExtra("tripId", 0))
                 getString(R.string.action_pause_trip_service) ->
                     pause(it.getLongExtra("tripId", 0))
@@ -171,8 +166,16 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
                     resume(it.getLongExtra("tripId", 0))
                 getString(R.string.action_stop_trip_service) ->
                     end(it.getLongExtra("tripId", 0))
+                else -> Log.d(logTag, "Received intent ${intent}")
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.d(logTag, "::onCreate; this=$this; tripId=$currentTripId")
+        gpsService.startListening()
+        bleService.initialize()
     }
 }

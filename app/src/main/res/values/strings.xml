@@ -80,4 +80,5 @@
     <string name="action_resume_trip_service">action_resume_trip_service</string>
     <string name="action_stop_trip_service">action_stop_trip_service</string>
     <string name="notification_channel_name_trip_in_progress">Ride in progress</string>
+    <string name="action_initialize_trip_service">action_initialize_trip_service</string>
 </resources>

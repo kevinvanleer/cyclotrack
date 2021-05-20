@@ -71,6 +71,11 @@ class TripInProgressFragment :
             }
         }
 
+        requireActivity().startService(Intent(requireContext(),
+            TripInProgressService::class.java).apply {
+            this.action = getString(R.string.action_initialize_trip_service)
+        })
+
         return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
     }
 
@@ -463,6 +468,10 @@ class TripInProgressFragment :
     override fun onDestroyView() {
         super.onDestroyView()
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
+        if (tipService.currentTripId == null) requireActivity().stopService(Intent(requireContext(),
+            TripInProgressService::class.java).apply {
+            this.action = getString(R.string.action_stop_trip_service)
+        })
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
