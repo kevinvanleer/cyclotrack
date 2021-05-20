@@ -192,7 +192,7 @@ class TripInProgressFragment : Fragment(), View.OnTouchListener {
         Log.d(TAG, "TripInProgressFragment::onViewCreated")
 
         viewModel.startGps()
-        if (bleFeatureFlag()) viewModel.startBle(requireActivity())
+        if (bleFeatureFlag()) viewModel.startBle()
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
         val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)

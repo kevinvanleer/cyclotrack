@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-private val logTag = "GOOGLE_FIT_UTILITIES"
+private const val logTag = "GOOGLE_FIT_UTILITIES"
 
 val fitnessOptions = FitnessOptions.builder()
     .addDataType(DataType.AGGREGATE_HEIGHT_SUMMARY,

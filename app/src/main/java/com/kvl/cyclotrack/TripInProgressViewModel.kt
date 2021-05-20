@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.app.Activity
 import android.content.SharedPreferences
 import android.location.Location
 import android.os.Handler
@@ -146,7 +145,7 @@ class TripInProgressViewModel @Inject constructor(
         get() = _currentTime
 
     fun startGps() = gpsService.startListening()
-    fun startBle(activity: Activity) = bleService.initialize(activity)
+    fun startBle() = bleService.initialize()
     fun stopBle() = bleService.disconnect()
 
     private fun setTripProgress(new: Measurements) {

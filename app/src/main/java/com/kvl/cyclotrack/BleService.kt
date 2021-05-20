@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.app.Activity
 import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
@@ -12,6 +11,7 @@ import android.content.pm.PackageManager
 import android.os.Handler
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.util.*
@@ -40,13 +40,14 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         var speed: String? = null
         var cadence: String? = null
     }
+    private val logTag = "BleService"
     private val myMacs =
         sharedPreferences.getStringSet(context.resources.getString(R.string.preferences_paired_ble_devices_key),
             HashSet())?.map {
             try {
                 Gson().fromJson(it, ExternalSensor::class.java)
             } catch (e: JsonSyntaxException) {
-                Log.e(TAG, "Could not parse sensor from JSON", e)
+                Log.e(logTag, "Could not parse sensor from JSON", e)
                 ExternalSensor("REMOVE_INVALID_SENSOR")
             }
         }?.filter { it.address != "REMOVE_INVALID_SENSOR" }?.toTypedArray()
@@ -58,7 +59,6 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     var cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
     var speedSensor = MutableLiveData(SpeedData(null, null, null, null))
 
-    private val TAG = "BLE_SERVICE"
     private val context = context
     private val bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
     private var mScanning = false
@@ -97,7 +97,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
 
     private fun BluetoothGatt.printGattTable() {
         if (services.isEmpty()) {
-            Log.v(TAG,
+            Log.v(logTag,
                 "No service and characteristic available, call discoverServices() first?")
             return
         }
@@ -109,7 +109,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             ) { "${it.uuid} ${it.descriptors?.getOrNull(0)?.uuid}" }
             characteristicsTable += "\nService ${service.uuid}\nCharacteristics:\n$characteristicsTableRow"
         }
-        Log.v(TAG, characteristicsTable)
+        Log.v(logTag, characteristicsTable)
     }
 
     private fun BluetoothGatt.hasCharacteristic(serviceUuid: UUID, charUuid: UUID): Boolean {
@@ -120,7 +120,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     private fun readBatteryLevel(gatt: BluetoothGatt) {
         val batteryLevelChar = gatt
             .getService(batteryServiceUuid)?.getCharacteristic(batteryLevelCharUuid)
-        Log.d(TAG, "read battery level characteristic ${batteryLevelChar?.uuid}")
+        Log.d(logTag, "read battery level characteristic ${batteryLevelChar?.uuid}")
         batteryLevelChar?.let { gatt.readCharacteristic(it) }
     }
 
@@ -146,13 +146,13 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         ) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
-                    Log.i(TAG, "Connected to GATT server.")
-                    Log.i(TAG, "Attempting to start service discovery: " +
+                    Log.i(logTag, "Connected to GATT server.")
+                    Log.i(logTag, "Attempting to start service discovery: " +
                             gatt.discoverServices())
                     gatts.add(gatt)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    Log.i(TAG, "Disconnected from GATT server.")
+                    Log.i(logTag, "Disconnected from GATT server.")
                 }
             }
         }
@@ -162,7 +162,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             descriptor: BluetoothGattDescriptor?,
             status: Int,
         ) {
-            Log.d(TAG, "Write descriptor finished")
+            Log.d(logTag, "Write descriptor finished")
             super.onDescriptorWrite(gatt, descriptor, status)
             if (gatt != null && descriptor != null) {
                 gatt.setCharacteristicNotification(descriptor.characteristic, true)
@@ -175,7 +175,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         // New services discovered
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             with(gatt) {
-                Log.d(TAG, "Discovered services: $status")
+                Log.d(logTag, "Discovered services: $status")
                 printGattTable()
                 when {
                     hasCharacteristic(heartRateServiceUuid,
@@ -187,7 +187,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                         gatt.getService(
                             cadenceSpeedServiceUuid)
                             .getCharacteristic(cscMeasurementCharacteristicUuid))
-                    else -> Log.d(TAG, "No supported characteristics")
+                    else -> Log.d(logTag, "No supported characteristics")
                 }
             }
         }
@@ -198,7 +198,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             characteristic: BluetoothGattCharacteristic,
             status: Int,
         ) {
-            Log.d(TAG, "onCharacteristicRead")
+            Log.d(logTag, "onCharacteristicRead")
             when (status) {
                 BluetoothGatt.GATT_SUCCESS -> {
                     broadcastUpdate(gatt, characteristic)
@@ -210,7 +210,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
         ) {
-            Log.d(TAG, "onCharacteristicChanged")
+            Log.d(logTag, "onCharacteristicChanged")
             broadcastUpdate(gatt, characteristic)
         }
     }
@@ -219,10 +219,10 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     private fun scanForDevice(mac: String): ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            Log.d(TAG,
+            Log.d(logTag,
                 "Found device ${result.device.name}, ${result.device.type}: ${result.device}")
             if (result.device.address == mac) {
-                Log.d(TAG,
+                Log.d(logTag,
                     "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}")
                 result.device.connectGatt(context, true, genericGattCallback)
                 bluetoothLeScanner.stopScan(this)
@@ -235,11 +235,11 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     private val leScanCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-            Log.d(TAG,
+            Log.d(logTag,
                 "Found device ${result.device.name}, ${result.device.type}: ${result.device}")
             /*
             if (myMacs?.contains(result.device.address) == true) {
-                Log.d(TAG,
+                Log.d(logTag,
                     "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}")
                 result.device.connectGatt(context, true, gattCallback)
             }
@@ -248,7 +248,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     }
 
     private fun broadcastUpdate(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-        Log.d(TAG, "broadcast update for ${characteristic.uuid}")
+        Log.d(logTag, "broadcast update for ${characteristic.uuid}")
 
         when (characteristic.uuid) {
             hrmCharacteristicUuid -> {
@@ -259,22 +259,22 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                 val flag = characteristic.properties
                 val format = when (flag and 0x01) {
                     0x01 -> {
-                        Log.d(TAG, "Heart rate format UINT16.")
+                        Log.d(logTag, "Heart rate format UINT16.")
                         BluetoothGattCharacteristic.FORMAT_UINT16
                     }
                     else -> {
-                        Log.d(TAG, "Heart rate format UINT8.")
+                        Log.d(logTag, "Heart rate format UINT8.")
                         BluetoothGattCharacteristic.FORMAT_UINT8
                     }
                 }
                 val heartRate = characteristic.getIntValue(format, 1)
-                Log.d(TAG, String.format("Received heart rate: %d", heartRate))
+                Log.d(logTag, String.format("Received heart rate: %d", heartRate))
                 hrmSensor.postValue(HrmData(hrmSensor.value?.batteryLevel,
                     heartRate.toShort()))
             }
             batteryLevelCharUuid -> {
                 val batteryLevel = characteristic.value[0]
-                Log.d(TAG, "Battery level: $batteryLevel")
+                Log.d(logTag, "Battery level: $batteryLevel")
                 when (gatt.device.address) {
                     addresses.hrm -> {
                         hrmSensor.postValue(hrmSensor.value?.copy(batteryLevel = batteryLevel))
@@ -285,7 +285,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                     addresses.cadence -> {
                         cadenceSensor.postValue(cadenceSensor.value?.copy(batteryLevel = batteryLevel))
                     }
-                    else -> Log.d(TAG,
+                    else -> Log.d(logTag,
                         "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel")
                 }
             }
@@ -316,7 +316,8 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                                 (speedSensor.value?.revolutionCount ?: revolutionCount),
                                 lastEvent,
                                 (speedSensor.value?.lastEvent ?: lastEvent))
-                            Log.d(TAG, "Speed sensor: ${revolutionCount} :: ${lastEvent} :: ${rpm}")
+                            Log.d(logTag,
+                                "Speed sensor: ${revolutionCount} :: ${lastEvent} :: ${rpm}")
                             speedSensor.postValue(SpeedData(speedSensor.value?.batteryLevel,
                                 revolutionCount,
                                 lastEvent, rpm, System.currentTimeMillis()))
@@ -331,7 +332,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
                         val lastEvent =
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3)
-                        Log.d(TAG,
+                        Log.d(logTag,
                             "Cadence sensor changed: ${revolutionCount} :: ${lastEvent}")
                         if (revolutionCount != cadenceSensor.value?.revolutionCount ||
                             System.currentTimeMillis() - (cadenceSensor.value?.timestamp
@@ -341,7 +342,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                                 (cadenceSensor.value?.revolutionCount ?: revolutionCount),
                                 lastEvent,
                                 (cadenceSensor.value?.lastEvent ?: lastEvent))
-                            Log.d(TAG,
+                            Log.d(logTag,
                                 "Cadence sensor update: ${revolutionCount} :: ${lastEvent} :: ${rpm}")
                             cadenceSensor.postValue(CadenceData(cadenceSensor.value?.batteryLevel,
                                 revolutionCount,
@@ -349,13 +350,14 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                         }
                     }
                     else -> {
-                        Log.d(TAG, "Unknown CSC sensor type")
+                        Log.d(logTag, "Unknown CSC sensor type")
                         val data: ByteArray? = characteristic.value
                         if (data?.isNotEmpty() == true) {
                             val hexString: String = data.joinToString(separator = " ") {
                                 String.format("%02X", it)
                             }
-                            Log.d(TAG, String.format("Received ${characteristic.uuid}: $hexString"))
+                            Log.d(logTag,
+                                String.format("Received ${characteristic.uuid}: $hexString"))
                         }
                     }
                 }
@@ -367,13 +369,14 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                     val hexString: String = data.joinToString(separator = " ") {
                         String.format("%02X", it)
                     }
-                    Log.d(TAG, String.format("Received ${characteristic.uuid}: $hexString"))
+                    Log.d(logTag, String.format("Received ${characteristic.uuid}: $hexString"))
                 }
             }
         }
     }
 
     companion object {
+        private const val logTag = "BleServiceCompanion"
         fun isBluetoothSupported(context: Context): Boolean {
             return (context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))
         }
@@ -386,40 +389,41 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
             BluetoothAdapter.getDefaultAdapter().enable()
         }
 
-        fun enableBluetooth(context: Context, activity: Activity) {
+        fun enableBluetooth(context: Context) {
             val bluetoothManager =
                 context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             val bluetoothAdapter = bluetoothManager.adapter
             if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                Log.d(logTag, "Requesting to enable Bluetooth")
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                activity.startActivity(enableBtIntent)
+                LocalBroadcastManager.getInstance(context).sendBroadcast(enableBtIntent)
             }
         }
     }
 
-    fun initialize(activity: Activity) {
+    fun initialize() {
         if (!isBluetoothSupported(context)) {
-            Log.d("BLE_SERVICE", "BLE not supported on this device")
+            Log.d(logTag, "BLE not supported on this device")
             return
         }
 
         if (myMacs.isNullOrEmpty()) {
-            Log.d("BLE_SERVICE", "No BLE devices have been selected by the user")
+            Log.d(logTag, "No BLE devices have been selected by the user")
             return
         }
 
-        enableBluetooth(context, activity)
+        enableBluetooth(context)
 
         myMacs.forEach {
             val device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(it.address)
             if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
-                Log.d(TAG,
+                Log.d(logTag,
                     "Scanning for uncached device: ${device.address}")
                 val callback = scanForDevice(device.address)
                 scanCallbacks.add(callback)
                 bluetoothLeScanner.startScan(callback)
             } else {
-                Log.d(TAG,
+                Log.d(logTag,
                     "Connecting to ${device.name}, ${device.type}: ${device.address}")
                 //TODO: Store BLE service for each device and use corresponding callback
                 device.connectGatt(context, true, genericGattCallback)
@@ -434,7 +438,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
 
     fun stopAllScans() {
         scanCallbacks.forEach {
-            Log.d(TAG, "Stopping device scan")
+            Log.d(logTag, "Stopping device scan")
             bluetoothLeScanner.stopScan(it)
         }
         scanCallbacks.clear()
@@ -443,7 +447,7 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     fun disconnect() {
         stopAllScans()
         gatts.forEach { gatt ->
-            Log.d(TAG, "Disconnecting ${gatt.device.address}")
+            Log.d(logTag, "Disconnecting ${gatt.device.address}")
             gatt.disconnect()
         }
     }

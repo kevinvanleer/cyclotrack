@@ -1,7 +1,11 @@
 package com.kvl.cyclotrack
 
 import android.app.Activity
+import android.bluetooth.BluetoothAdapter
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -20,6 +24,17 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.toolbar))
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         googleFitApiService = GoogleFitApiService(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        LocalBroadcastManager.getInstance(applicationContext)
+            .registerReceiver(object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    Log.d(logTag, "Show enable bluetooth dialog")
+                    startActivity(intent)
+                }
+            }, IntentFilter(BluetoothAdapter.ACTION_REQUEST_ENABLE))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
