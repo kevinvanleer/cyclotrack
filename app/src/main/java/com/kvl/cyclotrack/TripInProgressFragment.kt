@@ -186,7 +186,7 @@ class TripInProgressFragment :
     }
 
     private fun handleTimeStateChanges(tripId: Long) =
-        viewModel.currentTimeState(tripId)?.observe(viewLifecycleOwner, { currentState ->
+        viewModel.currentTimeState(tripId).observe(viewLifecycleOwner, { currentState ->
             Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
             if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
                 view?.doOnPreDraw { hideResumeStop() }
@@ -240,7 +240,6 @@ class TripInProgressFragment :
     override fun onDestroy() {
         Log.d(logTag, "Destroying TIP View")
         super.onDestroy()
-        if (bleFeatureFlag()) tipService.stopBle()
         activity?.window?.apply {
             val params = attributes
             params.screenBrightness = -1f
@@ -261,10 +260,7 @@ class TripInProgressFragment :
             tipService.currentTripId = tripId
         }
         if (tipService.currentTripId == null) {
-            //TODO: THIS SHOULD MOVE TO TripInProgressService::start
             Log.d(logTag, "Starting new trip")
-            tipService.startGps()
-            if (bleFeatureFlag()) tipService.startBle()
         }
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
@@ -415,7 +411,7 @@ class TripInProgressFragment :
                 Log.d(logTag, "speed rpm: ${it.rpm}")
                 if (it.rpm != null && viewModel.circumference != null) {
                     splitSpeedTextView.label =
-                        "${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
+                        getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())
                     splitSpeedTextView.value = when {
                         it.rpm.isFinite() -> String.format("%.1f",
                             getUserSpeed(requireContext(),

@@ -26,9 +26,8 @@ class TripInProgressViewModel @Inject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
-    private val sensorsRepository: OnboardSensorsRepository,
-    private val gpsService: GpsService,
-    private val bleService: BleService,
+    gpsService: GpsService,
+    bleService: BleService,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
@@ -81,12 +80,6 @@ class TripInProgressViewModel @Inject constructor(
         }
     }
 
-    private val sensorObserver: Observer<SensorModel> = Observer { newData ->
-        coroutineScope.launch {
-            sensorsRepository.insertMeasurements(tripId!!, newData)
-        }
-    }
-
     private fun accumulateDuration(timeStates: Array<TimeState>?) {
         var durationAcc = 0L
         var localStartTime = 0L
@@ -132,16 +125,12 @@ class TripInProgressViewModel @Inject constructor(
 
     fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
 
-    fun startGps() = gpsService.startListening()
-    fun startBle() = bleService.initialize()
-    fun stopBle() = bleService.disconnect()
-
     private fun setTripProgress(new: Measurements) {
         val old = _currentProgress.value
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
-        var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
-        var speedThreshold = defaultSpeedThreshold
+        val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+        val speedThreshold = defaultSpeedThreshold
 
         val newDuration = getDuration()
         val durationDelta = getDurationDelta(newDuration, old)
@@ -171,7 +160,7 @@ class TripInProgressViewModel @Inject constructor(
                 }
             }
 
-            var newSlope = calculateSlope(
+            val newSlope = calculateSlope(
                 newSpeed,
                 distanceDelta,
                 new,
@@ -356,7 +345,7 @@ class TripInProgressViewModel @Inject constructor(
         old: TripProgress?,
         new: Measurements,
     ): Double {
-        var distanceResults = floatArrayOf(0f)
+        val distanceResults = floatArrayOf(0f)
         Location.distanceBetween(old?.measurements?.latitude ?: new.latitude,
             old?.measurements?.longitude ?: new.longitude,
             new.latitude,
@@ -377,7 +366,7 @@ class TripInProgressViewModel @Inject constructor(
     fun startObserving(lifecycleOwner: LifecycleOwner) {
         if (tripId != null) {
             Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
-            getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
+            getLatest().observe(lifecycleOwner, newMeasurementsObserver)
             timeStateRepository.observeLatest(tripId!!)
                 .observe(lifecycleOwner, currentTimeStateObserver)
             timeStateRepository.observeTimeStates(tripId!!)
@@ -453,12 +442,6 @@ class TripInProgressViewModel @Inject constructor(
         }, 1000 - System.currentTimeMillis() % 1000, 500)
     }
 
-    fun pauseTrip() {
-        coroutineScope.launch(Dispatchers.Default) {
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.PAUSE))
-        }
-    }
-
     fun resumeTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         Log.d(logTag, "Resuming trip $tripId")
         this.tripId = tripId
@@ -487,21 +470,12 @@ class TripInProgressViewModel @Inject constructor(
         startClock()
     }
 
-    fun resumeTrip() {
-        coroutineScope.launch(Dispatchers.Default) {
-            Log.d(logTag, "resumeTrip")
-            timeStateRepository.appendTimeState(TimeState(this@TripInProgressViewModel.tripId!!,
-                TimeStateEnum.RESUME))
-        }
-    }
-
-    fun getLatest(): LiveData<Measurements>? {
+    fun getLatest(): LiveData<Measurements> {
         if (tripId == null) throw UninitializedPropertyAccessException()
         return measurementsRepository.observeLatest(tripId!!)
     }
 
     private fun cleanup() {
-        gpsService.stopListening()
         clockTick.cancel()
     }
 
@@ -529,8 +503,7 @@ class TripInProgressViewModel @Inject constructor(
     override fun onCleared() {
         Log.d(logTag, "Called onCleared")
         super.onCleared()
-        //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
-        //cleanup()
+        cleanup()
         //endTrip()
     }
 }

@@ -13,7 +13,9 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class GpsService @Inject constructor(context: Application) : LiveData<Location>() {
     private val context = context;
     var accessGranted = MutableLiveData(false);

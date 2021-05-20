@@ -16,6 +16,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.util.*
 import javax.inject.Inject
+import javax.inject.Singleton
 
 data class HrmData(var batteryLevel: Byte?, var bpm: Short?)
 data class SpeedData(
@@ -34,6 +35,7 @@ data class CadenceData(
     val timestamp: Long? = null,
 )
 
+@Singleton
 class BleService @Inject constructor(context: Application, sharedPreferences: SharedPreferences) {
     private val addresses = object {
         var hrm: String? = null

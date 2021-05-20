@@ -52,10 +52,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     fun gpsEnabled() = gpsService.accessGranted
 
-    fun startGps() = gpsService.startListening()
-    fun startBle() = bleService.initialize()
-    fun stopBle() = bleService.disconnect()
-
     private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
         currentTripId?.let { id ->
@@ -119,10 +115,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
-        //TODO: REMOVE ACTIVITY FROM BLE SERVICE. BROADCAST INTENT TO ACTIVITY.
         Log.d(logTag, "::onCreate; this=$this; tripId=$currentTripId")
-        //startGps()
-        //startBle(requ)
+        gpsService.startListening()
+        bleService.initialize()
     }
 
     private fun start(tripId: Long) {
@@ -161,6 +156,8 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         }
         //TODO: I DO NOT SEEM TO GET THE SAME SERVICE OBJECT ON REENTRY
         currentTripId = null
+        bleService.disconnect()
+        gpsService.stopListening()
         stopSelf()
     }
 
