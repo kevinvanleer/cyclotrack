@@ -53,9 +53,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
-    fun hrmSensor() = bleService.hrmSensor
-    fun cadenceSensor() = bleService.cadenceSensor
-    fun speedSensor() = bleService.speedSensor
+    private fun hrmSensor() = bleService.hrmSensor
+    private fun cadenceSensor() = bleService.cadenceSensor
+    private fun speedSensor() = bleService.speedSensor
 
     //fun gpsEnabled() = gpsService.accessGranted
 
@@ -208,6 +208,8 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         }
         //TODO: I DO NOT SEEM TO GET THE SAME SERVICE OBJECT ON REENTRY
         currentTripId = null
+        gpsService.removeObserver(gpsObserver)
+        onboardSensors.removeObserver(sensorObserver)
         bleService.disconnect()
         gpsService.stopListening()
         stopSelf()
