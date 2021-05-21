@@ -56,9 +56,11 @@ class TripInProgressViewModel @Inject constructor(
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
-    private val currentTimeStateObserver: Observer<TimeState> = Observer {
-        Log.d(logTag, "onChanged current time state observer: ${it.state}")
-        if (it != null) currentState = it.state
+    private val currentTimeStateObserver: Observer<TimeState> = Observer { timeState ->
+        timeState?.let {
+            Log.d(logTag, "onChanged current time state observer: ${it.state}")
+            currentState = it.state
+        }
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
@@ -406,30 +408,10 @@ class TripInProgressViewModel @Inject constructor(
         return biometrics
     }
 
-    fun startTrip(lifecycleOwner: LifecycleOwner): LiveData<Long> {
-        val tripStarted = MutableLiveData<Long>()
-
-        //TODO: Add speed revs to time state for distance calculations
-        coroutineScope.launch(Dispatchers.Default) {
-            tripId = tripsRepository.createNewTrip().also { id ->
-                tripsRepository.updateBiometrics(
-                    getCombinedBiometrics(id))
-
-            }
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
-            Log.d(logTag, "created new trip with id ${tripId.toString()}")
-            tripStarted.postValue(tripId)
-        }
-        tripStarted.observeForever(object : Observer<Long> {
-            override fun onChanged(t: Long?) {
-                startObserving(lifecycleOwner)
-                tripStarted.removeObserver(this)
-            }
-        })
-
+    fun startTrip(newTripId: Long, lifecycleOwner: LifecycleOwner) {
+        tripId = newTripId
+        startObserving(lifecycleOwner)
         startClock()
-
-        return tripStarted
     }
 
     private fun startClock() {

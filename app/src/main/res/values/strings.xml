@@ -83,4 +83,5 @@
     <string name="notification_channel_name_trip_in_progress">Ride in progress</string>
     <string name="action_initialize_trip_service">action_initialize_trip_service</string>
     <string name="gps_disabled_message">GPS disabled</string>
+    <string name="intent_action_tripId_created">com.kvl.cyclotrack.intent_action_tripId_created</string>
 </resources>

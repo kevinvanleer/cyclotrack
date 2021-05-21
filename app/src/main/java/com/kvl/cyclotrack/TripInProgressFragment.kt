@@ -12,7 +12,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import com.google.android.gms.common.api.ResolvableApiException
@@ -156,13 +156,11 @@ class TripInProgressFragment :
         }
     }
 
-    private fun startTrip(tripId: Long) {
+    private fun startTrip() {
         requireActivity().startService(Intent(requireContext(),
             TripInProgressService::class.java).apply {
             this.action = getString(R.string.action_start_trip_service)
-            this.putExtra("tripId", tripId)
         })
-        tipService.currentTripId = tripId
     }
 
     private fun pauseTrip(tripId: Long) {
@@ -192,33 +190,49 @@ class TripInProgressFragment :
 
     private fun handleTimeStateChanges(tripId: Long) =
         viewModel.currentTimeState(tripId).observe(viewLifecycleOwner, { currentState ->
-            Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
-            if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
-                view?.doOnPreDraw { hideResumeStop() }
-                view?.doOnPreDraw { hidePause() }
-                pauseButton.text = getString(R.string.pause_label)
-            } else if (currentState.state == TimeStateEnum.PAUSE) {
-                view?.doOnPreDraw { hidePause() }
-                slideInResumeStop()
-            } else {
-                pauseButton.setOnClickListener(startTripListener)
-                pauseButton.text = getString(R.string.start_label)
+            currentState.let {
+                Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
+                if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
+                    view?.doOnPreDraw { hideResumeStop() }
+                    view?.doOnPreDraw { hidePause() }
+                    pauseButton.text = getString(R.string.pause_label)
+                } else if (currentState.state == TimeStateEnum.PAUSE) {
+                    view?.doOnPreDraw { hidePause() }
+                    slideInResumeStop()
+                } else {
+                    pauseButton.setOnClickListener(startTripListener)
+                    pauseButton.text = getString(R.string.start_label)
+                }
             }
         })
+
+    private val newTripBroadcastReceiver = object :
+        BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.getLongExtra("tripId", -1)?.takeIf { it >= 0 }?.let { tripId ->
+                handleTimeStateChanges(tripId)
+                viewModel.startTrip(tripId, viewLifecycleOwner)
+                //HACK: I want to make th go away
+                tipService.currentTripId = tripId
+            }
+        }
+    }
 
     private val startTripListener: OnClickListener = OnClickListener {
         if (!gpsEnabled) {
             turnOnGps()
         } else {
-            viewModel.startTrip(viewLifecycleOwner).let { liveData ->
+            /*viewModel.startTrip(viewLifecycleOwner).let { liveData ->
                 liveData.observeForever(object : Observer<Long> {
                     override fun onChanged(tripId: Long) {
-                        startTrip(tripId)
-                        handleTimeStateChanges(tripId)
                         liveData.removeObserver(this)
                     }
                 })
-            }
+            }*/
+            startTrip()
+            LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
+                newTripBroadcastReceiver,
+                IntentFilter(getString(R.string.intent_action_tripId_created)))
             hidePause()
             pauseButton.setOnClickListener(null)
             pauseButton.text = getString(R.string.pause_label)
@@ -469,6 +483,8 @@ class TripInProgressFragment :
         super.onDestroyView()
         Log.d(logTag, "onDestroyView")
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
+        LocalBroadcastManager.getInstance(requireContext())
+            .unregisterReceiver(newTripBroadcastReceiver)
         if (tipService.currentTripId == null) requireActivity().startService(Intent(requireContext(),
             TripInProgressService::class.java).apply {
             this.action = getString(R.string.action_stop_trip_service)
