@@ -196,13 +196,13 @@ class TripInProgressFragment :
             if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
                 view?.doOnPreDraw { hideResumeStop() }
                 view?.doOnPreDraw { hidePause() }
-                pauseButton.text = "PAUSE"
+                pauseButton.text = getString(R.string.pause_label)
             } else if (currentState.state == TimeStateEnum.PAUSE) {
                 view?.doOnPreDraw { hidePause() }
                 slideInResumeStop()
             } else {
                 pauseButton.setOnClickListener(startTripListener)
-                pauseButton.text = "START"
+                pauseButton.text = getString(R.string.start_label)
             }
         })
 
@@ -221,7 +221,7 @@ class TripInProgressFragment :
             }
             hidePause()
             pauseButton.setOnClickListener(null)
-            pauseButton.text = "PAUSE"
+            pauseButton.text = getString(R.string.pause_label)
             pauseButton.setOnClickListener(pauseTripListener)
         }
     }
@@ -359,7 +359,7 @@ class TripInProgressFragment :
             if (!status && gpsEnabled) {
                 gpsEnabled = false
                 trackingImage.visibility = View.INVISIBLE
-                accuracyTextView.text = "GPS disabled"
+                accuracyTextView.text = getString(R.string.gps_disabled_message)
                 Log.d(logTag, "Location service access disabled")
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
@@ -441,7 +441,7 @@ class TripInProgressFragment :
             Log.d(logTag, "onResume: Trip null")
             view?.doOnPreDraw { hideResumeStop() }
             pauseButton.setOnClickListener(startTripListener)
-            pauseButton.text = "START"
+            pauseButton.text = getString(R.string.start_label)
         } else {
             Log.d(logTag, "onResume: use observer")
             handleTimeStateChanges(viewModel.tripId!!)
