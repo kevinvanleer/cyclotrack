@@ -467,8 +467,9 @@ class TripInProgressFragment :
 
     override fun onDestroyView() {
         super.onDestroyView()
+        Log.d(logTag, "onDestroyView")
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
-        if (tipService.currentTripId == null) requireActivity().stopService(Intent(requireContext(),
+        if (tipService.currentTripId == null) requireActivity().startService(Intent(requireContext(),
             TripInProgressService::class.java).apply {
             this.action = getString(R.string.action_stop_trip_service)
         })

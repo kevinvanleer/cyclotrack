@@ -143,9 +143,11 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     private fun end(tripId: Long) {
         Log.d(logTag, "Called end()")
-        lifecycle.coroutineScope.launch {
-            timeStateRepository.appendTimeState(TimeState(tripId = tripId,
-                state = TimeStateEnum.STOP))
+        tripId.takeIf { it >= 0 }?.let { id ->
+            lifecycle.coroutineScope.launch {
+                timeStateRepository.appendTimeState(TimeState(tripId = id,
+                    state = TimeStateEnum.STOP))
+            }
         }
         //TODO: I DO NOT SEEM TO GET THE SAME SERVICE OBJECT ON REENTRY
         currentTripId = null
@@ -159,13 +161,14 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             when (it.action) {
                 getString(R.string.action_initialize_trip_service) -> Log.d(logTag,
                     "Initialize trip service")
-                getString(R.string.action_start_trip_service) -> start(it.getLongExtra("tripId", 0))
+                getString(R.string.action_start_trip_service) -> start(it.getLongExtra("tripId",
+                    -1))
                 getString(R.string.action_pause_trip_service) ->
-                    pause(it.getLongExtra("tripId", 0))
+                    pause(it.getLongExtra("tripId", -1))
                 getString(R.string.action_resume_trip_service) ->
-                    resume(it.getLongExtra("tripId", 0))
+                    resume(it.getLongExtra("tripId", -1))
                 getString(R.string.action_stop_trip_service) ->
-                    end(it.getLongExtra("tripId", 0))
+                    end(it.getLongExtra("tripId", -1))
                 else -> Log.d(logTag, "Received intent ${intent}")
             }
         }
