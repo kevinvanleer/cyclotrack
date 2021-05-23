@@ -185,12 +185,12 @@ class TripInProgressFragment :
             this.action = getString(R.string.action_stop_trip_service)
             this.putExtra("tripId", tripId)
         })
-        tipService.currentTripId = null
+        //tipService.currentTripId = null
     }
 
     private fun handleTimeStateChanges(tripId: Long) =
         viewModel.currentTimeState(tripId).observe(viewLifecycleOwner, { currentState ->
-            currentState.let {
+            currentState?.let {
                 Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
                 if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
                     view?.doOnPreDraw { hideResumeStop() }
@@ -213,7 +213,7 @@ class TripInProgressFragment :
                 handleTimeStateChanges(tripId)
                 viewModel.startTrip(tripId, viewLifecycleOwner)
                 //HACK: I want to make th go away
-                tipService.currentTripId = tripId
+                //tipService.currentTripId = tripId
             }
         }
     }
@@ -276,10 +276,7 @@ class TripInProgressFragment :
             Log.d(logTag, "Resuming trip $tripId")
             handleTimeStateChanges(tripId)
             viewModel.resumeTrip(tripId, viewLifecycleOwner)
-            tipService.currentTripId = tripId
-        }
-        if (tipService.currentTripId == null) {
-            Log.d(logTag, "Starting new trip")
+            //tipService.currentTripId = tripId
         }
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
@@ -449,7 +446,6 @@ class TripInProgressFragment :
         viewModel.startObserving(viewLifecycleOwner)
         Log.d(logTag, "Called onResume: currentState = ${viewModel.currentState}")
         Log.d(logTag, "Called onResume: tipService = $tipService")
-        Log.d(logTag, "Called onResume: tipService.tripId = ${tipService.currentTripId}")
 
         if (viewModel.tripId == null) {
             Log.d(logTag, "onResume: Trip null")
@@ -464,7 +460,7 @@ class TripInProgressFragment :
 
     private fun updateClock() {
         Log.d(logTag,
-            "updateClock: tipService=$tipService; tipService.tripId = ${tipService.currentTripId}")
+            "updateClock: tripId = ${viewModel.tripId}")
         var hour = Calendar.getInstance().get(Calendar.HOUR)
         if (hour == 0) hour = 12
         val time = String.format("%d:%02d",
@@ -485,7 +481,7 @@ class TripInProgressFragment :
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
         LocalBroadcastManager.getInstance(requireContext())
             .unregisterReceiver(newTripBroadcastReceiver)
-        if (tipService.currentTripId == null) requireActivity().startService(Intent(requireContext(),
+        if (viewModel.tripId == null) requireActivity().startService(Intent(requireContext(),
             TripInProgressService::class.java).apply {
             this.action = getString(R.string.action_stop_trip_service)
         })

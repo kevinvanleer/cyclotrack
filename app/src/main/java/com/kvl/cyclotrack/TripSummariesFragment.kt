@@ -34,9 +34,6 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
     private lateinit var rollupView: RollupView
     private lateinit var menu: Menu
 
-    @Inject
-    lateinit var tipService: TripInProgressService
-
     private val requestLocationPermissions = registerForActivityResult(RequestMultiplePermissions()
     ) { permissions ->
         for (entry in permissions.entries) {
@@ -104,10 +101,10 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
     }
 
-    private val handleFabClick: View.OnClickListener = View.OnClickListener {
+    private fun handleFabClick(trip: Trip): View.OnClickListener = View.OnClickListener {
         // TODO: Multiple touches causes fatal exception
-        Log.d(logTag, "Start dashboard with trip ${tipService.currentTripId}")
         try {
+            val tripId = trip.id.takeIf { trip.inProgress }
             when (PackageManager.PERMISSION_GRANTED) {
                 ContextCompat.checkSelfPermission(
                     requireContext(),
@@ -115,8 +112,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                 ),
                 -> findNavController().navigate(R.id.action_start_trip,
                     Bundle().apply {
-                        Log.d(logTag, "Start dashboard with trip ${tipService.currentTripId}")
-                        putLong("tripId", tipService.currentTripId ?: -1L)
+                        Log.d(logTag, "Start dashboard with trip ${tripId}")
+                        putLong("tripId", tripId ?: -1L)
                     })
                 else -> initializeLocationService()
             }
@@ -169,9 +166,13 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             }
 
             rollupView.rollupTripData(trips)
-        })
 
-        view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener(handleFabClick)
+            view.findViewById<FloatingActionButton>(R.id.fab).apply {
+                isEnabled = true
+                visibility = View.VISIBLE
+                setOnClickListener(handleFabClick(trips[0]))
+            }
+        })
         noBackgroundLocationDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
@@ -319,8 +320,6 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        Log.d(logTag,
-            "Resumed summaries frag with tipService $tipService tripId = ${tipService.currentTripId}")
         if (this::tripListView.isInitialized) {
             tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
                 "MY_KEY"))

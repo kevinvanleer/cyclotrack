@@ -54,7 +54,7 @@ interface TripDao {
     fun update(vararg trips: Trip)
 
     @Update(entity = Trip::class)
-    fun updateInProgress(inProgress: TripInProgress)
+    suspend fun updateInProgress(inProgress: TripInProgress)
 
     @Update(entity = Trip::class)
     suspend fun updateStats(stats: TripStats)

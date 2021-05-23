@@ -31,7 +31,7 @@ class TripInProgressViewModel @Inject constructor(
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
-    private val logTag = "TIP_VIEW_MODEL"
+    private val logTag = "TripInProgressViewModel"
     private val coroutineScope = getViewModelScope(coroutineScopeProvider)
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
@@ -428,25 +428,29 @@ class TripInProgressViewModel @Inject constructor(
         Log.d(logTag, "Resuming trip $tripId")
         this.tripId = tripId
         coroutineScope.launch {
-            val tripState = tripsRepository.get(tripId)
-            val currentMeasurement = measurementsRepository.get(tripId).last()
-            userCircumference = tripState.userWheelCircumference
-            _autoCircumference = tripState.autoWheelCircumference
+            try {
+                val tripState = tripsRepository.get(tripId)
+                val currentMeasurement = measurementsRepository.get(tripId).last()
+                userCircumference = tripState.userWheelCircumference
+                _autoCircumference = tripState.autoWheelCircumference
 
-            _currentProgress.value = TripProgress(
-                measurements = currentMeasurement,
-                distance = tripState.distance ?: 0.0,
-                duration = tripState.duration ?: 0.0,
-                speed = currentMeasurement.speed,
-                accuracy = currentMeasurement.accuracy,
-                bearing = currentMeasurement.bearing,
-                acceleration = 0f,
-                maxAcceleration = 0f,
-                maxSpeed = 0f,
-                slope = 0.0,
-                splitSpeed = 0f,
-                tracking = true,
-            )
+                _currentProgress.value = TripProgress(
+                    measurements = currentMeasurement,
+                    distance = tripState.distance ?: 0.0,
+                    duration = tripState.duration ?: 0.0,
+                    speed = currentMeasurement.speed,
+                    accuracy = currentMeasurement.accuracy,
+                    bearing = currentMeasurement.bearing,
+                    acceleration = 0f,
+                    maxAcceleration = 0f,
+                    maxSpeed = 0f,
+                    slope = 0.0,
+                    splitSpeed = 0f,
+                    tracking = true,
+                )
+            } catch (e: NoSuchElementException) {
+                Log.d(logTag, "No measurements recorded")
+            }
             startObserving(lifecycleOwner)
         }
         startClock()

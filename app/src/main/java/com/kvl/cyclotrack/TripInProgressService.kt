@@ -21,13 +21,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 @AndroidEntryPoint
 class TripInProgressService @Inject constructor() : LifecycleService() {
     private val logTag = "TripInProgressService"
-    var currentTripId: Long? = null
 
     @Inject
     lateinit var tripsRepository: TripsRepository
@@ -59,26 +56,26 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     //fun gpsEnabled() = gpsService.accessGranted
 
-    private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
+    private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
-        currentTripId?.let { id ->
-            lifecycleScope.launch {
-                measurementsRepository.insertMeasurements(Measurements(id,
-                    LocationData(newLocation),
-                    hrmSensor().value?.bpm,
-                    cadenceSensor().value,
-                    speedSensor().value))
-            }
+        lifecycleScope.launch {
+            measurementsRepository.insertMeasurements(Measurements(tripId,
+                LocationData(newLocation),
+                hrmSensor().value?.bpm,
+                cadenceSensor().value,
+                speedSensor().value))
         }
     }
 
-    private val sensorObserver: Observer<SensorModel> = Observer { newData ->
-        currentTripId?.let { id ->
-            lifecycleScope.launch {
-                sensorsRepository.insertMeasurements(id, newData)
-            }
+    private lateinit var thisGpsObserver: Observer<Location>
+
+    private fun sensorObserver(tripId: Long): Observer<SensorModel> = Observer { newData ->
+        lifecycleScope.launch {
+            sensorsRepository.insertMeasurements(tripId, newData)
         }
     }
+
+    private lateinit var thisSensorObserver: Observer<SensorModel>
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String {
@@ -92,7 +89,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         return channelId
     }
 
-    private fun startForegroundCompat() {
+    private fun startForegroundCompat(tripId: Long) {
         val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannel(
                 getString(R.string.notification_id_trip_in_progress),
@@ -105,10 +102,10 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         val pendingIntent = NavDeepLinkBuilder(this).apply {
             setGraph(R.navigation.cyclotrack_nav_graph)
             setDestination(R.id.TripInProgressFragment)
-            setArguments(Bundle().apply { putLong("tripId", currentTripId ?: 0) })
+            setArguments(Bundle().apply { putLong("tripId", tripId ?: 0) })
         }.createPendingIntent()
 
-        startForeground(currentTripId?.toInt() ?: 0,
+        startForeground(tripId.toInt(),
             NotificationCompat.Builder(this, channelId).apply {
                 priority = NotificationCompat.PRIORITY_MAX
                 setOngoing(true)
@@ -153,13 +150,13 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     private suspend fun start() {
         Log.d(logTag, "Start trip")
-        Log.d(logTag, "::start(); this=$this; tripId=$currentTripId")
         Log.d(logTag, "gpsService=$gpsService")
         Log.d(logTag, "bleService=$bleService")
         Log.d(logTag, "measurementsRepository=$measurementsRepository")
         Log.d(logTag, "tripsRepository=$tripsRepository")
+        var tripId: Long = -1
         lifecycleScope.launch(Dispatchers.IO) {
-            currentTripId = tripsRepository.createNewTrip().also { id ->
+            tripId = tripsRepository.createNewTrip().also { id ->
                 tripsRepository.updateBiometrics(
                     getCombinedBiometrics(id))
                 LocalBroadcastManager.getInstance(this@TripInProgressService)
@@ -171,15 +168,25 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             }
         }.join()
 
-        Log.d(logTag, "Start trip service for ID ${currentTripId}; this=$this")
-        gpsService.observe(this, gpsObserver)
-
-        if (BuildConfig.BUILD_TYPE != "prod") {
-            onboardSensors.observe(this, sensorObserver)
-        }
+        Log.d(logTag, "Start trip service for ID ${tripId}; this=$this")
+        startObserving(tripId)
 
         //startClock()
-        startForegroundCompat()
+        startForegroundCompat(tripId)
+    }
+
+    private fun startObserving(tripId: Long) {
+        if (!::thisGpsObserver.isInitialized || !gpsService.hasObservers()) {
+            thisGpsObserver = gpsObserver(tripId)
+            gpsService.observe(this, thisGpsObserver)
+        }
+
+        if (BuildConfig.BUILD_TYPE != "prod") {
+            if (!::thisSensorObserver.isInitialized || !onboardSensors.hasObservers()) {
+                thisSensorObserver = sensorObserver(tripId)
+                onboardSensors.observe(this, thisSensorObserver)
+            }
+        }
     }
 
     private fun pause(tripId: Long) {
@@ -196,6 +203,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             timeStateRepository.appendTimeState(TimeState(tripId = tripId,
                 state = TimeStateEnum.RESUME))
         }
+        startObserving(tripId)
     }
 
     private fun end(tripId: Long) {
@@ -204,12 +212,15 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             lifecycle.coroutineScope.launch {
                 timeStateRepository.appendTimeState(TimeState(tripId = id,
                     state = TimeStateEnum.STOP))
+                tripsRepository.endTrip(id)
+            }
+            if (::thisGpsObserver.isInitialized) {
+                gpsService.removeObserver(thisGpsObserver)
+            }
+            if (::thisSensorObserver.isInitialized) {
+                onboardSensors.removeObserver(thisSensorObserver)
             }
         }
-        //TODO: I DO NOT SEEM TO GET THE SAME SERVICE OBJECT ON REENTRY
-        currentTripId = null
-        gpsService.removeObserver(gpsObserver)
-        onboardSensors.removeObserver(sensorObserver)
         bleService.disconnect()
         gpsService.stopListening()
         stopSelf()
@@ -235,7 +246,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(logTag, "::onCreate; this=$this; tripId=$currentTripId")
+        Log.d(logTag, "::onCreate; this=$this")
         Log.d(logTag, "gpsService=$gpsService")
         Log.d(logTag, "bleService=$bleService")
         Log.d(logTag, "measurementsRepository=$measurementsRepository")
