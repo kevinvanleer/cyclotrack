@@ -10,7 +10,6 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.util.*
@@ -38,13 +37,14 @@ class TripInProgressViewModel @Inject constructor(
     private var userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
     private var _autoCircumference: Float? = null
 
+    suspend fun getNewestTrip() = tripsRepository.getNewest()
+    
     val autoCircumference: Float?
         get() = _autoCircumference
     val circumference: Float?
         get() = _autoCircumference ?: userCircumference
 
     private var accumulatedDuration = 0.0
-    var tripId: Long? = null
     private var startTime = Double.NaN
     private var lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
     private var measuringCircumference = false
@@ -128,6 +128,8 @@ class TripInProgressViewModel @Inject constructor(
     fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
 
     private fun setTripProgress(new: Measurements) {
+        //TODO: Move dB mutations to trip service
+        val tripId = new.tripId
         val old = _currentProgress.value
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
@@ -365,16 +367,15 @@ class TripInProgressViewModel @Inject constructor(
     private fun getDuration() =
         if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
-    fun startObserving(lifecycleOwner: LifecycleOwner) {
-        if (tripId != null) {
-            Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
-            getLatest().observe(lifecycleOwner, newMeasurementsObserver)
-            timeStateRepository.observeLatest(tripId!!)
-                .observe(lifecycleOwner, currentTimeStateObserver)
-            timeStateRepository.observeTimeStates(tripId!!)
-                .observe(lifecycleOwner, accumulateDurationObserver)
-            splitRepository.observeLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
-        }
+    fun startObserving(tripId: Long, lifecycleOwner: LifecycleOwner) {
+        Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
+        measurementsRepository.observeLatest(tripId)
+            .observe(lifecycleOwner, newMeasurementsObserver)
+        timeStateRepository.observeLatest(tripId)
+            .observe(lifecycleOwner, currentTimeStateObserver)
+        timeStateRepository.observeTimeStates(tripId)
+            .observe(lifecycleOwner, accumulateDurationObserver)
+        splitRepository.observeLastSplit(tripId).observe(lifecycleOwner, lastSplitObserver)
     }
 
     suspend fun getCombinedBiometrics(id: Long): Biometrics {
@@ -408,9 +409,8 @@ class TripInProgressViewModel @Inject constructor(
         return biometrics
     }
 
-    fun startTrip(newTripId: Long, lifecycleOwner: LifecycleOwner) {
-        tripId = newTripId
-        startObserving(lifecycleOwner)
+    fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
+        startObserving(tripId, lifecycleOwner)
         startClock()
     }
 
@@ -426,7 +426,6 @@ class TripInProgressViewModel @Inject constructor(
 
     fun resumeTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         Log.d(logTag, "Resuming trip $tripId")
-        this.tripId = tripId
         coroutineScope.launch {
             try {
                 val tripState = tripsRepository.get(tripId)
@@ -451,21 +450,22 @@ class TripInProgressViewModel @Inject constructor(
             } catch (e: NoSuchElementException) {
                 Log.d(logTag, "No measurements recorded")
             }
-            startObserving(lifecycleOwner)
+            startObserving(tripId, lifecycleOwner)
         }
         startClock()
     }
 
-    fun getLatest(): LiveData<Measurements> {
+    /*
+    fun getLatest(tripId: Long): LiveData<Measurements> {
         if (tripId == null) throw UninitializedPropertyAccessException()
         return measurementsRepository.observeLatest(tripId!!)
-    }
+    }*/
 
     private fun cleanup() {
         clockTick.cancel()
     }
 
-    fun endTrip() {
+    /*fun endTrip() {
         if (tripId != null && currentState != TimeStateEnum.STOP) {
             val old = _currentProgress.value
             val oldDistance: Double = old?.distance ?: 0.0
@@ -484,7 +484,7 @@ class TripInProgressViewModel @Inject constructor(
                     tripId = tripId!!))
             }
         }
-    }
+    }*/
 
     override fun onCleared() {
         Log.d(logTag, "Called onCleared")

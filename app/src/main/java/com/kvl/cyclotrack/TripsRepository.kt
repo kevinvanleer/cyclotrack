@@ -12,6 +12,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         return tripDao.load(id)
     }
 
+    suspend fun getNewest(): Trip = tripDao.getNewestTrip()
+
     fun observeAll(): LiveData<Array<Trip>> {
         return tripDao.susbscribeAll()
     }

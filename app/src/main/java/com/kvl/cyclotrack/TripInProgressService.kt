@@ -102,7 +102,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         val pendingIntent = NavDeepLinkBuilder(this).apply {
             setGraph(R.navigation.cyclotrack_nav_graph)
             setDestination(R.id.TripInProgressFragment)
-            setArguments(Bundle().apply { putLong("tripId", tripId ?: 0) })
+            setArguments(Bundle().apply { putLong("tripId", tripId) })
         }.createPendingIntent()
 
         startForeground(tripId.toInt(),
@@ -171,7 +171,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         Log.d(logTag, "Start trip service for ID ${tripId}; this=$this")
         startObserving(tripId)
 
-        //startClock()
         startForegroundCompat(tripId)
     }
 

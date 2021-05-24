@@ -15,20 +15,21 @@ import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
-import javax.inject.Inject
 
 fun bleFeatureFlag() = true
 
 @AndroidEntryPoint
 class TripInProgressFragment :
     Fragment(), View.OnTouchListener {
-    val logTag = "DASHBOARD_FRAGMENT"
+    val logTag = "TripInProgressFragment"
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.trip_in_progress_graph) {
         defaultViewModelProviderFactory
     }
@@ -39,9 +40,6 @@ class TripInProgressFragment :
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
     private val lowBatteryThreshold = 15
-
-    @Inject
-    lateinit var tipService: TripInProgressService
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -185,13 +183,15 @@ class TripInProgressFragment :
             this.action = getString(R.string.action_stop_trip_service)
             this.putExtra("tripId", tripId)
         })
-        //tipService.currentTripId = null
     }
 
     private fun handleTimeStateChanges(tripId: Long) =
         viewModel.currentTimeState(tripId).observe(viewLifecycleOwner, { currentState ->
             currentState?.let {
                 Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
+                pauseButton.setOnClickListener(pauseTripListener(tripId))
+                resumeButton.setOnClickListener(resumeTripListener(tripId))
+                stopButton.setOnClickListener(stopTripListener(tripId))
                 if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
                     view?.doOnPreDraw { hideResumeStop() }
                     view?.doOnPreDraw { hidePause() }
@@ -212,8 +212,6 @@ class TripInProgressFragment :
             intent?.getLongExtra("tripId", -1)?.takeIf { it >= 0 }?.let { tripId ->
                 handleTimeStateChanges(tripId)
                 viewModel.startTrip(tripId, viewLifecycleOwner)
-                //HACK: I want to make th go away
-                //tipService.currentTripId = tripId
             }
         }
     }
@@ -222,38 +220,30 @@ class TripInProgressFragment :
         if (!gpsEnabled) {
             turnOnGps()
         } else {
-            /*viewModel.startTrip(viewLifecycleOwner).let { liveData ->
-                liveData.observeForever(object : Observer<Long> {
-                    override fun onChanged(tripId: Long) {
-                        liveData.removeObserver(this)
-                    }
-                })
-            }*/
             startTrip()
             LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
                 newTripBroadcastReceiver,
                 IntentFilter(getString(R.string.intent_action_tripId_created)))
             hidePause()
-            pauseButton.setOnClickListener(null)
             pauseButton.text = getString(R.string.pause_label)
-            pauseButton.setOnClickListener(pauseTripListener)
         }
     }
 
-    private val pauseTripListener: OnClickListener = OnClickListener {
-        pauseTrip(viewModel.tripId!!)
+    private fun pauseTripListener(tripId: Long): OnClickListener = OnClickListener {
+        pauseTrip(tripId)
         hidePause()
         slideInResumeStop()
     }
 
-    private val resumeTripListener: OnClickListener = OnClickListener {
-        resumeTrip(viewModel.tripId!!)
+    private fun resumeTripListener(tripId: Long): OnClickListener = OnClickListener {
+        resumeTrip(tripId)
         slideOutResumeStop()
     }
-    private val stopTripListener: OnClickListener = OnClickListener {
-        endTrip(viewModel.tripId!!)
+
+    private fun stopTripListener(tripId: Long): OnClickListener = OnClickListener {
+        endTrip(tripId)
         findNavController()
-            .navigate(TripInProgressFragmentDirections.actionFinishTrip(viewModel.tripId!!))
+            .navigate(TripInProgressFragmentDirections.actionFinishTrip(tripId))
     }
 
     override fun onDestroy() {
@@ -271,13 +261,10 @@ class TripInProgressFragment :
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
 
-        arguments?.getLong("tripId", -1L)?.takeIf { it != -1L }?.let { tripId ->
-            Log.d(logTag, "Received trip ID argument $tripId")
-            Log.d(logTag, "Resuming trip $tripId")
-            handleTimeStateChanges(tripId)
-            viewModel.resumeTrip(tripId, viewLifecycleOwner)
-            //tipService.currentTripId = tripId
-        }
+        pauseButton = view.findViewById(R.id.pause_button)
+        resumeButton = view.findViewById(R.id.resume_button)
+        stopButton = view.findViewById(R.id.stop_button)
+        clockView = view.findViewById(R.id.textview_time)
 
         val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
         val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)
@@ -293,15 +280,6 @@ class TripInProgressFragment :
             trackingImage.visibility = View.GONE
             accuracyTextView.visibility = View.GONE
         }
-
-        pauseButton = view.findViewById(R.id.pause_button)
-        resumeButton = view.findViewById(R.id.resume_button)
-        stopButton = view.findViewById(R.id.stop_button)
-        clockView = view.findViewById(R.id.textview_time)
-
-        pauseButton.setOnClickListener(pauseTripListener)
-        resumeButton.setOnClickListener(resumeTripListener)
-        stopButton.setOnClickListener(stopTripListener)
 
         speedTextView.label =
             "SPLIT ${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
@@ -326,7 +304,6 @@ class TripInProgressFragment :
         isTimeTickRegistered = true
 
         view.setOnTouchListener(this)
-        Log.d(logTag, "view created")
         viewModel.currentProgress.observe(viewLifecycleOwner, {
             Log.d(logTag, "Location observer detected change")
             val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
@@ -443,24 +420,21 @@ class TripInProgressFragment :
 
     override fun onResume() {
         super.onResume()
-        viewModel.startObserving(viewLifecycleOwner)
         Log.d(logTag, "Called onResume: currentState = ${viewModel.currentState}")
-        Log.d(logTag, "Called onResume: tipService = $tipService")
 
-        if (viewModel.tripId == null) {
-            Log.d(logTag, "onResume: Trip null")
-            view?.doOnPreDraw { hideResumeStop() }
-            pauseButton.setOnClickListener(startTripListener)
-            pauseButton.text = getString(R.string.start_label)
-        } else {
-            Log.d(logTag, "onResume: use observer")
-            handleTimeStateChanges(viewModel.tripId!!)
+        view?.doOnPreDraw { hideResumeStop() }
+        pauseButton.setOnClickListener(startTripListener)
+        pauseButton.text = getString(R.string.start_label)
+
+        arguments?.getLong("tripId", -1L)?.takeIf { it != -1L }?.let { tripId ->
+            Log.d(logTag, "Received trip ID argument $tripId")
+            Log.d(logTag, "Resuming trip $tripId")
+            handleTimeStateChanges(tripId)
+            viewModel.resumeTrip(tripId, viewLifecycleOwner)
         }
     }
 
     private fun updateClock() {
-        Log.d(logTag,
-            "updateClock: tripId = ${viewModel.tripId}")
         var hour = Calendar.getInstance().get(Calendar.HOUR)
         if (hour == 0) hour = 12
         val time = String.format("%d:%02d",
@@ -475,16 +449,18 @@ class TripInProgressFragment :
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<StopTripServiceWorker>().build())
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         Log.d(logTag, "onDestroyView")
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
         LocalBroadcastManager.getInstance(requireContext())
             .unregisterReceiver(newTripBroadcastReceiver)
-        if (viewModel.tripId == null) requireActivity().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
-            this.action = getString(R.string.action_stop_trip_service)
-        })
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {

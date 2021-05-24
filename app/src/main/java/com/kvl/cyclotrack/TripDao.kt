@@ -80,6 +80,9 @@ interface TripDao {
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun subscribeRealTrips(): LiveData<Array<Trip>>
 
+    @Query("SELECT * from trip WHERE id = (SELECT max(id) FROM trip)")
+    suspend fun getNewestTrip(): Trip
+
     @Query("SELECT * from trip WHERE distance < 1 OR duration < 60")
     suspend fun getCleanupTrips(): Array<Trip>
 
