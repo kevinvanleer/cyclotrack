@@ -118,6 +118,13 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
     }
 }
 
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("UPDATE Trip SET inProgress = 0 WHERE inProgress = 1")
+        database.execSQL("INSERT INTO `TimeState` (`tripId`, `state`, `timestamp`, `originalTripId`) SELECT `tripId`, 3, `timestamp`+1, `originalTripId` FROM TimeState GROUP BY `tripId` HAVING max(timestamp) and `state` != 3")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -140,6 +147,7 @@ object TripsDatabaseModule {
                 MIGRATION_11_12,
                 MIGRATION_12_13,
                 MIGRATION_13_14,
+                MIGRATION_14_15,
             ).build()
 
     @Provides
