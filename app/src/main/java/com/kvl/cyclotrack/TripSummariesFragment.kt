@@ -101,10 +101,10 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
     }
 
-    private fun handleFabClick(trip: Trip): View.OnClickListener = View.OnClickListener {
+    private fun handleFabClick(trip: Trip?): View.OnClickListener = View.OnClickListener {
         // TODO: Multiple touches causes fatal exception
         try {
-            val tripId = trip.id.takeIf { trip.inProgress }
+            val tripId = trip?.id.takeIf { trip?.inProgress ?: false }
             when (PackageManager.PERMISSION_GRANTED) {
                 ContextCompat.checkSelfPermission(
                     requireContext(),
@@ -170,7 +170,11 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             view.findViewById<FloatingActionButton>(R.id.fab).apply {
                 isEnabled = true
                 visibility = View.VISIBLE
-                setOnClickListener(handleFabClick(trips[0]))
+                if (trips.isNotEmpty()) {
+                    setOnClickListener(handleFabClick(trips.first()))
+                } else {
+                    setOnClickListener(handleFabClick(null))
+                }
             }
         })
         noBackgroundLocationDialog = activity?.let {
