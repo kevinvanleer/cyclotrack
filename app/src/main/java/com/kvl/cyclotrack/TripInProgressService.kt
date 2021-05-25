@@ -174,6 +174,23 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         startForegroundCompat(tripId)
     }
 
+    private fun restart(tripId: Long) {
+        Log.d(logTag, "Restart trip")
+        Log.d(logTag, "gpsService=$gpsService")
+        Log.d(logTag, "bleService=$bleService")
+        Log.d(logTag, "measurementsRepository=$measurementsRepository")
+        Log.d(logTag, "tripsRepository=$tripsRepository")
+        /*lifecycleScope.launch(Dispatchers.IO) {
+            timeStateRepository.appendTimeState(TimeState(tripId, TimeStateEnum.RESUME))
+            Log.d(logTag, "restart trip with id ${tripId}")
+        }*/
+
+        Log.d(logTag, "Restart trip service for ID ${tripId}; this=$this")
+        startObserving(tripId)
+
+        startForegroundCompat(tripId)
+    }
+
     private fun startObserving(tripId: Long) {
         if (!::thisGpsObserver.isInitialized || !gpsService.hasObservers()) {
             thisGpsObserver = gpsObserver(tripId)
@@ -225,12 +242,23 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         stopSelf()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
                 getString(R.string.action_initialize_trip_service) -> Log.d(logTag,
                     "Initialize trip service")
-                getString(R.string.action_start_trip_service) -> lifecycleScope.launch { start() }
+                getString(R.string.action_start_trip_service) -> {
+
+                    when (val tripId = it.getLongExtra("tripId", -1)) {
+                        -1L -> lifecycleScope.launch { start() }
+                        else -> restart(tripId)
+                    }
+                }
                 getString(R.string.action_pause_trip_service) ->
                     pause(it.getLongExtra("tripId", -1))
                 getString(R.string.action_resume_trip_service) ->

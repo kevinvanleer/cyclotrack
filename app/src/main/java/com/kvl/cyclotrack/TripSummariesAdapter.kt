@@ -49,8 +49,9 @@ class TripSummariesAdapter(
 
     override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
         val tripId = trips[position].id ?: 0L
+        val tripInProgress = trips[position].inProgress
 
-        buildView(tripId, holder, position)
+        buildView(holder, position)
 
         holder.tripSummaryView.setOnClickListener { view ->
             if (multiSelectMode) {
@@ -62,8 +63,16 @@ class TripSummariesAdapter(
                 }
             } else {
                 try {
-                    view.findNavController()
-                        .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+                    if (tripInProgress) {
+                        view.findNavController().navigate(R.id.action_start_trip,
+                            Bundle().apply {
+                                Log.d(logTag, "Start dashboard with trip ${tripId}")
+                                putLong("tripId", tripId)
+                            })
+                    } else {
+                        view.findNavController()
+                            .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+                    }
                 } catch (e: IllegalArgumentException) {
                     Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
                 }
@@ -82,10 +91,59 @@ class TripSummariesAdapter(
     }
 
     private fun buildView(
-        tripId: Long,
         holder: TripSummaryViewHolder,
         position: Int,
     ) {
+        when (trips[position].inProgress) {
+            true -> buildInProgressView(holder, position)
+            else -> buildFinishedView(holder, position)
+        }
+    }
+
+    private fun buildInProgressView(
+        holder: TripSummaryViewHolder,
+        position: Int,
+    ) {
+        val tripId = trips[position].id ?: 0L
+
+        Log.d(logTag, "Building in progress view for ${tripId}:${position}")
+        holder.tripSummaryView.tripId = tripId
+        holder.tripSummaryView.setTripInProgress(trips[position].duration ?: 0.0,
+            trips[position].distance ?: 0.0)
+        holder.tripSummaryView.onResumeMap()
+        holder.tripSummaryView.clearMap()
+        holder.tripSummaryView.showSelectionIndicator = multiSelectMode
+        holder.tripSummaryView.isSelected =
+            multiSelectMode && selectedTrips.contains(tripId)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            Log.d(logTag, "Updating view for ${tripId}:${position}")
+            val measurements = viewModel.getTripMeasurements(tripId)
+            val timeStates = viewModel.getTripTimeStates(tripId)
+            Log.d(logTag, "Retrieved data for ${tripId}:${position}")
+            val mapData = plotPath(measurements, timeStates)
+            Log.d(logTag, "Plotted path for ${tripId}:${position}")
+            if (mapData.bounds != null) {
+                mapData.paths.forEach { path ->
+                    path.startCap(RoundCap())
+                    path.endCap(RoundCap())
+                    path.width(5f)
+                    path.color(ResourcesCompat.getColor(context.resources,
+                        R.color.colorAccent,
+                        null))
+                    holder.tripSummaryView.drawPath(path, mapData.bounds)
+                }
+            }
+            Log.d(logTag, "Updated view for ${tripId}:${position}")
+        }
+    }
+
+    private fun buildFinishedView(
+        holder: TripSummaryViewHolder,
+        position: Int,
+    ) {
+        val tripId = trips[position].id ?: 0L
+
         Log.d(logTag, "Building view for ${tripId}:${position}")
         holder.tripSummaryView.tripId = tripId
         holder.tripSummaryView.title = trips[position].name ?: "Unnamed trip"

@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.app.ActivityManager
 import android.content.*
 import android.os.Bundle
 import android.text.format.DateUtils
@@ -23,6 +24,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import dagger.hilt.android.AndroidEntryPoint
 import java.util.*
+
 
 fun bleFeatureFlag() = true
 
@@ -69,10 +71,11 @@ class TripInProgressFragment :
             }
         }
 
+        /*
         requireActivity().startService(Intent(requireContext(),
             TripInProgressService::class.java).apply {
             this.action = getString(R.string.action_initialize_trip_service)
-        })
+        })*/
 
         return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
     }
@@ -418,6 +421,18 @@ class TripInProgressFragment :
         }
     }
 
+    private fun isMyServiceRunning(serviceClass: Class<*>, context: Context): Boolean {
+        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                Log.i("Service already", "running")
+                return true
+            }
+        }
+        Log.i("Service not", "running")
+        return false
+    }
+
     override fun onResume() {
         super.onResume()
         Log.d(logTag, "Called onResume: currentState = ${viewModel.currentState}")
@@ -426,11 +441,29 @@ class TripInProgressFragment :
         pauseButton.setOnClickListener(startTripListener)
         pauseButton.text = getString(R.string.start_label)
 
-        arguments?.getLong("tripId", -1L)?.takeIf { it != -1L }?.let { tripId ->
-            Log.d(logTag, "Received trip ID argument $tripId")
-            Log.d(logTag, "Resuming trip $tripId")
-            handleTimeStateChanges(tripId)
-            viewModel.resumeTrip(tripId, viewLifecycleOwner)
+        when (val tripId = arguments?.getLong("tripId", -1L) ?: -1L) {
+            -1L -> requireActivity().startService(Intent(requireContext(),
+                TripInProgressService::class.java).apply {
+                this.action = getString(R.string.action_initialize_trip_service)
+            })
+            else -> {
+                Log.d(logTag, "Received trip ID argument $tripId")
+                Log.d(logTag, "Resuming trip $tripId")
+                handleTimeStateChanges(tripId)
+                viewModel.resumeTrip(tripId, viewLifecycleOwner)
+                if (!isMyServiceRunning(TripInProgressService::class.java, requireContext())) {
+                    requireActivity().startService(Intent(requireContext(),
+                        TripInProgressService::class.java).apply {
+                        this.action = getString(R.string.action_start_trip_service)
+                        this.putExtra("tripId", tripId)
+                    })
+                } else {
+                    requireActivity().startService(Intent(requireContext(),
+                        TripInProgressService::class.java).apply {
+                        this.action = getString(R.string.action_initialize_trip_service)
+                    })
+                }
+            }
         }
     }
 

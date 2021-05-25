@@ -160,7 +160,7 @@ class TripInProgressViewModel @Inject constructor(
                         distance = newDistance - lastSplit.totalDistance,
                         totalDuration = newDuration,
                         totalDistance = newDistance,
-                        tripId = tripId!!))
+                        tripId = tripId))
                 }
             }
 
@@ -182,7 +182,7 @@ class TripInProgressViewModel @Inject constructor(
                 max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
             coroutineScope.launch {
-                if (tripId != null) tripsRepository.updateTripStats(TripStats(tripId!!,
+                tripsRepository.updateTripStats(TripStats(tripId,
                     newDistance,
                     newDuration,
                     (newDistance / newDuration).toFloat(),
