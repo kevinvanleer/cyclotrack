@@ -54,10 +54,8 @@ class SetTripProgressTestPowermock {
             mockMeasurementsRepository,
             mockTimeStateRepository,
             mockSplitRepository,
-            mockOnboardSensorsRepository,
             mockGpsService,
             mockBleService,
-            mockSensorLiveData,
             mockSharedPreferences
         )
 
