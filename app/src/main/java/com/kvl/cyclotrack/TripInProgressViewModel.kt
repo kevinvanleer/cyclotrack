@@ -36,8 +36,6 @@ class TripInProgressViewModel @Inject constructor(
     private var userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
     private var _autoCircumference: Float? = null
 
-    suspend fun getNewestTrip() = tripsRepository.getNewest()
-
     val autoCircumference: Float?
         get() = _autoCircumference
     val circumference: Float?
@@ -45,7 +43,6 @@ class TripInProgressViewModel @Inject constructor(
 
     private var accumulatedDuration = 0.0
     private var startTime = Double.NaN
-    private var _lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
     private var _lastSplitLive = MutableLiveData<Split>()
     private var measuringCircumference = false
     private var initialMeasureCircRevs = 0
@@ -115,7 +112,6 @@ class TripInProgressViewModel @Inject constructor(
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
         if (newSplit != null) {
-            _lastSplit = newSplit
             _lastSplitLive.value = newSplit
         }
     }
@@ -154,21 +150,6 @@ class TripInProgressViewModel @Inject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            /*
-            if (crossedSplitThreshold(sharedPreferences,
-                    newDistance,
-                    old?.distance ?: Double.MAX_VALUE)
-            ) {
-                coroutineScope.launch {
-                    splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
-                        duration = newDuration - lastSplit.totalDuration,
-                        distance = newDistance - lastSplit.totalDistance,
-                        totalDuration = newDuration,
-                        totalDistance = newDistance,
-                        tripId = tripId))
-                }
-            }*/
-
             val newSlope = calculateSlope(
                 newSpeed,
                 distanceDelta,
@@ -186,16 +167,6 @@ class TripInProgressViewModel @Inject constructor(
             Log.d("TIP_MAX_ACCELERATION",
                 max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
-            /*
-            coroutineScope.launch {
-                tripsRepository.updateTripStats(TripStats(tripId,
-                    newDistance,
-                    newDuration,
-                    (newDistance / newDuration).toFloat(),
-                    userCircumference,
-                    _autoCircumference))
-            }*/
-
             _currentProgress.value =
                 TripProgress(measurements = new,
                     speed = newSpeed,
@@ -209,7 +180,7 @@ class TripInProgressViewModel @Inject constructor(
                     duration = newDuration,
                     accuracy = new.accuracy,
                     bearing = new.bearing,
-                    splitSpeed = (_lastSplit.distance / _lastSplit.duration.coerceAtLeast(0.0001)).toFloat(),
+                    splitSpeed = -33.33f,
                     tracking = true)
 
         } else {
@@ -224,7 +195,7 @@ class TripInProgressViewModel @Inject constructor(
                         maxAcceleration = 0f,
                         distance = 0.0,
                         slope = 0.0,
-                        splitSpeed = 0f,
+                        splitSpeed = -33.33f,
                         measurements = null,
                         accuracy = new.accuracy,
                         bearing = new.bearing,
@@ -390,39 +361,6 @@ class TripInProgressViewModel @Inject constructor(
         splitRepository.observeLastSplit(tripId).observe(lifecycleOwner, lastSplitObserver)
     }
 
-    /*
-    suspend fun getCombinedBiometrics(id: Long): Biometrics {
-        var biometrics = getBiometrics(id, sharedPreferences)
-        Log.d(logTag, "biometrics prefs: ${biometrics}")
-
-        viewModelScope.launch {
-            val googleFitApiService = GoogleFitApiService.instance
-            if (googleFitApiService.hasPermission()) {
-                val weightDeferred = async { googleFitApiService.getLatestWeight() }
-                val heightDeferred = async { googleFitApiService.getLatestHeight() }
-                val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate() }
-
-                weightDeferred.await().let {
-                    Log.d(logTag, "google weight: ${it}")
-                    biometrics = biometrics.copy(userWeight = it)
-                }
-                heightDeferred.await().let {
-                    Log.d(logTag, "google height: ${it}")
-                    biometrics = biometrics.copy(userHeight = it)
-                }
-                hrDeferred.await().let {
-                    Log.d(logTag, "google resting hr: ${it}")
-                    biometrics = biometrics.copy(userRestingHeartRate = it)
-                }
-                Log.d(logTag, "biometrics google: ${biometrics}")
-            }
-        }.join()
-
-        Log.d(logTag, "biometrics: ${biometrics}")
-        return biometrics
-    }
-    */
-
     fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         startObserving(tripId, lifecycleOwner)
         startClock()
@@ -468,12 +406,6 @@ class TripInProgressViewModel @Inject constructor(
         }
         startClock()
     }
-
-    /*
-    fun getLatest(tripId: Long): LiveData<Measurements> {
-        if (tripId == null) throw UninitializedPropertyAccessException()
-        return measurementsRepository.observeLatest(tripId!!)
-    }*/
 
     private fun cleanup() {
         clockTick.cancel()
