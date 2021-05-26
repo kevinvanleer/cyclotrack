@@ -18,7 +18,20 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-private fun getDistance(
+fun getDistance(
+    curr: Measurements,
+    prev: Measurements,
+): Float {
+    val distanceArray = floatArrayOf(0f)
+    Location.distanceBetween(curr.latitude,
+        curr.longitude,
+        prev.latitude,
+        prev.longitude,
+        distanceArray)
+    return distanceArray[0]
+}
+
+fun getDistance(
     curr: CriticalMeasurements,
     prev: CriticalMeasurements,
 ): Float {
@@ -155,9 +168,8 @@ fun accumulatedTime(timeStates: Array<TimeState>?): Double {
     return sum * 1e-3
 }
 
-fun getTripIntervals(
+fun getTripInProgressIntervals(
     timeStates: Array<TimeState>?,
-    measurements: Array<CriticalMeasurements>? = null,
 ): Array<LongRange> {
     val intervals = ArrayList<LongRange>()
     var intervalStart = -1L
@@ -169,14 +181,44 @@ fun getTripIntervals(
             intervalStart = -1L
         }
     }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && !measurements.isNullOrEmpty()) {
-        if (timeStates.last().timestamp < measurements.last().time) {
-            intervals.add(LongRange(timeStates.last().timestamp, measurements.last().time))
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state)) {
+        intervals.add(LongRange(timeStates.last().timestamp, System.currentTimeMillis()))
+    }
+    return intervals.toTypedArray()
+}
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    measurements: Array<CriticalMeasurements>? = null,
+): Array<LongRange> =
+    when (measurements.isNullOrEmpty()) {
+        true -> getTripIntervals(timeStates, null, null)
+        false -> getTripIntervals(timeStates, measurements?.first(), measurements?.last())
+    }
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    firstMeasurement: CriticalMeasurements? = null,
+    lastMeasurement: CriticalMeasurements? = null,
+): Array<LongRange> {
+    val intervals = ArrayList<LongRange>()
+    var intervalStart = -1L
+    timeStates?.forEach { timeState ->
+        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
+            timeState.timestamp
+        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervalStart = -1L
         }
     }
-    return if (intervals.isEmpty() and !measurements.isNullOrEmpty()) {
-        arrayOf(LongRange(measurements!!.first().time,
-            measurements.last().time))
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
+        if (timeStates.last().timestamp < lastMeasurement.time) {
+            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.time))
+        }
+    }
+    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
+        arrayOf(LongRange(firstMeasurement.time,
+            lastMeasurement.time))
     } else intervals.toTypedArray()
 }
 

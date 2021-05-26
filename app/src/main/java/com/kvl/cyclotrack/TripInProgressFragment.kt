@@ -333,8 +333,6 @@ class TripInProgressFragment :
                     viewModel.autoCircumference,
                     it.bearing.toInt())
             }
-            speedTextView.value =
-                String.format("%.1f", getUserSpeed(requireContext(), it.splitSpeed.toDouble()))
         })
         /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
             override fun onChanged(it: SensorModel) {
@@ -344,6 +342,13 @@ class TripInProgressFragment :
         })*/
         viewModel.currentTime.observe(viewLifecycleOwner, {
             durationTextView.value = DateUtils.formatElapsedTime((it).toLong())
+        })
+        viewModel.lastSplit.observe(viewLifecycleOwner, {
+            Log.d(logTag, "Observed last split change")
+            speedTextView.value =
+                String.format("%.1f",
+                    getUserSpeed(requireContext(),
+                        (it.distance / it.duration.coerceAtLeast(0.0001))))
         })
 
         viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->

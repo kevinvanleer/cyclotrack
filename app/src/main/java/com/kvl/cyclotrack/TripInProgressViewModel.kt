@@ -10,7 +10,6 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -38,7 +37,7 @@ class TripInProgressViewModel @Inject constructor(
     private var _autoCircumference: Float? = null
 
     suspend fun getNewestTrip() = tripsRepository.getNewest()
-    
+
     val autoCircumference: Float?
         get() = _autoCircumference
     val circumference: Float?
@@ -46,7 +45,8 @@ class TripInProgressViewModel @Inject constructor(
 
     private var accumulatedDuration = 0.0
     private var startTime = Double.NaN
-    private var lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
+    private var _lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
+    private var _lastSplitLive = MutableLiveData<Split>()
     private var measuringCircumference = false
     private var initialMeasureCircRevs = 0
     private var initialMeasureCircDistance = 0.0
@@ -115,7 +115,8 @@ class TripInProgressViewModel @Inject constructor(
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
         if (newSplit != null) {
-            lastSplit = newSplit
+            _lastSplit = newSplit
+            _lastSplitLive.value = newSplit
         }
     }
 
@@ -124,6 +125,9 @@ class TripInProgressViewModel @Inject constructor(
 
     val currentTime: LiveData<Double>
         get() = _currentTime
+
+    val lastSplit: LiveData<Split>
+        get() = _lastSplitLive
 
     fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
 
@@ -140,7 +144,7 @@ class TripInProgressViewModel @Inject constructor(
         val durationDelta = getDurationDelta(newDuration, old)
 
         old?.measurements?.speedRevolutions?.let { revs ->
-            calculateWheelCircumference(old.measurements, newDistance,
+            calculateWheelCircumference(tripId, old.measurements, newDistance,
                 revs)
         }
         if (accurateEnough) {
@@ -150,6 +154,7 @@ class TripInProgressViewModel @Inject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
+            /*
             if (crossedSplitThreshold(sharedPreferences,
                     newDistance,
                     old?.distance ?: Double.MAX_VALUE)
@@ -162,7 +167,7 @@ class TripInProgressViewModel @Inject constructor(
                         totalDistance = newDistance,
                         tripId = tripId))
                 }
-            }
+            }*/
 
             val newSlope = calculateSlope(
                 newSpeed,
@@ -181,6 +186,7 @@ class TripInProgressViewModel @Inject constructor(
             Log.d("TIP_MAX_ACCELERATION",
                 max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
+            /*
             coroutineScope.launch {
                 tripsRepository.updateTripStats(TripStats(tripId,
                     newDistance,
@@ -188,7 +194,7 @@ class TripInProgressViewModel @Inject constructor(
                     (newDistance / newDuration).toFloat(),
                     userCircumference,
                     _autoCircumference))
-            }
+            }*/
 
             _currentProgress.value =
                 TripProgress(measurements = new,
@@ -203,7 +209,7 @@ class TripInProgressViewModel @Inject constructor(
                     duration = newDuration,
                     accuracy = new.accuracy,
                     bearing = new.bearing,
-                    splitSpeed = (lastSplit.distance / lastSplit.duration.coerceAtLeast(0.0001)).toFloat(),
+                    splitSpeed = (_lastSplit.distance / _lastSplit.duration.coerceAtLeast(0.0001)).toFloat(),
                     tracking = true)
 
         } else {
@@ -227,6 +233,7 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     fun calculateWheelCircumference(
+        tripId: Long,
         progress: Measurements,
         totalDistance: Double,
         speedRevolutions: Int,
@@ -255,6 +262,11 @@ class TripInProgressViewModel @Inject constructor(
                 _autoCircumference = (dist / revs).toFloat()
                 sharedPreferences.edit {
                     this.putFloat("auto_circumference", _autoCircumference!!.toFloat())
+                }
+                coroutineScope.launch {
+                    tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
+                        userWheelCircumference = userCircumference,
+                        autoWheelCircumference = _autoCircumference))
                 }
             }
         }
@@ -378,6 +390,7 @@ class TripInProgressViewModel @Inject constructor(
         splitRepository.observeLastSplit(tripId).observe(lifecycleOwner, lastSplitObserver)
     }
 
+    /*
     suspend fun getCombinedBiometrics(id: Long): Biometrics {
         var biometrics = getBiometrics(id, sharedPreferences)
         Log.d(logTag, "biometrics prefs: ${biometrics}")
@@ -408,6 +421,7 @@ class TripInProgressViewModel @Inject constructor(
         Log.d(logTag, "biometrics: ${biometrics}")
         return biometrics
     }
+    */
 
     fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         startObserving(tripId, lifecycleOwner)

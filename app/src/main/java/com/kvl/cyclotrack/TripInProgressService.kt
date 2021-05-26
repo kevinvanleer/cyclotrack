@@ -18,6 +18,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavDeepLinkBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,6 +26,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class TripInProgressService @Inject constructor() : LifecycleService() {
     private val logTag = "TripInProgressService"
+    private val accuracyThreshold = 7.5f
 
     @Inject
     lateinit var tripsRepository: TripsRepository
@@ -37,6 +39,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     @Inject
     lateinit var timeStateRepository: TimeStateRepository
+
+    @Inject
+    lateinit var splitRepository: SplitRepository
 
     @Inject
     lateinit var gpsService: GpsService
@@ -58,12 +63,66 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
+        val newMeasurement = Measurements(tripId,
+            LocationData(newLocation),
+            hrmSensor().value?.bpm,
+            cadenceSensor().value,
+            speedSensor().value)
         lifecycleScope.launch {
-            measurementsRepository.insertMeasurements(Measurements(tripId,
-                LocationData(newLocation),
-                hrmSensor().value?.bpm,
-                cadenceSensor().value,
-                speedSensor().value))
+            measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)
+                ?.let { lastMeasurement ->
+                    setTripProgress(lastMeasurement, newMeasurement, tripId)
+                }
+            measurementsRepository.insertMeasurements(newMeasurement)
+        }
+    }
+
+    private suspend fun setTripProgress(old: Measurements, new: Measurements, tripId: Long) {
+        val timeStates = timeStateRepository.getTimeStates(tripId)
+        val currentTimeState = timeStates.last()
+
+        if (currentTimeState.state == TimeStateEnum.RESUME || currentTimeState.state == TimeStateEnum.START) {
+            val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+            if (accurateEnough) {
+                val trip = tripsRepository.get(tripId)
+                val intervals = getTripInProgressIntervals(timeStates)
+                val duration = accumulateTripTime(intervals)
+                val distance = (trip.distance ?: 0.0) + getDistance(new, old)
+
+                tripsRepository.updateTripStats(
+                    TripStats(id = tripId,
+                        distance = distance,
+                        duration = duration,
+                        averageSpeed = (distance / duration).toFloat(),
+                        userWheelCircumference = trip.userWheelCircumference,
+                        autoWheelCircumference = trip.autoWheelCircumference))
+
+                if (crossedSplitThreshold(sharedPreferences,
+                        distance,
+                        trip.distance ?: Double.MAX_VALUE)
+                ) {
+                    try {
+                        val lastSplit = splitRepository.getTripSplits(tripId).last()
+                        splitRepository.addSplit(Split(
+                            timestamp = System.currentTimeMillis(),
+                            duration = duration - lastSplit.totalDuration,
+                            distance = distance - lastSplit.totalDistance,
+                            totalDuration = duration,
+                            totalDistance = distance,
+                            tripId = tripId
+                        ))
+                    } catch (e: NoSuchElementException) {
+                        splitRepository.addSplit(Split(
+                            timestamp = System.currentTimeMillis(),
+                            duration = duration,
+                            distance = distance,
+                            totalDuration = duration,
+                            totalDistance = distance,
+                            tripId = tripId
+                        ))
+                    }
+                }
+            }
         }
     }
 
@@ -222,23 +281,27 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         startObserving(tripId)
     }
 
-    private fun end(tripId: Long) {
+    private suspend fun end(tripId: Long) {
         Log.d(logTag, "Called end()")
+        var job: Job? = null
         tripId.takeIf { it >= 0 }?.let { id ->
-            lifecycle.coroutineScope.launch {
+            job = lifecycle.coroutineScope.launch {
                 timeStateRepository.appendTimeState(TimeState(tripId = id,
                     state = TimeStateEnum.STOP))
                 tripsRepository.endTrip(id)
             }
-            if (::thisGpsObserver.isInitialized) {
-                gpsService.removeObserver(thisGpsObserver)
-            }
-            if (::thisSensorObserver.isInitialized) {
-                onboardSensors.removeObserver(thisSensorObserver)
-            }
         }
+
+        if (::thisGpsObserver.isInitialized) {
+            gpsService.removeObserver(thisGpsObserver)
+        }
+        if (::thisSensorObserver.isInitialized) {
+            onboardSensors.removeObserver(thisSensorObserver)
+        }
+
         bleService.disconnect()
         gpsService.stopListening()
+        job?.join()
         stopSelf()
     }
 
@@ -263,8 +326,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
                     pause(it.getLongExtra("tripId", -1))
                 getString(R.string.action_resume_trip_service) ->
                     resume(it.getLongExtra("tripId", -1))
-                getString(R.string.action_stop_trip_service) ->
+                getString(R.string.action_stop_trip_service) -> lifecycleScope.launch {
                     end(it.getLongExtra("tripId", -1))
+                }
                 else -> Log.d(logTag, "Received intent ${intent}")
             }
         }

@@ -4,6 +4,9 @@ import javax.inject.Inject
 
 class MeasurementsRepository @Inject constructor(private val measurementsDao: MeasurementsDao) {
     suspend fun get(tripId: Long) = measurementsDao.load(tripId)
+    suspend fun getLatest(tripId: Long) = measurementsDao.loadLatest(tripId)
+    suspend fun getLatestAccurate(tripId: Long, accuracyThreshold: Float) =
+        measurementsDao.loadLatestAccurate(tripId, accuracyThreshold)
 
     fun observe(tripId: Long) = measurementsDao.subscribe(tripId)
 
