@@ -17,8 +17,9 @@ class GetGattUuidTest {
         Assert.assertThrows(NumberFormatException::class.java) {
             getGattUuid("zxcv")
         }
-        Assert.assertEquals(UUID.fromString("78912345-0000-1000-8000-00805f9b34fb"),
-            getGattUuid("12345678912345"))
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            getGattUuid("12345678912345")
+        }
     }
 
     @Test

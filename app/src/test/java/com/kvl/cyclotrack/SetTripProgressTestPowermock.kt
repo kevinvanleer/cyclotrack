@@ -133,7 +133,7 @@ class SetTripProgressTestPowermock {
             testLocationData.accuracy,
             10f,
             5f,
-            0f,
+            -33.33f,
             5f,
             0f,
             0f,
@@ -193,9 +193,6 @@ class SetTripProgressTestPowermock {
             TripInProgressViewModel::class.java.getDeclaredField("initialMeasureCircDistance")
         initCircDist.isAccessible = true
 
-        val privateTripId = TripInProgressViewModel::class.java.getDeclaredField("tripId")
-        privateTripId.isAccessible = true
-        privateTripId.set(viewModel, 1.toLong())
         val privateStartTime = getPrivateField(TripInProgressViewModel::class, "startTime")
         privateStartTime.setDouble(viewModel, System.currentTimeMillis() / 1e3 - 60)
         val privateCurrentState = getPrivateField(TripInProgressViewModel::class, "currentState")
