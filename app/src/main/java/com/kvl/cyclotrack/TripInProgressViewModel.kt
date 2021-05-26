@@ -350,7 +350,7 @@ class TripInProgressViewModel @Inject constructor(
     private fun getDuration() =
         if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
-    fun startObserving(tripId: Long, lifecycleOwner: LifecycleOwner) {
+    private fun startObserving(tripId: Long, lifecycleOwner: LifecycleOwner) {
         Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
         measurementsRepository.observeLatest(tripId)
             .observe(lifecycleOwner, newMeasurementsObserver)
