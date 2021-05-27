@@ -87,9 +87,18 @@ class TripInProgressFragment :
         super.onCreateOptionsMenu(menu, inflater)
     }
 
+    private var navigateToDebugView = navigateToDebugViewBuilder(-1L)
+    private fun navigateToDebugViewBuilder(tripId: Long): () -> Unit = {
+        findNavController().navigate(R.id.action_to_debug_view,
+            Bundle().apply {
+                Log.d(logTag, "Start dashboard with trip ${tripId}")
+                putLong("tripId", tripId)
+            })
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_item_show_details -> findNavController().navigate(R.id.action_to_debug_view)
+            R.id.menu_item_show_details -> navigateToDebugView()
             else -> super.onOptionsItemSelected(item)
         }
         return true
@@ -209,11 +218,17 @@ class TripInProgressFragment :
             }
         })
 
+    private fun initializeAfterTripCreated(tripId: Long) {
+        navigateToDebugView = navigateToDebugViewBuilder(tripId)
+        handleTimeStateChanges(tripId)
+    }
+
     private val newTripBroadcastReceiver = object :
         BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.getLongExtra("tripId", -1)?.takeIf { it >= 0 }?.let { tripId ->
-                handleTimeStateChanges(tripId)
+                //handleTimeStateChanges(tripId)
+                initializeAfterTripCreated(tripId)
                 viewModel.startTrip(tripId, viewLifecycleOwner)
             }
         }
@@ -454,7 +469,8 @@ class TripInProgressFragment :
             else -> {
                 Log.d(logTag, "Received trip ID argument $tripId")
                 Log.d(logTag, "Resuming trip $tripId")
-                handleTimeStateChanges(tripId)
+                //handleTimeStateChanges(tripId)
+                initializeAfterTripCreated(tripId)
                 viewModel.resumeTrip(tripId, viewLifecycleOwner)
                 if (!isMyServiceRunning(TripInProgressService::class.java, requireContext())) {
                     requireActivity().startService(Intent(requireContext(),

@@ -86,7 +86,9 @@ class AllDataFragment : Fragment() {
             }
         })
         view.findViewById<Button>(R.id.button_exit_all_data).setOnClickListener {
-            findNavController().navigate(R.id.action_back_to_dashboard)
+            findNavController().navigate(R.id.action_back_to_dashboard, Bundle().apply {
+                putLong("tripId", arguments?.getLong("tripId", -1L) ?: -1L)
+            })
         }
     }
 
