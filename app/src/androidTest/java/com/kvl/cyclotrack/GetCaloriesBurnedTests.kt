@@ -29,6 +29,6 @@ class GetCaloriesBurnedTests {
             this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_vo2max),
                 "50")
         }
-        assertEquals(600, getCaloriesBurned(testTrip, heartRate, testPrefs))
+        assertEquals(471, getCaloriesBurned(testTrip, heartRate, testPrefs))
     }
 }

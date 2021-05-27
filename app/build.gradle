@@ -60,6 +60,9 @@ android {
             signingConfig signingConfigs.Default
             debuggable true
         }
+        debug {
+            applicationIdSuffix '.debug'
+        }
         dev {
             debuggable true
             applicationIdSuffix '.dev'
@@ -136,6 +139,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.6'
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation group: "androidx.test", name: "rules", version: "$androidx_test"
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     testImplementation 'junit:junit:4.13.1',
