@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.MediatorLiveData
@@ -51,8 +52,8 @@ class TripDetailsViewModel @Inject constructor(
     private fun exportMeasurements() = measurementsRepository.observe(tripId)
     fun onboardSensors() = onboardSensorsRepository.observeDecimated(tripId)
 
-    suspend fun getCombinedBiometrics(timestamp: Long): Biometrics {
-        var biometrics = getBiometrics(0, sharedPreferences)
+    suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics {
+        var biometrics = getBiometrics(0, context)
         Log.d(logTag, "biometrics prefs: ${biometrics}")
 
         viewModelScope.launch {

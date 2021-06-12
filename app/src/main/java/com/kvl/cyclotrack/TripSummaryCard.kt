@@ -9,7 +9,6 @@ import android.util.Log
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
-import androidx.navigation.findNavController
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -32,6 +31,8 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
 
     var tripId: Long = 0L
     var showSelectionIndicator = false
+
+    private val logTag = "TripSummaryCard"
 
     override fun setSelected(selected: Boolean) {
         when (selected) {
@@ -90,6 +91,14 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
             }${getUserDistanceUnitShort(context)}  in  ${formatDuration(_duration)}"
     }
 
+    fun setTripInProgress(_duration: Double, _distance: Double) {
+        title = "Ride in progress"
+        date = "Tap to continue"
+        startTime = String.format("%.2f %s",
+            getUserDistance(context, _distance), getUserDistanceUnitShort(context))
+        duration = formatDuration(_duration)
+    }
+
     fun drawPath(polyline: PolylineOptions, latLngBound: LatLngBounds) {
         Log.d("TRIP_SUMMARY_CARD", "DRAW PATH")
         path = polyline
@@ -106,21 +115,21 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         durationView = findViewById((R.id.trip_summary_duration))
         mapView = findViewById(R.id.trip_summary_map)
         mapView.onCreate(null)
-        mapView.isClickable = false
 
         defaultBackgroundColor = cardBackgroundColor
 
+        val card = this
+        mapView.setOnClickListener {
+            Log.d(logTag, "MapView perform click")
+            card.performClick()
+        }
 
         mapView.getMapAsync {
             Log.d("TRIP_SUMMARY_CARD", "GOT MAP")
             map = it
             map.setOnMapClickListener {
-                try {
-                    mapView.findNavController()
-                        .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
-                } catch (e: IllegalArgumentException) {
-                    Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
-                }
+                Log.d(logTag, "Map perform click")
+                card.performClick()
             }
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
             map.uiSettings.setAllGesturesEnabled(false)

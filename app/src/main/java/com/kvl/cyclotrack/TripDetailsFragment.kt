@@ -833,13 +833,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val overview = pairs.second
                 Log.d(TAG, "Observed change to measurements and overview")
                 viewLifecycleOwner.lifecycleScope.launch {
-                    viewModel.getCombinedBiometrics(overview.timestamp).let { biometrics ->
-                        Log.d(TAG, "biometrics: ${biometrics}")
-                        if (biometrics.userWeight != null) {
-                            Log.d(TAG, "Calculating calories burned")
-                            getCaloriesBurned(biometrics, overview, measurements)
+                    viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
+                        .let { biometrics ->
+                            Log.d(TAG, "biometrics: ${biometrics}")
+                            if (biometrics.userWeight != null) {
+                                Log.d(TAG, "Calculating calories burned")
+                                getCaloriesBurned(biometrics, overview, measurements)
+                            }
                         }
-                    }
                 }
             })
     }

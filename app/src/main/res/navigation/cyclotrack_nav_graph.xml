@@ -5,6 +5,8 @@
     android:id="@+id/cyclotrack_nav_graph"
     app:startDestination="@id/TripSummariesFragment">
 
+    <include app:graph="@navigation/dashboard_nav_graph" />
+
     <fragment
         android:id="@+id/TripSummariesFragment"
         android:name="com.kvl.cyclotrack.TripSummariesFragment"
@@ -13,7 +15,7 @@
 
         <action
             android:id="@+id/action_start_trip"
-            app:destination="@id/trip_in_progress_graph" />
+            app:destination="@id/dashboard_nav_graph" />
         <action
             android:id="@+id/action_view_trip_details"
             app:destination="@id/TripDetailsFragment" />
@@ -71,33 +73,4 @@
         android:name="com.kvl.cyclotrack.BiometricsPreferenceFragment"
         android:label="Biometrics"
         tools:layout="@layout/biometrics_preference_fragment" />
-    <navigation
-        android:id="@+id/trip_in_progress_graph"
-        app:startDestination="@id/TripInProgressFragment">
-        <fragment
-            android:id="@+id/TripInProgressFragment"
-            android:name="com.kvl.cyclotrack.TripInProgressFragment"
-            android:label="Dashboard"
-            tools:layout="@layout/trip_in_progress_fragment">
-            <action
-                android:id="@+id/action_to_debug_view"
-                app:destination="@id/AllDataFragment" />
-            <action
-                android:id="@+id/action_finish_trip"
-                app:destination="@id/TripDetailsFragment"
-                app:launchSingleTop="true"
-                app:popUpTo="@id/TripSummariesFragment" />
-        </fragment>
-        <fragment
-            android:id="@+id/AllDataFragment"
-            android:name="com.kvl.cyclotrack.AllDataFragment"
-            android:label="Debug"
-            tools:layout="@layout/fragment_all_data">
-            <action
-                android:id="@+id/action_back_to_dashboard"
-                app:destination="@id/TripInProgressFragment"
-                app:popUpTo="@id/TripInProgressFragment"
-                app:popUpToInclusive="true" />
-        </fragment>
-    </navigation>
 </navigation>

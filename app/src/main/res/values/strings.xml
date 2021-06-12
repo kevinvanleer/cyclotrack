@@ -11,6 +11,7 @@
     <string name="time_placeholder">HH:mm</string>
     <string name="time_ago_placeholder">XX days ago</string>
     <string name="cyclotrack_summary_map_id">c2e079ebb492f6ef</string>
+    <string name="start_label">START</string>
     <string name="pause_label">PAUSE</string>
     <string name="stop_label">STOP</string>
     <string name="resume_label">RESUME</string>
@@ -56,7 +57,7 @@
     <string name="preferences_wheel_circumference_key">wheel_circumference</string>
     <string name="details_menu_title_export">Export</string>
     <string name="notification_export_trip_in_progress_id">notification_export_trip_in_progress_id</string>
-    <string name="notification_export_trip_in_progress_name">Export ride date in progress</string>
+    <string name="notification_export_trip_in_progress_name">Export ride data in progress</string>
     <string name="notification_export_trip_id">notification_export_trip_complete_id</string>
     <string name="notification_export_trip_name">Export ride data complete</string>
     <string name="notification_channel_description_export_trip">Indicates that data has been exported.</string>
@@ -72,4 +73,16 @@
     <string name="preferences_disconnect_google_fit_title">Disconnect from Google Fit</string>
     <string name="preferences_disconnect_google_fit_summary">Stop syncing data between Cyclotrack and Google Fit</string>
     <string name="intent_action_google_fit_access_granted">com.kvl.cyclotrack.google_fit_access_granted</string>
+    <string name="notification_id_trip_in_progress">notification_id_trip_in_progress</string>
+    <string name="notification_trip_in_progress_title">Ride in progress</string>
+    <string name="notification_export_trip_in_progress_message">Tap to return to dashboard</string>
+    <string name="action_start_trip_service">com.kvl.cyclotrack.action_start_trip_service</string>
+    <string name="action_pause_trip_service">com.kvl.cyclotrack.action_pause_trip_service</string>
+    <string name="action_resume_trip_service">com.kvl.cyclotrack.action_resume_trip_service</string>
+    <string name="action_stop_trip_service">com.kvl.cyclotrack.action_stop_trip_service</string>
+    <string name="notification_channel_name_trip_in_progress">Ride in progress</string>
+    <string name="action_initialize_trip_service">action_initialize_trip_service</string>
+    <string name="gps_disabled_message">GPS disabled</string>
+    <string name="intent_action_tripId_created">com.kvl.cyclotrack.intent_action_tripId_created</string>
+    <string name="initial_inspiring_message">Ready to start your first ride? Touch the bike button and let\'s get moving!</string>
 </resources>

@@ -43,10 +43,10 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             }
         }
 
-        if (BuildConfig.BUILD_TYPE == "dev") {
+        if (FeatureFlags.devBuild) {
             configureClearPreferences()
         }
-        if (BuildConfig.BUILD_TYPE != "prod") {
+        if (FeatureFlags.betaBuild) {
             if (GoogleSignIn.hasPermissions(getGoogleAccount(requireContext()), fitnessOptions)) {
                 accessGoogleFit(requireActivity())
             }

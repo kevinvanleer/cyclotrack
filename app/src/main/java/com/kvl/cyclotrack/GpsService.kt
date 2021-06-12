@@ -13,7 +13,9 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class GpsService @Inject constructor(context: Application) : LiveData<Location>() {
     private val context = context;
     var accessGranted = MutableLiveData(false);
@@ -22,7 +24,7 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location?) {
             Log.v("GPS_SERVICE", "New location result")
-            if (location != null) {
+            location?.let { location ->
                 Log.v("GPS_SERVICE",
                     "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -35,8 +37,8 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
                     Log.v("GPS_SERVICE",
                         "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
                 }
+                value = location
             }
-            value = location
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {

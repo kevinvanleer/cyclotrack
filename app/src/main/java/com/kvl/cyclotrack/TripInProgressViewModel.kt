@@ -10,8 +10,6 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.util.*
 import javax.inject.Inject
@@ -26,18 +24,16 @@ class TripInProgressViewModel @Inject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
-    private val sensorsRepository: OnboardSensorsRepository,
-    private val gpsService: GpsService,
-    private val bleService: BleService,
-    private val onboardSensors: SensorLiveData,
+    gpsService: GpsService,
+    bleService: BleService,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
-    private val logTag = "TIP_VIEW_MODEL"
+    private val logTag = "TripInProgressViewModel"
     private val coroutineScope = getViewModelScope(coroutineScopeProvider)
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
-    private val userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
+    private var userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
     private var _autoCircumference: Float? = null
 
     val autoCircumference: Float?
@@ -46,9 +42,8 @@ class TripInProgressViewModel @Inject constructor(
         get() = _autoCircumference ?: userCircumference
 
     private var accumulatedDuration = 0.0
-    var tripId: Long? = null
     private var startTime = Double.NaN
-    private var lastSplit = Split(0, 0.0, 0.0, 0.0, 0.0)
+    private var _lastSplitLive = MutableLiveData<Split>()
     private var measuringCircumference = false
     private var initialMeasureCircRevs = 0
     private var initialMeasureCircDistance = 0.0
@@ -58,9 +53,11 @@ class TripInProgressViewModel @Inject constructor(
     private val defaultSpeedThreshold = 0.5f
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
-    private val currentTimeStateObserver: Observer<TimeState> = Observer {
-        Log.d(logTag, "onChanged current time state observer: ${it.state}")
-        if (it != null) currentState = it.state
+    private val currentTimeStateObserver: Observer<TimeState> = Observer { timeState ->
+        timeState?.let {
+            Log.d(logTag, "onChanged current time state observer: ${it.state}")
+            currentState = it.state
+        }
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
@@ -69,18 +66,7 @@ class TripInProgressViewModel @Inject constructor(
     var cadenceSensor = bleService.cadenceSensor
     var speedSensor = bleService.speedSensor
 
-    private val gpsObserver: Observer<Location> = Observer<Location> { newLocation ->
-        Log.d(logTag, "onChanged gps observer")
-        if (tripId != null) {
-            coroutineScope.launch {
-                measurementsRepository.insertMeasurements(Measurements(tripId!!,
-                    LocationData(newLocation),
-                    hrmSensor.value?.bpm,
-                    cadenceSensor.value,
-                    speedSensor.value))
-            }
-        }
-    }
+    var tripId: Long? = null
 
     private val newMeasurementsObserver: Observer<Measurements> = Observer { newMeasurements ->
         Log.d(logTag, "onChanged measurements observer")
@@ -92,12 +78,6 @@ class TripInProgressViewModel @Inject constructor(
             } else {
                 setTripPaused(newMeasurements)
             }
-        }
-    }
-
-    private val sensorObserver: Observer<SensorModel> = Observer { newData ->
-        coroutineScope.launch {
-            sensorsRepository.insertMeasurements(tripId!!, newData)
         }
     }
 
@@ -134,7 +114,7 @@ class TripInProgressViewModel @Inject constructor(
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
         if (newSplit != null) {
-            lastSplit = newSplit
+            _lastSplitLive.value = newSplit
         }
     }
 
@@ -144,22 +124,25 @@ class TripInProgressViewModel @Inject constructor(
     val currentTime: LiveData<Double>
         get() = _currentTime
 
-    fun startGps() = gpsService.startListening()
-    fun startBle() = bleService.initialize()
-    fun stopBle() = bleService.disconnect()
+    val lastSplit: LiveData<Split>
+        get() = _lastSplitLive
+
+    fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
 
     private fun setTripProgress(new: Measurements) {
+        //TODO: Move dB mutations to trip service
+        val tripId = new.tripId
         val old = _currentProgress.value
         val oldDistance: Double = old?.distance ?: 0.0
         var newDistance: Double = oldDistance
-        var accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
-        var speedThreshold = defaultSpeedThreshold
+        val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+        val speedThreshold = defaultSpeedThreshold
 
         val newDuration = getDuration()
         val durationDelta = getDurationDelta(newDuration, old)
 
         old?.measurements?.speedRevolutions?.let { revs ->
-            calculateWheelCircumference(old.measurements, newDistance,
+            calculateWheelCircumference(tripId, old.measurements, newDistance,
                 revs)
         }
         if (accurateEnough) {
@@ -169,21 +152,7 @@ class TripInProgressViewModel @Inject constructor(
 
             if (new.speed > speedThreshold) newDistance += distanceDelta
 
-            if (crossedSplitThreshold(sharedPreferences,
-                    newDistance,
-                    old?.distance ?: Double.MAX_VALUE)
-            ) {
-                coroutineScope.launch {
-                    splitRepository.addSplit(Split(timestamp = System.currentTimeMillis(),
-                        duration = newDuration - lastSplit.totalDuration,
-                        distance = newDistance - lastSplit.totalDistance,
-                        totalDuration = newDuration,
-                        totalDistance = newDistance,
-                        tripId = tripId!!))
-                }
-            }
-
-            var newSlope = calculateSlope(
+            val newSlope = calculateSlope(
                 newSpeed,
                 distanceDelta,
                 new,
@@ -200,15 +169,6 @@ class TripInProgressViewModel @Inject constructor(
             Log.d("TIP_MAX_ACCELERATION",
                 max(newAcceleration, old?.maxAcceleration ?: 0f).toString())
 
-            coroutineScope.launch {
-                if (tripId != null) tripsRepository.updateTripStats(TripStats(tripId!!,
-                    newDistance,
-                    newDuration,
-                    (newDistance / newDuration).toFloat(),
-                    userCircumference,
-                    _autoCircumference))
-            }
-
             _currentProgress.value =
                 TripProgress(measurements = new,
                     speed = newSpeed,
@@ -222,7 +182,7 @@ class TripInProgressViewModel @Inject constructor(
                     duration = newDuration,
                     accuracy = new.accuracy,
                     bearing = new.bearing,
-                    splitSpeed = (lastSplit.distance / lastSplit.duration.coerceAtLeast(0.0001)).toFloat(),
+                    splitSpeed = -33.33f,
                     tracking = true)
 
         } else {
@@ -237,7 +197,7 @@ class TripInProgressViewModel @Inject constructor(
                         maxAcceleration = 0f,
                         distance = 0.0,
                         slope = 0.0,
-                        splitSpeed = 0f,
+                        splitSpeed = -33.33f,
                         measurements = null,
                         accuracy = new.accuracy,
                         bearing = new.bearing,
@@ -246,6 +206,7 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     fun calculateWheelCircumference(
+        tripId: Long,
         progress: Measurements,
         totalDistance: Double,
         speedRevolutions: Int,
@@ -274,6 +235,11 @@ class TripInProgressViewModel @Inject constructor(
                 _autoCircumference = (dist / revs).toFloat()
                 sharedPreferences.edit {
                     this.putFloat("auto_circumference", _autoCircumference!!.toFloat())
+                }
+                coroutineScope.launch {
+                    tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
+                        userWheelCircumference = userCircumference,
+                        autoWheelCircumference = _autoCircumference))
                 }
             }
         }
@@ -368,7 +334,7 @@ class TripInProgressViewModel @Inject constructor(
         old: TripProgress?,
         new: Measurements,
     ): Double {
-        var distanceResults = floatArrayOf(0f)
+        val distanceResults = floatArrayOf(0f)
         Location.distanceBetween(old?.measurements?.latitude ?: new.latitude,
             old?.measurements?.longitude ?: new.longitude,
             new.latitude,
@@ -386,75 +352,24 @@ class TripInProgressViewModel @Inject constructor(
     private fun getDuration() =
         if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
-    fun startObserving(lifecycleOwner: LifecycleOwner) {
-        if (tripId != null) {
-            Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
-            gpsService.observe(lifecycleOwner, gpsObserver)
-            getLatest()?.observe(lifecycleOwner, newMeasurementsObserver)
-            timeStateRepository.observeLatest(tripId!!)
-                .observe(lifecycleOwner, currentTimeStateObserver)
-            timeStateRepository.observeTimeStates(tripId!!)
-                .observe(lifecycleOwner, accumulateDurationObserver)
-            splitRepository.observeLastSplit(tripId!!).observe(lifecycleOwner, lastSplitObserver)
-
-            if (BuildConfig.BUILD_TYPE != "prod") {
-                onboardSensors.observe(lifecycleOwner, sensorObserver)
-            }
-        }
+    private fun startObserving(tripId: Long, lifecycleOwner: LifecycleOwner) {
+        Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
+        measurementsRepository.observeLatest(tripId)
+            .observe(lifecycleOwner, newMeasurementsObserver)
+        timeStateRepository.observeLatest(tripId)
+            .observe(lifecycleOwner, currentTimeStateObserver)
+        timeStateRepository.observeTimeStates(tripId)
+            .observe(lifecycleOwner, accumulateDurationObserver)
+        splitRepository.observeLastSplit(tripId).observe(lifecycleOwner, lastSplitObserver)
     }
 
-    suspend fun getCombinedBiometrics(id: Long): Biometrics {
-        var biometrics = getBiometrics(id, sharedPreferences)
-        Log.d(logTag, "biometrics prefs: ${biometrics}")
-
-        viewModelScope.launch {
-            val googleFitApiService = GoogleFitApiService.instance
-            if (googleFitApiService.hasPermission()) {
-                val weightDeferred = async { googleFitApiService.getLatestWeight() }
-                val heightDeferred = async { googleFitApiService.getLatestHeight() }
-                val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate() }
-
-                weightDeferred.await().let {
-                    Log.d(logTag, "google weight: ${it}")
-                    biometrics = biometrics.copy(userWeight = it)
-                }
-                heightDeferred.await().let {
-                    Log.d(logTag, "google height: ${it}")
-                    biometrics = biometrics.copy(userHeight = it)
-                }
-                hrDeferred.await().let {
-                    Log.d(logTag, "google resting hr: ${it}")
-                    biometrics = biometrics.copy(userRestingHeartRate = it)
-                }
-                Log.d(logTag, "biometrics google: ${biometrics}")
-            }
-        }.join()
-
-        Log.d(logTag, "biometrics: ${biometrics}")
-        return biometrics
+    fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
+        this.tripId = tripId
+        startObserving(tripId, lifecycleOwner)
+        startClock()
     }
 
-    fun startTrip(lifecycleOwner: LifecycleOwner): LiveData<Long> {
-        val tripStarted = MutableLiveData<Long>()
-
-        //TODO: Add speed revs to time state for distance calculations
-        coroutineScope.launch(Dispatchers.Default) {
-            tripId = tripsRepository.createNewTrip().also { id ->
-                tripsRepository.updateBiometrics(
-                    getCombinedBiometrics(id))
-
-            }
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.START))
-            Log.d(logTag, "created new trip with id ${tripId.toString()}")
-            tripStarted.postValue(tripId)
-        }
-        tripStarted.observeForever(object : Observer<Long> {
-            override fun onChanged(t: Long?) {
-                startObserving(lifecycleOwner)
-                tripStarted.removeObserver(this)
-            }
-        })
-
+    private fun startClock() {
         clockTick.scheduleAtFixedRate(timerTask {
             val timeHandler = Handler(Looper.getMainLooper())
             timeHandler.post {
@@ -462,34 +377,44 @@ class TripInProgressViewModel @Inject constructor(
                 _currentTime.value = getDuration()
             }
         }, 1000 - System.currentTimeMillis() % 1000, 500)
-
-        return tripStarted
     }
 
-    fun pauseTrip() {
-        coroutineScope.launch(Dispatchers.Default) {
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.PAUSE))
+    fun resumeTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
+        Log.d(logTag, "Resuming trip $tripId")
+        coroutineScope.launch {
+            try {
+                val tripState = tripsRepository.get(tripId)
+                val currentMeasurement = measurementsRepository.get(tripId).last()
+                userCircumference = tripState.userWheelCircumference
+                _autoCircumference = tripState.autoWheelCircumference
+
+                _currentProgress.value = TripProgress(
+                    measurements = currentMeasurement,
+                    distance = tripState.distance ?: 0.0,
+                    duration = tripState.duration ?: 0.0,
+                    speed = currentMeasurement.speed,
+                    accuracy = currentMeasurement.accuracy,
+                    bearing = currentMeasurement.bearing,
+                    acceleration = 0f,
+                    maxAcceleration = 0f,
+                    maxSpeed = 0f,
+                    slope = 0.0,
+                    splitSpeed = 0f,
+                    tracking = true,
+                )
+            } catch (e: NoSuchElementException) {
+                Log.d(logTag, "No measurements recorded")
+            }
+            startObserving(tripId, lifecycleOwner)
         }
-    }
-
-    fun resumeTrip() {
-        coroutineScope.launch(Dispatchers.Default) {
-            Log.d(logTag, "resumeTrip")
-            timeStateRepository.appendTimeState(TimeState(tripId!!, TimeStateEnum.RESUME))
-        }
-    }
-
-    fun getLatest(): LiveData<Measurements>? {
-        if (tripId == null) throw UninitializedPropertyAccessException()
-        return measurementsRepository.observeLatest(tripId!!)
+        startClock()
     }
 
     private fun cleanup() {
-        gpsService.stopListening()
         clockTick.cancel()
     }
 
-    fun endTrip() {
+    /*fun endTrip() {
         if (tripId != null && currentState != TimeStateEnum.STOP) {
             val old = _currentProgress.value
             val oldDistance: Double = old?.distance ?: 0.0
@@ -508,14 +433,13 @@ class TripInProgressViewModel @Inject constructor(
                     tripId = tripId!!))
             }
         }
-    }
+    }*/
 
     override fun onCleared() {
         Log.d(logTag, "Called onCleared")
         super.onCleared()
-        //TODO: MAYBE DON'T RUDELY END THE TRIP WHEN THE VIEW MODEL IS CLEARED
         cleanup()
-        endTrip()
+        //endTrip()
     }
 }
 

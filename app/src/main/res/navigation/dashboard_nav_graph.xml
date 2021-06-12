@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dashboard_nav_graph"
+    app:startDestination="@id/TripInProgressFragment">
+    <fragment
+        android:id="@+id/TripInProgressFragment"
+        android:name="com.kvl.cyclotrack.TripInProgressFragment"
+        android:label="Dashboard"
+        tools:layout="@layout/trip_in_progress_fragment">
+        <action
+            android:id="@+id/action_to_debug_view"
+            app:destination="@id/AllDataFragment" />
+        <action
+            android:id="@+id/action_finish_trip"
+            app:destination="@id/TripDetailsFragment"
+            app:launchSingleTop="true"
+            app:popUpTo="@id/TripSummariesFragment">
+            <argument
+                android:name="tripId"
+                app:argType="long" />
+        </action>
+    </fragment>
+    <fragment
+        android:id="@+id/AllDataFragment"
+        android:name="com.kvl.cyclotrack.AllDataFragment"
+        android:label="Debug"
+        tools:layout="@layout/fragment_all_data">
+        <action
+            android:id="@+id/action_back_to_dashboard"
+            app:destination="@id/TripInProgressFragment"
+            app:popUpTo="@id/TripInProgressFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+</navigation>

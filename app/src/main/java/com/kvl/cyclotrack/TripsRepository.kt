@@ -12,6 +12,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         return tripDao.load(id)
     }
 
+    suspend fun getNewest(): Trip = tripDao.getNewestTrip()
+
     fun observeAll(): LiveData<Array<Trip>> {
         return tripDao.susbscribeAll()
     }
@@ -34,6 +36,10 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
 
     suspend fun removeTrips(trips: Array<Trip>) {
         return tripDao.removeTrips(trips)
+    }
+
+    suspend fun endTrip(tripId: Long) {
+        tripDao.updateInProgress(TripInProgress(id = tripId, inProgress = false))
     }
 
     suspend fun updateTripStats(stats: TripStats) = with(tripDao) { updateStats(stats) }

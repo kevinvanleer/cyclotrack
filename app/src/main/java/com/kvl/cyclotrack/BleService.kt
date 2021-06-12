@@ -16,6 +16,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.util.*
 import javax.inject.Inject
+import javax.inject.Singleton
 
 data class HrmData(var batteryLevel: Byte?, var bpm: Short?)
 data class SpeedData(
@@ -34,7 +35,11 @@ data class CadenceData(
     val timestamp: Long? = null,
 )
 
-class BleService @Inject constructor(context: Application, sharedPreferences: SharedPreferences) {
+@Singleton
+class BleService @Inject constructor(
+    private val context: Application,
+    sharedPreferences: SharedPreferences,
+) {
     private val addresses = object {
         var hrm: String? = null
         var speed: String? = null
@@ -59,25 +64,10 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     var cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
     var speedSensor = MutableLiveData(SpeedData(null, null, null, null))
 
-    private val context = context
     private val bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
-    private var mScanning = false
-    private val handler = Handler()
 
-    // Stops scanning after 10 seconds.
-    private val SCAN_PERIOD: Long = 10000
-    private val STATE_DISCONNECTED = 0
-    private val STATE_CONNECTING = 1
-    private val STATE_CONNECTED = 2
-    val ACTION_GATT_CONNECTED = "com.example.bluetooth.le.ACTION_GATT_CONNECTED"
-    val ACTION_GATT_DISCONNECTED = "com.example.bluetooth.le.ACTION_GATT_DISCONNECTED"
-    val ACTION_GATT_SERVICES_DISCOVERED =
-        "com.example.bluetooth.le.ACTION_GATT_SERVICES_DISCOVERED"
-    val ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE"
-    val EXTRA_DATA = "com.example.bluetooth.le.EXTRA_DATA"
-
-    val updateNotificationDescriptorId = "2902"
-    val cadenceSpeedGattServiceId = "1816"
+    private val updateNotificationDescriptorId = "2902"
+    private val cadenceSpeedGattServiceId = "1816"
     val cscMeasurementCharacteristicId = "2a5b"
     val cscFeatureCharacteristicId = "2a5c"
     val batteryGattServiceId = "180f"
@@ -85,7 +75,8 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     val heartRateServiceId = "180d"
     val hrmCharacteristicId = "2a37"
 
-    val characteristicUpdateNotificationDescriptorUuid = getGattUuid(updateNotificationDescriptorId)
+    private val characteristicUpdateNotificationDescriptorUuid =
+        getGattUuid(updateNotificationDescriptorId)
     val batteryServiceUuid = getGattUuid(batteryGattServiceId)
     val batteryLevelCharUuid = getGattUuid(batterLevelCharacteristicId)
 
@@ -146,9 +137,9 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
         ) {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
-                    Log.i(logTag, "Connected to GATT server.")
-                    Log.i(logTag, "Attempting to start service discovery: " +
-                            gatt.discoverServices())
+                    Log.i(logTag, "Connected to GATT server ${gatt.device.address}.")
+                    Log.i(logTag,
+                        "Attempting to start service discovery: ${gatt.discoverServices()}")
                     gatts.add(gatt)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
@@ -228,22 +219,6 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
                 bluetoothLeScanner.stopScan(this)
                 scanCallbacks.remove(this)
             }
-        }
-    }
-
-    // Device scan callback.
-    private val leScanCallback: ScanCallback = object : ScanCallback() {
-        override fun onScanResult(callbackType: Int, result: ScanResult) {
-            super.onScanResult(callbackType, result)
-            Log.d(logTag,
-                "Found device ${result.device.name}, ${result.device.type}: ${result.device}")
-            /*
-            if (myMacs?.contains(result.device.address) == true) {
-                Log.d(logTag,
-                    "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}")
-                result.device.connectGatt(context, true, gattCallback)
-            }
-             */
         }
     }
 
@@ -445,10 +420,13 @@ class BleService @Inject constructor(context: Application, sharedPreferences: Sh
     }
 
     fun disconnect() {
+        Log.d(logTag, "disconnect")
         stopAllScans()
         gatts.forEach { gatt ->
             Log.d(logTag, "Disconnecting ${gatt.device.address}")
+            gatt.close()
             gatt.disconnect()
         }
+        gatts.clear()
     }
 }

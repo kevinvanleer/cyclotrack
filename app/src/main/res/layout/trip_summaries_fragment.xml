@@ -36,6 +36,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
+        android:visibility="invisible"
+        android:enabled="false"
         android:contentDescription="@string/start_dashboard_button_description"
         app:srcCompat="@drawable/ic_baseline_directions_bike_24" />
 

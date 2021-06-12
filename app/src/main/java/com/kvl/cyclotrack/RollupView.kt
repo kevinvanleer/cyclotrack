@@ -16,7 +16,7 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
         var distanceText = "Welcome to"
         var durationText = "Cyclotrack"
         var inspiringMessage =
-            "Ready to start your first ride? Touch the bike button and let's get moving!"
+            context.getString(R.string.initial_inspiring_message)
 
         if (!trips.isNullOrEmpty()) {
             var totalDistance = 0.0

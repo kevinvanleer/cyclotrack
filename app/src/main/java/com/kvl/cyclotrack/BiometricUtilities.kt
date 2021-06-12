@@ -1,12 +1,25 @@
 package com.kvl.cyclotrack
 
+import android.content.Context
 import android.content.SharedPreferences
+import androidx.preference.PreferenceManager
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
 const val POUNDS_TO_KG = 0.453592
+
+fun getBiometrics(id: Long, context: Context) = Biometrics(
+    id,
+    getUserSex(context),
+    getUserWeight(context),
+    getUserHeight(context),
+    getUserAge(context),
+    getUserVo2max(context),
+    getUserRestingHeartRate(context),
+    getUserMaxHeartRate(context),
+)
 
 fun getBiometrics(id: Long, sharedPreferences: SharedPreferences) = Biometrics(
     id,
@@ -18,6 +31,75 @@ fun getBiometrics(id: Long, sharedPreferences: SharedPreferences) = Biometrics(
     getUserRestingHeartRate(sharedPreferences),
     getUserMaxHeartRate(sharedPreferences),
 )
+
+
+fun getUserSex(context: Context) =
+    try {
+        PreferenceManager.getDefaultSharedPreferences(context).getString(context
+            .getString(R.string.preference_key_biometrics_user_sex),
+            "")?.let {
+            UserSexEnum.valueOf(it)
+        }
+    } catch (e: IllegalArgumentException) {
+        null
+    }
+
+fun getUserWeight(context: Context): Float? =
+    PreferenceManager.getDefaultSharedPreferences(context).getString(context
+        .getString(R.string.preference_key_biometrics_user_weight),
+        "")?.toFloatOrNull()?.let {
+        getMassConversionFactor(PreferenceManager.getDefaultSharedPreferences(context)) * it
+
+    }?.toFloat()
+
+fun getMassConversionFactor(context: Context) =
+    when (PreferenceManager.getDefaultSharedPreferences(context).getString("display_units", "1")) {
+        "1" -> POUNDS_TO_KG
+        else -> 1.0
+    }
+
+fun getUserHeight(context: Context): Float? =
+    PreferenceManager.getDefaultSharedPreferences(context).getString(context
+        .getString(R.string.preference_key_biometrics_user_height),
+        "")?.toFloatOrNull()?.let {
+        when (PreferenceManager.getDefaultSharedPreferences(context)
+            .getString("display_units", "1")) {
+            "1" -> INCHES_TO_FEET * FEET_TO_METERS
+            "2" -> 0.001
+            else -> 1.0
+        } * it
+
+    }?.toFloat()
+
+fun getUserAge(context: Context): Float? =
+    try {
+        PreferenceManager.getDefaultSharedPreferences(context).getString(
+            context
+                .getString(R.string.preference_key_biometrics_user_dob),
+            "")?.let { dateString ->
+            SimpleDateFormat(context.getString(R.string.date_format_patten_dob),
+                Locale.US).parse(dateString
+            )
+                ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+        }
+    } catch (e: ParseException) {
+        null
+    }
+
+fun getUserVo2max(context: Context) =
+    PreferenceManager.getDefaultSharedPreferences(context).getString(context
+        .getString(R.string.preference_key_biometrics_user_vo2max),
+        "")?.toFloatOrNull()
+
+fun getUserRestingHeartRate(context: Context) =
+    PreferenceManager.getDefaultSharedPreferences(context).getString(context
+        .getString(R.string.preference_key_biometrics_user_restingHeartRate),
+        "")?.toIntOrNull()
+
+fun getUserMaxHeartRate(context: Context) =
+    PreferenceManager.getDefaultSharedPreferences(context).getString(context
+        .getString(R.string.preference_key_biometrics_user_maxHeartRate),
+        "")?.toIntOrNull()
 
 fun getUserSex(sharedPreferences: SharedPreferences) =
     try {
@@ -199,31 +281,6 @@ fun getCaloriesBurned(
         biometrics.userVo2max,
         biometrics.userRestingHeartRate,
         biometrics.userMaxHeartRate,
-        overview.duration?.toFloat()!!,
-        overview.distance?.toFloat()!!,
-        heartRate)
-}
-
-fun getCaloriesBurned(
-    overview: Trip,
-    heartRate: Short?,
-    sharedPrefs: SharedPreferences,
-): Int? {
-    fun getSex(value: UserSexEnum?) = value?.name ?: getUserSex(sharedPrefs)?.name
-    fun getAge(value: Float?) = (value ?: getUserAge(sharedPrefs))?.roundToInt()
-    fun getWeight(value: Float?) = value ?: getUserWeight(sharedPrefs)!!
-    fun getHeight(value: Float?) = value ?: getUserHeight(sharedPrefs)
-    fun getVo2max(value: Float?) = value ?: getUserVo2max(sharedPrefs)
-    fun getRestingHeartRate(value: Int?) = value ?: getUserRestingHeartRate(sharedPrefs)
-    fun getMaxHeartRate(value: Int?) = value ?: getUserMaxHeartRate(sharedPrefs)
-
-    return estimateCaloriesBurned(getSex(overview.userSex),
-        getAge(overview.userAge),
-        getWeight(overview.userWeight),
-        getHeight(overview.userHeight),
-        getVo2max(overview.userVo2max),
-        getRestingHeartRate(overview.userRestingHeartRate),
-        getMaxHeartRate(overview.userMaxHeartRate),
         overview.duration?.toFloat()!!,
         overview.distance?.toFloat()!!,
         heartRate)

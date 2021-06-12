@@ -53,7 +53,7 @@ class DiscoverSensorViewModel @Inject constructor(private val sharedPreferences:
     }
 
     fun startScan() {
-        if (BuildConfig.BUILD_TYPE == "dev") {
+        if (FeatureFlags.devBuild) {
             val testDevices = ArrayList<ExternalSensor>()
             testDevices.add(ExternalSensor("77:07:70:00:00:01", "Thing 1"))
             testDevices.add(ExternalSensor("77:07:70:00:00:02", "Thing 2"))

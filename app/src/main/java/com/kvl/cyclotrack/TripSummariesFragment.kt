@@ -19,9 +19,11 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
-class TripSummariesFragment : Fragment() {
+class TripSummariesFragment @Inject constructor() : Fragment() {
+    private val logTag = "TripSummariesFragment"
     private val viewModel: TripSummariesViewModel by navGraphViewModels(R.id.cyclotrack_nav_graph) {
         defaultViewModelProviderFactory
     }
@@ -99,6 +101,27 @@ class TripSummariesFragment : Fragment() {
         }
     }
 
+    private fun handleFabClick(trip: Trip?): View.OnClickListener = View.OnClickListener {
+        // TODO: Multiple touches causes fatal exception
+        try {
+            val tripId = trip?.id.takeIf { trip?.inProgress ?: false }
+            when (PackageManager.PERMISSION_GRANTED) {
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ),
+                -> findNavController().navigate(R.id.action_start_trip,
+                    Bundle().apply {
+                        Log.d(logTag, "Start dashboard with trip ${tripId}")
+                        putLong("tripId", tripId ?: -1L)
+                    })
+                else -> initializeLocationService()
+            }
+        } catch (e: IllegalArgumentException) {
+            Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
@@ -110,7 +133,7 @@ class TripSummariesFragment : Fragment() {
     private val enableMultiSelectControls: (enable: Boolean) -> Unit = { enable ->
         (menu.findItem(R.id.action_clear_multiselect) as MenuItem).isVisible = enable
         (menu.findItem(R.id.action_stitch) as MenuItem).isVisible = enable
-        if (BuildConfig.BUILD_TYPE == "dev") {
+        if (FeatureFlags.devBuild) {
             (menu.findItem(R.id.action_delete) as MenuItem).isVisible = enable
         }
     }
@@ -143,23 +166,17 @@ class TripSummariesFragment : Fragment() {
             }
 
             rollupView.rollupTripData(trips)
-        })
 
-        view.findViewById<FloatingActionButton>(R.id.fab).setOnClickListener {
-            // TODO: Multiple touches causes fatal exception
-            try {
-                when (PackageManager.PERMISSION_GRANTED) {
-                    ContextCompat.checkSelfPermission(
-                        requireContext(),
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ),
-                    -> findNavController().navigate(R.id.action_start_trip)
-                    else -> initializeLocationService()
+            view.findViewById<FloatingActionButton>(R.id.fab).apply {
+                isEnabled = true
+                visibility = View.VISIBLE
+                if (trips.isNotEmpty()) {
+                    setOnClickListener(handleFabClick(trips.first()))
+                } else {
+                    setOnClickListener(handleFabClick(null))
                 }
-            } catch (e: IllegalArgumentException) {
-                Log.d("TRIP_SUMMARIES", "CANNOT HANDLE MULTIPLE TRIP START TOUCHES")
             }
-        }
+        })
         noBackgroundLocationDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
