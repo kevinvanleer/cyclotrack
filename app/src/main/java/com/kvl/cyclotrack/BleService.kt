@@ -38,7 +38,7 @@ data class CadenceData(
 @Singleton
 class BleService @Inject constructor(
     private val context: Application,
-    sharedPreferences: SharedPreferences,
+    private val sharedPreferences: SharedPreferences,
 ) {
     private val addresses = object {
         var hrm: String? = null
@@ -46,17 +46,6 @@ class BleService @Inject constructor(
         var cadence: String? = null
     }
     private val logTag = "BleService"
-    private val myMacs =
-        sharedPreferences.getStringSet(context.resources.getString(R.string.preferences_paired_ble_devices_key),
-            HashSet())?.map {
-            try {
-                Gson().fromJson(it, ExternalSensor::class.java)
-            } catch (e: JsonSyntaxException) {
-                Log.e(logTag, "Could not parse sensor from JSON", e)
-                ExternalSensor("REMOVE_INVALID_SENSOR")
-            }
-        }?.filter { it.address != "REMOVE_INVALID_SENSOR" }?.toTypedArray()
-
     private var scanCallbacks = ArrayList<ScanCallback>()
     private var gatts = ArrayList<BluetoothGatt>()
 
@@ -381,6 +370,17 @@ class BleService @Inject constructor(
             Log.d(logTag, "BLE not supported on this device")
             return
         }
+
+        val myMacs =
+            sharedPreferences.getStringSet(context.resources.getString(R.string.preferences_paired_ble_devices_key),
+                HashSet())?.map {
+                try {
+                    Gson().fromJson(it, ExternalSensor::class.java)
+                } catch (e: JsonSyntaxException) {
+                    Log.e(logTag, "Could not parse sensor from JSON", e)
+                    ExternalSensor("REMOVE_INVALID_SENSOR")
+                }
+            }?.filter { it.address != "REMOVE_INVALID_SENSOR" }?.toTypedArray()
 
         if (myMacs.isNullOrEmpty()) {
             Log.d(logTag, "No BLE devices have been selected by the user")
