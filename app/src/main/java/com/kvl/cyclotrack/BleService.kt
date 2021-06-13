@@ -19,6 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 data class HrmData(var batteryLevel: Byte?, var bpm: Short?)
+
 data class SpeedData(
     val batteryLevel: Byte?,
     val revolutionCount: Int?,
@@ -428,5 +429,9 @@ class BleService @Inject constructor(
             gatt.disconnect()
         }
         gatts.clear()
+
+        hrmSensor = MutableLiveData(HrmData(null, null))
+        cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
+        speedSensor = MutableLiveData(SpeedData(null, null, null, null))
     }
 }
