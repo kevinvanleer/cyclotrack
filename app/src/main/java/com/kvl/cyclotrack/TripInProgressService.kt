@@ -69,10 +69,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             cadenceSensor().value,
             speedSensor().value)
         lifecycleScope.launch {
-            measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)
-                ?.let { lastMeasurement ->
-                    setTripProgress(lastMeasurement, newMeasurement, tripId)
-                }
+            setTripProgress(measurementsRepository.getLatestAccurate(tripId, accuracyThreshold),
+                newMeasurement,
+                tripId)
             measurementsRepository.insertMeasurements(newMeasurement)
         }
     }

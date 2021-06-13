@@ -193,7 +193,7 @@ fun getTripIntervals(
 ): Array<LongRange> =
     when (measurements.isNullOrEmpty()) {
         true -> getTripIntervals(timeStates, null, null)
-        false -> getTripIntervals(timeStates, measurements?.first(), measurements?.last())
+        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
     }
 
 fun getTripIntervals(

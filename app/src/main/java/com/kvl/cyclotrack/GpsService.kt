@@ -22,9 +22,9 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
     private val locationManager =
         (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
     private val locationListener = object : LocationListener {
-        override fun onLocationChanged(location: Location?) {
+        override fun onLocationChanged(newLocation: Location?) {
             Log.v("GPS_SERVICE", "New location result")
-            location?.let { location ->
+            newLocation?.let { location ->
                 Log.v("GPS_SERVICE",
                     "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
