@@ -389,6 +389,79 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val tripId = args.tripId
         Log.d(TAG, String.format("Displaying details for trip %d", tripId))
         viewModel.tripId = tripId
+
+        viewModel.updateSplits()
+        viewModel.splits().observe(viewLifecycleOwner, { splits ->
+            fun makeSplitsGrid() {
+                splitsGridView.removeAllViews()
+                splitsGridView.visibility = View.VISIBLE
+                splitsHeadingView.visibility = View.VISIBLE
+                if (splits.isEmpty()) {
+                    splitsGridView.visibility = View.GONE
+                    splitsHeadingView.visibility = View.GONE
+                    return
+                }
+
+                var maxSpeed = 0.0f
+                splits.forEach {
+                    val splitSpeed =
+                        getUserSpeed(requireContext(), it.distance, it.duration)
+                    if (splitSpeed > maxSpeed) maxSpeed = splitSpeed
+                }
+                val maxWidth = (maxSpeed / 10).toInt() * 10 + 10
+
+                splits.forEachIndexed { idx, split ->
+                    val distanceView = TextView(activity)
+                    val speedView = LinearLayout(activity)
+                    val speedText = TextView(activity)
+                    val timeView = TextView(activity)
+
+                    distanceView.text = String.format("%d %s",
+                        idx + 1, getUserDistanceUnitShort(requireContext()))
+                    timeView.text = formatDuration(split.totalDuration)
+                    speedText.text = String.format("%.2f %s",
+                        getUserSpeed(requireContext(),
+                            split.distance,
+                            split.duration),
+                        getUserSpeedUnitShort(requireContext()))
+
+
+                    val distanceLayout =
+                        GridLayout.LayoutParams(GridLayout.spec(idx + 1,
+                            GridLayout.CENTER),
+                            GridLayout.spec(0))
+                    val speedLayout =
+                        GridLayout.LayoutParams(GridLayout.spec(idx + 1),
+                            GridLayout.spec(1, 100f))
+                    val timeLayout =
+                        GridLayout.LayoutParams(GridLayout.spec(idx + 1,
+                            GridLayout.CENTER),
+                            GridLayout.spec(2))
+
+                    distanceView.layoutParams = distanceLayout
+                    speedView.layoutParams = speedLayout
+                    speedText.background =
+                        ResourcesCompat.getDrawable(resources,
+                            R.drawable.rounded_corner,
+                            null)
+                    speedView.doOnPreDraw {
+                        speedText.width =
+                            (speedView.width * getUserSpeed(requireContext(),
+                                split.distance,
+                                split.duration) / maxWidth).toInt()
+                    }
+                    timeView.layoutParams = timeLayout
+
+
+                    speedView.addView(speedText)
+                    splitsGridView.addView(distanceView)
+                    splitsGridView.addView(speedView)
+                    splitsGridView.addView(timeView)
+                }
+            }
+            makeSplitsGrid()
+        })
+
         viewModel.tripOverview().observe(viewLifecycleOwner, { overview ->
             if (overview != null) {
                 distanceHeadingView.value =
@@ -724,79 +797,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         scrollView.setOnTouchListener(thisFragment)
                     }
                 })
-
-            viewModel.updateSplits()
-
-            viewModel.splits().observe(viewLifecycleOwner, { splits ->
-                fun makeSplitsGrid() {
-                    splitsGridView.removeAllViews()
-                    splitsGridView.visibility = View.VISIBLE
-                    splitsHeadingView.visibility = View.VISIBLE
-                    if (splits.isEmpty()) {
-                        splitsGridView.visibility = View.GONE
-                        splitsHeadingView.visibility = View.GONE
-                        return
-                    }
-
-                    var maxSpeed = 0.0f
-                    splits.forEach {
-                        val splitSpeed =
-                            getUserSpeed(requireContext(), it.distance, it.duration)
-                        if (splitSpeed > maxSpeed) maxSpeed = splitSpeed
-                    }
-                    val maxWidth = (maxSpeed / 10).toInt() * 10 + 10
-
-                    splits.forEachIndexed { idx, split ->
-                        val distanceView = TextView(activity)
-                        val speedView = LinearLayout(activity)
-                        val speedText = TextView(activity)
-                        val timeView = TextView(activity)
-
-                        distanceView.text = String.format("%d %s",
-                            idx + 1, getUserDistanceUnitShort(requireContext()))
-                        timeView.text = formatDuration(split.totalDuration)
-                        speedText.text = String.format("%.2f %s",
-                            getUserSpeed(requireContext(),
-                                split.distance,
-                                split.duration),
-                            getUserSpeedUnitShort(requireContext()))
-
-
-                        val distanceLayout =
-                            GridLayout.LayoutParams(GridLayout.spec(idx + 1,
-                                GridLayout.CENTER),
-                                GridLayout.spec(0))
-                        val speedLayout =
-                            GridLayout.LayoutParams(GridLayout.spec(idx + 1),
-                                GridLayout.spec(1, 100f))
-                        val timeLayout =
-                            GridLayout.LayoutParams(GridLayout.spec(idx + 1,
-                                GridLayout.CENTER),
-                                GridLayout.spec(2))
-
-                        distanceView.layoutParams = distanceLayout
-                        speedView.layoutParams = speedLayout
-                        speedText.background =
-                            ResourcesCompat.getDrawable(resources,
-                                R.drawable.rounded_corner,
-                                null)
-                        speedView.doOnPreDraw {
-                            speedText.width =
-                                (speedView.width * getUserSpeed(requireContext(),
-                                    split.distance,
-                                    split.duration) / maxWidth).toInt()
-                        }
-                        timeView.layoutParams = timeLayout
-
-
-                        speedView.addView(speedText)
-                        splitsGridView.addView(distanceView)
-                        splitsGridView.addView(speedView)
-                        splitsGridView.addView(timeView)
-                    }
-                }
-                makeSplitsGrid()
-            })
         })
 
         fun getCaloriesBurned(
