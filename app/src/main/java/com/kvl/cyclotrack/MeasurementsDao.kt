@@ -23,10 +23,10 @@ interface MeasurementsDao {
     @Query("SELECT * FROM measurements WHERE tripId = :tripId")
     fun subscribe(tripId: Long): LiveData<Array<Measurements>>
 
-    @Query("SELECT time,speed,heartRate,speedRevolutions,speedRpm,cadenceRevolutions,cadenceRpm,latitude,longitude,altitude FROM measurements WHERE tripId = :tripId and accuracy < 5")
+    @Query("SELECT time,speed,heartRate,speedRevolutions,speedLastEvent,cadenceRevolutions,cadenceLastEvent,latitude,longitude,altitude FROM measurements WHERE tripId = :tripId and accuracy < 5")
     suspend fun loadCritical(tripId: Long): Array<CriticalMeasurements>
 
-    @Query("SELECT time,speed,heartRate,speedRevolutions,speedRpm,cadenceRevolutions,cadenceRpm,latitude,longitude,altitude FROM measurements WHERE tripId = :tripId and accuracy < 5")
+    @Query("SELECT time,speed,heartRate,speedRevolutions,speedLastEvent,cadenceRevolutions,cadenceLastEvent,latitude,longitude,altitude FROM measurements WHERE tripId = :tripId and accuracy < 5")
     fun subscribeCritical(tripId: Long): LiveData<Array<CriticalMeasurements>>
 
     @Query("SELECT * FROM measurements WHERE time = (SELECT max(time) FROM measurements WHERE tripId = :tripId)")

@@ -119,8 +119,8 @@ data class CriticalMeasurements(
     val speed: Float,
     val time: Long,
     val heartRate: Short? = null,
-    val cadenceRpm: Float? = null,
     val speedRevolutions: Int? = null,
+    val speedLastEvent: Int? = null,
     val cadenceRevolutions: Int? = null,
-    val speedRpm: Float? = null,
+    val cadenceLastEvent: Int? = null,
 )

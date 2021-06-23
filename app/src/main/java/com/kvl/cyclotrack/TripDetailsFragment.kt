@@ -55,6 +55,7 @@ import kotlin.math.roundToInt
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment(), View.OnTouchListener {
     val TAG = "TRIP_DETAILS_FRAGMENT"
+    val logTag = "TripDetailsFragment"
 
     private var startHeight: Int = 0
     private var startY: Float = 0.0f
@@ -533,14 +534,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     fun getSpeedDataFromSensor(
                         entries: ArrayList<Entry>,
                         trend: ArrayList<Entry>,
-                        measurements: Array<CriticalMeasurements>,
+                        measurementsList: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ) {
                         val intervalStart = intervals.last().first
                         val accumulatedTime = accumulateTime(intervals)
                         var trendLast =
-                            getUserSpeed(requireContext(), measurements[0].speed.toDouble())
-                        var trendAlpha = 0.01f
+                            getUserSpeed(requireContext(), measurementsList[0].speed.toDouble())
+                        var trendAlpha = 0.5f
 
                         val circumference =
                             effectiveCircumference ?: overview.autoWheelCircumference
@@ -548,19 +549,36 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ?: getUserCircumference(requireContext())
                         Log.d(TAG, "Using circumference: $circumference")
 
-                        measurements.forEach {
-                            val speed =
-                                (it.speedRpm ?: 0f) * circumference / 60
-                            if (speed.isFinite()) {
-                                val timestamp =
-                                    (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                                entries.add(Entry(timestamp,
-                                    getUserSpeed(requireContext(), speed)))
-                                trendLast = (trendAlpha * getUserSpeed(requireContext(),
-                                    speed)) + ((1 - trendAlpha) * trendLast)
-                                trend.add(Entry(timestamp, trendLast))
-                                if (trendAlpha > 0.01f) trendAlpha -= 0.01f
+                        var lastMeasurements: CriticalMeasurements? = null
+                        measurementsList.forEach { measurements ->
+                            lastMeasurements?.let { last ->
+                                if (measurements.speedLastEvent != last.speedLastEvent) {
+                                    try {
+                                        getRpm(rev = measurements.speedRevolutions ?: 0,
+                                            revLast = last.speedRevolutions ?: 0,
+                                            time = measurements.speedLastEvent ?: 0,
+                                            timeLast = last.speedLastEvent
+                                                ?: 0).takeIf { it.isFinite() }
+                                            ?.let { it * circumference / 60 }
+                                            ?.let { speed ->
+                                                val timestamp =
+                                                    (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
+                                                entries.add(Entry(timestamp,
+                                                    getUserSpeed(requireContext(), speed)))
+                                                trendLast =
+                                                    (trendAlpha * getUserSpeed(requireContext(),
+                                                        speed)) + ((1 - trendAlpha) * trendLast)
+                                                trend.add(Entry(timestamp, trendLast))
+                                                if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                                if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                                            }
+                                    } catch (e: Exception) {
+                                        Log.e(logTag,
+                                            "Could not calculate speed for time ${measurements.time}")
+                                    }
+                                }
                             }
+                            lastMeasurements = measurements
                         }
                     }
 
@@ -662,27 +680,63 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
 
                     fun makeCadenceDataset(
-                        measurements: Array<CriticalMeasurements>,
+                        measurementsList: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
-                    ): LineDataSet {
+                    ): Pair<LineDataSet, LineDataSet> {
                         val entries = ArrayList<Entry>()
+                        val trend = ArrayList<Entry>()
                         val intervalStart = intervals.last().first
+                        var trendLast: Float? = null
+                        var trendAlpha = 0.5f
 
                         val accumulatedTime = accumulateTime(intervals)
 
-                        measurements.forEach {
-                            entries.add(Entry((accumulatedTime + (it.time - intervalStart) / 1e3).toFloat(),
-                                it.cadenceRpm ?: 0f))
+                        var lastMeasurements: CriticalMeasurements? = null
+                        measurementsList.forEach { measurements ->
+                            lastMeasurements?.let { last ->
+                                if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
+                                    try {
+                                        getRpm(rev = measurements.cadenceRevolutions ?: 0,
+                                            revLast = last.cadenceRevolutions ?: 0,
+                                            time = measurements.cadenceLastEvent ?: 0,
+                                            timeLast = last.cadenceLastEvent
+                                                ?: 0)?.takeIf { it.isFinite() }?.let { rpm ->
+                                            val timestamp =
+                                                (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
+                                            entries.add(Entry(timestamp, rpm))
+                                            trendLast =
+                                                (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
+                                                    ?: rpm))
+                                            trend.add(Entry(timestamp, trendLast!!))
+                                            if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                            if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e(logTag,
+                                            "Could not create rpm value for timestamp ${measurements.time}")
+                                    }
+                                }
+                            }
+                            lastMeasurements = measurements
                         }
+
                         val dataset = LineDataSet(entries, "Cadence")
                         dataset.setDrawCircles(false)
                         dataset.setDrawValues(false)
+                        val trendData = LineDataSet(trend, "Trend")
+                        trendData.setDrawCircles(false)
+                        trendData.setDrawValues(false)
                         dataset.color =
+                            ResourcesCompat.getColor(resources,
+                                R.color.colorGraphSecondary,
+                                null)
+                        dataset.lineWidth = 15f
+                        trendData.color =
                             ResourcesCompat.getColor(resources,
                                 R.color.colorAccent,
                                 null)
-                        dataset.lineWidth = 3f
-                        return dataset
+                        trendData.lineWidth = 3f
+                        return Pair(dataset, trendData)
                     }
 
                     fun makeCadenceLineChart() {
@@ -693,9 +747,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val data = LineData()
 
                         legs.forEachIndexed { idx, leg ->
-                            data.addDataSet(makeCadenceDataset(leg,
-                                intervals.sliceArray(IntRange(0, idx))))
+                            val (raw, trend) = makeCadenceDataset(leg,
+                                intervals.sliceArray(IntRange(0, idx)))
+
+                            data.addDataSet(raw)
+                            data.addDataSet(trend)
                         }
+
                         cadenceChartView.data = data
                         cadenceChartView.invalidate()
                     }
