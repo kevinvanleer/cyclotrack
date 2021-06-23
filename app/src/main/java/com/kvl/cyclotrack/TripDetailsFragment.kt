@@ -609,7 +609,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ResourcesCompat.getColor(resources,
                                 R.color.colorGraphSecondary,
                                 null)
-                        dataset.lineWidth = 15f
+                        dataset.lineWidth = 10f
                         trendData.color =
                             ResourcesCompat.getColor(resources,
                                 R.color.colorAccent,
@@ -730,7 +730,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ResourcesCompat.getColor(resources,
                                 R.color.colorGraphSecondary,
                                 null)
-                        dataset.lineWidth = 15f
+                        dataset.lineWidth = 10f
                         trendData.color =
                             ResourcesCompat.getColor(resources,
                                 R.color.colorAccent,
