@@ -766,15 +766,23 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     ): LineDataSet {
                         val entries = ArrayList<Entry>()
                         val intervalStart = intervals.last().first
-
-                        val accumulatedTime = accumulateTime(intervals)
-
+                        var trendLast: Float? = null
+                        var trendAlpha = 0.1f
+                        var totalDistance = 0.0
+                        var lastMeasurements: CriticalMeasurements? = null
                         measurements.forEach {
-                            val timestamp =
-                                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-                            entries.add(Entry(timestamp,
-                                getUserAltitude(requireContext(),
-                                    it.altitude).toFloat()))
+                            lastMeasurements?.let { last -> totalDistance += getDistance(it, last) }
+                            lastMeasurements = it
+                            getUserAltitude(requireContext(),
+                                it.altitude).toFloat().let { alt ->
+                                trendLast =
+                                    (trendAlpha * alt) + ((1 - trendAlpha) * (trendLast
+                                        ?: alt))
+                                entries.add(Entry(totalDistance.toFloat(),
+                                    trendLast!!))
+                            }
+                            if (trendAlpha > 0.1f) trendAlpha -= 0.005f
+                            if (trendAlpha < 0.1f) trendAlpha = 0.01f
                         }
                         val dataset = LineDataSet(entries, "Elevation")
                         dataset.setDrawCircles(false)
