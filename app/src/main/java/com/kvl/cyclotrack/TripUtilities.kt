@@ -588,11 +588,11 @@ fun makeSplit(
         tripId = tripId)
 }
 
-fun getDifferenceRollover(newTime: Int, oldTime: Int, rollover: Int = 65535) =
-    newTime + when (oldTime > newTime) {
+fun getDifferenceRollover(new: Int, old: Int, rollover: Int = 65536) =
+    new + when (old > new) {
         true -> rollover
         else -> 0
-    } - oldTime
+    } - old
 
 
 fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {

@@ -27,9 +27,10 @@ class GetRpmTest {
 
     @Test
     fun getRpm_rollover() {
-        Assert.assertEquals(10f, getRpm(5, 65535 - 5, 2 * 60 * 1024, 1 * 60 * 1024))
+        Assert.assertEquals(10f, getRpm(5, 65536 - 5, 2 * 60 * 1024, 1 * 60 * 1024))
         Assert.assertEquals(10f, getRpm(3251234, 3251224, 2 * 60 * 1024, 1 * 60 * 1024))
-        Assert.assertEquals(10f, getRpm(20, 10, 0, 65535 - (60 * 1024)))
-        Assert.assertEquals(10f, getRpm(20, 10, 1024, 65535 - (59 * 1024)))
+        Assert.assertEquals(10f, getRpm(20, 10, 0, 65536 - (60 * 1024)))
+        Assert.assertEquals(10f, getRpm(20, 10, 1024, 65536 - (59 * 1024)))
+        Assert.assertEquals(1f, getRpm(0, 65535, 60 * 1024, 0))
     }
 }
