@@ -694,7 +694,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         var lastMeasurements: CriticalMeasurements? = null
                         measurementsList.forEach { measurements ->
-                            Log.v(logTag, "itr: ${measurements.time} - ${lastMeasurements?.time}")
                             lastMeasurements?.let { last ->
                                 if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
                                     try {
@@ -704,8 +703,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                             timeLast = last.cadenceLastEvent ?: 0,
                                             delta = measurements.time - last.time
                                         )?.takeIf { it.isFinite() }?.let { rpm ->
-                                            Log.v(logTag,
-                                                "add: ${measurements.time} - ${lastMeasurements?.time}")
                                             val timestamp =
                                                 (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
                                             entries.add(Entry(timestamp, rpm))
