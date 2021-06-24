@@ -595,6 +595,18 @@ fun getDifferenceRollover(new: Int, old: Int, rollover: Int = 65536) =
     } - old
 
 
+fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int, delta: Long): Float {
+    //NOTE: Does not handle 32-bit rollover, as the CSC spec states 32-bit values
+    //do not rollover.
+    //Accounts for gaps in samples larger than BLE time range
+    val rollCount = (delta / 64000).toInt()
+    val adjustedTime = time + 65536 * rollCount
+    return getDifferenceRollover(rev, revLast).toFloat().let {
+        if (it == 0f) 0f else it / getDifferenceRollover(adjustedTime,
+            timeLast) * 1024 * 60
+    }
+}
+
 fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
     //NOTE: Does not handle 32-bit rollover, as the CSC spec states 32-bit values
     //do not rollover.

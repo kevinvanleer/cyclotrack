@@ -33,4 +33,24 @@ class GetRpmTest {
         Assert.assertEquals(10f, getRpm(20, 10, 1024, 65536 - (59 * 1024)))
         Assert.assertEquals(1f, getRpm(0, 65535, 60 * 1024, 0))
     }
+
+    @Test
+    fun getRpm_deltaRollover() {
+        Assert.assertEquals(60f,
+            getRpm(rev = 65, revLast = 0, time = 10 * 1024, timeLast = 9 * 1024, delta = 65000))
+        Assert.assertEquals(60f,
+            getRpm(rev = 129,
+                revLast = 0,
+                time = 10 * 1024,
+                timeLast = 9 * 1024,
+                delta = 65000 * 2))
+        Assert.assertEquals(60f,
+            getRpm(rev = 63, revLast = 0, time = 10 * 1024, timeLast = 11 * 1024, delta = 65000))
+        Assert.assertEquals(60f,
+            getRpm(rev = 127,
+                revLast = 0,
+                time = 10 * 1024,
+                timeLast = 11 * 1024,
+                delta = 65000 * 2))
+    }
 }
