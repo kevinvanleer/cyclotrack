@@ -31,8 +31,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.toolbar))
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         googleFitApiService = GoogleFitApiService(this)
-        WorkManager.getInstance(applicationContext)
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
     }
 
     override fun onResume() {
@@ -44,6 +42,8 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
             }, IntentFilter(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+        WorkManager.getInstance(applicationContext)
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
