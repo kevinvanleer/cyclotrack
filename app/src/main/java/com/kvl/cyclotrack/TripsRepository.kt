@@ -19,6 +19,7 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     }
 
     suspend fun getAll() = tripDao.loadAll()
+    suspend fun getAfter(tripId: Long) = tripDao.loadAfter(tripId)
 
     fun observeRealTrips(): LiveData<Array<Trip>> {
         return tripDao.subscribeRealTrips()
