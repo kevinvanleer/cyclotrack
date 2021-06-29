@@ -12,8 +12,6 @@ import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -31,10 +29,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.toolbar))
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         googleFitApiService = GoogleFitApiService(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
         LocalBroadcastManager.getInstance(applicationContext)
             .registerReceiver(object : BroadcastReceiver() {
                 override fun onReceive(context: Context?, intent: Intent?) {
@@ -42,8 +36,10 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
             }, IntentFilter(BluetoothAdapter.ACTION_REQUEST_ENABLE))
-        WorkManager.getInstance(applicationContext)
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+    }
+
+    override fun onResume() {
+        super.onResume()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
