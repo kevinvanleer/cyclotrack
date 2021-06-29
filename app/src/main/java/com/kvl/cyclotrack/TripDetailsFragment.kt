@@ -551,7 +551,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         var lastMeasurements: CriticalMeasurements? = null
                         measurementsList.forEach { measurements ->
-                            lastMeasurements?.let { last ->
+                            lastMeasurements?.takeIf { it.speedRevolutions != null }?.let { last ->
                                 if (measurements.speedLastEvent != last.speedLastEvent) {
                                     try {
                                         getRpm(rev = measurements.speedRevolutions ?: 0,
@@ -694,17 +694,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         var lastMeasurements: CriticalMeasurements? = null
                         measurementsList.forEach { measurements ->
-                            lastMeasurements?.let { last ->
-                                if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
-                                    try {
-                                        getRpm(rev = measurements.cadenceRevolutions ?: 0,
-                                            revLast = last.cadenceRevolutions ?: 0,
-                                            time = measurements.cadenceLastEvent ?: 0,
-                                            timeLast = last.cadenceLastEvent ?: 0,
-                                            delta = measurements.time - last.time
-                                        )?.takeIf { it.isFinite() }?.let { rpm ->
-                                            val timestamp =
-                                                (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
+                            lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+                                ?.let { last ->
+                                    if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
+                                        try {
+                                            getRpm(rev = measurements.cadenceRevolutions ?: 0,
+                                                revLast = last.cadenceRevolutions ?: 0,
+                                                time = measurements.cadenceLastEvent ?: 0,
+                                                timeLast = last.cadenceLastEvent ?: 0,
+                                                delta = measurements.time - last.time
+                                            )?.takeIf { it.isFinite() }?.let { rpm ->
+                                                val timestamp =
+                                                    (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
                                             entries.add(Entry(timestamp, rpm))
                                             trendLast =
                                                 (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
