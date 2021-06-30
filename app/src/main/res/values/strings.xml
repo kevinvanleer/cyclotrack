@@ -85,4 +85,5 @@
     <string name="gps_disabled_message">GPS disabled</string>
     <string name="intent_action_tripId_created">com.kvl.cyclotrack.intent_action_tripId_created</string>
     <string name="initial_inspiring_message">Ready to start your first ride? Touch the bike button and let\'s get moving!</string>
+    <string name="details_menu_title_sync">Sync</string>
 </resources>

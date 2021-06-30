@@ -30,6 +30,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
@@ -257,6 +260,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 })
                 true
             }
+            R.id.details_menu_action_sync -> {
+                WorkManager.getInstance(requireContext())
+                    .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                        .setInputData(workDataOf("tripId" to viewModel.tripId)).build())
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -311,7 +320,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
 
         fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
-            var sum = 0
+            var sum = 0f
             var count = 0
             measurements.forEach {
                 if (it.heartRate != null) {
@@ -322,7 +331,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return if (count == 0) {
                 null
             } else {
-                (sum / count).toShort()
+                (sum / count).roundToInt().toShort()
             }
         }
 
@@ -491,17 +500,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val timeStates = pairs.second
                     Log.d(TAG, "Observed change to measurements and time state")
 
-                    val effectiveCircumference = overview.distance?.let { distance ->
-                        tripMeasurements.filter { meas -> meas.speedRevolutions != null }
-                            .map { filtered -> filtered.speedRevolutions!! }
-                            .let { mapped ->
-                                if (mapped.isNotEmpty()) {
-                                    distance.div(mapped.last()
-                                        .minus(mapped.first().toDouble()))
-                                        .toFloat()
-                                } else null
-                            }
-                    }
+                    val effectiveCircumference =
+                        getEffectiveCircumference(overview, tripMeasurements)
+
                     Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
                     Log.d(TAG,
                         "Auto circumference trip $tripId: ${overview.autoWheelCircumference}")
@@ -919,8 +920,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                 }
             })
+        viewModel.tripOverview().observe(viewLifecycleOwner, { trip ->
+            getDatasets(requireActivity(), trip.timestamp, (trip.timestamp + (trip.duration?.times(
+                1000) ?: 0).toLong()))
+        })
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -965,7 +969,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private fun startTouchSequence(event: MotionEvent?): Boolean {
         startY = event?.rawY ?: 0f
         startHeight = scrollView.marginTop
-        Log.d("TOUCH_SEQ", "Start sequence: $startY")
+        Log.v("TOUCH_SEQ", "Start sequence: $startY")
         return true
     }
 
@@ -983,7 +987,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return false
         }
 
-        Log.d("TOUCH_SEQ_MOVE",
+        Log.v("TOUCH_SEQ_MOVE",
             "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight")
         val marginParams: ViewGroup.MarginLayoutParams =
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
@@ -1022,7 +1026,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         val delta = newHeight - currentHeight
-        Log.d("TOUCH_SEQ_END",
+        Log.v("TOUCH_SEQ_END",
             "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight, currentHeight:$currentHeight, delta:$delta")
 
         val marginAnimation = object : Animation() {

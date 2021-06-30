@@ -18,6 +18,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         return tripDao.susbscribeAll()
     }
 
+    suspend fun getAll() = tripDao.loadAll()
+
     fun observeRealTrips(): LiveData<Array<Trip>> {
         return tripDao.subscribeRealTrips()
     }

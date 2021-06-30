@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessOptions
 import com.google.android.gms.fitness.data.DataPoint
@@ -17,35 +18,41 @@ import java.util.concurrent.TimeUnit
 
 private const val logTag = "GOOGLE_FIT_UTILITIES"
 
-val fitnessOptions = FitnessOptions.builder()
-    .addDataType(DataType.AGGREGATE_HEIGHT_SUMMARY,
-        FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.AGGREGATE_WEIGHT_SUMMARY,
-        FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.AGGREGATE_HEART_RATE_SUMMARY,
-        FitnessOptions.ACCESS_READ)
+val fitnessOptions: FitnessOptions = FitnessOptions.builder()
+    .addDataType(DataType.AGGREGATE_HEIGHT_SUMMARY, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.AGGREGATE_WEIGHT_SUMMARY, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.AGGREGATE_HEART_RATE_SUMMARY, FitnessOptions.ACCESS_READ)
     .addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_WRITE)
     .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
     .addDataType(DataType.TYPE_CYCLING_WHEEL_REVOLUTION, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_CYCLING_WHEEL_REVOLUTION, FitnessOptions.ACCESS_WRITE)
     .addDataType(DataType.TYPE_CYCLING_WHEEL_RPM, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_CYCLING_WHEEL_RPM, FitnessOptions.ACCESS_WRITE)
     .addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_WRITE)
+    .addDataType(DataType.TYPE_CYCLING_PEDALING_CUMULATIVE, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_CYCLING_PEDALING_CUMULATIVE, FitnessOptions.ACCESS_WRITE)
     .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_WRITE)
     .addDataType(DataType.TYPE_WEIGHT, FitnessOptions.ACCESS_READ)
     .addDataType(DataType.TYPE_HEIGHT, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_ACTIVITY_SEGMENT,
-        FitnessOptions.ACCESS_WRITE)
-    .addDataType(DataType.AGGREGATE_ACTIVITY_SUMMARY,
-        FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.AGGREGATE_ACTIVITY_SUMMARY, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_READ)
+    .addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_WRITE)
     .build()
 
-fun getGoogleAccount(context: Context) = GoogleSignIn.getLastSignedInAccount(context)
+//fun getGoogleAccount(context: Context) = GoogleSignIn.getLastSignedInAccount(context)
+fun getGoogleAccount(context: Context): GoogleSignInAccount? =
+    GoogleSignIn.getAccountForExtension(context, fitnessOptions)
 
 private fun printDataPoint(dataPoint: DataPoint) {
     val startString =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date(dataPoint.getStartTime(
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(dataPoint.getStartTime(
             TimeUnit.MILLISECONDS)))
     val endString =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date(dataPoint.getEndTime(
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(dataPoint.getEndTime(
             TimeUnit.MILLISECONDS)))
     when (dataPoint.dataType) {
         DataType.TYPE_HEIGHT -> {
@@ -64,6 +71,48 @@ private fun printDataPoint(dataPoint: DataPoint) {
             Log.d(logTag,
                 "${startString}><${endString} M/S: ${
                     dataPoint.getValue(Field.FIELD_SPEED)
+                }")
+        }
+        DataType.TYPE_CYCLING_WHEEL_REVOLUTION -> {
+            Log.d(logTag,
+                "${startString}><${endString} REVS: ${
+                    dataPoint.getValue(Field.FIELD_REVOLUTIONS)
+                }")
+        }
+        DataType.TYPE_CYCLING_WHEEL_RPM -> {
+            Log.d(logTag,
+                "${startString}><${endString} RPM: ${
+                    dataPoint.getValue(Field.FIELD_RPM)
+                }")
+        }
+        DataType.TYPE_CYCLING_PEDALING_CUMULATIVE -> {
+            Log.d(logTag,
+                "${startString}><${endString} REVS: ${
+                    dataPoint.getValue(Field.FIELD_REVOLUTIONS)
+                }")
+        }
+        DataType.TYPE_CYCLING_PEDALING_CADENCE -> {
+            Log.d(logTag,
+                "${startString}><${endString} RPM: ${
+                    dataPoint.getValue(Field.FIELD_RPM)
+                }")
+        }
+        DataType.TYPE_LOCATION_SAMPLE -> {
+            Log.d(logTag,
+                "${startString}><${endString} LAT: ${
+                    dataPoint.getValue(Field.FIELD_LATITUDE)
+                }")
+            Log.d(logTag,
+                "${startString}><${endString} LNG: ${
+                    dataPoint.getValue(Field.FIELD_LONGITUDE)
+                }")
+            Log.d(logTag,
+                "${startString}><${endString} ALT: ${
+                    dataPoint.getValue(Field.FIELD_ALTITUDE)
+                }")
+            Log.d(logTag,
+                "${startString}><${endString} ACC: ${
+                    dataPoint.getValue(Field.FIELD_ACCURACY)
                 }")
         }
         DataType.TYPE_DISTANCE_DELTA -> {
@@ -128,9 +177,11 @@ fun getActivities(activity: Activity, start: Long, end: Long) {
         //.aggregate(DataType.AGGREGATE_ACTIVITY_SUMMARY)
         .read(DataType.AGGREGATE_ACTIVITY_SUMMARY)
         .read(DataType.TYPE_WEIGHT)
-        //.read(DataType.TYPE_LOCATION_SAMPLE) cannot be read
+        .read(DataType.TYPE_LOCATION_SAMPLE)
+        .read(DataType.TYPE_CYCLING_PEDALING_CADENCE)
         .read(DataType.TYPE_HEART_RATE_BPM)
-        .setTimeRange(start, end, TimeUnit.SECONDS)
+        .read(DataType.TYPE_SPEED)
+        .setTimeRange(start, end, TimeUnit.MILLISECONDS)
         .bucketByActivitySegment(30, TimeUnit.MINUTES)
         .build()
     getGoogleAccount(activity)?.let {
@@ -156,7 +207,41 @@ fun getActivities(activity: Activity, start: Long, end: Long) {
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getActivities::OnFailure()", e) }
+    }
+}
+
+fun getDatasets(activity: Activity, start: Long, end: Long) {
+    Log.d(logTag, "GoogleFitUtilities::getDatasets()")
+    val readRequest = DataReadRequest.Builder()
+        //.aggregate(DataType.AGGREGATE_ACTIVITY_SUMMARY)
+        //.read(DataType.AGGREGATE_ACTIVITY_SUMMARY)
+        //.read(DataType.TYPE_WEIGHT)
+        .read(DataType.TYPE_LOCATION_SAMPLE)
+        .read(DataType.TYPE_CYCLING_PEDALING_CADENCE)
+        .read(DataType.TYPE_CYCLING_PEDALING_CUMULATIVE)
+        .read(DataType.TYPE_CYCLING_WHEEL_RPM)
+        .read(DataType.TYPE_CYCLING_WHEEL_REVOLUTION)
+        .read(DataType.TYPE_HEART_RATE_BPM)
+        .read(DataType.TYPE_SPEED)
+        .setTimeRange(start, end, TimeUnit.MILLISECONDS)
+        .setLimit(100)
+        .build()
+    getGoogleAccount(activity)?.let {
+        Fitness.getHistoryClient(activity, it)
+            .readData(readRequest)
+            .addOnSuccessListener { response ->
+                // Use response data here
+                Log.d(logTag, "getDatasets::OnSuccess()")
+                response.dataSets.forEach { dataset ->
+                    Log.d(logTag, "data type: ${dataset.dataType.name}")
+                    Log.d(logTag, "data points count: ${dataset.dataPoints.size}")
+                    dataset.dataPoints.forEach { dataPoint ->
+                        printDataPoint(dataPoint)
+                    }
+                }
+            }
+            .addOnFailureListener { e -> Log.d(logTag, "getActivities::OnFailure()", e) }
     }
 }
 
@@ -183,7 +268,7 @@ fun getLatestWeight(
                 }
             }
             .addOnFailureListener { e ->
-                Log.d(logTag, "OnFailure()", e)
+                Log.d(logTag, "getLatestWeight::OnFailure()", e)
             }
     }
 }
@@ -202,18 +287,18 @@ fun getLatest(activity: Activity, type: DataType, timestamp: Long = System.curre
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getLatest::OnFailure()", e) }
     }
 }
 
 fun getLatestHeartRate(activity: Activity) {
     getGoogleAccount(activity)?.let {
-        val end = System.currentTimeMillis() / 1000
-        val start = end - 60 * 60 * 24 * 30
+        val end = System.currentTimeMillis()
+        val start = end - 1000L * 60 * 60 * 24 * 30
         Fitness.getHistoryClient(activity, it)
             .readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
                 .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
-                .setTimeRange(start, end, TimeUnit.SECONDS).build())
+                .setTimeRange(start, end, TimeUnit.MILLISECONDS).build())
             .addOnSuccessListener { response ->
                 Log.d(logTag, "getLatestHeartRate")
                 response.buckets.forEach { bucket ->
@@ -224,7 +309,7 @@ fun getLatestHeartRate(activity: Activity) {
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getLatestHeartRate::OnFailure()", e) }
     }
 }
 
@@ -232,7 +317,7 @@ fun getBiometricsHistory(activity: Activity, start: Long, end: Long) {
     val readRequest = DataReadRequest.Builder()
         .read(DataType.TYPE_HEIGHT)
         .read(DataType.TYPE_WEIGHT)
-        .setTimeRange(start, end, TimeUnit.SECONDS)
+        .setTimeRange(start, end, TimeUnit.MILLISECONDS)
         //.setTimeRange(1, end, TimeUnit.SECONDS)
         .bucketByTime(1, TimeUnit.DAYS)
         //.bucketByActivitySegment(30, TimeUnit.MINUTES)
@@ -252,25 +337,24 @@ fun getBiometricsHistory(activity: Activity, start: Long, end: Long) {
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getBiometricsHistory::OnFailure()", e) }
     }
 }
 
-fun getSession(activity: Activity, start: Long, end: Long) {
+fun getSessions(activity: Activity, start: Long, end: Long) {
     val readRequest = SessionReadRequest.Builder()
         //.read(DataType.TYPE_HEIGHT)
         //.read(DataType.TYPE_WEIGHT)
         //.read(DataType.TYPE_LOCATION_SAMPLE)
-        .read(DataType.TYPE_SPEED)
-        .read(DataType.TYPE_DISTANCE_DELTA)
+        //.read(DataType.TYPE_SPEED)
+        //.read(DataType.TYPE_DISTANCE_DELTA)
+        .read(DataType.TYPE_CYCLING_PEDALING_CADENCE)
         //.read(DataType.TYPE_HEART_RATE_BPM)
         //.read(DataType.AGGREGATE_HEART_RATE_SUMMARY)
         //.read(DataType.AGGREGATE_HEIGHT_SUMMARY)
         //.read(DataType.AGGREGATE_WEIGHT_SUMMARY)
         .readSessionsFromAllApps()
-        .excludePackage("com.kvl.cyclotrack.dev")
-        .excludePackage("com.kvl.cyclotrack")
-        .setTimeInterval(start, end, TimeUnit.SECONDS)
+        .setTimeInterval(start, end, TimeUnit.MILLISECONDS)
         .build()
     getGoogleAccount(activity)?.let {
         Fitness.getSessionsClient(activity, it)
@@ -283,13 +367,14 @@ fun getSession(activity: Activity, start: Long, end: Long) {
                     Log.d(logTag, "Session description: ${session.description}")
                     Log.d(logTag, "Activity type: ${session.activity}")
                     response.getDataSet(session).forEach { dataSet ->
+                        Log.d(logTag, "Data type: ${dataSet.dataType.name}")
                         dataSet.dataPoints.forEach { dataPoint ->
                             printDataPoint(dataPoint)
                         }
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getSessions::OnFailure()", e) }
     }
 }
 
@@ -307,7 +392,7 @@ fun getBikingSessions(activity: Activity, start: Long, end: Long) {
         .enableServerQueries()
         .excludePackage("com.kvl.cyclotrack.dev")
         .excludePackage("com.kvl.cyclotrack")
-        .setTimeInterval(start, end, TimeUnit.SECONDS)
+        .setTimeInterval(start, end, TimeUnit.MILLISECONDS)
         .build()
     getGoogleAccount(activity)?.let {
         Fitness.getSessionsClient(activity, it)
@@ -328,7 +413,7 @@ fun getBikingSessions(activity: Activity, start: Long, end: Long) {
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getBikingSessions::OnFailure()", e) }
     }
 }
 
@@ -337,7 +422,7 @@ fun getAggBiometrics(activity: Activity, start: Long, end: Long) {
         .aggregate(DataType.TYPE_HEART_RATE_BPM)
         .aggregate(DataType.TYPE_HEIGHT)
         .aggregate(DataType.TYPE_WEIGHT)
-        .setTimeRange(start, end, TimeUnit.SECONDS)
+        .setTimeRange(start, end, TimeUnit.MILLISECONDS)
         //.setTimeRange(1, end, TimeUnit.SECONDS)
         .bucketByTime(1, TimeUnit.DAYS)
         //.bucketByActivitySegment(30, TimeUnit.MINUTES)
@@ -357,24 +442,27 @@ fun getAggBiometrics(activity: Activity, start: Long, end: Long) {
                     }
                 }
             }
-            .addOnFailureListener { e -> Log.d(logTag, "OnFailure()", e) }
+            .addOnFailureListener { e -> Log.d(logTag, "getAggBiometrics::OnFailure()", e) }
     }
 }
 
 fun accessGoogleFit(activity: Activity) {
     Log.d(logTag, "accessGoogleFit()")
-    //val end = System.currentTimeMillis() / 1000
-    //val start = end - 60 * 60 * 24 * 30
+    val end = System.currentTimeMillis()
+    val start = end - 1000 * 60 * 60 * 24 * 30
 
     val startCal = GregorianCalendar.getInstance()
     val endCal = GregorianCalendar.getInstance()
-    startCal.set(2020, 7, 1)
-    endCal.set(2020, 9, 30)
+    //startCal.set(2020, 7, 1)
+    //endCal.set(2020, 9, 30)
+    startCal.set(2021, 4, 3)
+    endCal.set(2021, 4, 4)
 
-    //getActivities(activity,start,end)
+    //getActivities(activity, start, end)
     //getAggBiometrics(activity, start, end)
-    //getBiometricsHistory(activity, start, end)/get
-    //getSession(activity, startCal.timeInMillis/1000, endCal.timeInMillis/1000)
+    //getBiometricsHistory(activity, start, end)
+    //getSessions(activity, startCal.timeInMillis , endCal.timeInMillis )
+    getDatasets(activity, startCal.timeInMillis, endCal.timeInMillis)
     //getSession(activity, start, end)
 
     /*
@@ -383,12 +471,12 @@ fun accessGoogleFit(activity: Activity) {
         val rangeStart = inc
         val rangeEnd = inc.clone() as GregorianCalendar
         rangeEnd.add(Calendar.DAY_OF_MONTH, 7)
-        getBikingSessions(activity, rangeStart.timeInMillis / 1000, rangeEnd.timeInMillis / 1000)
+        getBikingSessions(activity, rangeStart.timeInMillis , rangeEnd.timeInMillis )
         inc = rangeEnd
     }
     */
 
-    //getBikingSessions(activity, startCal.timeInMillis / 1000, endCal.timeInMillis / 1000)
+    //getBikingSessions(activity, startCal.timeInMillis , endCal.timeInMillis )
     getLatest(activity, DataType.TYPE_WEIGHT)
     getLatest(activity, DataType.TYPE_HEIGHT)
     getLatestHeartRate(activity)

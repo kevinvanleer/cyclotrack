@@ -15,4 +15,8 @@
         android:id="@+id/details_menu_action_export"
         android:title="@string/details_menu_title_export"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/details_menu_action_sync"
+        android:title="@string/details_menu_title_sync"
+        app:showAsAction="never" />
 </menu>

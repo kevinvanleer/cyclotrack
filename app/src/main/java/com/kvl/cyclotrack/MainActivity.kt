@@ -52,12 +52,18 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(logTag, "onActivityResult: ${resultCode}")
         when (resultCode) {
-            Activity.RESULT_OK -> when (requestCode) {
-                1 -> LocalBroadcastManager.getInstance(this)
-                    .sendBroadcast(Intent(getString(R.string.intent_action_google_fit_access_granted)))
-                else -> Log.d(logTag, "Result was not from Google Fit")
+            Activity.RESULT_OK -> {
+                Log.i(logTag, "Permission request granted.")
+                when (requestCode) {
+                    1 -> LocalBroadcastManager.getInstance(this)
+                        .sendBroadcast(Intent(getString(R.string.intent_action_google_fit_access_granted)))
+                    else -> Log.d(logTag, "Result was not from Google Fit")
+                }
             }
-            else -> Log.d(logTag, "Permission not granted")
+            Activity.RESULT_CANCELED -> Log.w(logTag,
+                "Permission request was cancelled ${resultCode}")
+
+            else -> Log.w(logTag, "Google permission request failed ${resultCode}")
         }
     }
 }
