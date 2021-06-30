@@ -113,6 +113,7 @@ data class Measurements(
 }
 
 data class CriticalMeasurements(
+    val accuracy: Float,
     val altitude: Double,
     val latitude: Double,
     val longitude: Double,
