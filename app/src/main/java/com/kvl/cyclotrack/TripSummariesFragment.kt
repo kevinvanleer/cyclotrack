@@ -280,7 +280,10 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                 setPositiveButton("DELETE"
                 ) { _, _ ->
                     Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                    viewModel.removeTrips(selectedTrips)
+                    WorkManager.getInstance(requireContext())
+                        .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                            .setInputData(workDataOf("tripIds" to selectedTrips))
+                            .build())
                     (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
                 }
                 setNegativeButton("CANCEL"
@@ -328,7 +331,9 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
                 "MY_KEY"))
         }
-        WorkManager.getInstance(requireContext())
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        if (!FeatureFlags.devBuild) {
+            WorkManager.getInstance(requireContext())
+                .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        }
     }
 }

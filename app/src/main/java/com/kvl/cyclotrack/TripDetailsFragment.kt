@@ -230,11 +230,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d(TAG, "Options menu clicked delete")
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
+                    val googleFit = hasFitnessPermissions(it)
+
                     builder.apply {
                         setPositiveButton("DELETE"
                         ) { _, _ ->
                             Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                            viewModel.removeTrip()
+
+                            WorkManager.getInstance(requireContext())
+                                .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                                    .build())
                             findNavController().navigate(R.id.action_remove_trip)
                         }
                         setNegativeButton("CANCEL"
@@ -242,7 +248,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
                         }
                         setTitle("Delete ride?")
-                        setMessage("You are about to remove this ride from your history. This change cannot be undone.")
+                        setMessage("You are about to remove this ride from your history${if (googleFit) " and Google Fit." else "."} This change cannot be undone.")
                     }
 
                     builder.create()
@@ -920,10 +926,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                 }
             })
-        viewModel.tripOverview().observe(viewLifecycleOwner, { trip ->
-            getDatasets(requireActivity(), trip.timestamp, (trip.timestamp + (trip.duration?.times(
-                1000) ?: 0).toLong()))
-        })
+        if (FeatureFlags.devBuild) {
+            viewModel.tripOverview().observe(viewLifecycleOwner, { trip ->
+                getDatasets(requireActivity(),
+                    trip.timestamp,
+                    (trip.timestamp + (trip.duration?.times(
+                        1000) ?: 0).toLong()))
+            })
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

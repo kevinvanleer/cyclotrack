@@ -309,16 +309,20 @@ fun accessGoogleFit(activity: Activity) {
     getLatestHeartRate(activity)
 }
 
+fun hasFitnessPermissions(context: Context): Boolean {
+    return GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)
+}
+
 fun configureGoogleFit(activity: Activity) {
     with(activity) {
-        if (!GoogleSignIn.hasPermissions(getGoogleAccount(this), fitnessOptions)) {
-            Log.d(logTag, "Syncing with Google Fit")
+        if (!hasFitnessPermissions(this)) {
+            Log.i(logTag, "Logging in with Google Fit")
             GoogleSignIn.requestPermissions(this,
                 1,
                 getGoogleAccount(this),
                 fitnessOptions)
         } else {
-            Log.d(logTag, "Already logged in to Google Fit")
+            Log.i(logTag, "Already logged in to Google Fit")
         }
     }
 }
