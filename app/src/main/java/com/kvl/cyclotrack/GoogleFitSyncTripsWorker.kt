@@ -53,7 +53,7 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
                         }
                         if (trip.id!! > newestSyncedTrip) {
                             sharedPreferences.edit {
-                                putLong("com.kvl.cyclotrack.newestSyncedTrip", trip.id!!)
+                                putLong("com.kvl.cyclotrack.newestSyncedTrip", trip.id)
                                 apply()
                             }
                         }

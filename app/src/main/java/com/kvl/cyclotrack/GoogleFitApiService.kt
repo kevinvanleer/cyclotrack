@@ -128,7 +128,7 @@ class GoogleFitApiService constructor(private val context: Context) {
         val cadenceData = DataSet.builder(dataSource)
         var lastMeasurements: CriticalMeasurements? = null
         measurements.forEach { current ->
-            current?.takeIf { it.cadenceRevolutions != null }?.let { curr ->
+            current.takeIf { it.cadenceRevolutions != null }?.let { curr ->
                 lastMeasurements?.takeIf { it.cadenceRevolutions != null }?.let { last ->
                     val dataPoint = DataPoint.builder(dataSource)
                     getRpm(rev = curr.cadenceRevolutions ?: 0,

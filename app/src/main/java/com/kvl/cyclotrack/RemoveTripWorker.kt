@@ -30,8 +30,8 @@ class RemoveTripWorker @AssistedInject constructor(
             if (hasFitnessPermissions(applicationContext)) {
                 Log.i(logTag, "Removing data from Google Fit for trip ${tripId}")
                 try {
-                    tripsRepository.get(tripId)?.let { trip ->
-                        timeStateRepository.getTimeStates(trip.id!!)?.let {
+                    tripsRepository.get(tripId).let { trip ->
+                        timeStateRepository.getTimeStates(trip.id!!).let {
                             GoogleFitApiService.instance.deleteTrip(trip, it)
                         }
                     }

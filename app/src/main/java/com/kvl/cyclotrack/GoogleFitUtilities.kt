@@ -276,7 +276,7 @@ fun getSessionId(tripId: Long) = "com.kvl.cyclotrack.trip-${tripId}"
 fun accessGoogleFit(activity: Activity) {
     Log.d(logTag, "accessGoogleFit()")
     val end = System.currentTimeMillis()
-    val start = end - 1000 * 60 * 60 * 24 * 30
+    //val start = end - 1000L * 60 * 60 * 24 * 30
 
     val startCal = GregorianCalendar.getInstance()
     val endCal = GregorianCalendar.getInstance()
