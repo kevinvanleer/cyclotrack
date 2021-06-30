@@ -226,10 +226,10 @@ fun getTripIntervals(
 }
 
 fun getStartTime(timeStates: Array<TimeState>) =
-    timeStates.find { it.state == TimeStateEnum.START }?.timestamp
+    timeStates.find { isTripInProgress(it.state) }?.timestamp
 
 fun getEndTime(timeStates: Array<TimeState>) =
-    timeStates.find { it.state == TimeStateEnum.STOP }?.timestamp
+    timeStates.findLast { !isTripInProgress(it.state) }?.timestamp
 
 fun getTripLegs(
     measurements: Array<CriticalMeasurements>,

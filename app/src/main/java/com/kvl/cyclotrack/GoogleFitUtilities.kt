@@ -56,115 +56,115 @@ private fun printDataPoint(dataPoint: DataPoint) {
             TimeUnit.MILLISECONDS)))
     when (dataPoint.dataType) {
         DataType.TYPE_HEIGHT -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_HEIGHT)
                 }")
         }
         DataType.TYPE_WEIGHT -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} WEIGHT: ${
                     dataPoint.getValue(Field.FIELD_WEIGHT)
                 }")
         }
         DataType.TYPE_SPEED -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} M/S: ${
                     dataPoint.getValue(Field.FIELD_SPEED)
                 }")
         }
         DataType.TYPE_CYCLING_WHEEL_REVOLUTION -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} REVS: ${
                     dataPoint.getValue(Field.FIELD_REVOLUTIONS)
                 }")
         }
         DataType.TYPE_CYCLING_WHEEL_RPM -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} RPM: ${
                     dataPoint.getValue(Field.FIELD_RPM)
                 }")
         }
         DataType.TYPE_CYCLING_PEDALING_CUMULATIVE -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} REVS: ${
                     dataPoint.getValue(Field.FIELD_REVOLUTIONS)
                 }")
         }
         DataType.TYPE_CYCLING_PEDALING_CADENCE -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} RPM: ${
                     dataPoint.getValue(Field.FIELD_RPM)
                 }")
         }
         DataType.TYPE_LOCATION_SAMPLE -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} LAT: ${
                     dataPoint.getValue(Field.FIELD_LATITUDE)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} LNG: ${
                     dataPoint.getValue(Field.FIELD_LONGITUDE)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} ALT: ${
                     dataPoint.getValue(Field.FIELD_ALTITUDE)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} ACC: ${
                     dataPoint.getValue(Field.FIELD_ACCURACY)
                 }")
         }
         DataType.TYPE_DISTANCE_DELTA -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} M: ${
                     dataPoint.getValue(Field.FIELD_DISTANCE)
                 }")
         }
         DataType.TYPE_HEART_RATE_BPM -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} BPM: ${
                     dataPoint.getValue(Field.FIELD_BPM)
                 }")
         }
         DataType.AGGREGATE_HEIGHT_SUMMARY -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} AVG HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_AVERAGE)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} MIN HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_MIN)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} MAX HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_MAX)
                 }")
         }
         DataType.AGGREGATE_WEIGHT_SUMMARY -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} AVG KG: ${
                     dataPoint.getValue(Field.FIELD_AVERAGE)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} MIN KG: ${
                     dataPoint.getValue(Field.FIELD_MIN)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} MAX KG: ${
                     dataPoint.getValue(Field.FIELD_MAX)
                 }")
         }
         DataType.AGGREGATE_HEART_RATE_SUMMARY -> {
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} AVG BPM: ${
                     dataPoint.getValue(Field.FIELD_AVERAGE)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} MIN BPM: ${
                     dataPoint.getValue(Field.FIELD_MIN)
                 }")
-            Log.d(logTag,
+            Log.v(logTag,
                 "${startString}><${endString} MAX BPM: ${
                     dataPoint.getValue(Field.FIELD_MAX)
                 }")
@@ -219,11 +219,12 @@ fun getDatasets(activity: Activity, start: Long, end: Long) {
         //.read(DataType.TYPE_WEIGHT)
         .read(DataType.TYPE_LOCATION_SAMPLE)
         .read(DataType.TYPE_CYCLING_PEDALING_CADENCE)
-        .read(DataType.TYPE_CYCLING_PEDALING_CUMULATIVE)
-        .read(DataType.TYPE_CYCLING_WHEEL_RPM)
-        .read(DataType.TYPE_CYCLING_WHEEL_REVOLUTION)
+        //.read(DataType.TYPE_CYCLING_PEDALING_CUMULATIVE)
+        //.read(DataType.TYPE_CYCLING_WHEEL_RPM)
+        //.read(DataType.TYPE_CYCLING_WHEEL_REVOLUTION)
         .read(DataType.TYPE_HEART_RATE_BPM)
         .read(DataType.TYPE_SPEED)
+        .read(DataType.TYPE_DISTANCE_DELTA)
         .setTimeRange(start, end, TimeUnit.MILLISECONDS)
         .setLimit(100)
         .build()
@@ -341,6 +342,8 @@ fun getBiometricsHistory(activity: Activity, start: Long, end: Long) {
     }
 }
 
+fun getSessionId(tripId: Long) = "com.kvl.cyclotrack.trip-${tripId}"
+
 fun getSessions(activity: Activity, start: Long, end: Long) {
     val readRequest = SessionReadRequest.Builder()
         //.read(DataType.TYPE_HEIGHT)
@@ -348,7 +351,7 @@ fun getSessions(activity: Activity, start: Long, end: Long) {
         //.read(DataType.TYPE_LOCATION_SAMPLE)
         //.read(DataType.TYPE_SPEED)
         //.read(DataType.TYPE_DISTANCE_DELTA)
-        .read(DataType.TYPE_CYCLING_PEDALING_CADENCE)
+        //.read(DataType.TYPE_CYCLING_PEDALING_CADENCE)
         //.read(DataType.TYPE_HEART_RATE_BPM)
         //.read(DataType.AGGREGATE_HEART_RATE_SUMMARY)
         //.read(DataType.AGGREGATE_HEIGHT_SUMMARY)
@@ -364,6 +367,7 @@ fun getSessions(activity: Activity, start: Long, end: Long) {
                 Log.d(logTag, "getSessions found ${response.sessions.size} sessions")
                 response.sessions.forEach { session ->
                     Log.d(logTag, "Session name: ${session.name}")
+                    Log.d(logTag, "Session identifier: ${session.identifier}")
                     Log.d(logTag, "Session description: ${session.description}")
                     Log.d(logTag, "Activity type: ${session.activity}")
                     response.getDataSet(session).forEach { dataSet ->
