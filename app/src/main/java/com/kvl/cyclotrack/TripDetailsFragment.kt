@@ -703,17 +703,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                                 time = measurements.cadenceLastEvent ?: 0,
                                                 timeLast = last.cadenceLastEvent ?: 0,
                                                 delta = measurements.time - last.time
-                                            )?.takeIf { it.isFinite() }?.let { rpm ->
+                                            ).takeIf { it.isFinite() }?.let { rpm ->
                                                 val timestamp =
                                                     (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
-                                            entries.add(Entry(timestamp, rpm))
-                                            trendLast =
-                                                (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
-                                                    ?: rpm))
-                                            trend.add(Entry(timestamp, trendLast!!))
-                                            if (trendAlpha > 0.01f) trendAlpha -= 0.005f
-                                            if (trendAlpha < 0.01f) trendAlpha = 0.01f
-                                        }
+                                                entries.add(Entry(timestamp, rpm))
+                                                trendLast =
+                                                    (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
+                                                        ?: rpm))
+                                                trend.add(Entry(timestamp, trendLast!!))
+                                                if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                                if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                                            }
                                     } catch (e: Exception) {
                                         Log.e(logTag,
                                             "Could not create rpm value for timestamp ${measurements.time}")
@@ -763,13 +763,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     fun makeElevationDataset(
                         measurements: Array<CriticalMeasurements>,
-                        intervals: Array<LongRange>,
+                        _totalDistance: Float,
                     ): LineDataSet {
                         val entries = ArrayList<Entry>()
-                        val intervalStart = intervals.last().first
                         var trendLast: Float? = null
                         var trendAlpha = 0.1f
-                        var totalDistance = 0.0
+                        var totalDistance = _totalDistance
                         var lastMeasurements: CriticalMeasurements? = null
                         measurements.forEach {
                             lastMeasurements?.let { last -> totalDistance += getDistance(it, last) }
@@ -779,7 +778,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 trendLast =
                                     (trendAlpha * alt) + ((1 - trendAlpha) * (trendLast
                                         ?: alt))
-                                entries.add(Entry(totalDistance.toFloat(),
+                                entries.add(Entry(totalDistance,
                                     trendLast!!))
                             }
                             if (trendAlpha > 0.1f) trendAlpha -= 0.005f
@@ -803,9 +802,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val legs = getTripLegs(tripMeasurements, intervals)
                         val data = LineData()
 
-                        legs.forEachIndexed { idx, leg ->
-                            data.addDataSet(makeElevationDataset(leg,
-                                intervals.sliceArray(IntRange(0, idx))))
+                        var totalDistance = 0f
+                        legs.forEach { leg ->
+                            makeElevationDataset(leg, totalDistance).let { dataset ->
+                                data.addDataSet(dataset)
+                                totalDistance = dataset.values.last().x
+                            }
                         }
                         elevationChartView.data = data
                         elevationChartView.invalidate()
