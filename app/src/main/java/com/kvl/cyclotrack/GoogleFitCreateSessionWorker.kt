@@ -25,6 +25,9 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
     @Inject
     lateinit var timeStateRepository: TimeStateRepository
 
+    @Inject
+    lateinit var googleFitApiService: GoogleFitApiService
+
     override suspend fun doWork(): Result {
         inputData.getLong("tripId", -1).takeIf { it >= 0 }?.let { tripId ->
             Log.i(logTag, "Syncing data with Google Fit for trip ${tripId}")
@@ -33,12 +36,12 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                 val timeStates = timeStateRepository.getTimeStates(tripId)
                 val measurements = measurementsRepository.getCritical(tripId)
 
-                GoogleFitApiService.instance.insertDatasets(measurements,
+                googleFitApiService.insertDatasets(measurements,
                     getEffectiveCircumference(trip, measurements) ?: getUserCircumference(
                         applicationContext))
                 timeStates.takeIf { it.isNotEmpty() }
-                    ?.let { GoogleFitApiService.instance.insertSession(trip, it) }
-                    ?: GoogleFitApiService.instance.insertSession(trip,
+                    ?.let { googleFitApiService.insertSession(trip, it) }
+                    ?: googleFitApiService.insertSession(trip,
                         measurements.first().time,
                         measurements.last().time)
 

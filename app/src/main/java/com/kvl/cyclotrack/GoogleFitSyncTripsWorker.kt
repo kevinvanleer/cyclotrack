@@ -29,13 +29,16 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
+    @Inject
+    lateinit var googleFitApiService: GoogleFitApiService
+
     override suspend fun doWork(): Result {
         val newestSyncedTrip = sharedPreferences.getLong("com.kvl.cyclotrack.newestSyncedTrip", -1)
         Log.d(logTag, "Syncing sessions after ${newestSyncedTrip}")
         tripsRepository.getAfter(newestSyncedTrip).forEach { trip ->
             //tripsRepository.getAll().forEach { trip ->
             try {
-                GoogleFitApiService.instance.getSession(trip)
+                googleFitApiService.getSession(trip)
                     ?.addOnSuccessListener { response ->
                         // Use response data here
                         Log.d(logTag, "found ${response.sessions.size} sessions")

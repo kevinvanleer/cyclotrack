@@ -55,6 +55,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
+    @Inject
+    lateinit var googleFitApiService: GoogleFitApiService
+
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
     private fun speedSensor() = bleService.speedSensor
@@ -180,7 +183,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         Log.d(logTag, "biometrics prefs: ${biometrics}")
 
         lifecycleScope.launch {
-            val googleFitApiService = GoogleFitApiService.instance
             if (googleFitApiService.hasPermission()) {
                 val weightDeferred = async { googleFitApiService.getLatestWeight() }
                 val heightDeferred = async { googleFitApiService.getLatestHeight() }

@@ -25,6 +25,9 @@ class RemoveTripWorker @AssistedInject constructor(
     @Inject
     lateinit var timeStateRepository: TimeStateRepository
 
+    @Inject
+    lateinit var googleFitApiService: GoogleFitApiService
+
     override suspend fun doWork(): Result {
         inputData.getLongArray("tripIds")?.takeIf { it.isNotEmpty() }?.forEach { tripId ->
             if (hasFitnessPermissions(applicationContext)) {
@@ -32,7 +35,7 @@ class RemoveTripWorker @AssistedInject constructor(
                 try {
                     tripsRepository.get(tripId).let { trip ->
                         timeStateRepository.getTimeStates(trip.id!!).let {
-                            GoogleFitApiService.instance.deleteTrip(trip, it)
+                            googleFitApiService.deleteTrip(trip, it)
                         }
                     }
                 } catch (e: NullPointerException) {

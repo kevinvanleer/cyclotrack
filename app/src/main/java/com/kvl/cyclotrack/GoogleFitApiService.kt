@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.app.Activity
 import android.content.Context
 import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -10,27 +9,20 @@ import com.google.android.gms.fitness.data.*
 import com.google.android.gms.fitness.request.*
 import com.google.android.gms.fitness.result.SessionReadResponse
 import com.google.android.gms.tasks.Task
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
-class GoogleFitApiService constructor(private val context: Context) {
+class GoogleFitApiService @Inject constructor(@ApplicationContext private val context: Context) {
     private val logTag = "GoogleFitApiService"
-    private val activity = context as Activity
-
-    companion object {
-        lateinit var instance: GoogleFitApiService private set
-    }
-
-    init {
-        instance = this
-    }
 
     suspend fun getLatestHeight(
         timestamp: Long = System.currentTimeMillis(),
     ): Float? {
         var height: Float? = null
-        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+        getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
             ?.readData(DataReadRequest.Builder().read(DataType.TYPE_HEIGHT).setLimit(1)
                 .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())?.await()
             ?.dataSets?.forEach { dataset ->
@@ -48,7 +40,7 @@ class GoogleFitApiService constructor(private val context: Context) {
         timestamp: Long = System.currentTimeMillis(),
     ): Float? {
         var weight: Float? = null
-        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+        getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
             ?.readData(DataReadRequest.Builder().read(DataType.TYPE_WEIGHT).setLimit(1)
                 .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())?.await()
             ?.dataSets?.forEach { dataset ->
@@ -66,7 +58,7 @@ class GoogleFitApiService constructor(private val context: Context) {
         val end = timestamp / 1000
         val start = end - 60 * 60 * 24 * 30
         var hr: Int? = null
-        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+        getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
             ?.readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
                 .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
                 .setTimeRange(start, end, TimeUnit.SECONDS).build())?.await()
@@ -257,7 +249,7 @@ class GoogleFitApiService constructor(private val context: Context) {
                 .setDataSet(dataset)
                 .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS).build()
 
-            getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+            getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
                 ?.updateData(updateRequest)
                 ?.addOnSuccessListener {
                     Log.d(logTag,
@@ -278,7 +270,7 @@ class GoogleFitApiService constructor(private val context: Context) {
             }-${dataset.dataPoints.last().getTimestamp(TimeUnit.MILLISECONDS)}")
 
         if (dataset.dataPoints.isNotEmpty()) {
-            getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+            getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
                 ?.insertData(dataset)
                 ?.addOnSuccessListener {
                     Log.d(logTag,
@@ -402,26 +394,26 @@ class GoogleFitApiService constructor(private val context: Context) {
     }
 
     private fun getActivitySegments(sessionId: String, timeStates: Array<TimeState>): DataSet {
-        val activitySegmentDataSource = DataSource.Builder()
+        val contextSegmentDataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_ACTIVITY_SEGMENT)
-            .setStreamName("$sessionId-activity-segments")
+            .setStreamName("$sessionId-context-segments")
             .setType(DataSource.TYPE_RAW)
             .build()
 
-        val activitySegments = DataSet.builder(activitySegmentDataSource)
+        val contextSegments = DataSet.builder(contextSegmentDataSource)
 
         getTripIntervals(timeStates).let { intervals ->
             intervals.forEach { interval ->
-                DataPoint.builder(activitySegmentDataSource)
+                DataPoint.builder(contextSegmentDataSource)
                     .setActivityField(Field.FIELD_ACTIVITY, FitnessActivities.BIKING)
                     .setTimeInterval(interval.first, interval.last, TimeUnit.MILLISECONDS)
                     .build().let {
-                        activitySegments.add(it)
+                        contextSegments.add(it)
                     }
             }
         }
-        return activitySegments.build()
+        return contextSegments.build()
     }
 
     fun insertSession(
@@ -445,7 +437,7 @@ class GoogleFitApiService constructor(private val context: Context) {
         getActivitySegments(sessionId, timeStates).takeIf { it.dataPoints.isNotEmpty() }
             ?.let { insertRequest.addDataSet(it) }
 
-        getGoogleAccount(activity)?.let { Fitness.getSessionsClient(activity, it) }
+        getGoogleAccount(context)?.let { Fitness.getSessionsClient(context, it) }
             ?.insertSession(insertRequest.build())
             ?.addOnSuccessListener { Log.d(logTag, "Ingested session for trip ${trip.id}") }
             ?.addOnFailureListener { Log.d(logTag, "Failed to insert session for trip ${trip.id}") }
@@ -470,7 +462,7 @@ class GoogleFitApiService constructor(private val context: Context) {
         val insertRequest = SessionInsertRequest.Builder()
             .setSession(sessionBuilder.build())
 
-        getGoogleAccount(activity)?.let { Fitness.getSessionsClient(activity, it) }
+        getGoogleAccount(context)?.let { Fitness.getSessionsClient(context, it) }
             ?.insertSession(insertRequest.build())
             ?.addOnSuccessListener { Log.d(logTag, "Ingested session for trip ${trip.id}") }
             ?.addOnFailureListener { Log.d(logTag, "Failed to insert session for trip ${trip.id}") }
@@ -485,8 +477,8 @@ class GoogleFitApiService constructor(private val context: Context) {
             .setSessionId(sessionId)
             .setTimeInterval(start, end, TimeUnit.MILLISECONDS)
             .build()
-        return getGoogleAccount(activity)?.let {
-            Fitness.getSessionsClient(activity, it)
+        return getGoogleAccount(context)?.let {
+            Fitness.getSessionsClient(context, it)
                 .readSession(readRequest)
         }
     }
@@ -495,8 +487,8 @@ class GoogleFitApiService constructor(private val context: Context) {
         val readRequest = SessionReadRequest.Builder()
             .setSessionId(sessionId)
             .build()
-        return getGoogleAccount(activity)?.let {
-            Fitness.getSessionsClient(activity, it)
+        return getGoogleAccount(context)?.let {
+            Fitness.getSessionsClient(context, it)
                 .readSession(readRequest)
         }
     }
@@ -505,8 +497,8 @@ class GoogleFitApiService constructor(private val context: Context) {
         val readRequest = SessionReadRequest.Builder()
             .setTimeInterval(start, end, TimeUnit.MILLISECONDS)
             .build()
-        return getGoogleAccount(activity)?.let {
-            Fitness.getSessionsClient(activity, it)
+        return getGoogleAccount(context)?.let {
+            Fitness.getSessionsClient(context, it)
                 .readSession(readRequest)
         }
     }
@@ -518,12 +510,12 @@ class GoogleFitApiService constructor(private val context: Context) {
                 TimeUnit.MILLISECONDS)
             .deleteAllData()
             .deleteAllSessions().build()
-        getGoogleAccount(activity)?.let { Fitness.getHistoryClient(activity, it) }
+        getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
             ?.deleteData(request)
             ?.addOnSuccessListener { Log.d(logTag, "Removing trip ${trip.id} from Google Fit") }
             ?.addOnFailureListener {
-                Log.d(logTag,
-                    "Failed to remove trip ${trip.id} from Google Fit")
+                Log.e(logTag,
+                    "Failed to remove trip ${trip.id} from Google Fit", it)
             }
     }
 
