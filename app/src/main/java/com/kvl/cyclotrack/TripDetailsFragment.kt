@@ -818,7 +818,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         legs.forEach { leg ->
                             makeElevationDataset(leg, totalDistance).let { dataset ->
                                 data.addDataSet(dataset)
-                                totalDistance = dataset.values.last().x
+                                dataset.values.takeIf { it.isNotEmpty() }?.let {
+                                    totalDistance = it.last().x
+                                }
                             }
                         }
                         elevationChartView.data = data
@@ -931,7 +933,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 getDatasets(requireActivity(),
                     trip.timestamp,
                     (trip.timestamp + (trip.duration?.times(
-                        1000) ?: 0).toLong()))
+                        1000) ?: 1).toLong()))
             })
         }
     }
