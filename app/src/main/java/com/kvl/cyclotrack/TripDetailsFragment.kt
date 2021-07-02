@@ -551,35 +551,38 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         var lastMeasurements: CriticalMeasurements? = null
                         measurementsList.forEach { measurements ->
-                            lastMeasurements?.takeIf { it.speedRevolutions != null }?.let { last ->
-                                if (measurements.speedLastEvent != last.speedLastEvent) {
-                                    try {
-                                        getRpm(rev = measurements.speedRevolutions ?: 0,
-                                            revLast = last.speedRevolutions ?: 0,
-                                            time = measurements.speedLastEvent ?: 0,
-                                            timeLast = last.speedLastEvent ?: 0,
-                                            delta = measurements.time - last.time
-                                        ).takeIf { it.isFinite() }
-                                            ?.let { it * circumference / 60 }
-                                            ?.let { speed ->
-                                                val timestamp =
-                                                    (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
-                                                entries.add(Entry(timestamp,
-                                                    getUserSpeed(requireContext(), speed)))
-                                                trendLast =
-                                                    (trendAlpha * getUserSpeed(requireContext(),
-                                                        speed)) + ((1 - trendAlpha) * trendLast)
-                                                trend.add(Entry(timestamp, trendLast))
-                                                if (trendAlpha > 0.01f) trendAlpha -= 0.005f
-                                                if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                            if (measurements.speedRevolutions != null) {
+                                lastMeasurements?.takeIf { it.speedRevolutions != null }
+                                    ?.let { last ->
+                                        if (measurements.speedLastEvent != last.speedLastEvent) {
+                                            try {
+                                                getRpm(rev = measurements.speedRevolutions ?: 0,
+                                                    revLast = last.speedRevolutions ?: 0,
+                                                    time = measurements.speedLastEvent ?: 0,
+                                                    timeLast = last.speedLastEvent ?: 0,
+                                                    delta = measurements.time - last.time
+                                                ).takeIf { it.isFinite() }
+                                                    ?.let { it * circumference / 60 }
+                                                    ?.let { speed ->
+                                                        val timestamp =
+                                                            (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
+                                                        entries.add(Entry(timestamp,
+                                                            getUserSpeed(requireContext(), speed)))
+                                                        trendLast =
+                                                            (trendAlpha * getUserSpeed(requireContext(),
+                                                                speed)) + ((1 - trendAlpha) * trendLast)
+                                                        trend.add(Entry(timestamp, trendLast))
+                                                        if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                                        if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                                                    }
+                                            } catch (e: Exception) {
+                                                Log.e(logTag,
+                                                    "Could not calculate speed for time ${measurements.time}")
                                             }
-                                    } catch (e: Exception) {
-                                        Log.e(logTag,
-                                            "Could not calculate speed for time ${measurements.time}")
+                                        }
                                     }
-                                }
+                                lastMeasurements = measurements
                             }
-                            lastMeasurements = measurements
                         }
                     }
 
@@ -694,33 +697,35 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         var lastMeasurements: CriticalMeasurements? = null
                         measurementsList.forEach { measurements ->
-                            lastMeasurements?.takeIf { it.cadenceRevolutions != null }
-                                ?.let { last ->
-                                    if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
-                                        try {
-                                            getRpm(rev = measurements.cadenceRevolutions ?: 0,
-                                                revLast = last.cadenceRevolutions ?: 0,
-                                                time = measurements.cadenceLastEvent ?: 0,
-                                                timeLast = last.cadenceLastEvent ?: 0,
-                                                delta = measurements.time - last.time
-                                            ).takeIf { it.isFinite() }?.let { rpm ->
-                                                val timestamp =
-                                                    (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
-                                                entries.add(Entry(timestamp, rpm))
-                                                trendLast =
-                                                    (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
-                                                        ?: rpm))
-                                                trend.add(Entry(timestamp, trendLast!!))
-                                                if (trendAlpha > 0.01f) trendAlpha -= 0.005f
-                                                if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                            if (measurements.cadenceRevolutions != null) {
+                                lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+                                    ?.let { last ->
+                                        if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
+                                            try {
+                                                getRpm(rev = measurements.cadenceRevolutions ?: 0,
+                                                    revLast = last.cadenceRevolutions ?: 0,
+                                                    time = measurements.cadenceLastEvent ?: 0,
+                                                    timeLast = last.cadenceLastEvent ?: 0,
+                                                    delta = measurements.time - last.time
+                                                ).takeIf { it.isFinite() }?.let { rpm ->
+                                                    val timestamp =
+                                                        (accumulatedTime + (measurements.time - intervalStart) / 1e3).toFloat()
+                                                    entries.add(Entry(timestamp, rpm))
+                                                    trendLast =
+                                                        (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
+                                                            ?: rpm))
+                                                    trend.add(Entry(timestamp, trendLast!!))
+                                                    if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                                    if (trendAlpha < 0.01f) trendAlpha = 0.01f
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e(logTag,
+                                                    "Could not create rpm value for timestamp ${measurements.time}")
                                             }
-                                    } catch (e: Exception) {
-                                        Log.e(logTag,
-                                            "Could not create rpm value for timestamp ${measurements.time}")
+                                        }
                                     }
-                                }
+                                lastMeasurements = measurements
                             }
-                            lastMeasurements = measurements
                         }
 
                         val dataset = LineDataSet(entries, "Cadence")
