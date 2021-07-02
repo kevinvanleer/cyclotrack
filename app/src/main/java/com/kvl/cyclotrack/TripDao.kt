@@ -25,6 +25,11 @@ data class TripWheelCircumference(
     val autoWheelCircumference: Float?,
 )
 
+data class TripGoogleFitSync(
+    val id: Long,
+    val googleFitSyncStatus: GoogleFitSyncStatusEnum,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
@@ -68,6 +73,9 @@ interface TripDao {
     @Update(entity = Trip::class)
     suspend fun updateBiometrics(biometrics: Biometrics)
 
+    @Update(entity = Trip::class)
+    suspend fun updateGoogleFitSyncStatus(googleFitSyncStatus: TripGoogleFitSync)
+
     @Query("SELECT * FROM trip WHERE id = :tripId")
     fun subscribe(tripId: Long): LiveData<Trip>
 
@@ -82,6 +90,9 @@ interface TripDao {
 
     @Query("SELECT * FROM trip WHERE id > :tripId ORDER BY id DESC")
     suspend fun loadAfter(tripId: Long): Array<Trip>
+
+    @Query("SELECT * FROM trip WHERE googleFitSyncStatus != 1 ORDER BY id DESC")
+    suspend fun loadGoogleFitUnsyncedTrips(): Array<Trip>
 
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun subscribeRealTrips(): LiveData<Array<Trip>>

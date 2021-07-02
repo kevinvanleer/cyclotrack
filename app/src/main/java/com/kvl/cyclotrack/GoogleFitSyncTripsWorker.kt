@@ -3,7 +3,6 @@ package com.kvl.cyclotrack
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.core.content.edit
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import dagger.assisted.Assisted
@@ -33,11 +32,11 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
     lateinit var googleFitApiService: GoogleFitApiService
 
     override suspend fun doWork(): Result {
-        val newestSyncedTrip = sharedPreferences.getLong("com.kvl.cyclotrack.newestSyncedTrip", -1)
-        Log.d(logTag, "Syncing sessions after ${newestSyncedTrip}")
-        tripsRepository.getAfter(newestSyncedTrip).forEach { trip ->
+        Log.d(logTag, "Syncing sessions")
+        tripsRepository.getGoogleFitUnsynced().forEach { trip ->
             //tripsRepository.getAll().forEach { trip ->
             try {
+                /* No longer need to check google fit
                 googleFitApiService.getSession(trip)
                     ?.addOnSuccessListener { response ->
                         // Use response data here
@@ -54,16 +53,20 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
                                 .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
                                     .setInputData(workDataOf("tripId" to trip.id)).build())
                         }
-                        if (trip.id!! > newestSyncedTrip) {
-                            sharedPreferences.edit {
-                                putLong("com.kvl.cyclotrack.newestSyncedTrip", trip.id)
-                                apply()
-                            }
-                        }
                     }
-                    ?.addOnFailureListener { e -> Log.d(logTag, "getSessions::OnFailure()", e) }
+                    ?.addOnFailureListener { e ->
+                        Log.d(logTag,
+                            "Failed to get session for trip ${trip.id}",
+                            e)
+                    }
+                 */
+                Log.d(logTag, "Syncing trip; ID: ${trip.id} name: ${trip.name}")
+                WorkManager.getInstance(applicationContext)
+                    .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                        .setInputData(workDataOf("tripId" to trip.id)).build())
             } catch (e: NullPointerException) {
                 Log.e(logTag, "Trip contains invalid data, don't sync", e)
+                tripsRepository.setGoogleFitSyncStatus(trip.id!!, GoogleFitSyncStatusEnum.FAILED)
 
             }
         }

@@ -263,13 +263,14 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     private fun insertDataset(dataset: DataSet) {
-        Log.d(logTag, "Insert ${dataset.dataPoints.size} data points in ${dataset.dataType.name}")
-        Log.d(logTag,
-            "with time interval ${
-                dataset.dataPoints.first().getTimestamp(TimeUnit.MILLISECONDS)
-            }-${dataset.dataPoints.last().getTimestamp(TimeUnit.MILLISECONDS)}")
-
         if (dataset.dataPoints.isNotEmpty()) {
+            Log.d(logTag,
+                "Insert ${dataset.dataPoints.size} data points in ${dataset.dataType.name}")
+            Log.d(logTag,
+                "with time interval ${
+                    dataset.dataPoints.first().getTimestamp(TimeUnit.MILLISECONDS)
+                }-${dataset.dataPoints.last().getTimestamp(TimeUnit.MILLISECONDS)}")
+
             getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
                 ?.insertData(dataset)
                 ?.addOnSuccessListener {
@@ -280,6 +281,8 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
                     Log.d(logTag, "Failed to insert data points in ${dataset.dataType.name}: $e")
                     //e.startResolutionForResult()
                 }
+        } else {
+            Log.w(logTag, "No data to insert")
         }
     }
 

@@ -45,13 +45,10 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                         measurements.first().time,
                         measurements.last().time)
 
-                /*tripsRepository.getAll().forEach { trip ->
-                    timeStateRepository.getTimeStates(trip.id!!)?.let {
-                        GoogleFitApiService.instance.deleteTrip(trip, it)
-                    }
-                }*/
-            } catch (e: NullPointerException) {
-                Log.e(logTag, "Failed to insert trip ${tripId}")
+                tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.SYNCED)
+            } catch (e: Exception) {
+                Log.e(logTag, "Failed to insert trip ${tripId}", e)
+                tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.FAILED)
                 return Result.failure()
             }
         }

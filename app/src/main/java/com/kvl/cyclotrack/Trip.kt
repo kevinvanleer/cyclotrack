@@ -6,6 +6,28 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import java.util.*
 
+enum class GoogleFitSyncStatusEnum(val value: Int) {
+    NOT_SYNCED(0),
+    SYNCED(1),
+    FAILED(2),
+}
+
+class GoogleFitSyncStatusConverter {
+    @TypeConverter
+    fun fromGoogleFitSyncStatusEnum(value: GoogleFitSyncStatusEnum?): Int? {
+        return value?.ordinal
+    }
+
+    @TypeConverter
+    fun toGoogleFitSyncStatusEnum(value: Int?): GoogleFitSyncStatusEnum? = value?.let {
+        when (it) {
+            0 -> GoogleFitSyncStatusEnum.NOT_SYNCED
+            1 -> GoogleFitSyncStatusEnum.SYNCED
+            else -> GoogleFitSyncStatusEnum.FAILED
+        }
+    }
+}
+
 enum class UserSexEnum(val value: Int) {
     MALE(0),
     FEMALE(1),
@@ -32,8 +54,9 @@ fun getDefaultTripName(): String {
 
     return when (c.get(Calendar.HOUR_OF_DAY)) {
         in 0..3 -> "Night bike ride"
-        in 4..10 -> "Morning bike ride"
-        in 11..13 -> "Midday bike ride"
+        in 4..5 -> "Early morning bike ride"
+        in 6..9 -> "Morning bike ride"
+        in 10..13 -> "Midday bike ride"
         in 14..17 -> "Afternoon bike ride"
         in 18..20 -> "Evening bike ride"
         in 21..23 -> "Night bike ride"
@@ -62,4 +85,5 @@ data class Trip(
     val userVo2max: Float? = null,
     val userRestingHeartRate: Int? = null,
     val userMaxHeartRate: Int? = null,
+    val googleFitSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
 )
