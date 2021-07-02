@@ -34,32 +34,8 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         Log.d(logTag, "Syncing sessions")
         tripsRepository.getGoogleFitUnsynced().forEach { trip ->
-            //tripsRepository.getAll().forEach { trip ->
             try {
-                /* No longer need to check google fit
-                googleFitApiService.getSession(trip)
-                    ?.addOnSuccessListener { response ->
-                        // Use response data here
-                        Log.d(logTag, "found ${response.sessions.size} sessions")
-                        response.sessions.forEach { session ->
-                            Log.v(logTag, "Session name: ${session.name}")
-                            Log.v(logTag, "Session identifier: ${session.identifier}")
-                            Log.v(logTag, "Session description: ${session.description}")
-                            Log.v(logTag, "Activity type: ${session.activity}")
-                        }
-                        if (response.sessions.isEmpty()) {
-                            Log.d(logTag, "Syncing trip; ID: ${trip.id} name: ${trip.name}")
-                            WorkManager.getInstance(applicationContext)
-                                .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
-                                    .setInputData(workDataOf("tripId" to trip.id)).build())
-                        }
-                    }
-                    ?.addOnFailureListener { e ->
-                        Log.d(logTag,
-                            "Failed to get session for trip ${trip.id}",
-                            e)
-                    }
-                 */
+
                 Log.d(logTag, "Syncing trip; ID: ${trip.id} name: ${trip.name}")
                 WorkManager.getInstance(applicationContext)
                     .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
