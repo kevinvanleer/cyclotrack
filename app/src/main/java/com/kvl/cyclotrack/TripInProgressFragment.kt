@@ -420,8 +420,8 @@ class TripInProgressFragment :
                 if (it.rpm != null) {
                     clockView.label = "RPM"
                     clockView.value = when {
-                        it.rpm.isFinite() -> it.rpm.toInt().toString()
-                        else -> "0"
+                        it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
+                        else -> clockView.value
                     }
                 }
                 if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
@@ -434,10 +434,10 @@ class TripInProgressFragment :
                     splitSpeedTextView.label =
                         getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())
                     splitSpeedTextView.value = when {
-                        it.rpm.isFinite() -> String.format("%.1f",
+                        it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
                             getUserSpeed(requireContext(),
                                 it.rpm / 60 * viewModel.circumference!!))
-                        else -> "0.0"
+                        else -> splitSpeedTextView.value
                     }
                 }
                 if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
