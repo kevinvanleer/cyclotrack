@@ -2,6 +2,7 @@ client_secret*
 secure.properties
 keystore.properties
 /db_baks
+/art
 cyclotrack-keystore
 /app/release
 /app/prod
@@ -15,6 +16,8 @@ cyclotrack-keystore
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+/.idea/inspectionProfiles
+
 .DS_Store
 /build
 /captures
