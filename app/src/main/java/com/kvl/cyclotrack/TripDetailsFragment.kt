@@ -700,7 +700,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             if (measurements.cadenceRevolutions != null) {
                                 lastMeasurements?.takeIf { it.cadenceRevolutions != null }
                                     ?.let { last ->
-                                        if (measurements.cadenceLastEvent != last.cadenceLastEvent) {
+                                        if (validateCadence(measurements, last)) {
                                             try {
                                                 getRpm(rev = measurements.cadenceRevolutions ?: 0,
                                                     revLast = last.cadenceRevolutions ?: 0,

@@ -646,4 +646,17 @@ fun degreesToCardinal(degrees: Float): String {
     }
 }
 
+fun validateCadence(current: CriticalMeasurements, previous: CriticalMeasurements): Boolean {
+    val cadenceDidNotUpdate = current.cadenceLastEvent == previous.cadenceLastEvent
+    val doubleRollover =
+        (current.cadenceLastEvent!! < previous.cadenceLastEvent!! && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
+    val prematureRollover =
+        (previous.cadenceRevolutions!! < 65500f && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
+    val veryPrematureRollover =
+        (previous.cadenceRevolutions!! < 64000f && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
+    val deviceReset = prematureRollover && doubleRollover
+
+    return !(cadenceDidNotUpdate || deviceReset || veryPrematureRollover)
+}
+
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)
