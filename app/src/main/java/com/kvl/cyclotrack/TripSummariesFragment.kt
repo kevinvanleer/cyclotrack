@@ -331,9 +331,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
                 "MY_KEY"))
         }
-        if (!FeatureFlags.devBuild) {
-            WorkManager.getInstance(requireContext())
-                .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
-        }
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
     }
 }
