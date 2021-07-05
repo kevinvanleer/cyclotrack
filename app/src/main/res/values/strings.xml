@@ -86,4 +86,6 @@
     <string name="intent_action_tripId_created">com.kvl.cyclotrack.intent_action_tripId_created</string>
     <string name="initial_inspiring_message">Ready to start your first ride? Touch the bike button and let\'s get moving!</string>
     <string name="details_menu_title_sync">Sync</string>
+    <string name="google_fit_sync_dialog_description">Sign in to Google Fit to Sync your workouts. Data from your rides, including location, heart rate, speed, and cadence will be shared with Google and stored in Google Fit. Google Fit will store your rides in the journal and your rides will count toward your weekly goals.</string>
+    <string name="google_fit_logout_dialog_message">You are about to logout from your Google Account and stop sharing data with Google. Your rides will no longer be synchronized with Google. If you would like to remove all Cyclotrack data from Google Fit, select \"Remove data from Google Fit\" below.</string>
 </resources>

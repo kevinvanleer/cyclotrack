@@ -522,6 +522,22 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
             }
     }
 
+    fun deleteAllData() {
+        val request = DataDeleteRequest.Builder()
+            .setTimeInterval(0,
+                System.currentTimeMillis(),
+                TimeUnit.MILLISECONDS)
+            .deleteAllData()
+            .deleteAllSessions().build()
+        getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
+            ?.deleteData(request)
+            ?.addOnSuccessListener { Log.d(logTag, "Removing all data from Google Fit") }
+            ?.addOnFailureListener {
+                Log.e(logTag,
+                    "Failed to remove all data from Google Fit", it)
+            }
+    }
+
     fun hasPermission(): Boolean =
         GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)
 }
