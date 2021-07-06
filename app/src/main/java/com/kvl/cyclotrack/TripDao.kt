@@ -91,7 +91,7 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE id > :tripId ORDER BY id DESC")
     suspend fun loadAfter(tripId: Long): Array<Trip>
 
-    @Query("SELECT * FROM trip WHERE googleFitSyncStatus != 1 ORDER BY id DESC")
+    @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 0 ORDER BY id DESC")
     suspend fun loadGoogleFitUnsyncedTrips(): Array<Trip>
 
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")

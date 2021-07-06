@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -18,6 +17,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.preference.*
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -50,39 +50,59 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         if (FeatureFlags.devBuild) {
             configureClearPreferences()
         }
-        if (FeatureFlags.betaBuild) {
-            configureGoogleFitPreference()
-        }
     }
 
-    private fun configureGoogleFitPreference() {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        if (FeatureFlags.betaBuild) {
+            configureGoogleFitPreference(view.context)
+            LocalBroadcastManager.getInstance(view.context)
+                .registerReceiver(object : BroadcastReceiver() {
+                    override fun onReceive(context: Context?, intent: Intent?) {
+                        configureGoogleFitPreference(view.context)
+                    }
+                }, IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
+        }
+
+    }
+
+    private fun configureGoogleFitPreference(context: Context) {
         findPreference<Preference>(getString(R.string.preferences_key_google_fit))?.apply {
-            if (GoogleSignIn.hasPermissions(getGoogleAccount(requireContext()), fitnessOptions)) {
+            if (GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)) {
                 this.title = getString(R.string.preferences_disconnect_google_fit_title)
                 this.summary = getString(R.string.preferences_disconnect_google_fit_summary)
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         val removeAllCheckboxView =
-                            View.inflate(requireContext(),
+                            View.inflate(context,
                                 R.layout.remove_all_google_fit_dialog_option,
                                 null)
                         setPositiveButton("DISCONNECT") { _, _ ->
                             if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
                                 Log.i(logTag, "Remove all data from Google Fit")
-                                WorkManager.getInstance(requireContext())
+                                WorkManager.getInstance(context)
                                     .enqueue(OneTimeWorkRequestBuilder<RemoveAllGoogleFitDataWorker>()
-                                        .build()).result.addListener({
-                                        GoogleSignIn.getClient(requireContext(),
-                                            GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
-                                            .addOnSuccessListener {
-                                                configureGoogleFitPreference()
-                                            }
-                                    }, AsyncTask.SERIAL_EXECUTOR)
+                                        .build().apply {
+                                            WorkManager.getInstance(context)
+                                                .getWorkInfoByIdLiveData(id)
+                                                .observe(viewLifecycleOwner, { workInfo ->
+                                                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                                        Log.i(logTag, "Sign out from Google Fit")
+                                                        GoogleSignIn.getClient(context,
+                                                            GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                                            .signOut()
+                                                            .addOnSuccessListener {
+                                                                configureGoogleFitPreference(context)
+                                                            }
+                                                    }
+                                                })
+                                        })
                             } else {
-                                GoogleSignIn.getClient(requireContext(),
+                                Log.i(logTag, "Sign out from Google Fit")
+                                GoogleSignIn.getClient(context,
                                     GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
                                     .addOnSuccessListener {
-                                        configureGoogleFitPreference()
+                                        configureGoogleFitPreference(context)
                                     }
                             }
                         }
@@ -147,13 +167,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             editText.inputType = EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
             editText.isSingleLine = true
         }
-
-        LocalBroadcastManager.getInstance(requireContext())
-            .registerReceiver(object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    configureGoogleFitPreference()
-                }
-            }, IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
 
         activity?.title = "Settings"
         return super.onCreateView(inflater, container, savedInstanceState)

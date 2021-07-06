@@ -524,7 +524,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
 
     fun deleteAllData() {
         val request = DataDeleteRequest.Builder()
-            .setTimeInterval(0,
+            .setTimeInterval(/*1577836800000*/1262304000000,
                 System.currentTimeMillis(),
                 TimeUnit.MILLISECONDS)
             .deleteAllData()
