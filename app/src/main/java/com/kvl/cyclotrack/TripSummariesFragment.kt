@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import android.view.*
+import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -14,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -275,15 +277,29 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
+                val removeAllCheckboxView = View.inflate(context,
+                    R.layout.remove_all_google_fit_dialog_option,
+                    null)
+                val checkBox =
+                    removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit)
+                checkBox.text = "Remove selected ride data from Google Fit"
                 val selectedTrips =
                     (tripListView.adapter as TripSummariesAdapter).selectedTrips.toTypedArray()
+
                 setPositiveButton("DELETE"
                 ) { _, _ ->
-                    Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                    WorkManager.getInstance(requireContext())
-                        .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                    Log.d(logTag, "CLICKED DELETE")
+                    val serviceList = arrayListOf<OneTimeWorkRequest>().apply {
+                        if (checkBox.isChecked) add(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
                             .setInputData(workDataOf("tripIds" to selectedTrips))
                             .build())
+                    }
+                    WorkManager.getInstance(requireContext())
+                        .beginWith(serviceList)
+                        .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                            .setInputData(workDataOf("tripIds" to selectedTrips))
+                            .build())
+                        .enqueue()
                     (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
                 }
                 setNegativeButton("CANCEL"
@@ -292,6 +308,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                 }
                 setTitle("Delete rides?")
                 setMessage("You are about to remove ${selectedTrips.size} rides. This change cannot be undone.")
+                setView(removeAllCheckboxView)
             }.show()
 
             builder.create()

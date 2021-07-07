@@ -30,6 +30,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -209,6 +210,30 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         // Inflate the menu; this adds items to the action bar if it is present.
         inflater.inflate(R.menu.details_menu, menu)
         Log.d(TAG, "Options menu created")
+        when (hasFitnessPermissions(requireContext())) {
+            true -> {
+                viewModel.tripOverview().observe(viewLifecycleOwner, {
+                    when (it.googleFitSyncStatus) {
+                        GoogleFitSyncStatusEnum.SYNCED -> {
+                            menu.findItem(R.id.details_menu_action_unsync).isVisible = true
+                            menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                        }
+                        GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
+                            menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+                            menu.findItem(R.id.details_menu_action_sync).isVisible = true
+                        }
+                        else -> {
+                            menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                            menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+                        }
+                    }
+                })
+            }
+            else -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -233,14 +258,29 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val googleFit = hasFitnessPermissions(it)
 
                     builder.apply {
+                        val removeAllCheckboxView =
+                            View.inflate(context,
+                                R.layout.remove_all_google_fit_dialog_option,
+                                null)
+                        val checkBox =
+                            removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit)
+                        //Figure out if this ride is synced
+                        checkBox.isChecked = googleFit
+                        checkBox.text = "Remove this ride from Google Fit"
                         setPositiveButton("DELETE"
                         ) { _, _ ->
                             Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-
-                            WorkManager.getInstance(requireContext())
-                                .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                            val serviceList = arrayListOf<OneTimeWorkRequest>().apply {
+                                if (checkBox.isChecked) add(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
                                     .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
                                     .build())
+                            }
+                            WorkManager.getInstance(requireContext())
+                                .beginWith(serviceList)
+                                .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                                    .build())
+                                .enqueue()
                             findNavController().navigate(R.id.action_remove_trip)
                         }
                         setNegativeButton("CANCEL"
@@ -248,7 +288,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
                         }
                         setTitle("Delete ride?")
-                        setMessage("You are about to remove this ride from your history${if (googleFit) " and Google Fit." else "."} This change cannot be undone.")
+                        setMessage("You are about to remove this ride from your history. This change cannot be undone.")
+                        if (googleFit) setView(removeAllCheckboxView)
                     }
 
                     builder.create()
@@ -269,6 +310,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             R.id.details_menu_action_sync -> {
                 WorkManager.getInstance(requireContext())
                     .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                        .setInputData(workDataOf("tripId" to viewModel.tripId)).build())
+                true
+            }
+            R.id.details_menu_action_unsync -> {
+                WorkManager.getInstance(requireContext())
+                    .enqueue(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
                         .setInputData(workDataOf("tripId" to viewModel.tripId)).build())
                 true
             }

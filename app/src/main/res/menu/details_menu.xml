@@ -19,4 +19,9 @@
         android:id="@+id/details_menu_action_sync"
         android:title="@string/details_menu_title_sync"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/details_menu_action_unsync"
+        android:title="@string/details_menu_title_unsync"
+        android:visible="false"
+        app:showAsAction="never" />
 </menu>
