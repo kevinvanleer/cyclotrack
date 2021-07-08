@@ -247,7 +247,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             val builder = AlertDialog.Builder(it)
             builder.apply {
                 setTitle("Sign-in required")
-                setMessage("This ride is synced with Google Fit. Please sign-in then delete the trip.")
+                setMessage("This ride is synced with Google Fit. Please sign-in then delete the ride.")
                 setPositiveButton("SIGN IN") { _, _ ->
                     configureGoogleFit(requireActivity())
                     //TODO: Need to wait for login to finish
@@ -284,6 +284,44 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         findNavController().navigate(R.id.action_remove_trip)
     }
 
+    private fun showUnsyncAndDeleteDialog() =
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("DELETE"
+                ) { _, _ ->
+                    unsyncAndDeleteTrip()
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Delete ride?")
+                setMessage("You are about to remove this ride from Cyclotrack and Google Fit. This change cannot be undone.")
+            }
+
+            builder.create()
+        }?.show()
+
+    private fun showDeleteDialog() =
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("DELETE"
+                ) { _, _ ->
+                    deleteTrip()
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Delete ride?")
+                setMessage("You are about to remove this ride from your history. This change cannot be undone.")
+            }
+
+            builder.create()
+        }?.show()
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         Log.d(TAG, "Options menu clicked")
         return when (item.itemId) {
@@ -301,34 +339,16 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             }
             R.id.details_menu_action_delete -> {
                 Log.d(TAG, "Options menu clicked delete")
-                activity?.let {
-                    val builder = AlertDialog.Builder(it)
-                    builder.apply {
-                        setPositiveButton("DELETE"
-                        ) { _, _ ->
-                            when (googleFitSyncStatus) {
-                                GoogleFitSyncStatusEnum.SYNCED,
-                                GoogleFitSyncStatusEnum.FAILED,
-                                -> {
-                                    Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                                    when (hasFitnessPermissions(context)) {
-                                        false -> showMustBeLoggedInDialog()
-                                        else -> unsyncAndDeleteTrip()
-                                    }
-                                }
-                                else -> deleteTrip()
-                            }
+                when (hasFitnessPermissions(requireContext())) {
+                    false -> showMustBeLoggedInDialog()
+                    else ->
+                        when (googleFitSyncStatus) {
+                            GoogleFitSyncStatusEnum.SYNCED,
+                            GoogleFitSyncStatusEnum.FAILED,
+                            -> showUnsyncAndDeleteDialog()
+                            else -> showDeleteDialog()
                         }
-                        setNegativeButton("CANCEL"
-                        ) { _, _ ->
-                            Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
-                        }
-                        setTitle("Delete ride?")
-                        setMessage("You are about to remove this ride from your history. This change cannot be undone.")
-                    }
-
-                    builder.create()
-                }?.show()
+                }
                 true
             }
             R.id.details_menu_action_export -> {
