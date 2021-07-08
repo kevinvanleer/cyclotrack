@@ -26,14 +26,14 @@ class GoogleFitDeleteSessionWorker @AssistedInject constructor(
     lateinit var googleFitApiService: GoogleFitApiService
 
     override suspend fun doWork(): Result {
-        if (!hasFitnessPermissions(appContext)) {
-            Log.i(logTag, "Cannot remove data, user not logged in")
-            return Result.failure()
-        }
         inputData.getLongArray("tripIds")?.takeIf { it.isNotEmpty() }?.forEach { tripId ->
             try {
                 tripsRepository.get(tripId).let { trip ->
                     if (trip.googleFitSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {
+                        if (!hasFitnessPermissions(appContext)) {
+                            Log.i(logTag, "Cannot remove data, user not logged in")
+                            return Result.failure()
+                        }
                         Log.i(logTag, "Removing data from Google Fit for trip ${tripId}")
                         timeStateRepository.getTimeStates(trip.id!!).let {
                             googleFitApiService.deleteTrip(trip, it)
@@ -41,7 +41,7 @@ class GoogleFitDeleteSessionWorker @AssistedInject constructor(
                         tripsRepository.setGoogleFitSyncStatus(trip.id!!,
                             GoogleFitSyncStatusEnum.REMOVED)
                     } else {
-                        Log.i(logTag, "Trip ${tripId} already synced")
+                        Log.i(logTag, "Trip ${tripId} not synced to Google Fit")
                     }
                 }
             } catch (e: NullPointerException) {
