@@ -38,7 +38,6 @@ val fitnessOptions: FitnessOptions = FitnessOptions.builder()
 
 fun getGoogleAccount(context: Context): GoogleSignInAccount? =
     GoogleSignIn.getAccountForExtension(context, fitnessOptions)
-        ?.takeIf { !(FeatureFlags.devBuild && it.email == "kevin.vanleer@gmail.com") }
 
 private fun printDataPoint(dataPoint: DataPoint) {
     val startString =

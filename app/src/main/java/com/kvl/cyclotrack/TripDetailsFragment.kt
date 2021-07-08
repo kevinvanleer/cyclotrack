@@ -30,7 +30,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -77,6 +76,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var minGuide: View
     private lateinit var defaultCameraPosition: CameraPosition
     private lateinit var maxCameraPosition: CameraPosition
+    private lateinit var googleFitSyncStatus: GoogleFitSyncStatusEnum
+
     private val requestCreateExport =
         registerForActivityResult(ActivityResultContracts.CreateDocument()) { uri ->
             if (uri != null) {
@@ -206,34 +207,81 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         return inflater.inflate(R.layout.trip_details_fragment, container, false)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.details_menu, menu)
-        Log.d(TAG, "Options menu created")
+    private fun configureSyncOptions(menu: Menu) {
         when (hasFitnessPermissions(requireContext())) {
             true -> {
-                viewModel.tripOverview().observe(viewLifecycleOwner, {
-                    when (it.googleFitSyncStatus) {
-                        GoogleFitSyncStatusEnum.SYNCED -> {
-                            menu.findItem(R.id.details_menu_action_unsync).isVisible = true
-                            menu.findItem(R.id.details_menu_action_sync).isVisible = false
-                        }
-                        GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
-                            menu.findItem(R.id.details_menu_action_unsync).isVisible = false
-                            menu.findItem(R.id.details_menu_action_sync).isVisible = true
-                        }
-                        else -> {
-                            menu.findItem(R.id.details_menu_action_sync).isVisible = false
-                            menu.findItem(R.id.details_menu_action_unsync).isVisible = false
-                        }
+                when (googleFitSyncStatus) {
+                    GoogleFitSyncStatusEnum.SYNCED -> {
+                        menu.findItem(R.id.details_menu_action_unsync).isVisible = true
+                        menu.findItem(R.id.details_menu_action_sync).isVisible = false
                     }
-                })
+                    GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
+                        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+                        menu.findItem(R.id.details_menu_action_sync).isVisible = true
+                    }
+                    else -> {
+                        menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+                    }
+                }
             }
             else -> {
                 menu.findItem(R.id.details_menu_action_sync).isVisible = false
                 menu.findItem(R.id.details_menu_action_unsync).isVisible = false
             }
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        inflater.inflate(R.menu.details_menu, menu)
+        Log.d(TAG, "Options menu created")
+        viewModel.tripOverview().observe(viewLifecycleOwner, {
+            googleFitSyncStatus = it.googleFitSyncStatus
+            configureSyncOptions(menu)
+        })
+    }
+
+    private fun showMustBeLoggedInDialog() {
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setTitle("Sign-in required")
+                setMessage("This ride is synced with Google Fit. Please sign-in then delete the trip.")
+                setPositiveButton("SIGN IN") { _, _ ->
+                    configureGoogleFit(requireActivity())
+                    //TODO: Need to wait for login to finish
+                    //or force user to login through settings first
+                    //unsyncAndDeleteTrip()
+                }
+                setNegativeButton("CANCEL") { _, _ ->
+                    Log.d(logTag, "CLICKED CANCEL SIGN-IN")
+                }
+            }
+            builder.create()
+        }?.show()
+    }
+
+    private fun unsyncAndDeleteTrip() {
+        WorkManager.getInstance(requireContext())
+            .beginWith(listOf(
+                OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                    .setInputData(workDataOf("tripIds" to arrayOf(
+                        viewModel.tripId)))
+                    .build()))
+            .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                .build())
+            .enqueue()
+        findNavController().navigate(R.id.action_remove_trip)
+    }
+
+    private fun deleteTrip() {
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                .build())
+        findNavController().navigate(R.id.action_remove_trip)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -255,33 +303,21 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d(TAG, "Options menu clicked delete")
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
-                    val googleFit = hasFitnessPermissions(it)
-
                     builder.apply {
-                        val removeAllCheckboxView =
-                            View.inflate(context,
-                                R.layout.remove_all_google_fit_dialog_option,
-                                null)
-                        val checkBox =
-                            removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit)
-                        //Figure out if this ride is synced
-                        checkBox.isChecked = googleFit
-                        checkBox.text = "Remove this ride from Google Fit"
                         setPositiveButton("DELETE"
                         ) { _, _ ->
-                            Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                            val serviceList = arrayListOf<OneTimeWorkRequest>().apply {
-                                if (checkBox.isChecked) add(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
-                                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
-                                    .build())
+                            when (googleFitSyncStatus) {
+                                GoogleFitSyncStatusEnum.SYNCED,
+                                GoogleFitSyncStatusEnum.FAILED,
+                                -> {
+                                    Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
+                                    when (hasFitnessPermissions(context)) {
+                                        false -> showMustBeLoggedInDialog()
+                                        else -> unsyncAndDeleteTrip()
+                                    }
+                                }
+                                else -> deleteTrip()
                             }
-                            WorkManager.getInstance(requireContext())
-                                .beginWith(serviceList)
-                                .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
-                                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
-                                    .build())
-                                .enqueue()
-                            findNavController().navigate(R.id.action_remove_trip)
                         }
                         setNegativeButton("CANCEL"
                         ) { _, _ ->
@@ -289,7 +325,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                         setTitle("Delete ride?")
                         setMessage("You are about to remove this ride from your history. This change cannot be undone.")
-                        if (googleFit) setView(removeAllCheckboxView)
                     }
 
                     builder.create()
@@ -316,7 +351,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             R.id.details_menu_action_unsync -> {
                 WorkManager.getInstance(requireContext())
                     .enqueue(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
-                        .setInputData(workDataOf("tripId" to viewModel.tripId)).build())
+                        .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId))).build())
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -900,14 +935,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     null))
                                 map.addPolyline(path)
                             }
-                            map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
-                                mapView.width,
-                                scrollView.marginTop,
-                                100))
-                            maxCameraPosition = map.cameraPosition
-                            map.moveCamera(CameraUpdateFactory.scrollBy(0f,
-                                (mapView.height - scrollView.marginTop) / 2f))
-                            defaultCameraPosition = map.cameraPosition
+                            try {
+                                map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
+                                    mapView.width,
+                                    scrollView.marginTop,
+                                    100))
+                                maxCameraPosition = map.cameraPosition
+                                map.moveCamera(CameraUpdateFactory.scrollBy(0f,
+                                    (mapView.height - scrollView.marginTop) / 2f))
+                                defaultCameraPosition = map.cameraPosition
+                            } catch (e: Exception) {
+                                Log.e(logTag, "Couldn't draw trip details map", e)
+                            }
                         }
                         makeSpeedLineChart()
                         makeElevationLineChart()

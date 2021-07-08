@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 @HiltWorker
 class GoogleFitDeleteSessionWorker @AssistedInject constructor(
-    @Assisted appContext: Context,
+    @Assisted val appContext: Context,
     @Assisted params: WorkerParameters,
 ) : CoroutineWorker(appContext, params) {
     val logTag = "GFitDeleteSessionWorker"
@@ -26,12 +26,22 @@ class GoogleFitDeleteSessionWorker @AssistedInject constructor(
     lateinit var googleFitApiService: GoogleFitApiService
 
     override suspend fun doWork(): Result {
+        if (!hasFitnessPermissions(appContext)) {
+            Log.i(logTag, "Cannot remove data, user not logged in")
+            return Result.failure()
+        }
         inputData.getLongArray("tripIds")?.takeIf { it.isNotEmpty() }?.forEach { tripId ->
-            Log.i(logTag, "Removing data from Google Fit for trip ${tripId}")
             try {
                 tripsRepository.get(tripId).let { trip ->
-                    timeStateRepository.getTimeStates(trip.id!!).let {
-                        googleFitApiService.deleteTrip(trip, it)
+                    if (trip.googleFitSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {
+                        Log.i(logTag, "Removing data from Google Fit for trip ${tripId}")
+                        timeStateRepository.getTimeStates(trip.id!!).let {
+                            googleFitApiService.deleteTrip(trip, it)
+                        }
+                        tripsRepository.setGoogleFitSyncStatus(trip.id!!,
+                            GoogleFitSyncStatusEnum.REMOVED)
+                    } else {
+                        Log.i(logTag, "Trip ${tripId} already synced")
                     }
                 }
             } catch (e: NullPointerException) {

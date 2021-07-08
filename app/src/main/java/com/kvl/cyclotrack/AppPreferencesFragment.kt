@@ -52,18 +52,26 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         }
     }
 
+    private val configureGoogleFitBroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            configureGoogleFitPreference(requireContext())
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (FeatureFlags.betaBuild) {
-            configureGoogleFitPreference(view.context)
-            LocalBroadcastManager.getInstance(view.context)
-                .registerReceiver(object : BroadcastReceiver() {
-                    override fun onReceive(context: Context?, intent: Intent?) {
-                        configureGoogleFitPreference(view.context)
-                    }
-                }, IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
+            configureGoogleFitPreference(requireContext())
+            LocalBroadcastManager.getInstance(requireContext())
+                .registerReceiver(configureGoogleFitBroadcastReceiver,
+                    IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
         }
+    }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        LocalBroadcastManager.getInstance(requireContext())
+            .unregisterReceiver(configureGoogleFitBroadcastReceiver)
     }
 
     private fun configureGoogleFitPreference(context: Context) {
