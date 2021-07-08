@@ -303,6 +303,28 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             builder.create()
         }?.show()
 
+    private fun showUnsyncDialog() =
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("UNSYNC"
+                ) { _, _ ->
+                    WorkManager.getInstance(requireContext())
+                        .enqueue(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                            .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                            .build())
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d(logTag, "UNSYNC: CLICKED CANCEL")
+                }
+                setTitle("Remove from Google Fit?")
+                setMessage("You are about to remove this ride from Google Fit. If you want to add it back later select \"Sync\" from the options menu.")
+            }
+
+            builder.create()
+        }?.show()
+
     private fun showDeleteDialog() =
         activity?.let {
             val builder = AlertDialog.Builder(it)
@@ -369,9 +391,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 true
             }
             R.id.details_menu_action_unsync -> {
-                WorkManager.getInstance(requireContext())
-                    .enqueue(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
-                        .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId))).build())
+                showUnsyncDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
