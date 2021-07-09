@@ -62,8 +62,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     private fun cadenceSensor() = bleService.cadenceSensor
     private fun speedSensor() = bleService.speedSensor
 
-    //fun gpsEnabled() = gpsService.accessGranted
-
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
         val newMeasurement = Measurements(tripId,
@@ -307,11 +305,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         gpsService.stopListening()
         job?.join()
         stopSelf()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
