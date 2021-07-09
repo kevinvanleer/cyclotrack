@@ -65,7 +65,7 @@ fun getUserHeight(context: Context): Float? =
         when (PreferenceManager.getDefaultSharedPreferences(context)
             .getString("display_units", "1")) {
             "1" -> INCHES_TO_FEET * FEET_TO_METERS
-            "2" -> 0.001
+            "2" -> 0.01
             else -> 1.0
         } * it
 
