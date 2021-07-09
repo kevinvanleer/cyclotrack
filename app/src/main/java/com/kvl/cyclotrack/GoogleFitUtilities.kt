@@ -17,24 +17,29 @@ import java.util.concurrent.TimeUnit
 
 private const val logTag = "GOOGLE_FIT_UTILITIES"
 
-val fitnessOptions: FitnessOptions = FitnessOptions.builder()
-    .addDataType(DataType.AGGREGATE_HEIGHT_SUMMARY, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.AGGREGATE_WEIGHT_SUMMARY, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.AGGREGATE_HEART_RATE_SUMMARY, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.AGGREGATE_ACTIVITY_SUMMARY, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_WRITE)
-    .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
-    .addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_WRITE)
-    .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_WRITE)
-    .addDataType(DataType.TYPE_WEIGHT, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_HEIGHT, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_READ)
-    .addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_WRITE)
-    .build()
+val fitnessOptions: FitnessOptions = FitnessOptions.builder().apply {
+    addDataType(DataType.TYPE_WEIGHT, FitnessOptions.ACCESS_READ)
+    addDataType(DataType.TYPE_HEIGHT, FitnessOptions.ACCESS_READ)
+    addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_READ)
+
+    addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_WRITE)
+    addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
+    addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_WRITE)
+    addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_WRITE)
+    addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_WRITE)
+
+    if (FeatureFlags.devBuild) {
+        addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_READ)
+        addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_READ)
+        addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_READ)
+        addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_READ)
+
+        addDataType(DataType.AGGREGATE_HEIGHT_SUMMARY, FitnessOptions.ACCESS_READ)
+        addDataType(DataType.AGGREGATE_WEIGHT_SUMMARY, FitnessOptions.ACCESS_READ)
+        addDataType(DataType.AGGREGATE_HEART_RATE_SUMMARY, FitnessOptions.ACCESS_READ)
+        addDataType(DataType.AGGREGATE_ACTIVITY_SUMMARY, FitnessOptions.ACCESS_READ)
+    }
+}.build()
 
 fun getGoogleAccount(context: Context): GoogleSignInAccount? =
     GoogleSignIn.getAccountForExtension(context, fitnessOptions)
