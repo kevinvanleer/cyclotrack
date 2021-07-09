@@ -10,6 +10,27 @@ import kotlin.math.roundToInt
 
 const val POUNDS_TO_KG = 0.453592
 
+fun convertSystemToUserMass(mass: Float, context: Context) =
+    mass * when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "1")) {
+        "1" -> 1 / POUNDS_TO_KG
+        else -> 1.0
+    }
+
+fun convertSystemToUserHeight(height: Float, context: Context) =
+    height * when (PreferenceManager.getDefaultSharedPreferences(context)
+        .getString("display_units", "1")) {
+        "1" -> METERS_TO_FEET * FEET_TO_INCHES
+        "2" -> 1e2
+        else -> 1.0
+    }
+
+fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
+    when (sharedPreferences.getString("display_units", "1")) {
+        "1" -> POUNDS_TO_KG
+        else -> 1.0
+    }
+
 fun getBiometrics(id: Long, context: Context) = Biometrics(
     id,
     getUserSex(context),
@@ -52,11 +73,6 @@ fun getUserWeight(context: Context): Float? =
 
     }?.toFloat()
 
-fun getMassConversionFactor(context: Context) =
-    when (PreferenceManager.getDefaultSharedPreferences(context).getString("display_units", "1")) {
-        "1" -> POUNDS_TO_KG
-        else -> 1.0
-    }
 
 fun getUserHeight(context: Context): Float? =
     PreferenceManager.getDefaultSharedPreferences(context).getString(context
@@ -119,12 +135,6 @@ fun getUserWeight(sharedPreferences: SharedPreferences): Float? =
         getMassConversionFactor(sharedPreferences) * it
 
     }?.toFloat()
-
-fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
-    when (sharedPreferences.getString("display_units", "1")) {
-        "1" -> POUNDS_TO_KG
-        else -> 1.0
-    }
 
 fun getUserHeight(sharedPreferences: SharedPreferences): Float? =
     sharedPreferences.getString(CyclotrackApp.instance
