@@ -146,7 +146,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                 AlertDialog.Builder(context).apply {
                     setPositiveButton("CLEAR") { _, _ ->
                         PreferenceManager.getDefaultSharedPreferences(context).edit().clear()
-                            .apply()
+                            .commit()
                     }
                     setTitle("Clear Preferences?")
                     setMessage("You are about to clear all shared preferences. This cannot be undone.")
