@@ -277,10 +277,19 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             builder.apply {
                 val selectedTrips =
                     (tripListView.adapter as TripSummariesAdapter).selectedTrips.toTypedArray()
+
                 setPositiveButton("DELETE"
                 ) { _, _ ->
-                    Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                    viewModel.removeTrips(selectedTrips)
+                    Log.d(logTag, "CLICKED DELETE")
+                    WorkManager.getInstance(requireContext())
+                        .beginWith(listOf(
+                            OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                                .setInputData(workDataOf("tripIds" to selectedTrips))
+                                .build()))
+                        .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                            .setInputData(workDataOf("tripIds" to selectedTrips))
+                            .build())
+                        .enqueue()
                     (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
                 }
                 setNegativeButton("CANCEL"
@@ -328,5 +337,9 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
                 "MY_KEY"))
         }
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
     }
 }

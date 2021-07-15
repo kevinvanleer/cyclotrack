@@ -184,7 +184,7 @@ class TripSummariesTest {
 
         onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.resume_button)).check(matches(isDisplayed()))
-        onView(withText(R.id.stop_button)).check(matches(isDisplayed())).perform(click())
+        onView(withId(R.id.stop_button)).check(matches(isDisplayed())).perform(click())
     }
 
 /*

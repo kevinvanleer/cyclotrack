@@ -141,6 +141,9 @@ fun accumulateTripTime(intervals: Array<LongRange>): Double {
     return sum * 1e-3
 }
 
+fun accumulateActiveTime(timeStates: Array<TimeState>) =
+    accumulateTripTime(getTripIntervals(timeStates))
+
 fun accumulateTime(intervals: Array<LongRange>): Double {
     return if (intervals.size <= 1) 0.0 else accumulateTripTime(intervals.sliceArray(IntRange(0,
         intervals.size - 2))) + accumulateTripPauses(intervals)
@@ -222,6 +225,12 @@ fun getTripIntervals(
     } else intervals.toTypedArray()
 }
 
+fun getStartTime(timeStates: Array<TimeState>) =
+    timeStates.find { isTripInProgress(it.state) }?.timestamp
+
+fun getEndTime(timeStates: Array<TimeState>) =
+    timeStates.findLast { !isTripInProgress(it.state) }?.timestamp
+
 fun getTripLegs(
     measurements: Array<CriticalMeasurements>,
     intervals: Array<LongRange>,
@@ -240,6 +249,19 @@ fun getTripLegs(
     val intervals = getTripIntervals(timeStates, measurements)
     return getTripLegs(measurements, intervals)
 }
+
+fun getEffectiveCircumference(trip: Trip, measurements: Array<CriticalMeasurements>) =
+    trip.distance?.let { distance ->
+        measurements.filter { meas -> meas.speedRevolutions != null }
+            .map { filtered -> filtered.speedRevolutions!! }
+            .let { mapped ->
+                if (mapped.isNotEmpty()) {
+                    distance.div(mapped.last()
+                        .minus(mapped.first().toDouble()))
+                        .toFloat()
+                } else null
+            }
+    }
 
 suspend fun plotPath(
     measurements: Array<CriticalMeasurements>,

@@ -30,6 +30,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
@@ -73,6 +76,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var minGuide: View
     private lateinit var defaultCameraPosition: CameraPosition
     private lateinit var maxCameraPosition: CameraPosition
+    private lateinit var googleFitSyncStatus: GoogleFitSyncStatusEnum
+
     private val requestCreateExport =
         registerForActivityResult(ActivityResultContracts.CreateDocument()) { uri ->
             if (uri != null) {
@@ -202,11 +207,142 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         return inflater.inflate(R.layout.trip_details_fragment, container, false)
     }
 
+    private fun configureSyncOptions(menu: Menu) {
+        when (hasFitnessPermissions(requireContext())) {
+            true -> {
+                when (googleFitSyncStatus) {
+                    GoogleFitSyncStatusEnum.SYNCED -> {
+                        menu.findItem(R.id.details_menu_action_unsync).isVisible = true
+                        menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                    }
+                    GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
+                        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+                        menu.findItem(R.id.details_menu_action_sync).isVisible = true
+                    }
+                    else -> {
+                        menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+                    }
+                }
+            }
+            else -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = false
+                menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+            }
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
         inflater.inflate(R.menu.details_menu, menu)
         Log.d(TAG, "Options menu created")
+        viewModel.tripOverview().observe(viewLifecycleOwner, {
+            googleFitSyncStatus = it.googleFitSyncStatus
+            configureSyncOptions(menu)
+        })
     }
+
+    private fun showMustBeLoggedInDialog() {
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setTitle("Sign-in required")
+                setMessage("This ride is synced with Google Fit. Please sign-in then delete the ride.")
+                setPositiveButton("SIGN IN") { _, _ ->
+                    configureGoogleFit(requireActivity())
+                    //TODO: Need to wait for login to finish
+                    //or force user to login through settings first
+                    //unsyncAndDeleteTrip()
+                }
+                setNegativeButton("CANCEL") { _, _ ->
+                    Log.d(logTag, "CLICKED CANCEL SIGN-IN")
+                }
+            }
+            builder.create()
+        }?.show()
+    }
+
+    private fun unsyncAndDeleteTrip() {
+        WorkManager.getInstance(requireContext())
+            .beginWith(listOf(
+                OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                    .setInputData(workDataOf("tripIds" to arrayOf(
+                        viewModel.tripId)))
+                    .build()))
+            .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                .build())
+            .enqueue()
+        findNavController().navigate(R.id.action_remove_trip)
+    }
+
+    private fun deleteTrip() {
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                .build())
+        findNavController().navigate(R.id.action_remove_trip)
+    }
+
+    private fun showUnsyncAndDeleteDialog() =
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("DELETE"
+                ) { _, _ ->
+                    unsyncAndDeleteTrip()
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Delete ride?")
+                setMessage("You are about to remove this ride from Cyclotrack and Google Fit. This change cannot be undone.")
+            }
+
+            builder.create()
+        }?.show()
+
+    private fun showUnsyncDialog() =
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("UNSYNC"
+                ) { _, _ ->
+                    WorkManager.getInstance(requireContext())
+                        .enqueue(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                            .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                            .build())
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d(logTag, "UNSYNC: CLICKED CANCEL")
+                }
+                setTitle("Remove from Google Fit?")
+                setMessage("You are about to remove this ride from Google Fit. If you want to add it back later select \"Sync\" from the options menu.")
+            }
+
+            builder.create()
+        }?.show()
+
+    private fun showDeleteDialog() =
+        activity?.let {
+            val builder = AlertDialog.Builder(it)
+            builder.apply {
+                setPositiveButton("DELETE"
+                ) { _, _ ->
+                    deleteTrip()
+                }
+                setNegativeButton("CANCEL"
+                ) { _, _ ->
+                    Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
+                }
+                setTitle("Delete ride?")
+                setMessage("You are about to remove this ride from your history. This change cannot be undone.")
+            }
+
+            builder.create()
+        }?.show()
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         Log.d(TAG, "Options menu clicked")
@@ -225,25 +361,16 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             }
             R.id.details_menu_action_delete -> {
                 Log.d(TAG, "Options menu clicked delete")
-                activity?.let {
-                    val builder = AlertDialog.Builder(it)
-                    builder.apply {
-                        setPositiveButton("DELETE"
-                        ) { _, _ ->
-                            Log.d("TRIP_DELETE_DIALOG", "CLICKED DELETE")
-                            viewModel.removeTrip()
-                            findNavController().navigate(R.id.action_remove_trip)
+                when (hasFitnessPermissions(requireContext())) {
+                    false -> showMustBeLoggedInDialog()
+                    else ->
+                        when (googleFitSyncStatus) {
+                            GoogleFitSyncStatusEnum.SYNCED,
+                            GoogleFitSyncStatusEnum.FAILED,
+                            -> showUnsyncAndDeleteDialog()
+                            else -> showDeleteDialog()
                         }
-                        setNegativeButton("CANCEL"
-                        ) { _, _ ->
-                            Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
-                        }
-                        setTitle("Delete ride?")
-                        setMessage("You are about to remove this ride from your history. This change cannot be undone.")
-                    }
-
-                    builder.create()
-                }?.show()
+                }
                 true
             }
             R.id.details_menu_action_export -> {
@@ -255,6 +382,16 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         viewModel.tripOverview().removeObserver(this)
                     }
                 })
+                true
+            }
+            R.id.details_menu_action_sync -> {
+                WorkManager.getInstance(requireContext())
+                    .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                        .setInputData(workDataOf("tripId" to viewModel.tripId)).build())
+                true
+            }
+            R.id.details_menu_action_unsync -> {
+                showUnsyncDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -311,7 +448,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
 
         fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
-            var sum = 0
+            var sum = 0f
             var count = 0
             measurements.forEach {
                 if (it.heartRate != null) {
@@ -322,7 +459,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return if (count == 0) {
                 null
             } else {
-                (sum / count).toShort()
+                (sum / count).roundToInt().toShort()
             }
         }
 
@@ -491,17 +628,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val timeStates = pairs.second
                     Log.d(TAG, "Observed change to measurements and time state")
 
-                    val effectiveCircumference = overview.distance?.let { distance ->
-                        tripMeasurements.filter { meas -> meas.speedRevolutions != null }
-                            .map { filtered -> filtered.speedRevolutions!! }
-                            .let { mapped ->
-                                if (mapped.isNotEmpty()) {
-                                    distance.div(mapped.last()
-                                        .minus(mapped.first().toDouble()))
-                                        .toFloat()
-                                } else null
-                            }
-                    }
+                    val effectiveCircumference =
+                        getEffectiveCircumference(overview, tripMeasurements)
+
                     Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
                     Log.d(TAG,
                         "Auto circumference trip $tripId: ${overview.autoWheelCircumference}")
@@ -811,7 +940,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         legs.forEach { leg ->
                             makeElevationDataset(leg, totalDistance).let { dataset ->
                                 data.addDataSet(dataset)
-                                totalDistance = dataset.values.last().x
+                                dataset.values.takeIf { it.isNotEmpty() }?.let {
+                                    totalDistance = it.last().x
+                                }
                             }
                         }
                         elevationChartView.data = data
@@ -844,14 +975,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     null))
                                 map.addPolyline(path)
                             }
-                            map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
-                                mapView.width,
-                                scrollView.marginTop,
-                                100))
-                            maxCameraPosition = map.cameraPosition
-                            map.moveCamera(CameraUpdateFactory.scrollBy(0f,
-                                (mapView.height - scrollView.marginTop) / 2f))
-                            defaultCameraPosition = map.cameraPosition
+                            try {
+                                map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
+                                    mapView.width,
+                                    scrollView.marginTop,
+                                    100))
+                                maxCameraPosition = map.cameraPosition
+                                map.moveCamera(CameraUpdateFactory.scrollBy(0f,
+                                    (mapView.height - scrollView.marginTop) / 2f))
+                                defaultCameraPosition = map.cameraPosition
+                            } catch (e: Exception) {
+                                Log.e(logTag, "Couldn't draw trip details map", e)
+                            }
                         }
                         makeSpeedLineChart()
                         makeElevationLineChart()
@@ -919,8 +1054,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                 }
             })
+        if (FeatureFlags.devBuild) {
+            viewModel.tripOverview().observe(viewLifecycleOwner, { trip ->
+                getDatasets(requireActivity(),
+                    trip.timestamp,
+                    (trip.timestamp + (trip.duration?.times(
+                        1000) ?: 1).toLong()))
+            })
+        }
     }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -965,7 +1107,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private fun startTouchSequence(event: MotionEvent?): Boolean {
         startY = event?.rawY ?: 0f
         startHeight = scrollView.marginTop
-        Log.d("TOUCH_SEQ", "Start sequence: $startY")
+        Log.v("TOUCH_SEQ", "Start sequence: $startY")
         return true
     }
 
@@ -983,7 +1125,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return false
         }
 
-        Log.d("TOUCH_SEQ_MOVE",
+        Log.v("TOUCH_SEQ_MOVE",
             "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight")
         val marginParams: ViewGroup.MarginLayoutParams =
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
@@ -1022,7 +1164,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         val delta = newHeight - currentHeight
-        Log.d("TOUCH_SEQ_END",
+        Log.v("TOUCH_SEQ_END",
             "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight, currentHeight:$currentHeight, delta:$delta")
 
         val marginAnimation = object : Animation() {

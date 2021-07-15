@@ -55,11 +55,12 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
+    @Inject
+    lateinit var googleFitApiService: GoogleFitApiService
+
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
     private fun speedSensor() = bleService.speedSensor
-
-    //fun gpsEnabled() = gpsService.accessGranted
 
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
@@ -180,7 +181,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         Log.d(logTag, "biometrics prefs: ${biometrics}")
 
         lifecycleScope.launch {
-            val googleFitApiService = GoogleFitApiService.instance
             if (googleFitApiService.hasPermission()) {
                 val weightDeferred = async { googleFitApiService.getLatestWeight() }
                 val heightDeferred = async { googleFitApiService.getLatestHeight() }
@@ -194,7 +194,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
                     Log.d(logTag, "google height: ${it}")
                     biometrics = biometrics.copy(userHeight = it)
                 }
-                hrDeferred.await().let {
+                hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
                     Log.d(logTag, "google resting hr: ${it}")
                     biometrics = biometrics.copy(userRestingHeartRate = it)
                 }
@@ -305,11 +305,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         gpsService.stopListening()
         job?.join()
         stopSelf()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

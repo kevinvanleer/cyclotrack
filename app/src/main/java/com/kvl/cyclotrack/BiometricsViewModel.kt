@@ -113,20 +113,25 @@ class BiometricsViewModel @Inject constructor(
 
     @get:Bindable
     val vo2maxHint: String
-        get() = "VO2Max ${
-            if (vo2max.isNullOrEmpty()) getUserRestingHeartRate(sharedPreferences)?.let {
-                estimateVo2Max(it,
-                    getUserMaxHeartRate(sharedPreferences),
-                    getUserAge(sharedPreferences)?.roundToInt())
-            }?.let { "(est ${it.toInt()} mL/kg/min)" } ?: "" else ""
-        }"
+        get() = try {
+            "VO2Max ${
+                if (vo2max.isNullOrEmpty()) getUserRestingHeartRate(sharedPreferences)?.let {
+                    estimateVo2Max(it,
+                        getUserMaxHeartRate(sharedPreferences),
+                        getUserAge(sharedPreferences)?.roundToInt())
+                }
+                    ?.let { "(est ${it.toInt()} mL/kg/min)" } ?: "(enter resting/max HR to estimate)" else "(enter resting/max HR to estimate)"
+            }"
+        } catch (e: NullPointerException) {
+            "VO2Max (enter resting/max HR to estimate)"
+        }
 
     @get:Bindable
     val maxHrHint: String
         get() = "Max heart rate ${
             getUserAge(sharedPreferences)?.let {
                 "(${estimateMaxHeartRate(it.roundToInt())} based on age)"
-            } ?: ""
+            } ?: "(or use age to estimate)"
         }"
 
     @get:Bindable

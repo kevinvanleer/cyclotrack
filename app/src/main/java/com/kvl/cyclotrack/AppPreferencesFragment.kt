@@ -11,10 +11,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
+import android.widget.CheckBox
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.preference.*
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
@@ -46,30 +50,71 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         if (FeatureFlags.devBuild) {
             configureClearPreferences()
         }
-        if (FeatureFlags.betaBuild) {
-            if (GoogleSignIn.hasPermissions(getGoogleAccount(requireContext()), fitnessOptions)) {
-                accessGoogleFit(requireActivity())
-            }
-            configureGoogleFitPreference()
+    }
+
+    private val configureGoogleFitBroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            configureGoogleFitPreference(requireContext())
         }
     }
 
-    private fun configureGoogleFitPreference() {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+            configureGoogleFitPreference(requireContext())
+            LocalBroadcastManager.getInstance(requireContext())
+                .registerReceiver(configureGoogleFitBroadcastReceiver,
+                    IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        LocalBroadcastManager.getInstance(requireContext())
+            .unregisterReceiver(configureGoogleFitBroadcastReceiver)
+    }
+
+    private fun configureGoogleFitPreference(context: Context) {
         findPreference<Preference>(getString(R.string.preferences_key_google_fit))?.apply {
-            if (GoogleSignIn.hasPermissions(getGoogleAccount(requireContext()), fitnessOptions)) {
+            if (GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)) {
                 this.title = getString(R.string.preferences_disconnect_google_fit_title)
                 this.summary = getString(R.string.preferences_disconnect_google_fit_summary)
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
+                        val removeAllCheckboxView =
+                            View.inflate(context,
+                                R.layout.remove_all_google_fit_dialog_option,
+                                null)
                         setPositiveButton("DISCONNECT") { _, _ ->
-                            GoogleSignIn.getClient(requireContext(),
-                                GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
-                                .addOnSuccessListener {
-                                    configureGoogleFitPreference()
-                                }
+                            if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
+                                Log.i(logTag, "Remove all data from Google Fit")
+                                WorkManager.getInstance(context)
+                                    .enqueue(OneTimeWorkRequestBuilder<RemoveAllGoogleFitDataWorker>()
+                                        .build().apply {
+                                            WorkManager.getInstance(context)
+                                                .getWorkInfoByIdLiveData(id)
+                                                .observe(viewLifecycleOwner, { workInfo ->
+                                                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                                        Log.i(logTag, "Sign out from Google Fit")
+                                                        GoogleSignIn.getClient(context,
+                                                            GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                                            .signOut()
+                                                            .addOnSuccessListener {
+                                                                configureGoogleFitPreference(context)
+                                                            }
+                                                    }
+                                                })
+                                        })
+                            } else {
+                                Log.i(logTag, "Sign out from Google Fit")
+                                GoogleSignIn.getClient(context,
+                                    GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
+                                    .addOnSuccessListener {
+                                        configureGoogleFitPreference(context)
+                                    }
+                            }
                         }
-                        setTitle("Disconnect from Google Fit")
-                        setMessage("Logout from Google Account and stop sharing data with Google. Probably for the best!")
+                        setView(removeAllCheckboxView)
+                        setTitle(getString(R.string.preferences_disconnect_google_fit_title))
+                        setMessage(getString(R.string.google_fit_logout_dialog_message))
                     }.create().show()
                     true
                 }
@@ -81,8 +126,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                         setPositiveButton("SYNC") { _, _ ->
                             configureGoogleFit(requireActivity())
                         }
-                        setTitle("Sync with Google Fit")
-                        setMessage("Your data will be shared with Google. Are you sure that's a good idea?")
+                        setTitle(getString(R.string.preferences_sync_with_google_fit_title))
+                        setMessage(getString(R.string.google_fit_sync_dialog_description))
                     }.create().show()
                     true
                 }
@@ -99,7 +144,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                 AlertDialog.Builder(context).apply {
                     setPositiveButton("CLEAR") { _, _ ->
                         PreferenceManager.getDefaultSharedPreferences(context).edit().clear()
-                            .apply()
+                            .commit()
                     }
                     setTitle("Clear Preferences?")
                     setMessage("You are about to clear all shared preferences. This cannot be undone.")
@@ -128,13 +173,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             editText.inputType = EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
             editText.isSingleLine = true
         }
-
-        LocalBroadcastManager.getInstance(requireContext())
-            .registerReceiver(object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    configureGoogleFitPreference()
-                }
-            }, IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
 
         activity?.title = "Settings"
         return super.onCreateView(inflater, container, savedInstanceState)

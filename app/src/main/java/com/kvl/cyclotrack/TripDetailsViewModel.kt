@@ -21,6 +21,7 @@ class TripDetailsViewModel @Inject constructor(
     private val splitRepository: SplitRepository,
     private val onboardSensorsRepository: OnboardSensorsRepository,
     private val sharedPreferences: SharedPreferences,
+    private val googleFitApiService: GoogleFitApiService,
 ) : ViewModel() {
     val logTag = "TRIP_DETAILS_VIEW_MODEL"
     var tripId: Long = 0
@@ -71,22 +72,21 @@ class TripDetailsViewModel @Inject constructor(
                     ?: biometrics.userMaxHeartRate,
             )
             Log.d(logTag, "biometrics after trip: ${biometrics}")
-            val googleFitApiService = GoogleFitApiService.instance
             if (googleFitApiService.hasPermission()) {
                 val weightDeferred = async { googleFitApiService.getLatestWeight(timestamp) }
                 val heightDeferred = async { googleFitApiService.getLatestHeight(timestamp) }
                 val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate(timestamp) }
 
                 weightDeferred.await().let {
-                    Log.d(logTag, "google weight: ${it}")
+                    Log.d(logTag, "biometrics google weight: ${it}")
                     biometrics = biometrics.copy(userWeight = it)
                 }
                 heightDeferred.await().let {
-                    Log.d(logTag, "google height: ${it}")
+                    Log.d(logTag, "biometrics google height: ${it}")
                     biometrics = biometrics.copy(userHeight = it)
                 }
-                hrDeferred.await().let {
-                    Log.d(logTag, "google resting hr: ${it}")
+                hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
+                    Log.d(logTag, "biometrics google resting hr: ${it}")
                     biometrics = biometrics.copy(userRestingHeartRate = it)
                 }
                 Log.d(logTag, "biometrics google: ${biometrics}")
