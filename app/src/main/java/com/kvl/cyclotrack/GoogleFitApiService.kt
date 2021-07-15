@@ -59,7 +59,13 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         val start = end - 60 * 60 * 24 * 30
         var hr: Int? = null
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
-            ?.readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
+            ?.readData(DataReadRequest.Builder()
+                .aggregate(DataSource.Builder()
+                    .setType(DataSource.TYPE_DERIVED)
+                    .setDataType(DataType.TYPE_HEART_RATE_BPM)
+                    .setAppPackageName("com.google.android.gms")
+                    .setStreamName("resting_heart_rate<-merge_heart_rate_bpm")
+                    .build())
                 .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
                 .setTimeRange(start, end, TimeUnit.SECONDS).build())?.await()
             ?.buckets?.forEach { bucket ->
@@ -69,6 +75,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
                     }
                 }
             }
+
         return hr
     }
 
