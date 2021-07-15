@@ -932,6 +932,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     fun makeElevationLineChart() {
                         configureLineChart(elevationChartView)
 
+                        elevationChartView.xAxis.valueFormatter = object : ValueFormatter() {
+                            override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+                                return if (value == 0f) "" else "${
+                                    getUserDistance(requireContext(),
+                                        value.toDouble()).roundToInt()
+                                } ${getUserDistanceUnitShort(requireContext())}"
+                            }
+                        }
+
                         val intervals = getTripIntervals(timeStates, tripMeasurements)
                         val legs = getTripLegs(tripMeasurements, intervals)
                         val data = LineData()
