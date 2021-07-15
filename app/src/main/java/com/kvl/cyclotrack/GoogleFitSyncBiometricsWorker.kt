@@ -40,7 +40,8 @@ class GoogleFitSyncBiometricsWorker @AssistedInject constructor(
                 putString(applicationContext.getString(R.string.preference_key_biometrics_user_weight),
                     String.format("%.1f", convertSystemToUserMass(it, applicationContext)))
             }
-            restingHr?.let {
+
+            restingHr?.takeIf { FeatureFlags.betaBuild }?.let {
                 putString(applicationContext.getString(R.string.preference_key_biometrics_user_restingHeartRate),
                     it.toString())
             }

@@ -339,5 +339,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
         WorkManager.getInstance(requireContext())
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
     }
 }

@@ -194,7 +194,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
                     Log.d(logTag, "google height: ${it}")
                     biometrics = biometrics.copy(userHeight = it)
                 }
-                hrDeferred.await().let {
+                hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
                     Log.d(logTag, "google resting hr: ${it}")
                     biometrics = biometrics.copy(userRestingHeartRate = it)
                 }

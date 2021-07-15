@@ -4,9 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
+
         <variable
             name="viewmodel"
             type="com.kvl.cyclotrack.BiometricsViewModel" />
+
+        <variable
+            name="featureflags"
+            type="com.kvl.cyclotrack.FeatureFlags" />
     </data>
 
     <ScrollView
@@ -28,11 +33,31 @@
                 android:text="@{viewmodel.instructionText}" />
 
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/preference_biometrics_height_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="10dp"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_instruction_text"
+                app:layout_constraintStart_toStartOf="parent"
+                android:hint="@{viewmodel.heightHint}">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/preference_biometrics_height"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:text="@={viewmodel.height}"
+                    android:enabled="@{viewmodel.isEditable}"
+                    android:inputType="numberDecimal" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/preference_biometrics_weight_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_instruction_text"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_height_layout"
                 app:layout_constraintStart_toStartOf="parent"
                 android:hint="@{viewmodel.weightHint}">
 
@@ -146,7 +171,7 @@
                     android:layout_height="wrap_content"
                     android:ems="10"
                     android:text="@={viewmodel.restingHeartRate}"
-                    android:enabled="@{!viewmodel.vo2maxDefined}"
+                    android:enabled="@{featureflags.productionBuild || !viewmodel.vo2maxDefined &amp;&amp; viewmodel.isEditable}"
                     android:inputType="number" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -179,27 +204,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="30dp"
                 android:text="@string/preference_biometrics_hrm_net_calorie_instruction_text" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/preference_biometrics_height_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="10dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_hrm_net_calorie_instruction_text"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:hint="@{viewmodel.heightHint}">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/preference_biometrics_height"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ems="10"
-                    android:text="@={viewmodel.height}"
-                    android:enabled="@{viewmodel.isEditable}"
-                    android:inputType="numberDecimal" />
-            </com.google.android.material.textfield.TextInputLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
