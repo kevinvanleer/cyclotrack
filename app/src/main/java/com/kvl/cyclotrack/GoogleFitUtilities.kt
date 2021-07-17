@@ -314,9 +314,8 @@ fun accessGoogleFit(activity: Activity) {
     getLatestHeartRate(activity)
 }
 
-fun hasFitnessPermissions(context: Context): Boolean {
-    return GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)
-}
+fun hasFitnessPermissions(context: Context): Boolean =
+    GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)
 
 fun configureGoogleFit(activity: Activity) {
     with(activity) {

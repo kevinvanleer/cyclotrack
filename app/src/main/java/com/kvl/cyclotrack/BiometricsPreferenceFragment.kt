@@ -49,12 +49,6 @@ class BiometricsPreferenceFragment : Fragment() {
                     null
                 }
             }
-            /*val newFragment = DatePickerFragment(dob) {
-                viewModel.dob =
-                    SimpleDateFormat(getString(R.string.date_format_patten_dob)).format(it)
-                binding.preferenceBiometricsDob.setText(viewModel.dob)
-            }
-            activity?.supportFragmentManager?.let { newFragment.show(it, "datePicker") }*/
 
             val default = GregorianCalendar.getInstance()
             default.set(1990, 6, 22)
