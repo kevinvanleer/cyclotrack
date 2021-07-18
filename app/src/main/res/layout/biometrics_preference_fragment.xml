@@ -48,7 +48,7 @@
                     android:layout_height="wrap_content"
                     android:ems="10"
                     android:text="@={viewmodel.height}"
-                    android:enabled="@{viewmodel.isEditable}"
+                    android:enabled="@{viewmodel.heightEditable}"
                     android:inputType="numberDecimal" />
             </com.google.android.material.textfield.TextInputLayout>
 
@@ -66,7 +66,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:enabled="@{viewmodel.isEditable}"
+                    android:enabled="@{viewmodel.weightEditable}"
                     android:text="@={viewmodel.weight}"
                     android:inputType="numberDecimal" />
             </com.google.android.material.textfield.TextInputLayout>
@@ -171,7 +171,7 @@
                     android:layout_height="wrap_content"
                     android:ems="10"
                     android:text="@={viewmodel.restingHeartRate}"
-                    android:enabled="@{!viewmodel.vo2maxDefined &amp;&amp; viewmodel.isEditable}"
+                    android:enabled="@{!viewmodel.vo2maxDefined &amp;&amp; viewmodel.restingHeartRateEditable}"
                     android:inputType="number" />
             </com.google.android.material.textfield.TextInputLayout>
 

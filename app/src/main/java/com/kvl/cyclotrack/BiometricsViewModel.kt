@@ -5,16 +5,16 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
-import javax.inject.Inject
+import com.google.android.gms.common.api.ApiException
 import kotlin.math.roundToInt
 import kotlin.reflect.KProperty
 
 
-class BiometricsViewModel @Inject constructor(
+class BiometricsViewModel constructor(
     private val googleFitApiService: GoogleFitApiService,
     private val sharedPreferences: SharedPreferences,
 ) : BaseObservable() {
-    private val tag = "BIOMETRICS_VM"
+    private val logTag = "BIOMETRICS_VM"
 
     private val keyUserSex =
         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_sex)
@@ -65,7 +65,7 @@ class BiometricsViewModel @Inject constructor(
             }
         }
         set(newValue) {
-            Log.d(tag, "Sex $newValue")
+            Log.d(logTag, "Sex $newValue")
             sharedPreferences.edit {
                 this.putString(keyUserSex, when (newValue) {
                     R.id.preference_biometrics_sex_male -> UserSexEnum.MALE.name
@@ -117,8 +117,7 @@ class BiometricsViewModel @Inject constructor(
             "VO2Max ${
                 if (vo2max.isNullOrEmpty()) getUserRestingHeartRate(sharedPreferences)?.let {
                     estimateVo2Max(it,
-                        getUserMaxHeartRate(sharedPreferences),
-                        getUserAge(sharedPreferences)?.roundToInt())
+                        getUserMaxHeartRate(sharedPreferences) ?: getUserAge(sharedPreferences)?.roundToInt()!!)
                 }
                     ?.let { "(est ${it.toInt()} mL/kg/min)" } ?: "(enter resting/max HR to estimate)" else "(enter resting/max HR to estimate)"
             }"
@@ -145,4 +144,33 @@ class BiometricsViewModel @Inject constructor(
     @get:Bindable
     val isEditable: Boolean
         get() = !googleFitApiService.hasPermission()
+
+    var gfRestingHr: Int? = null
+    var gfHeight: Float? = null
+    var gfWeight: Float? = null
+
+    @get:Bindable
+    val isRestingHeartRateEditable
+        get() = gfRestingHr == null
+
+    @get:Bindable
+    val isWeightEditable
+        get() = gfWeight == null
+
+    @get:Bindable
+    val isHeightEditable
+        get() = gfHeight == null
+
+    suspend fun updateGoogleFitBiometrics() {
+        try {
+            gfRestingHr = googleFitApiService.getLatestRestingHeartRate()
+            gfHeight = googleFitApiService.getLatestHeight()
+            gfWeight = googleFitApiService.getLatestWeight()
+            notifyPropertyChanged(BR.restingHeartRateEditable)
+            notifyPropertyChanged(BR.heightEditable)
+            notifyPropertyChanged(BR.weightEditable)
+        } catch (e: ApiException) {
+            Log.e(logTag, "Can't update biometrics", e)
+        }
+    }
 }

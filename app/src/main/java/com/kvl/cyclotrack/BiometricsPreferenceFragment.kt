@@ -8,9 +8,11 @@ import android.view.ViewGroup
 import android.widget.DatePicker
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.kvl.cyclotrack.databinding.BiometricsPreferenceFragmentBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -79,5 +81,12 @@ class BiometricsPreferenceFragment : Fragment() {
         activity?.title = "Settings: Biometrics"
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.updateGoogleFitBiometrics()
+        }
     }
 }

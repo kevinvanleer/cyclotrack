@@ -31,6 +31,16 @@ fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
         else -> 1.0
     }
 
+fun dateStringToAge(dateString: String) =
+    try {
+        SimpleDateFormat(CyclotrackApp.instance.getString(R.string.date_format_patten_dob),
+            Locale.US).parse(dateString
+        )
+            ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+    } catch (e: ParseException) {
+        null
+    }
+
 fun getBiometrics(id: Long, context: Context) = Biometrics(
     id,
     getUserSex(context),
@@ -53,7 +63,6 @@ fun getBiometrics(id: Long, sharedPreferences: SharedPreferences) = Biometrics(
     getUserMaxHeartRate(sharedPreferences),
 )
 
-
 fun getUserSex(context: Context) =
     try {
         PreferenceManager.getDefaultSharedPreferences(context).getString(context
@@ -73,7 +82,6 @@ fun getUserWeight(context: Context): Float? =
 
     }?.toFloat()
 
-
 fun getUserHeight(context: Context): Float? =
     PreferenceManager.getDefaultSharedPreferences(context).getString(context
         .getString(R.string.preference_key_biometrics_user_height),
@@ -84,8 +92,26 @@ fun getUserHeight(context: Context): Float? =
             "2" -> 0.01
             else -> 1.0
         } * it
-
     }?.toFloat()
+
+fun getUserDob(sharedPreferences: SharedPreferences): String? =
+    try {
+        sharedPreferences.getString(CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_dob),
+            "")
+    } catch (e: ParseException) {
+        null
+    }
+
+fun getUserDob(context: Context): String? =
+    try {
+        PreferenceManager.getDefaultSharedPreferences(context).getString(
+            context
+                .getString(R.string.preference_key_biometrics_user_dob),
+            "")
+    } catch (e: ParseException) {
+        null
+    }
 
 fun getUserAge(context: Context): Float? =
     try {
@@ -93,10 +119,7 @@ fun getUserAge(context: Context): Float? =
             context
                 .getString(R.string.preference_key_biometrics_user_dob),
             "")?.let { dateString ->
-            SimpleDateFormat(context.getString(R.string.date_format_patten_dob),
-                Locale.US).parse(dateString
-            )
-                ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+            dateStringToAge(dateString)
         }
     } catch (e: ParseException) {
         null
@@ -154,10 +177,7 @@ fun getUserAge(sharedPreferences: SharedPreferences): Float? =
             CyclotrackApp.instance
                 .getString(R.string.preference_key_biometrics_user_dob),
             "")?.let { dateString ->
-            SimpleDateFormat(CyclotrackApp.instance.getString(R.string.date_format_patten_dob),
-                Locale.US).parse(dateString
-            )
-                ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+            dateStringToAge(dateString)
         }
     } catch (e: ParseException) {
         null
@@ -180,10 +200,9 @@ fun getUserMaxHeartRate(sharedPreferences: SharedPreferences) =
 
 fun estimateMaxHeartRate(age: Int) = (208 - 0.7 * age).toInt()
 
-fun estimateVo2Max(restingHeartRate: Int, maximumHeartRate: Int?, age: Int? = null): Float {
+fun estimateVo2Max(restingHeartRate: Int, maximumHeartRate: Int): Float {
     //http://www.shapesense.com/fitness-exercise/calculators/vo2max-calculator.shtml
-    val mhr = maximumHeartRate ?: estimateMaxHeartRate(age!!)
-    return (15.3 * mhr / restingHeartRate).toFloat()
+    return (15.3 * maximumHeartRate / restingHeartRate).toFloat()
 }
 
 fun getCaloriesEstimateType(
@@ -232,8 +251,8 @@ fun getCaloriesBurnedLabel(
     val estVo2max = biometrics.userVo2max
         ?: biometrics.userRestingHeartRate?.let {
             estimateVo2Max(it,
-                biometrics.userMaxHeartRate,
-                biometrics.userAge?.roundToInt())
+                biometrics.userMaxHeartRate
+                    ?: estimateMaxHeartRate(biometrics.userAge?.roundToInt()!!))
         }
 
     if (biometrics.userWeight != null) {
@@ -308,7 +327,10 @@ fun estimateCaloriesBurned(
     distance: Float,
     heartRate: Short?,
 ): Int? {
-    val estVo2max = vo2Max ?: restingHeartRate?.let { estimateVo2Max(it, maximumHeartRate, age) }
+    val estVo2max = vo2Max ?: restingHeartRate?.let {
+        estimateVo2Max(it,
+            maximumHeartRate ?: age!!)
+    }
     return if (sex != null && age != null && heartRate != null && estVo2max != null) {
         if (height != null) estimateNetCaloriesBurned(sex,
             age,
