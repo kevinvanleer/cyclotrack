@@ -8,7 +8,6 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -53,49 +52,13 @@ class TripDetailsViewModel @Inject constructor(
     private fun exportMeasurements() = measurementsRepository.observe(tripId)
     fun onboardSensors() = onboardSensorsRepository.observeDecimated(tripId)
 
-    suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics {
-        var biometrics = getBiometrics(0, context)
-        Log.d(logTag, "biometrics prefs: ${biometrics}")
-
-        viewModelScope.launch {
-            val tripBiometrics = tripsRepository.getDefaultBiometrics(tripId)
-            Log.d(logTag, "trip biometrics for ${tripId}: ${tripBiometrics}")
-            biometrics = biometrics.copy(
-                userSex = tripBiometrics?.userSex ?: biometrics.userSex,
-                userHeight = tripBiometrics?.userHeight ?: biometrics.userHeight,
-                userWeight = tripBiometrics?.userWeight ?: biometrics.userWeight,
-                userAge = tripBiometrics?.userAge ?: biometrics.userAge,
-                userVo2max = tripBiometrics?.userVo2max ?: biometrics.userVo2max,
-                userRestingHeartRate = tripBiometrics?.userRestingHeartRate
-                    ?: biometrics.userRestingHeartRate,
-                userMaxHeartRate = tripBiometrics?.userMaxHeartRate
-                    ?: biometrics.userMaxHeartRate,
-            )
-            Log.d(logTag, "biometrics after trip: ${biometrics}")
-            if (googleFitApiService.hasPermission()) {
-                val weightDeferred = async { googleFitApiService.getLatestWeight(timestamp) }
-                val heightDeferred = async { googleFitApiService.getLatestHeight(timestamp) }
-                val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate(timestamp) }
-
-                weightDeferred.await().let {
-                    Log.d(logTag, "biometrics google weight: ${it}")
-                    biometrics = biometrics.copy(userWeight = it)
-                }
-                heightDeferred.await().let {
-                    Log.d(logTag, "biometrics google height: ${it}")
-                    biometrics = biometrics.copy(userHeight = it)
-                }
-                hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
-                    Log.d(logTag, "biometrics google resting hr: ${it}")
-                    biometrics = biometrics.copy(userRestingHeartRate = it)
-                }
-                Log.d(logTag, "biometrics google: ${biometrics}")
-            }
-        }.join()
-
-        Log.d(logTag, "biometrics: ${biometrics}")
-        return biometrics
-    }
+    suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics =
+        getCombinedBiometrics(0,
+            timestamp,
+            context,
+            viewModelScope,
+            tripsRepository,
+            googleFitApiService)
 
     data class ExportData(
         var summary: Trip? = null,

@@ -2,7 +2,11 @@ package com.kvl.cyclotrack
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.preference.PreferenceManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -204,6 +208,17 @@ fun estimateVo2Max(restingHeartRate: Int, maximumHeartRate: Int): Float {
     //http://www.shapesense.com/fitness-exercise/calculators/vo2max-calculator.shtml
     return (15.3 * maximumHeartRate / restingHeartRate).toFloat()
 }
+
+fun googleFitBiometricsEnabled(context: Context): Boolean =
+    PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context
+        .getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+        true)
+
+fun googleFitBiometricsEnabled(sharedPreferences: SharedPreferences) =
+    sharedPreferences.getBoolean(CyclotrackApp.instance
+        .getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+        true)
+
 
 fun getCaloriesEstimateType(
     sharedPrefs: SharedPreferences,
@@ -440,4 +455,58 @@ fun estimateBasalMetabolicRate(sex: String, weight: Float, height: Float, age: I
     //return shapesense()
     return mifflinStJeor()
     //return harrisBenedict()
+}
+
+suspend fun getCombinedBiometrics(
+    tripId: Long,
+    timestamp: Long,
+    context: Context,
+    coroutineScope: CoroutineScope,
+    tripsRepository: TripsRepository?,
+    googleFitApiService: GoogleFitApiService,
+): Biometrics {
+    val logTag = "getCombinedBiometrics"
+    var biometrics = getBiometrics(0, context)
+    Log.d(logTag, "biometrics prefs: ${biometrics}")
+
+    coroutineScope.launch {
+        tripsRepository?.let {
+            val tripBiometrics = it.getDefaultBiometrics(tripId)
+            Log.d(logTag, "trip biometrics for ${tripId}: ${tripBiometrics}")
+            biometrics = biometrics.copy(
+                userSex = tripBiometrics?.userSex ?: biometrics.userSex,
+                userHeight = tripBiometrics?.userHeight ?: biometrics.userHeight,
+                userWeight = tripBiometrics?.userWeight ?: biometrics.userWeight,
+                userAge = tripBiometrics?.userAge ?: biometrics.userAge,
+                userVo2max = tripBiometrics?.userVo2max ?: biometrics.userVo2max,
+                userRestingHeartRate = tripBiometrics?.userRestingHeartRate
+                    ?: biometrics.userRestingHeartRate,
+                userMaxHeartRate = tripBiometrics?.userMaxHeartRate
+                    ?: biometrics.userMaxHeartRate,
+            )
+        }
+        Log.d(logTag, "biometrics after trip: ${biometrics}")
+        if (googleFitBiometricsEnabled(context) && googleFitApiService.hasPermission()) {
+            val weightDeferred = async { googleFitApiService.getLatestWeight(timestamp) }
+            val heightDeferred = async { googleFitApiService.getLatestHeight(timestamp) }
+            val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate(timestamp) }
+
+            weightDeferred.await().let {
+                Log.d(logTag, "biometrics google weight: ${it}")
+                biometrics = biometrics.copy(userWeight = it)
+            }
+            heightDeferred.await().let {
+                Log.d(logTag, "biometrics google height: ${it}")
+                biometrics = biometrics.copy(userHeight = it)
+            }
+            hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
+                Log.d(logTag, "biometrics google resting hr: ${it}")
+                biometrics = biometrics.copy(userRestingHeartRate = it)
+            }
+            Log.d(logTag, "biometrics google: ${biometrics}")
+        }
+    }.join()
+
+    Log.d(logTag, "biometrics: ${biometrics}")
+    return biometrics
 }

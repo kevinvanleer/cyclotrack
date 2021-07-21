@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
-
+        <import type="android.view.View" />
         <variable
             name="viewmodel"
             type="com.kvl.cyclotrack.BiometricsViewModel" />
@@ -24,12 +24,24 @@
             android:layout_margin="12dp"
             tools:context=".BiometricsPreferenceFragment">
 
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/preference_biometrics_switch_use_google_fit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginBottom="12dp"
+                android:visibility="@{viewmodel.googleFitEnabled ? View.VISIBLE : View.GONE}"
+                android:checked="@={viewmodel.useGoogleFitBiometrics}"
+                android:text="Use Google Fit Biometrics" />
+
             <TextView
                 android:id="@+id/preference_biometrics_instruction_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit"
                 app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="12dp"
                 android:text="@{viewmodel.instructionText}" />
 
             <com.google.android.material.textfield.TextInputLayout
@@ -207,4 +219,5 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
+
 </layout>

@@ -51,8 +51,8 @@ class BiometricsViewModel constructor(
 
     var sex: Int
         @Bindable
-        get() {
-            return try {
+        get() =
+            try {
                 sharedPreferences.getString(keyUserSex, "").let {
                     when (it) {
                         UserSexEnum.MALE.name -> R.id.preference_biometrics_sex_male
@@ -63,7 +63,6 @@ class BiometricsViewModel constructor(
             } catch (e: ClassCastException) {
                 -1
             }
-        }
         set(newValue) {
             Log.d(logTag, "Sex $newValue")
             sharedPreferences.edit {
@@ -75,11 +74,6 @@ class BiometricsViewModel constructor(
             }
         }
 
-    @get:Bindable
-    var weight by makeObservablePreference(R.string.preference_key_biometrics_user_weight)
-
-    @get:Bindable
-    var height by makeObservablePreference(R.string.preference_key_biometrics_user_height)
 
     @get:Bindable
     var dob by makeObservablePreference(R.string.preference_key_biometrics_user_dob)
@@ -88,10 +82,94 @@ class BiometricsViewModel constructor(
     var vo2max by makeObservablePreference(R.string.preference_key_biometrics_user_vo2max)
 
     @get:Bindable
-    var restingHeartRate by makeObservablePreference(R.string.preference_key_biometrics_user_restingHeartRate)
-
-    @get:Bindable
     var maxHeartRate by makeObservablePreference(R.string.preference_key_biometrics_user_maxHeartRate)
+
+    var weight
+        @Bindable
+        get() =
+            try {
+                when (gfWeight != null && useGoogleFitBiometrics) {
+                    true -> "%.1f".format(convertSystemToUserMass(gfWeight!!,
+                        CyclotrackApp.instance))
+                    else
+                    -> sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
+                        "")
+                }
+            } catch (e: ClassCastException) {
+                ""
+            }
+        set(newValue) {
+            if (gfWeight == null || !useGoogleFitBiometrics) {
+                sharedPreferences.edit {
+                    this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
+                        newValue)
+                }
+                notifyChange()
+            }
+        }
+
+    var height
+        @Bindable
+        get() =
+            try {
+                when (gfHeight != null && useGoogleFitBiometrics) {
+                    true -> "%.1f".format(convertSystemToUserHeight(gfHeight!!,
+                        CyclotrackApp.instance))
+                    else -> sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
+                        "")
+                }
+            } catch (e: ClassCastException) {
+                ""
+            }
+        set(newValue) {
+            if (gfHeight == null || !useGoogleFitBiometrics) {
+                sharedPreferences.edit {
+                    this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
+                        newValue)
+                }
+                notifyChange()
+            }
+        }
+
+    var restingHeartRate
+        @Bindable
+        get() =
+            try {
+                when (gfRestingHr != null && useGoogleFitBiometrics) {
+                    true -> gfRestingHr.toString()
+                    else -> sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
+                        "")
+                }
+            } catch (e: ClassCastException) {
+                ""
+            }
+        set(newValue) {
+            if (gfRestingHr == null || !useGoogleFitBiometrics) {
+                sharedPreferences.edit {
+                    this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
+                        newValue)
+                }
+                notifyChange()
+            }
+        }
+
+    var useGoogleFitBiometrics: Boolean
+        @Bindable
+        get() =
+            try {
+                sharedPreferences.getBoolean(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                    true)
+            } catch (e: ClassCastException) {
+                true
+            }
+        set(newValue) {
+            sharedPreferences.edit {
+                this.putBoolean(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                    newValue)
+            }
+            notifyChange()
+        }
+
 
     @get:Bindable
     val heightHint: String
@@ -145,30 +223,33 @@ class BiometricsViewModel constructor(
     val isEditable: Boolean
         get() = !googleFitApiService.hasPermission()
 
+    @get:Bindable
+    val googleFitEnabled: Boolean
+        get() = googleFitApiService.hasPermission()
+
+
     var gfRestingHr: Int? = null
     var gfHeight: Float? = null
     var gfWeight: Float? = null
 
     @get:Bindable
     val isRestingHeartRateEditable
-        get() = gfRestingHr == null
+        get() = !useGoogleFitBiometrics || gfRestingHr == null
 
     @get:Bindable
     val isWeightEditable
-        get() = gfWeight == null
+        get() = !useGoogleFitBiometrics || gfWeight == null
 
     @get:Bindable
     val isHeightEditable
-        get() = gfHeight == null
+        get() = !useGoogleFitBiometrics || gfHeight == null
 
     suspend fun updateGoogleFitBiometrics() {
         try {
             gfRestingHr = googleFitApiService.getLatestRestingHeartRate()
             gfHeight = googleFitApiService.getLatestHeight()
             gfWeight = googleFitApiService.getLatestWeight()
-            notifyPropertyChanged(BR.restingHeartRateEditable)
-            notifyPropertyChanged(BR.heightEditable)
-            notifyPropertyChanged(BR.weightEditable)
+            notifyChange()
         } catch (e: ApiException) {
             Log.e(logTag, "Can't update biometrics", e)
         }

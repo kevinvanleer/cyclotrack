@@ -35,6 +35,7 @@
     <string name="preference_key_biometrics_user_maxHeartRate">preference_key_biometrics_user_maxHeartRate</string>
     <string name="preference_key_system_of_measurement">display_units</string>
     <string name="preference_key_biometrics_user_dob">preference_key_biometrics_user_date_of_birth</string>
+    <string name="preference_key_biometrics_use_google_fit_biometrics">preference_key_biometrics_use_google_fit_biometrics</string>
     <string name="date_format_patten_dob">yyyy-MM-dd</string>
     <string name="preferences_clear_preferences_key">preferences_clear_preferences</string>
     <string name="preference_biometrics_instruction_text">This information is used to estimate Calorie burn during rides.</string>

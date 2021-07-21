@@ -74,7 +74,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
 
     private fun configureGoogleFitPreference(context: Context) {
         findPreference<Preference>(getString(R.string.preferences_key_google_fit))?.apply {
-            if (GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)) {
+            if (hasFitnessPermissions(context)) {
                 this.title = getString(R.string.preferences_disconnect_google_fit_title)
                 this.summary = getString(R.string.preferences_disconnect_google_fit_summary)
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {

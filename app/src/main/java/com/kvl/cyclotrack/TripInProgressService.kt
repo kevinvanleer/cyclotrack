@@ -19,7 +19,6 @@ import androidx.navigation.NavDeepLinkBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -176,35 +175,13 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT })
     }
 
-    suspend fun getCombinedBiometrics(id: Long): Biometrics {
-        var biometrics = getBiometrics(id, applicationContext)
-        Log.d(logTag, "biometrics prefs: ${biometrics}")
-
-        lifecycleScope.launch {
-            if (googleFitApiService.hasPermission()) {
-                val weightDeferred = async { googleFitApiService.getLatestWeight() }
-                val heightDeferred = async { googleFitApiService.getLatestHeight() }
-                val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate() }
-
-                weightDeferred.await().let {
-                    Log.d(logTag, "google weight: ${it}")
-                    biometrics = biometrics.copy(userWeight = it)
-                }
-                heightDeferred.await().let {
-                    Log.d(logTag, "google height: ${it}")
-                    biometrics = biometrics.copy(userHeight = it)
-                }
-                hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
-                    Log.d(logTag, "google resting hr: ${it}")
-                    biometrics = biometrics.copy(userRestingHeartRate = it)
-                }
-                Log.d(logTag, "biometrics google: ${biometrics}")
-            }
-        }.join()
-
-        Log.d(logTag, "biometrics: ${biometrics}")
-        return biometrics
-    }
+    suspend fun getCombinedBiometrics(id: Long): Biometrics =
+        getCombinedBiometrics(id,
+            System.currentTimeMillis(),
+            applicationContext,
+            lifecycleScope,
+            null,
+            googleFitApiService)
 
     private suspend fun start() {
         Log.d(logTag, "Start trip")
