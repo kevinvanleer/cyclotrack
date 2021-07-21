@@ -20,12 +20,29 @@ function Privacy() {
         </RouterLink>
         <Spacer height="3em" />
         <h3>Privacy Policy</h3>
-        Cyclotrack uses location data from GPS receiver on your device to
-        visualize speed, distance, and map your route. All data collected by
-        Cyclotrack is stored on your device. No data is transmitted from your
+        Cyclotrack uses location data from GPS receiver on a user device to
+        visualize speed, distance, and map a route. All data collected by
+        Cyclotrack is stored on the device. No data is transmitted from the
         device to the developer of Cyclotrack. No data is transmitted to a third
         party unless you explicitly enable a third party integration (e.g.
         Google Fit).
+        <h4>Google Fit</h4>A user may choose to link Cyclotrack with a Google
+        Fit account. This is done by signing in to a Google account in
+        Cyclotrack settings. When linked Cyclotrack will:
+        <ul>
+          <li>
+            Read height, weight, and resting heart rate stored in Google Fit.
+            This data will be used to assist in calculating metrics like calorie
+            burn. This data will be stored in Cyclotrack as part of a ride. The
+            data will persist until the ride is deleted from Cyclotrack.
+          </li>
+          <li>
+            Send data to Google Fit to be entered in the activity journal and
+            used to track toward Google Fit goals. These include: location,
+            distance, speed, cadence, and heart rate.
+          </li>
+        </ul>
+        No data received from Google Fit will be shared with any third party.
         <Spacer height="2em" />
       </Flexbox>
     </Flexbox>

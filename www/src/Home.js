@@ -1,6 +1,12 @@
 import React from 'react';
 import './App.css';
 import logo from './cyclotrack-app.svg';
+import summary from './screenshot-summary.jpg';
+import dash from './screenshot-dash-ble.jpg';
+import detailsTop from './screenshot-details-1.jpg';
+import detailsTwo from './screenshot-details-2.jpg';
+import detailsThree from './screenshot-details-3.jpg';
+import detailsFour from './screenshot-details-4.jpg';
 import { Flexbox, Text, Link, Icon, Spacer } from 'kvl-react-ui';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -29,6 +35,73 @@ function Home() {
             <Text>Download Cyclotrack from the Google Play Store</Text>
           </Flexbox>
         </Link>
+        <Spacer height="3em" />
+        <Flexbox
+          flexDirection="row"
+          justifyContent="center"
+          marginBetween="30px"
+        >
+          <img width="25%" src={summary} alt="logo" />
+          <img width="25%" src={dash} alt="logo" />
+          <img width="25%" src={detailsTop} alt="logo" />
+        </Flexbox>
+        <Spacer height="3em" />
+        I started Cyclotrack because I could not find a cycle computer app that
+        provided an always-on dashboard with relevant performance data. I also
+        wanted to build an app that was functional using only onboard sensors,
+        primarily GPS. And finally, I wanted a record of my past rides so I
+        could track progress toward my goals and compare performance to past
+        rides.
+        <Spacer height="1em" />
+        As I developed Cyclotrack, the shortcomings of smartphone GPS became
+        apparent. The relatively low speed of cycling, shaded bike paths,
+        buildings and even cloudy days seemed to make tracking instantaneous
+        speed frustrating and unreliable. As a result I added support for
+        Bluetooth Low Engery (BLE) heart rate, speed and cadence sensors. This
+        added a new level of fidelity to the data available Cyclotrack,
+        providing a much more reliable source for speed data and adding the
+        ability to track pedaling cadence. Tracking heart rate provided a
+        missing piece of information that helped me understand how much effort I
+        was expending on my rides, when I was overdoing it, when I had more to
+        give, and enabled me to push myself and keep my heart rate just under my
+        functional threshold.
+        <Spacer height="1em" />
+        I wanted to have rich data analysis without relying on cloud storage or
+        third part integrations with platforms like Strava or Google Fit, so
+        Cyclotrack provides details analysis with, maps, graphs and stats for
+        each ride. This data is stored efficiently on your device, and can be
+        exported to XLSX format so you can do your own analysis in your favorite
+        spreadsheet application. Cyclotrack is fully functional offline, no
+        network connection is required to utilize any of its features. Your data
+        is safe. I do not collect any data or analytics (although I may collect
+        anonymous app usage data in the future) and I do not send or sell any
+        data to third parties.
+        <Spacer height="1em" />
+        Having said all that, I wanted to track all my fitness activity in a
+        single experience, so I built an integration between Cyclotrack and
+        Google Fit. This integration enables Cyclotrack to send data to Google
+        Fit so that I get credit for heart points. calories, miles, and minutes.
+        Cyclotrack rides also appear in the Google Fit journal. There was
+        another reason I wanted this integration. I wanted to track my weight in
+        one place. Until this point I had been entering my weight in Google Fit
+        to track my weight, and Cyclotrack so that my weight could be used to
+        help estimate calorie burn on my rides. So I updated Cyclotrack to read
+        all relevant (and available) biometric data from Google Fit. Cyclotrack
+        can get height, weight, and resting heart rate data from Google Fit. It
+        uses this information, and BLE heart rate (if available), to estimate
+        calorie burn. The best part is that this feature is totally optional.
+        Cyclotrack is 100% functional even if you do not use Google Fit.
+        <Spacer height="3em" />
+        <Flexbox
+          flexDirection="row"
+          justifyContent="center"
+          marginBetween="10px"
+        >
+          <img width="23%" src={detailsTop} alt="logo" />
+          <img width="23%" src={detailsTwo} alt="logo" />
+          <img width="23%" src={detailsThree} alt="logo" />
+          <img width="23%" src={detailsFour} alt="logo" />
+        </Flexbox>
         <Spacer height="3em" />
         <h3>Become a beta tester</h3>
         <Link
