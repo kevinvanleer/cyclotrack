@@ -42,7 +42,19 @@ function Privacy() {
             distance, speed, cadence, and heart rate.
           </li>
         </ul>
-        No data received from Google Fit will be shared with any third party.
+        No data received from Google Fit will be shared with or transmitted to
+        any third party.
+        <Spacer height="1em" />
+        <span>
+          <i>
+            <b>Disclosure:</b> Use and transfer to any other app of information
+            received from Google APIs by Cyclotrack will adhere to the{' '}
+            <Link href="https://developers.google.com/terms/api-services-user-data-policy">
+              Google API Services User Data Policy
+            </Link>
+            , including the Limited Use requirements.
+          </i>
+        </span>
         <Spacer height="2em" />
       </Flexbox>
     </Flexbox>
