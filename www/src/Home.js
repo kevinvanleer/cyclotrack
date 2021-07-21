@@ -41,9 +41,9 @@ function Home() {
           justifyContent="center"
           marginBetween="30px"
         >
-          <img width="25%" src={summary} alt="logo" />
-          <img width="25%" src={dash} alt="logo" />
-          <img width="25%" src={detailsTop} alt="logo" />
+          <img width="25%" src={summary} alt="summary view screenshot" />
+          <img width="25%" src={dash} alt="dashboard screenshot" />
+          <img width="25%" src={detailsTop} alt="details screenshot" />
         </Flexbox>
         <Spacer height="3em" />
         I started Cyclotrack because I could not find a cycle computer app that
@@ -95,10 +95,22 @@ function Home() {
           justifyContent="center"
           marginBetween="10px"
         >
-          <img width="23%" src={detailsTop} alt="logo" />
-          <img width="23%" src={detailsTwo} alt="logo" />
-          <img width="23%" src={detailsThree} alt="logo" />
-          <img width="23%" src={detailsFour} alt="logo" />
+          <img width="23%" src={detailsTop} alt="details screenshot with map" />
+          <img
+            width="23%"
+            src={detailsTwo}
+            alt="details screenshot with graphs"
+          />
+          <img
+            width="23%"
+            src={detailsThree}
+            alt="details screenshot with splits"
+          />
+          <img
+            width="23%"
+            src={detailsFour}
+            alt="details screenshot with elevation chart"
+          />
         </Flexbox>
         <Spacer height="3em" />
         <h3>Become a beta tester</h3>
