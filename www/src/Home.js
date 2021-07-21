@@ -127,6 +127,7 @@ function Home() {
         >
           View Privacy policy
         </RouterLink>
+        <Spacer height="2em" />
       </Flexbox>
     </Flexbox>
   );
