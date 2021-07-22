@@ -673,9 +673,9 @@ fun validateCadence(current: CriticalMeasurements, previous: CriticalMeasurement
     val doubleRollover =
         (current.cadenceLastEvent!! < previous.cadenceLastEvent!! && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
     val prematureRollover =
-        (previous.cadenceRevolutions!! < 65500f && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
+        (previous.cadenceRevolutions!! < 65500f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
     val veryPrematureRollover =
-        (previous.cadenceRevolutions!! < 64000f && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
+        (previous.cadenceRevolutions < 64000f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
     val deviceReset = prematureRollover && doubleRollover
 
     return !(cadenceDidNotUpdate || deviceReset || veryPrematureRollover)

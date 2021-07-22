@@ -685,7 +685,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     ?.let { last ->
                                         if (measurements.speedLastEvent != last.speedLastEvent) {
                                             try {
-                                                getRpm(rev = measurements.speedRevolutions ?: 0,
+                                                getRpm(rev = measurements.speedRevolutions,
                                                     revLast = last.speedRevolutions ?: 0,
                                                     time = measurements.speedLastEvent ?: 0,
                                                     timeLast = last.speedLastEvent ?: 0,
@@ -831,7 +831,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     ?.let { last ->
                                         if (validateCadence(measurements, last)) {
                                             try {
-                                                getRpm(rev = measurements.cadenceRevolutions ?: 0,
+                                                getRpm(rev = measurements.cadenceRevolutions,
                                                     revLast = last.cadenceRevolutions ?: 0,
                                                     time = measurements.cadenceLastEvent ?: 0,
                                                     timeLast = last.cadenceLastEvent ?: 0,
