@@ -90,4 +90,6 @@
     <string name="google_fit_sync_dialog_description">Sign in to Google Fit to sync your workouts. Data from your rides, including location, heart rate, speed, and cadence will be shared with Google and stored in Google Fit. Google Fit will store your rides in the journal and your rides will count toward your weekly goals. Your Google Fit height, weight, and resting heart rate will be used to estimate calorie burn if available.</string>
     <string name="google_fit_logout_dialog_message">You are about to logout from your Google Account and stop sharing data with Google. Your rides will no longer be synchronized with Google Fit.</string>
     <string name="details_menu_title_unsync">Unsync</string>
+    <string name="useGoogleFitBiometricsDialog_title">Use Google Fit Biometrics</string>
+    <string name="useGoogleFitBiometricsDialog_message">Enable this option to read height, weight, and resting heart rate data from Google Fit. If this option is disabled, the values stored in Cyclotrack will be used. Update this option at any time in biometrics settings.</string>
 </resources>

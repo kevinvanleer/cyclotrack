@@ -12,6 +12,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.CheckBox
+import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
@@ -24,6 +26,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 class AppPreferencesFragment : PreferenceFragmentCompat(),
     PreferenceFragmentCompat.OnPreferenceDisplayDialogCallback {
+    private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "PREFERENCES"
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
@@ -54,16 +57,38 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
 
     private val configureGoogleFitBroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            userGoogleFitBiometricsDialog.show()
             configureGoogleFitPreference(requireContext())
         }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-            configureGoogleFitPreference(requireContext())
-            LocalBroadcastManager.getInstance(requireContext())
-                .registerReceiver(configureGoogleFitBroadcastReceiver,
-                    IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
+        configureGoogleFitPreference(requireContext())
+
+        userGoogleFitBiometricsDialog = AlertDialog.Builder(context).apply {
+            val dialogView =
+                View.inflate(context, R.layout.use_google_fit_biometrics_dialog, null)
+            val useGoogleFitSwitch =
+                dialogView.findViewById<SwitchCompat>(R.id.useGoogleFitBiometricsDialog_switch_useGoogleFit)
+            useGoogleFitSwitch.isChecked =
+                PreferenceManager.getDefaultSharedPreferences(context)
+                    .getBoolean(requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                        true)
+            setPositiveButton("OK") { _, _ ->
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                    putBoolean(requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                        useGoogleFitSwitch.isChecked)
+                    commit()
+                }
+            }
+            setTitle(getString(R.string.useGoogleFitBiometricsDialog_title))
+            setMessage(getString(R.string.useGoogleFitBiometricsDialog_message))
+            setView(dialogView)
+        }.create()
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(configureGoogleFitBroadcastReceiver,
+                IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
     }
 
     override fun onDestroyView() {
