@@ -60,6 +60,9 @@ class TripSummariesAdapter(
                     selectedTrips.add(tripId)
                 } else {
                     selectedTrips.remove(tripId)
+                    if (selectedTrips.isEmpty()) {
+                        multiSelectMode = false
+                    }
                 }
             } else {
                 try {
