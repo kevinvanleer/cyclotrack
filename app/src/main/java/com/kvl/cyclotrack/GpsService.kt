@@ -22,35 +22,33 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
     private val locationManager =
         (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
     private val locationListener = object : LocationListener {
-        override fun onLocationChanged(newLocation: Location?) {
+        override fun onLocationChanged(location: Location) {
             Log.v("GPS_SERVICE", "New location result")
-            newLocation?.let { location ->
+            Log.v("GPS_SERVICE",
+                "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 Log.v("GPS_SERVICE",
-                    "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    Log.v("GPS_SERVICE",
-                        "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
-                    Log.v("GPS_SERVICE",
-                        "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
-                    Log.v("GPS_SERVICE",
-                        "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
+                    "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
+                Log.v("GPS_SERVICE",
+                    "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
+                Log.v("GPS_SERVICE",
+                    "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
                     Log.v("GPS_SERVICE",
                         "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
                 }
                 value = location
-            }
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
             Log.d("GPS_SERVICE", "GPS status changed")
         }
 
-        override fun onProviderEnabled(provider: String?) {
+        override fun onProviderEnabled(provider: String) {
             Log.d("GPS_SERVICE", "GPS provider enabled")
             accessGranted.value = true;
         }
 
-        override fun onProviderDisabled(provider: String?) {
+        override fun onProviderDisabled(provider: String) {
             Log.d("GPS_SERVICE", "GPS provider disabled")
             accessGranted.value = false;
         }

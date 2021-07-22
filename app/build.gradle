@@ -23,12 +23,12 @@ android {
             keyAlias "androiddebugkey"
         }
     }
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     defaultConfig {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 23
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 26
         versionName "2.1.0"
 
