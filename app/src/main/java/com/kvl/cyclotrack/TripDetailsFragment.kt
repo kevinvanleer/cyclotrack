@@ -447,6 +447,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             getUserAltitudeUnitLong(requireContext())
 
 
+        val elevationAlpha = 0.05
+        fun getElevationChange(measurements: Array<CriticalMeasurements>): Pair<Double, Double> {
+            return smooth(elevationAlpha,
+                measurements.map { it.altitude }.toTypedArray()).let {
+                accumulateAscentDescent(it, 10.0)
+            }
+        }
+
         fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
             var sum = 0f
             var count = 0
@@ -898,25 +906,30 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     fun makeElevationDataset(
                         measurements: Array<CriticalMeasurements>,
                         _totalDistance: Float,
-                    ): LineDataSet {
+                    ): Pair<LineDataSet, LineDataSet> {
                         val entries = ArrayList<Entry>()
-                        var trendLast: Float? = null
-                        var trendAlpha = 0.1f
+                        val raw = ArrayList<Entry>()
                         var totalDistance = _totalDistance
                         var lastMeasurements: CriticalMeasurements? = null
+                        var smoothed: Double = measurements[0].altitude
+                        var smoothedLast = smoothed
                         measurements.forEach {
-                            lastMeasurements?.let { last -> totalDistance += getDistance(it, last) }
-                            lastMeasurements = it
-                            getUserAltitude(requireContext(),
-                                it.altitude).toFloat().let { alt ->
-                                trendLast =
-                                    (trendAlpha * alt) + ((1 - trendAlpha) * (trendLast
-                                        ?: alt))
-                                entries.add(Entry(totalDistance,
-                                    trendLast!!))
+                            smoothed =
+                                exponentialSmoothing(elevationAlpha,
+                                    it.altitude,
+                                    smoothedLast)
+                            smoothedLast = smoothed
+
+                            lastMeasurements?.let { last ->
+                                totalDistance += getDistance(it, last)
                             }
-                            if (trendAlpha > 0.1f) trendAlpha -= 0.005f
-                            if (trendAlpha < 0.1f) trendAlpha = 0.01f
+                            lastMeasurements = it
+
+                            entries.add(Entry(totalDistance,
+                                getUserAltitude(requireContext(),
+                                    smoothed).toFloat()))
+                            raw.add(Entry(totalDistance,
+                                getUserAltitude(requireContext(), it.altitude).toFloat()))
                         }
                         val dataset = LineDataSet(entries, "Elevation")
                         dataset.setDrawCircles(false)
@@ -925,8 +938,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ResourcesCompat.getColor(resources,
                                 R.color.colorAccent,
                                 null)
-                        dataset.lineWidth = 3f
-                        return dataset
+                        dataset.lineWidth = 1f
+                        val rawdataset = LineDataSet(raw, "raw")
+                        rawdataset.setDrawCircles(false)
+                        rawdataset.setDrawValues(false)
+                        rawdataset.color = Color.CYAN
+                        rawdataset.lineWidth = 1f
+                        return Pair(rawdataset, dataset)
                     }
 
                     fun makeElevationLineChart() {
@@ -948,8 +966,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         var totalDistance = 0f
                         legs.forEach { leg ->
                             makeElevationDataset(leg, totalDistance).let { dataset ->
-                                data.addDataSet(dataset)
-                                dataset.values.takeIf { it.isNotEmpty() }?.let {
+                                data.addDataSet(dataset.first)
+                                data.addDataSet(dataset.second)
+                                dataset.first.values.takeIf { it.isNotEmpty() }?.let {
                                     totalDistance = it.last().x
                                 }
                             }
@@ -998,7 +1017,20 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             }
                         }
                         makeSpeedLineChart()
+
+                        val elevationChange = getElevationChange(tripMeasurements)
+                        view.findViewById<HeadingView>(R.id.trip_details_elevation).value =
+                            "+${
+                                getUserAltitude(requireContext(),
+                                    elevationChange.first).roundToInt()
+                            }/${
+                                getUserAltitude(requireContext(),
+                                    elevationChange.second).roundToInt()
+                            } ${
+                                getUserAltitudeUnitLong(requireContext())
+                            }"
                         makeElevationLineChart()
+
                         val avgHeartRate = getAverageHeartRate(tripMeasurements)
                         if (avgHeartRate != null) {
                             heartRateView.visibility = View.VISIBLE

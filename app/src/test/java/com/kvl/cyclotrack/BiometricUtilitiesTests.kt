@@ -163,7 +163,7 @@ class BiometricUtilitiesTests {
             age,
             weight,
             height,
-            estimateVo2Max(restingHr, maxHr, age),
+            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
             estimateCaloriesBurned(sex,
@@ -183,7 +183,7 @@ class BiometricUtilitiesTests {
             age,
             weight,
             height,
-            estimateVo2Max(restingHr, maxHr, age),
+            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
             estimateCaloriesBurned(sex,
@@ -204,7 +204,7 @@ class BiometricUtilitiesTests {
             age,
             weight,
             height,
-            estimateVo2Max(restingHr, maxHr, age),
+            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
             estimateCaloriesBurned(sex,
@@ -235,7 +235,7 @@ class BiometricUtilitiesTests {
         Assert.assertEquals(estimateGrossCaloriesBurned(sex,
             age,
             weight,
-            estimateVo2Max(restingHr, maxHr, age),
+            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
             estimateCaloriesBurned(sex,
@@ -254,7 +254,7 @@ class BiometricUtilitiesTests {
         Assert.assertEquals(estimateGrossCaloriesBurned(sex,
             age,
             weight,
-            estimateVo2Max(restingHr, maxHr, age),
+            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
             estimateCaloriesBurned(sex,
@@ -273,7 +273,7 @@ class BiometricUtilitiesTests {
         Assert.assertEquals(estimateGrossCaloriesBurned(sex,
             age,
             weight,
-            estimateVo2Max(restingHr, maxHr, age),
+            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
             estimateCaloriesBurned(sex,
@@ -371,10 +371,6 @@ class BiometricUtilitiesTests {
         Assert.assertEquals(51f, estimateVo2Max(60, 200), 1e0f)
         Assert.assertEquals(53f, estimateVo2Max(55, 190), 1e0f)
         Assert.assertEquals(48f, estimateVo2Max(60, 190), 1e0f)
-        Assert.assertEquals(63f, estimateVo2Max(44, null, 40), 1e0f)
-        Assert.assertEquals(51f, estimateVo2Max(54, null, 40), 1e0f)
-        Assert.assertEquals(46f, estimateVo2Max(60, null, 40), 1e0f)
-        Assert.assertEquals(39f, estimateVo2Max(70, null, 40), 1e0f)
     }
 
     @Test
