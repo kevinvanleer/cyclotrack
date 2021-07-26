@@ -124,4 +124,5 @@ data class CriticalMeasurements(
     val speedLastEvent: Int? = null,
     val cadenceRevolutions: Int? = null,
     val cadenceLastEvent: Int? = null,
+    val verticalAccuracyMeters: Float? = null,
 )

@@ -450,8 +450,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val elevationAlpha = 0.05
         fun getElevationChange(measurements: Array<CriticalMeasurements>): Pair<Double, Double> {
             return smooth(elevationAlpha,
-                measurements.map { it.altitude }.toTypedArray()).let {
-                accumulateAscentDescent(it, 10.0)
+                measurements.map { Pair(it.altitude, it.verticalAccuracyMeters!!.toDouble()) }
+                    .toTypedArray()).let {
+                accumulateAscentDescent(it)
             }
         }
 
@@ -906,7 +907,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     fun makeElevationDataset(
                         measurements: Array<CriticalMeasurements>,
                         _totalDistance: Float,
-                    ): Pair<LineDataSet, LineDataSet> {
+                    ): LineDataSet {
                         val entries = ArrayList<Entry>()
                         val raw = ArrayList<Entry>()
                         var totalDistance = _totalDistance
@@ -928,8 +929,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             entries.add(Entry(totalDistance,
                                 getUserAltitude(requireContext(),
                                     smoothed).toFloat()))
-                            raw.add(Entry(totalDistance,
-                                getUserAltitude(requireContext(), it.altitude).toFloat()))
                         }
                         val dataset = LineDataSet(entries, "Elevation")
                         dataset.setDrawCircles(false)
@@ -938,13 +937,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ResourcesCompat.getColor(resources,
                                 R.color.colorAccent,
                                 null)
-                        dataset.lineWidth = 1f
-                        val rawdataset = LineDataSet(raw, "raw")
-                        rawdataset.setDrawCircles(false)
-                        rawdataset.setDrawValues(false)
-                        rawdataset.color = Color.CYAN
-                        rawdataset.lineWidth = 1f
-                        return Pair(rawdataset, dataset)
+                        dataset.lineWidth = 3f
+                        return dataset
                     }
 
                     fun makeElevationLineChart() {
@@ -966,9 +960,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         var totalDistance = 0f
                         legs.forEach { leg ->
                             makeElevationDataset(leg, totalDistance).let { dataset ->
-                                data.addDataSet(dataset.first)
-                                data.addDataSet(dataset.second)
-                                dataset.first.values.takeIf { it.isNotEmpty() }?.let {
+                                data.addDataSet(dataset)
+                                dataset.values.takeIf { it.isNotEmpty() }?.let {
                                     totalDistance = it.last().x
                                 }
                             }

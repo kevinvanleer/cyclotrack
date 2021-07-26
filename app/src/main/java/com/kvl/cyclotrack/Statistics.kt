@@ -21,11 +21,13 @@ fun doubleExponentialSmoothingTrend(
 ) =
     beta * (smooth - smoothLast) + (1 - beta) * trendLast
 
-fun smooth(alpha: Double, data: Array<Double>): List<Double> {
-    var smoothed: Double? = null
+fun smooth(alpha: Double, data: Array<Pair<Double, Double>>): List<Pair<Double, Double>> {
+    var smoothedFirst = data[0].first
+    var smoothedSecond = data[0].second
     return data.map { datum ->
-        smoothed = exponentialSmoothing(alpha, datum, smoothed ?: datum)
-        smoothed!!
+        smoothedFirst = exponentialSmoothing(alpha, datum.first, smoothedFirst)
+        smoothedSecond = exponentialSmoothing(alpha, datum.second, smoothedSecond)
+        Pair(smoothedFirst!!, smoothedSecond!!)
     }
 }
 
@@ -41,15 +43,18 @@ fun doubleSmooth(alpha: Double, beta: Double, data: Array<Double>): List<Double>
     }
 }
 
-fun accumulateAscentDescent(elevationData: List<Double>, threshold: Double): Pair<Double, Double> {
+fun accumulateAscentDescent(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> {
     val logTag = "accumulateAscentDescent"
     var totalAscent = 0.0
     var totalDescent = 0.0
-    var lastAltitudeTurningPoint = elevationData[0]
+    var lastAltitudeTurningPoint = elevationData[0].first
     var altitudeCursor = lastAltitudeTurningPoint
     var ascending = false
     var descending = false
-    elevationData.forEach { sample ->
+    elevationData.forEach { pair ->
+        val sample = pair.first
+        val threshold = pair.second * 2
+
         if (!descending && (sample - lastAltitudeTurningPoint > threshold)) ascending = true
         if (!ascending && (lastAltitudeTurningPoint - sample > threshold)) descending = true
         //descending
