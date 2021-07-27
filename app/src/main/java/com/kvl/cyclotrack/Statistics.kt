@@ -1,7 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.util.Log
-
 fun exponentialSmoothing(alpha: Double, current: Double, last: Double) =
     (alpha * current) + ((1 - alpha) * last)
 
@@ -43,50 +41,33 @@ fun doubleSmooth(alpha: Double, beta: Double, data: Array<Double>): List<Double>
     }
 }
 
+fun isRangeGreaterThan(left: Pair<Double, Double>, right: Pair<Double, Double>): Boolean {
+    val leftRange = Pair(left.first - left.second, left.first + left.second)
+    val rightRange = Pair(right.first - right.second, right.first + right.second)
+    return leftRange.first > rightRange.second
+}
+
+fun isRangeLessThan(left: Pair<Double, Double>, right: Pair<Double, Double>): Boolean {
+    val leftRange = Pair(left.first - left.second, left.first + left.second)
+    val rightRange = Pair(right.first - right.second, right.first + right.second)
+    return leftRange.second < rightRange.first
+}
+
 fun accumulateAscentDescent(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> {
-    val logTag = "accumulateAscentDescent"
     var totalAscent = 0.0
     var totalDescent = 0.0
-    var lastAltitudeTurningPoint = elevationData[0].first
-    var altitudeCursor = lastAltitudeTurningPoint
-    var ascending = false
-    var descending = false
-    elevationData.forEach { pair ->
-        val sample = pair.first
-        val threshold = pair.second * 2
+    var altitudeCursor = elevationData[0]
 
-        if (!descending && (sample - lastAltitudeTurningPoint > threshold)) ascending = true
-        if (!ascending && (lastAltitudeTurningPoint - sample > threshold)) descending = true
-        //descending
-        if (descending) {
-            if (sample < altitudeCursor) altitudeCursor = sample
-            if (sample > altitudeCursor + threshold) {
-                Log.d(logTag,
-                    "Accumulating descent ${altitudeCursor} - ${lastAltitudeTurningPoint} =  ${altitudeCursor - lastAltitudeTurningPoint}")
-                totalDescent += altitudeCursor - lastAltitudeTurningPoint
-                lastAltitudeTurningPoint = altitudeCursor
-                Log.d(logTag, "Total descent = ${totalDescent}")
-                altitudeCursor = sample
-                descending = false
-            }
+    elevationData.forEach { sample ->
+        if (isRangeGreaterThan(sample, altitudeCursor)) {
+            totalAscent += sample.first - altitudeCursor.first
+            altitudeCursor = sample
         }
-        //ascending
-        if (ascending) {
-            if (sample > altitudeCursor) altitudeCursor = sample
-            if (sample < altitudeCursor - threshold) {
-                Log.d(logTag,
-                    "Accumulating ascent ${altitudeCursor} - ${lastAltitudeTurningPoint} =  ${
-                        altitudeCursor - lastAltitudeTurningPoint
-                    }")
-                totalAscent += altitudeCursor - lastAltitudeTurningPoint
-                lastAltitudeTurningPoint = altitudeCursor
-                Log.d(logTag, "Total ascent = ${totalAscent}")
-                altitudeCursor = sample
-                ascending = false
-            }
+        if (isRangeLessThan(sample, altitudeCursor)) {
+            totalDescent += sample.first - altitudeCursor.first
+            altitudeCursor = sample
         }
     }
-    if (altitudeCursor < lastAltitudeTurningPoint) totalDescent += altitudeCursor - lastAltitudeTurningPoint
-    if (altitudeCursor > lastAltitudeTurningPoint) totalAscent += altitudeCursor - lastAltitudeTurningPoint
+
     return Pair(totalAscent, totalDescent)
 }
