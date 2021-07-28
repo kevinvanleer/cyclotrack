@@ -466,7 +466,7 @@ suspend fun getCombinedBiometrics(
     googleFitApiService: GoogleFitApiService,
 ): Biometrics {
     val logTag = "getCombinedBiometrics"
-    var biometrics = getBiometrics(0, context)
+    var biometrics = getBiometrics(tripId, context)
     Log.d(logTag, "biometrics prefs: ${biometrics}")
 
     coroutineScope.launch {

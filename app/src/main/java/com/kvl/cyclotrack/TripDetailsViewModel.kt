@@ -53,7 +53,7 @@ class TripDetailsViewModel @Inject constructor(
     fun onboardSensors() = onboardSensorsRepository.observeDecimated(tripId)
 
     suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics =
-        getCombinedBiometrics(0,
+        getCombinedBiometrics(tripId,
             timestamp,
             context,
             viewModelScope,
