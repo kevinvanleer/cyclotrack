@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.app.ActivityManager
 import android.content.*
 import android.os.Bundle
+import android.os.Looper
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.*
@@ -141,15 +142,15 @@ class TripInProgressFragment :
     }
 
     fun turnOnGps() {
-        val locationRequest = LocationRequest.create()?.apply {
+        val locationRequest = LocationRequest.create().apply {
             interval = 1000
             fastestInterval = 100
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
         val builder =
-            locationRequest?.let { LocationSettingsRequest.Builder().addLocationRequest(it) }
+            locationRequest.let { LocationSettingsRequest.Builder().addLocationRequest(it) }
         val client = LocationServices.getSettingsClient(requireActivity())
-        val task = client.checkLocationSettings(builder?.build())
+        val task = client.checkLocationSettings(builder.build())
         task.addOnFailureListener { exception ->
             if (exception is ResolvableApiException) {
                 // Location settings are not satisfied, but this can be fixed
@@ -305,17 +306,17 @@ class TripInProgressFragment :
             IntentFilter(getString(R.string.intent_action_tripId_created)))
 
         speedTextView.label =
-            "SPLIT ${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
+            "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
         distanceTextView.label =
-            getUserDistanceUnitLong(requireContext()).toUpperCase(Locale.getDefault())
+            getUserDistanceUnitLong(requireContext()).uppercase(Locale.getDefault())
         durationTextView.label = "DURATION"
         averageSpeedTextView.label = "AVG ${
-            getUserSpeedUnitShort(requireContext()).toUpperCase(
+            getUserSpeedUnitShort(requireContext()).uppercase(
                 Locale.getDefault())
         }"
         heartRateTextView.label = "SLOPE"
         splitSpeedTextView.label =
-            "GPS ${getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())}"
+            "GPS ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
 
         fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
 
@@ -432,7 +433,7 @@ class TripInProgressFragment :
                 Log.d(logTag, "speed rpm: ${it.rpm}")
                 if (it.rpm != null && viewModel.circumference != null) {
                     splitSpeedTextView.label =
-                        getUserSpeedUnitShort(requireContext()).toUpperCase(Locale.getDefault())
+                        getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
                     splitSpeedTextView.value = when {
                         it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
                             getUserSpeed(requireContext(),
@@ -547,7 +548,7 @@ class TripInProgressFragment :
         }
     }
 
-    private val hidePauseHandler = android.os.Handler()
+    private val hidePauseHandler = android.os.Handler(Looper.getMainLooper())
     private val hidePauseCallback = Runnable {
         pauseButton.animate().setDuration(100).translationY(pauseButton.height.toFloat())
     }

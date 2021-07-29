@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -406,9 +407,9 @@ class BleService @Inject constructor(
             }
         }
         if (scanCallbacks.isNotEmpty()) {
-            Handler().postDelayed({
+            Handler(Looper.getMainLooper()).postDelayed({
                 stopAllScans()
-            }, 5 * 60 * 1000)
+            }, 5L * 60 * 1000)
         }
     }
 

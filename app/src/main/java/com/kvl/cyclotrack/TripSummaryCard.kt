@@ -27,7 +27,6 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
     private lateinit var mapView: MapView
     private lateinit var map: GoogleMap
     private var path: PolylineOptions? = null
-    private var bounds: LatLngBounds? = null
 
     var tripId: Long = 0L
     var showSelectionIndicator = false
@@ -99,12 +98,11 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         duration = formatDuration(_duration)
     }
 
-    fun drawPath(polyline: PolylineOptions, latLngBound: LatLngBounds) {
+    fun drawPath(polyline: PolylineOptions, latLngBounds: LatLngBounds) {
         Log.d("TRIP_SUMMARY_CARD", "DRAW PATH")
         path = polyline
-        bounds = latLngBound
         map.addPolyline(polyline)
-        map.moveCamera(newLatLngBounds(bounds, 1000, 1000, 100))
+        map.moveCamera(newLatLngBounds(latLngBounds, 1000, 1000, 100))
     }
 
     override fun onFinishInflate() {

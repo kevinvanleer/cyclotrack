@@ -25,7 +25,7 @@ fun smooth(alpha: Double, data: Array<Pair<Double, Double>>): List<Pair<Double, 
     return data.map { datum ->
         smoothedFirst = exponentialSmoothing(alpha, datum.first, smoothedFirst)
         smoothedSecond = exponentialSmoothing(alpha, datum.second, smoothedSecond)
-        Pair(smoothedFirst!!, smoothedSecond!!)
+        Pair(smoothedFirst, smoothedSecond)
     }
 }
 

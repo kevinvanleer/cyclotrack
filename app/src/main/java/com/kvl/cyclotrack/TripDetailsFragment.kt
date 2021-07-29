@@ -414,7 +414,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         mapView.getMapAsync {
             Log.d(TAG, "GOT MAP")
             map = it
-            map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
+            map.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(),
+                R.raw.summary_map_style))
             map.uiSettings.setAllGesturesEnabled(false)
         }
 
@@ -909,7 +910,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         _totalDistance: Float,
                     ): LineDataSet {
                         val entries = ArrayList<Entry>()
-                        val raw = ArrayList<Entry>()
                         var totalDistance = _totalDistance
                         var lastMeasurements: CriticalMeasurements? = null
                         var smoothed: Double = measurements[0].altitude
@@ -1147,7 +1147,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     private fun adjustMap(event: MotionEvent?): Boolean {
         val displayMetrics = DisplayMetrics()
-        activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            activity?.display?.getRealMetrics(displayMetrics)
+        } else {
+            @Suppress("DEPRECATION")
+            activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
+        }
 
         val newHeight =
             (startHeight + (event?.rawY ?: startY) - startY).toInt()
