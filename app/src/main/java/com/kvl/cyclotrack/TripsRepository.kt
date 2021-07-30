@@ -46,7 +46,11 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     }
 
     suspend fun updateTripStats(stats: TripStats) = with(tripDao) { updateStats(stats) }
-    suspend fun updateTripStuff(stuff: TripStuff) = with(tripDao) { updateStuff(stuff) }
+    suspend fun updateTripStuff(stuff: TripStuff) = with(tripDao) {
+        updateStuff(stuff)
+        getGoogleFitUnsynced()
+    }
+
     suspend fun updateWheelCircumference(circ: TripWheelCircumference) =
         with(tripDao) { updateCircumference(circ) }
 
@@ -64,4 +68,5 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
             googleFitSyncStatus = googleFitSyncStatus))
 
     suspend fun getGoogleFitUnsynced() = tripDao.loadGoogleFitUnsyncedTrips()
+    suspend fun getGoogleFitDirty() = tripDao.loadGoogleFitDirtyTrips()
 }

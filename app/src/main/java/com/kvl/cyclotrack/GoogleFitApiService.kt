@@ -426,11 +426,59 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return contextSegments.build()
     }
 
+
+    private fun updateSession(
+        trip: Trip,
+        start: Long,
+        end: Long,
+        activeTime: Long,
+    ) {
+        val sessionBuilder = Session.Builder()
+            .setIdentifier(getSessionId(trip.id!!))
+            .setActivity(FitnessActivities.BIKING_ROAD)
+            .setActiveTime(activeTime, TimeUnit.MILLISECONDS)
+            .setStartTime(start, TimeUnit.MILLISECONDS)
+            .setEndTime(end, TimeUnit.MILLISECONDS)
+
+        trip.name?.let { sessionBuilder.setName(it) }
+        trip.notes?.let { sessionBuilder.setDescription(it) }
+
+        val insertRequest = SessionInsertRequest.Builder()
+            .setSession(sessionBuilder.build())
+
+        getGoogleAccount(context)?.let { Fitness.getSessionsClient(context, it) }
+            ?.insertSession(insertRequest.build())
+            ?.addOnSuccessListener { Log.d(logTag, "Ingested session for trip ${trip.id}") }
+            ?.addOnFailureListener { Log.d(logTag, "Failed to insert session for trip ${trip.id}") }
+    }
+
+    fun updateSession(
+        trip: Trip,
+        start: Long,
+        end: Long,
+    ) {
+        updateSession(trip, start, end, end - start)
+    }
+
+    fun updateSession(
+        trip: Trip,
+        timeStates: Array<TimeState>,
+    ) {
+        getStartTime(timeStates)?.let { start ->
+            getEndTime(timeStates)?.let { end ->
+                updateSession(trip,
+                    start,
+                    end,
+                    (accumulateActiveTime(timeStates) * 1000.0).toLong())
+            }
+        }
+    }
+
     fun insertSession(
         trip: Trip,
         timeStates: Array<TimeState>,
     ) {
-        val sessionId = "com.kvl.cyclotrack.trip-${trip.id}"
+        val sessionId = getSessionId(trip.id!!)
         val sessionBuilder = Session.Builder()
             .setIdentifier(sessionId)
             .setActivity(FitnessActivities.BIKING_ROAD)
@@ -458,7 +506,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         start: Long,
         end: Long,
     ) {
-        val sessionId = "com.kvl.cyclotrack.trip-${trip.id}"
+        val sessionId = getSessionId(trip.id!!)
         val sessionBuilder = Session.Builder()
             .setIdentifier(sessionId)
             .setActivity(FitnessActivities.BIKING_ROAD)

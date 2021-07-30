@@ -129,6 +129,12 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
     }
 }
 
+val MIGRATION_16_17 = object : Migration(16, 17) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("UPDATE Trip SET googleFitSyncStatus = 4 WHERE googleFitSyncStatus = 1")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -153,6 +159,7 @@ object TripsDatabaseModule {
                 MIGRATION_13_14,
                 MIGRATION_14_15,
                 MIGRATION_15_16,
+                MIGRATION_16_17,
             ).build()
 
     @Provides

@@ -35,7 +35,6 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
         Log.d(logTag, "Syncing sessions")
         tripsRepository.getGoogleFitUnsynced().forEach { trip ->
             try {
-
                 Log.d(logTag, "Syncing trip; ID: ${trip.id} name: ${trip.name}")
                 WorkManager.getInstance(applicationContext)
                     .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
@@ -44,6 +43,17 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
                 Log.e(logTag, "Trip contains invalid data, don't sync", e)
                 tripsRepository.setGoogleFitSyncStatus(trip.id!!, GoogleFitSyncStatusEnum.FAILED)
 
+            }
+        }
+        tripsRepository.getGoogleFitDirty().forEach { trip ->
+            try {
+                Log.d(logTag, "Updating trip; ID: ${trip.id} name: ${trip.name}")
+                WorkManager.getInstance(applicationContext)
+                    .enqueue(OneTimeWorkRequestBuilder<GoogleFitUpdateSessionWorker>()
+                        .setInputData(workDataOf("tripId" to trip.id)).build())
+            } catch (e: NullPointerException) {
+                Log.e(logTag, "Trip contains invalid data, don't sync", e)
+                tripsRepository.setGoogleFitSyncStatus(trip.id!!, GoogleFitSyncStatusEnum.FAILED)
             }
         }
         return Result.success()

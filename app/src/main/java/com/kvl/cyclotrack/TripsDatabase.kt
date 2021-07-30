@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(entities = [Trip::class, Measurements::class, TimeState::class, Split::class, OnboardSensors::class],
-    version = 16)
+    version = 17)
 @TypeConverters(TimeStateEnumConverter::class,
     UserSexEnumConverter::class,
     GoogleFitSyncStatusConverter::class)

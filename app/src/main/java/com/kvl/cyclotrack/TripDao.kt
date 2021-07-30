@@ -94,6 +94,9 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 0 ORDER BY id DESC")
     suspend fun loadGoogleFitUnsyncedTrips(): Array<Trip>
 
+    @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 4 ORDER BY id DESC")
+    suspend fun loadGoogleFitDirtyTrips(): Array<Trip>
+
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun subscribeRealTrips(): LiveData<Array<Trip>>
 

@@ -46,6 +46,9 @@ class EditTripViewModel @Inject constructor(
 
     private fun changeDetails(name: String, notes: String?, circumference: Float?) =
         viewModelScope.launch(Dispatchers.IO) {
+            if (tripsRepository.get(tripInfo.id!!).googleFitSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {
+                tripsRepository.setGoogleFitSyncStatus(tripInfo.id!!, GoogleFitSyncStatusEnum.DIRTY)
+            }
             tripsRepository.updateTripStuff(TripStuff(tripInfo.id!!, name, notes, circumference))
             tripInfo = tripsRepository.get(tripInfo.id!!)
         }

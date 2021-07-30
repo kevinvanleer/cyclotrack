@@ -10,7 +10,8 @@ enum class GoogleFitSyncStatusEnum(val value: Int) {
     NOT_SYNCED(0),
     SYNCED(1),
     FAILED(2),
-    REMOVED(3)
+    REMOVED(3),
+    DIRTY(4)
 }
 
 class GoogleFitSyncStatusConverter {
