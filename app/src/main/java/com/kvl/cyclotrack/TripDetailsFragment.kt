@@ -644,6 +644,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
                     Log.d(TAG,
                         "Auto circumference trip $tripId: ${overview.autoWheelCircumference}")
+                    effectiveCircumference?.let { e ->
+                        overview.autoWheelCircumference?.let { a ->
+                            Log.d(TAG,
+                                "Auto circumference variance: ${(a / e - 1f)}")
+                        }
+                    }
                     Log.d(TAG,
                         "User circumference trip $tripId: ${overview.userWheelCircumference}")
 

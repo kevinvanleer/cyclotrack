@@ -39,7 +39,11 @@ class TripInProgressViewModel @Inject constructor(
     val autoCircumference: Float?
         get() = _autoCircumference
     val circumference: Float?
-        get() = _autoCircumference ?: userCircumference
+        get() = when (sharedPreferences.getBoolean(CyclotrackApp.instance.getString(
+            R.string.preference_key_useAutoCircumference), true)) {
+            true -> autoCircumference ?: userCircumference
+            else -> userCircumference
+        }
 
     private var accumulatedDuration = 0.0
     private var startTime = Double.NaN

@@ -67,10 +67,18 @@
         <action
             android:id="@+id/action_edit_biometrics_preferences"
             app:destination="@id/BiometricsPreferenceFragment" />
+        <action
+            android:id="@+id/action_edit_bike_specs"
+            app:destination="@id/BikeSpecsPreferenceFragment" />
     </fragment>
     <fragment
         android:id="@+id/BiometricsPreferenceFragment"
         android:name="com.kvl.cyclotrack.BiometricsPreferenceFragment"
         android:label="Biometrics"
         tools:layout="@layout/biometrics_preference_fragment" />
+    <fragment
+        android:id="@+id/BikeSpecsPreferenceFragment"
+        android:name="com.kvl.cyclotrack.BikeSpecsPreferenceFragment"
+        android:label="Bike Specs"
+        tools:layout="@layout/bike_specs_preference_fragment" />
 </navigation>

@@ -55,7 +55,7 @@
     <string name="preferences_dashboard_brightness_toggle_key">dashboard_brightness_toggle</string>
     <string name="preferences_system_of_measurement_key">display_units</string>
     <string name="preferences_privacy_policy_key">privacy_policy</string>
-    <string name="preferences_wheel_circumference_key">wheel_circumference</string>
+    <string name="preference_key_wheel_circumference">wheel_circumference</string>
     <string name="details_menu_title_export">Export</string>
     <string name="notification_export_trip_in_progress_id">notification_export_trip_in_progress_id</string>
     <string name="notification_export_trip_in_progress_name">Export ride data in progress</string>
@@ -92,4 +92,8 @@
     <string name="details_menu_title_unsync">Unsync</string>
     <string name="useGoogleFitBiometricsDialog_title">Use Google Fit Biometrics</string>
     <string name="useGoogleFitBiometricsDialog_message">Enable this option to read height, weight, and resting heart rate data from Google Fit. If this option is disabled, the values stored in Cyclotrack will be used. Update this option at any time in biometrics settings.</string>
+    <string name="preference_key_useAutoCircumference">useAutoCircumference</string>
+    <string name="preference_key_bike_specs">preference_key_bike_specs</string>
+    <string name="preference_bike_specs_useAutoCircumference_description">Let Cyclotrack use GPS to determine circumference</string>
+    <string name="preference_key_bike_mass">bike_mass</string>
 </resources>

@@ -21,12 +21,10 @@
         android:key="@string/preferences_paired_ble_devices_key"
         android:title="Link BLE sensors"
         android:summary="Collect heart rate, cadence, and speed sensor data during your rides" />
-    <EditTextPreference
-        app:key="@string/preferences_wheel_circumference_key"
-        app:title="Wheel circumference (in or mm)"
-        app:defaultValue="81.681"
-        android:singleLine="true"
-        app:summary="Used with BLE speed sensor" />
+    <Preference
+        app:key="@string/preference_key_bike_specs"
+        app:title="Bike specs"
+        app:summary="Help calculate speed and other metrics" />
     <Preference
         app:key="@string/preferences_biometrics_key"
         app:title="Biometrics"

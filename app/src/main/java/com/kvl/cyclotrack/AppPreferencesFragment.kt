@@ -10,7 +10,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import android.widget.CheckBox
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.edit
@@ -30,6 +29,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
     private val logTag = "PREFERENCES"
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
+
+        findPreference<Preference>(getString(R.string.preference_key_bike_specs))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_edit_bike_specs)
+                    true
+                } == true
+            }
+        }
 
         findPreference<Preference>(getString(R.string.preferences_biometrics_key))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
@@ -184,19 +193,9 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-        val circumferencePref: EditTextPreference? =
-            preferenceManager.findPreference("wheel_circumference")
-
         if (!BleService.isBluetoothSupported(requireContext())) {
-            val linkDevicesPref: DiscoverSensorDialogPreference? =
-                preferenceManager.findPreference("paired_blue_devices")
-            linkDevicesPref?.isEnabled = false
-        }
-
-        circumferencePref?.setOnBindEditTextListener { editText ->
-            Log.d(logTag, "Updating circumference editor")
-            editText.inputType = EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
-            editText.isSingleLine = true
+            preferenceManager.findPreference<DiscoverSensorDialogPreference>("paired_blue_devices")?.isEnabled =
+                false
         }
 
         activity?.title = "Settings"

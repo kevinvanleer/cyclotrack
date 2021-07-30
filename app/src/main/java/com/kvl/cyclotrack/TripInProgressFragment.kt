@@ -351,7 +351,7 @@ class TripInProgressFragment :
                 true -> String.format("%.2f / %d°", it.accuracy, it.bearing.toInt())
                 else -> String.format("%.2f / C%.3f / %d°",
                     it.accuracy,
-                    viewModel.autoCircumference,
+                    viewModel.circumference,
                     it.bearing.toInt())
             }
         })
