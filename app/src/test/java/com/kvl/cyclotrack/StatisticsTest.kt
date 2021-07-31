@@ -35,7 +35,7 @@ class StatisticsTest {
     }
 
     @Test
-    fun accumulateAscentDescent_happyPath() {
+    fun accumulateAscentDescent_normalUse() {
         var testData = listOf(0.0, 10.0, 10.1).map { Pair(it, 5.0) }
         Assert.assertEquals(Pair(10.1, 0.0), accumulateAscentDescent(testData))
         testData = listOf(0.0, 10.0, 10.1, 10.0, 0.0).map { Pair(it, 5.0) }
@@ -143,5 +143,89 @@ class StatisticsTest {
             Pair(0.0, 5.0),
         )
         Assert.assertEquals(Pair(10.1, -10.1), accumulateAscentDescent(testData))
+    }
+
+    @Test
+    fun average_normalUse() {
+        var testData = listOf(100.0, 100.0, 100.0)
+        Assert.assertEquals(100.0, testData.average(), 1e-6)
+
+        testData = List(100) { 100.0 }
+        Assert.assertEquals(100.0, testData.average(), 1e-6)
+
+        testData = listOf(100.0, 0.0, 100.0, 0.0)
+        Assert.assertEquals(50.0, testData.average(), 1e-6)
+
+        testData = listOf(100.0, 80.0, 100.0, 80.0)
+        Assert.assertEquals(90.0, testData.average(), 1e-6)
+
+        testData = listOf(1.0, 2.0, 3.0, 4.0, 5.0)
+        Assert.assertEquals(3.0, testData.average(), 1e-6)
+    }
+
+    @Test
+    fun populationVariance_normalUse() {
+        var testData = listOf(100.0, 100.0, 100.0)
+        Assert.assertEquals(0.0, testData.populationVariance(), 1e-6)
+
+        testData = List(100) { 100.0 }
+        Assert.assertEquals(0.0, testData.populationVariance(), 1e-6)
+
+        testData = listOf(100.0, 0.0, 100.0, 0.0)
+        Assert.assertEquals(2500.0, testData.populationVariance(), 1e-6)
+
+        testData = listOf(100.0, 80.0, 100.0, 80.0)
+        Assert.assertEquals(100.0, testData.populationVariance(), 1e-6)
+
+        testData = listOf(1.0, 2.0, 3.0, 4.0, 5.0)
+        Assert.assertEquals(2.0, testData.populationVariance(), 1e-6)
+
+        testData = listOf(
+            1.910557887,
+            3.01870131,
+            1.835732132,
+            2.353462463,
+            1.998233796,
+            1.923542099,
+            1.966576393,
+            2.209932945,
+            2.002360733,
+            2.200955598,
+            2.2041716,
+            1.98205866)
+        Assert.assertEquals(0.0930078062, testData.populationVariance(), 1e-6)
+    }
+
+    @Test
+    fun sampleVariance_normalUse() {
+        var testData = listOf(100.0, 100.0, 100.0)
+        Assert.assertEquals(0.0, testData.sampleVariance(), 1e-6)
+
+        testData = List(100) { 100.0 }
+        Assert.assertEquals(0.0, testData.sampleVariance(), 1e-6)
+
+        testData = listOf(100.0, 0.0, 100.0, 0.0)
+        Assert.assertEquals(3333.333333333333, testData.sampleVariance(), 1e-6)
+
+        testData = listOf(100.0, 80.0, 100.0, 80.0)
+        Assert.assertEquals(133.333333333333, testData.sampleVariance(), 1e-6)
+
+        testData = listOf(1.0, 2.0, 3.0, 4.0, 5.0)
+        Assert.assertEquals(2.5, testData.sampleVariance(), 1e-6)
+
+        testData = listOf(
+            1.910557887,
+            3.01870131,
+            1.835732132,
+            2.353462463,
+            1.998233796,
+            1.923542099,
+            1.966576393,
+            2.209932945,
+            2.002360733,
+            2.200955598,
+            2.2041716,
+            1.98205866)
+        Assert.assertEquals(0.1014630613, testData.sampleVariance(), 1e-6)
     }
 }

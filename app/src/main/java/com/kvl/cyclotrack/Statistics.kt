@@ -1,5 +1,20 @@
 package com.kvl.cyclotrack
 
+import kotlin.math.pow
+
+fun List<Double>.average(): Double =
+    this.reduce { acc, d -> acc + d } / this.size
+
+fun List<Double>.sampleVariance(): Double {
+    val avg = this.average()
+    return this.fold(0.0, { acc, d -> acc + (d - avg).pow(2.0) }) / (this.size - 1)
+}
+
+fun List<Double>.populationVariance(): Double {
+    val avg = this.average()
+    return this.fold(0.0, { acc, d -> acc + (d - avg).pow(2.0) }) / this.size
+}
+
 fun exponentialSmoothing(alpha: Double, current: Double, last: Double) =
     (alpha * current) + ((1 - alpha) * last)
 
