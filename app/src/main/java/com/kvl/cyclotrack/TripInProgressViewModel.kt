@@ -24,8 +24,8 @@ class TripInProgressViewModel @Inject constructor(
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
-    gpsService: GpsService,
-    bleService: BleService,
+    private val gpsService: GpsService,
+    private val bleService: BleService,
     private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
 
@@ -369,6 +369,13 @@ class TripInProgressViewModel @Inject constructor(
 
     fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         this.tripId = tripId
+        if (userCircumference == null) userCircumference =
+            getUserCircumferenceOrNull(sharedPreferences)
+        if (_autoCircumference == null) _autoCircumference = null
+        if (gpsEnabled == null) gpsEnabled = gpsService.accessGranted
+        if (hrmSensor == null) hrmSensor = bleService.hrmSensor
+        if (cadenceSensor == null) cadenceSensor = bleService.cadenceSensor
+        if (speedSensor == null) speedSensor = bleService.speedSensor
         startObserving(tripId, lifecycleOwner)
         startClock()
     }
