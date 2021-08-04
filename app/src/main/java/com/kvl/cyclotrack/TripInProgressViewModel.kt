@@ -65,10 +65,10 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
-    var gpsEnabled = gpsService.accessGranted
-    var hrmSensor = bleService.hrmSensor
-    var cadenceSensor = bleService.cadenceSensor
-    var speedSensor = bleService.speedSensor
+    fun gpsEnabled(): LiveData<Boolean> = gpsService.accessGranted
+    fun hrmSensor(): LiveData<HrmData> = bleService.hrmSensor
+    fun cadenceSensor(): LiveData<CadenceData> = bleService.cadenceSensor
+    fun speedSensor(): LiveData<SpeedData> = bleService.speedSensor
 
     var tripId: Long? = null
 
@@ -371,11 +371,6 @@ class TripInProgressViewModel @Inject constructor(
         this.tripId = tripId
         if (userCircumference == null) userCircumference =
             getUserCircumferenceOrNull(sharedPreferences)
-        if (_autoCircumference == null) _autoCircumference = null
-        if (gpsEnabled == null) gpsEnabled = gpsService.accessGranted
-        if (hrmSensor == null) hrmSensor = bleService.hrmSensor
-        if (cadenceSensor == null) cadenceSensor = bleService.cadenceSensor
-        if (speedSensor == null) speedSensor = bleService.speedSensor
         startObserving(tripId, lifecycleOwner)
         startClock()
     }
