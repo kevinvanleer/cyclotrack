@@ -743,11 +743,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             "Speed"),
                             LineDataSet(trend, "Trend"))
 
-                        if (getAverageSpeedRpm(measurements) == null) {
-                            getSpeedDataFromGps(entries, trend, measurements, intervals)
-                        } else {
-                            getSpeedDataFromSensor(entries, trend, measurements, intervals)
+                        if (measurements.isNotEmpty()) {
+                            if (getAverageSpeedRpm(measurements) == null) {
+                                getSpeedDataFromGps(entries, trend, measurements, intervals)
+                            } else {
+                                getSpeedDataFromSensor(entries, trend, measurements, intervals)
+                            }
                         }
+
                         val dataset = LineDataSet(entries, "Speed")
                         dataset.setDrawCircles(false)
                         dataset.setDrawValues(false)
@@ -965,10 +968,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                         var totalDistance = 0f
                         legs.forEach { leg ->
-                            makeElevationDataset(leg, totalDistance).let { dataset ->
-                                data.addDataSet(dataset)
-                                dataset.values.takeIf { it.isNotEmpty() }?.let {
-                                    totalDistance = it.last().x
+                            if (leg.isNotEmpty()) {
+                                makeElevationDataset(leg, totalDistance).let { dataset ->
+                                    data.addDataSet(dataset)
+                                    dataset.values.takeIf { it.isNotEmpty() }?.let {
+                                        totalDistance = it.last().x
+                                    }
                                 }
                             }
                         }
