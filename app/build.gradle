@@ -54,6 +54,12 @@ android {
         dataBinding true
     }
 
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.test:monitor:1.4.0'
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled true

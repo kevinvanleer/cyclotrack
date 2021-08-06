@@ -43,7 +43,7 @@ class BiometricsPreferenceFragment : Fragment() {
             val dob = viewModel.dob?.let {
                 try {
                     viewModel.dob?.let {
-                        SimpleDateFormat(getString(R.string.date_format_patten_dob),
+                        SimpleDateFormat(dateFormatPattenDob,
                             Locale.US).parse(it)
                     }
                 } catch (e: ParseException) {
@@ -70,7 +70,7 @@ class BiometricsPreferenceFragment : Fragment() {
                         val newDate = GregorianCalendar.getInstance()
                         newDate.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
                         viewModel.dob =
-                            SimpleDateFormat(getString(R.string.date_format_patten_dob)).format(
+                            SimpleDateFormat(dateFormatPattenDob).format(
                                 newDate.time)
                         binding.preferenceBiometricsDob.setText(viewModel.dob)
                     }

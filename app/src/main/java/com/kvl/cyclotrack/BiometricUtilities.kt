@@ -13,6 +13,8 @@ import java.util.*
 import kotlin.math.roundToInt
 
 const val POUNDS_TO_KG = 0.453592
+val dateFormatPattenDob = "yyyy-MM-dd"
+
 
 fun convertSystemToUserMass(mass: Float, context: Context) =
     mass * when (PreferenceManager.getDefaultSharedPreferences(context)
@@ -37,7 +39,7 @@ fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
 
 fun dateStringToAge(dateString: String) =
     try {
-        SimpleDateFormat(CyclotrackApp.instance.getString(R.string.date_format_patten_dob),
+        SimpleDateFormat(dateFormatPattenDob,
             Locale.US).parse(dateString
         )
             ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
