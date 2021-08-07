@@ -13,10 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 fun getDistance(
     curr: Measurements,
@@ -679,6 +676,80 @@ fun validateCadence(current: CriticalMeasurements, previous: CriticalMeasurement
     val deviceReset = prematureRollover && doubleRollover
 
     return !(cadenceDidNotUpdate || deviceReset || veryPrematureRollover)
+}
+
+fun getAcceleration(
+    durationDelta: Double,
+    newSpeed: Float,
+    oldSpeed: Float,
+) = if (durationDelta == 0.0) 0f
+else ((newSpeed - oldSpeed) / durationDelta).toFloat()
+
+fun getSpeed(
+    new: Measurements,
+    speedThreshold: Float,
+    circumference: Float?,
+): Float {
+    return if (circumference != null && new.speedRpm != null) {
+        val rps = new.speedRpm.div(60)
+        circumference * rps
+    } else if (new.speed > speedThreshold) new.speed else 0f
+}
+
+fun calculateSlope(
+    newSpeed: Float,
+    distanceDelta: Float,
+    new: Measurements,
+    speedThreshold: Float,
+    old: TripProgress?,
+    durationDelta: Double,
+): Double {
+    val oldAltitude: Double = old?.measurements?.altitude ?: 0.0
+    val verticalSpeed = abs((new.altitude - oldAltitude) / durationDelta)
+
+    val slopeAlpha = 0.5
+    return if (verticalSpeed < newSpeed && distanceDelta != 0f) {
+        slopeAlpha * (
+                if (new.speed > speedThreshold) ((new.altitude - oldAltitude) / distanceDelta)
+                else (old?.slope ?: 0.0)
+                ) + ((1 - slopeAlpha) * (old?.slope ?: 0.0))
+    } else 0.0
+}
+
+fun calculateWheelCircumference(
+    progress: Measurements,
+    totalDistance: Double,
+    speedRevolutions: Int,
+    state: CircumferenceState,
+): CircumferenceState {
+    val autoCircumferenceAccThreshold = 5.0
+    val autoCircumferenceSpeedThreshold = 4.0
+    var newState = state.copy()
+    if (progress.accuracy < autoCircumferenceAccThreshold &&
+        progress.speed >= autoCircumferenceSpeedThreshold && !state.measuring &&
+        progress.speedRevolutions != null && state.circumference == null
+    ) {
+        newState = CircumferenceState(measuring = true,
+            initialCircDistance = totalDistance,
+            initialCircRevs = speedRevolutions,
+            circumference = null)
+    }
+    if (state.measuring && progress.accuracy > autoCircumferenceAccThreshold ||
+        progress.speed < autoCircumferenceSpeedThreshold || state.circumference != null
+    ) {
+        newState = state.copy(measuring = false)
+    }
+    if (state.measuring && (totalDistance - state.initialCircDistance) > 400
+    ) {
+        val revs = progress.speedRevolutions?.minus(state.initialCircRevs)
+        val dist = totalDistance - state.initialCircDistance
+        if (revs != null) {
+            newState = state.copy(
+                measuring = false,
+                circumference = (dist / revs).toFloat())
+        }
+    }
+    return newState
 }
 
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)

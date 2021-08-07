@@ -345,7 +345,7 @@ class TripInProgressFragment :
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
 
-            accuracyTextView.text = when (viewModel.autoCircumference == null) {
+            accuracyTextView.text = when (viewModel.circumference == null) {
                 true -> String.format("%.2f / %d°", it.accuracy, it.bearing.toInt())
                 else -> String.format("%.2f / C%.3f / %d°",
                     it.accuracy,
