@@ -143,6 +143,8 @@ class TripSummariesTest {
         SystemClock.sleep(5000)
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.textview_duration)).check(matches(not("00:00")))
+        onView(withId(R.id.textview_duration)).check(matches(not("--:--")))
 
         onView(withId(R.id.textview_average_speed)).perform(click())
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
