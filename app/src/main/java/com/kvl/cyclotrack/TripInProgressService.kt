@@ -150,8 +150,8 @@ class TripInProgressService @Inject constructor() :
                     distance = totalDistance,
                     duration = duration,
                     averageSpeed = (totalDistance / duration).toFloat(),
-                    userWheelCircumference = trip.userWheelCircumference,
-                    autoWheelCircumference = trip.autoWheelCircumference))
+                    userWheelCircumference = userCircumference,
+                    autoWheelCircumference = circumferenceState.circumference))
 
             if (crossedSplitThreshold(sharedPreferences,
                     totalDistance,
