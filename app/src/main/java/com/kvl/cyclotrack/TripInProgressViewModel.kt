@@ -42,7 +42,7 @@ class TripInProgressViewModel @Inject constructor(
         get() = when (sharedPreferences.getBoolean(CyclotrackApp.instance.getString(
             R.string.preference_key_useAutoCircumference), true)) {
             true -> autoCircumference ?: userCircumference
-            else -> userCircumference
+            else -> userCircumference ?: autoCircumference
         }
 
     private var accumulatedDuration = 0.0
