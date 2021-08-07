@@ -207,6 +207,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         startForegroundCompat(tripId)
 
         lifecycleScope.launch(Dispatchers.IO) {
+            tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
+                userWheelCircumference = getUserCircumferenceOrNull(sharedPreferences),
+                autoWheelCircumference = null))
             tripsRepository.updateBiometrics(
                 getCombinedBiometrics(tripId))
         }

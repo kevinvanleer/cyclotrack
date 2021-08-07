@@ -369,8 +369,6 @@ class TripInProgressViewModel @Inject constructor(
 
     fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
         this.tripId = tripId
-        if (userCircumference == null) userCircumference =
-            getUserCircumferenceOrNull(sharedPreferences)
         startObserving(tripId, lifecycleOwner)
         startClock()
     }
