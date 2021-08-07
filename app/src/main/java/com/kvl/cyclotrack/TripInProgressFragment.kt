@@ -324,7 +324,7 @@ class TripInProgressFragment :
 
         updateClock()
 
-        context?.registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
+        requireContext().registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
         isTimeTickRegistered = true
 
         view.setOnTouchListener(this)
@@ -485,7 +485,6 @@ class TripInProgressFragment :
             else -> {
                 Log.d(logTag, "Received trip ID argument $tripId")
                 Log.d(logTag, "Resuming trip $tripId")
-                //handleTimeStateChanges(tripId)
                 initializeAfterTripCreated(tripId)
                 viewModel.resumeTrip(tripId, viewLifecycleOwner)
                 if (!isMyServiceRunning(TripInProgressService::class.java, requireContext())) {
