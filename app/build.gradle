@@ -113,6 +113,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
     implementation group: 'org.dhatim', name: 'fastexcel', version: '0.12.7'
     implementation group: 'androidx.fragment', name: 'fragment-ktx', version: "$fragment_version"
+    implementation 'org.greenrobot:eventbus:3.2.0'
 
     // WorkManager
     implementation "androidx.work:work-runtime-ktx:$work_version"

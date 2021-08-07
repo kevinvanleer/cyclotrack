@@ -72,7 +72,6 @@
     <string name="preferences_sync_with_google_fit_summary">Sign in to Google Fit to sync your workouts</string>
     <string name="preferences_disconnect_google_fit_title">Disconnect from Google Fit</string>
     <string name="preferences_disconnect_google_fit_summary">Stop syncing data between Cyclotrack and Google Fit</string>
-    <string name="intent_action_google_fit_access_granted">com.kvl.cyclotrack.google_fit_access_granted</string>
     <string name="notification_id_trip_in_progress">notification_id_trip_in_progress</string>
     <string name="notification_trip_in_progress_title">Ride in progress</string>
     <string name="notification_export_trip_in_progress_message">Tap to return to dashboard</string>
@@ -83,7 +82,6 @@
     <string name="notification_channel_name_trip_in_progress">Ride in progress</string>
     <string name="action_initialize_trip_service">action_initialize_trip_service</string>
     <string name="gps_disabled_message">GPS disabled</string>
-    <string name="intent_action_tripId_created">com.kvl.cyclotrack.intent_action_tripId_created</string>
     <string name="initial_inspiring_message">Ready to start your first ride? Touch the bike button and let\'s get moving!</string>
     <string name="details_menu_title_sync">Sync</string>
     <string name="google_fit_sync_dialog_description">Sign in to Google Fit to sync your workouts. Data from your rides, including location, heart rate, speed, and cadence will be shared with Google and stored in Google Fit. Google Fit will store your rides in the journal and your rides will count toward your weekly goals. Your Google Fit height, weight, and resting heart rate will be used to estimate calorie burn if available.</string>

@@ -5,16 +5,16 @@ import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import com.kvl.cyclotrack.events.BluetoothActionEvent
+import org.greenrobot.eventbus.EventBus
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -361,8 +361,8 @@ class BleService @Inject constructor(
             val bluetoothAdapter = bluetoothManager.adapter
             if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
                 Log.d(logTag, "Requesting to enable Bluetooth")
-                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                LocalBroadcastManager.getInstance(context).sendBroadcast(enableBtIntent)
+                EventBus.getDefault()
+                    .post(BluetoothActionEvent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
             }
         }
     }

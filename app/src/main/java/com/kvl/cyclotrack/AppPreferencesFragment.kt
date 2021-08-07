@@ -1,10 +1,7 @@
 package com.kvl.cyclotrack
 
 import android.app.AlertDialog
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,7 +11,6 @@ import android.widget.CheckBox
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.edit
 import androidx.fragment.app.Fragment
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.preference.*
 import androidx.work.OneTimeWorkRequestBuilder
@@ -22,6 +18,10 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.kvl.cyclotrack.events.GoogleFitAccessGranted
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 class AppPreferencesFragment : PreferenceFragmentCompat(),
     PreferenceFragmentCompat.OnPreferenceDisplayDialogCallback {
@@ -64,11 +64,10 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         }
     }
 
-    private val configureGoogleFitBroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            userGoogleFitBiometricsDialog.show()
-            configureGoogleFitPreference(requireContext())
-        }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onGoogleFitAccessGranted(@Suppress("UNUSED_PARAMETER") event: GoogleFitAccessGranted) {
+        userGoogleFitBiometricsDialog.show()
+        configureGoogleFitPreference(requireContext())
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -95,15 +94,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             setMessage(getString(R.string.useGoogleFitBiometricsDialog_message))
             setView(dialogView)
         }.create()
-        LocalBroadcastManager.getInstance(requireContext())
-            .registerReceiver(configureGoogleFitBroadcastReceiver,
-                IntentFilter(getString(R.string.intent_action_google_fit_access_granted)))
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        LocalBroadcastManager.getInstance(requireContext())
-            .unregisterReceiver(configureGoogleFitBroadcastReceiver)
+    override fun onStart() {
+        super.onStart()
+        EventBus.getDefault().register(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
     }
 
     private fun configureGoogleFitPreference(context: Context) {

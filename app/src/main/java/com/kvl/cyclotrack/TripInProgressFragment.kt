@@ -14,7 +14,6 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import androidx.work.OneTimeWorkRequestBuilder
@@ -23,7 +22,11 @@ import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
+import com.kvl.cyclotrack.events.StartTripEvent
 import dagger.hilt.android.AndroidEntryPoint
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import java.util.*
 
 
@@ -225,15 +228,14 @@ class TripInProgressFragment :
         handleTimeStateChanges(tripId)
     }
 
-    private val newTripBroadcastReceiver = object :
-        BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.getLongExtra("tripId", -1)?.takeIf { it >= 0 }?.let { tripId ->
-                initializeAfterTripCreated(tripId)
-                viewModel.startTrip(tripId, viewLifecycleOwner)
-            }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onStartTripEvent(event: StartTripEvent) {
+        event.tripId.takeIf { it >= 0 }?.let { tripId ->
+            initializeAfterTripCreated(tripId)
+            viewModel.startTrip(tripId, viewLifecycleOwner)
         }
     }
+
 
     private val startTripListener: OnClickListener = OnClickListener {
         if (!gpsEnabled) {
@@ -300,10 +302,6 @@ class TripInProgressFragment :
             trackingImage.visibility = View.GONE
             accuracyTextView.visibility = View.GONE
         }
-
-        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(
-            newTripBroadcastReceiver,
-            IntentFilter(getString(R.string.intent_action_tripId_created)))
 
         speedTextView.label =
             "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
@@ -518,18 +516,22 @@ class TripInProgressFragment :
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        EventBus.getDefault().register(this)
+    }
+
     override fun onStop() {
         super.onStop()
         WorkManager.getInstance(requireContext())
             .enqueue(OneTimeWorkRequestBuilder<StopTripServiceWorker>().build())
+        EventBus.getDefault().unregister(this)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         Log.d(logTag, "onDestroyView")
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
-        LocalBroadcastManager.getInstance(requireContext())
-            .unregisterReceiver(newTripBroadcastReceiver)
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {

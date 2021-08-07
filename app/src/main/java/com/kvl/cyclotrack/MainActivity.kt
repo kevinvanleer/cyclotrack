@@ -1,18 +1,17 @@
 package com.kvl.cyclotrack
 
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.kvl.cyclotrack.events.BluetoothActionEvent
+import com.kvl.cyclotrack.events.GoogleFitAccessGranted
 import dagger.hilt.android.AndroidEntryPoint
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -29,17 +28,22 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.toolbar))
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         googleFitApiService = GoogleFitApiService(this)
-        LocalBroadcastManager.getInstance(applicationContext)
-            .registerReceiver(object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    Log.d(logTag, "Show enable bluetooth dialog")
-                    startActivity(intent)
-                }
-            }, IntentFilter(BluetoothAdapter.ACTION_REQUEST_ENABLE))
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onStart() {
+        super.onStart()
+        EventBus.getDefault().register(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
+    }
+
+    @Subscribe
+    fun onBluetoothActionEvent(event: BluetoothActionEvent) {
+        Log.d(logTag, "Show enable bluetooth dialog")
+        startActivity(Intent(event.action))
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -55,8 +59,7 @@ class MainActivity : AppCompatActivity() {
             Activity.RESULT_OK -> {
                 Log.i(logTag, "Permission request granted.")
                 when (requestCode) {
-                    1 -> LocalBroadcastManager.getInstance(this)
-                        .sendBroadcast(Intent(getString(R.string.intent_action_google_fit_access_granted)))
+                    1 -> EventBus.getDefault().post(GoogleFitAccessGranted())
                     else -> Log.d(logTag, "Result was not from Google Fit")
                 }
             }

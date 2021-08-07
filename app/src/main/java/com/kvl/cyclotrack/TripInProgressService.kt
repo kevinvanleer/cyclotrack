@@ -13,13 +13,17 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import androidx.lifecycle.*
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.Observer
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
+import com.kvl.cyclotrack.events.StartTripEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -192,10 +196,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         var tripId: Long = -1
         lifecycleScope.launch(Dispatchers.IO) {
             tripId = tripsRepository.createNewTrip().also { id ->
-                LocalBroadcastManager.getInstance(this@TripInProgressService)
-                    .sendBroadcast(Intent(getString(R.string.intent_action_tripId_created)).apply {
-                        putExtra("tripId", id)
-                    })
+                EventBus.getDefault().post(StartTripEvent(id))
                 timeStateRepository.appendTimeState(TimeState(id, TimeStateEnum.START))
                 Log.d(logTag, "created new trip with id ${id}")
             }
