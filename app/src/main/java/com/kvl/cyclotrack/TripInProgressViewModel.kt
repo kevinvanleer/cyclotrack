@@ -56,7 +56,7 @@ class TripInProgressViewModel @Inject constructor(
 
     private fun accumulateDuration(timeStates: Array<TimeState>?) {
         timeStates?.let { ts ->
-            getTripInProgressIntervals(ts).let { intervals ->
+            getTripInProgressIntervals(ts).takeIf { it.isNotEmpty() }?.let { intervals ->
                 accumulatedDuration = accumulateTripTime(intervals)
                 startTime = intervals.last().first / 1e3
             }
