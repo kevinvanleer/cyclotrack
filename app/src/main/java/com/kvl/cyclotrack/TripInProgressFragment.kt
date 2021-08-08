@@ -75,12 +75,6 @@ class TripInProgressFragment :
             }
         }
 
-        /*
-        requireActivity().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
-            this.action = getString(R.string.action_initialize_trip_service)
-        })*/
-
         return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
     }
 

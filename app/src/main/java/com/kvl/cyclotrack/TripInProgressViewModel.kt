@@ -1,14 +1,13 @@
 package com.kvl.cyclotrack
 
-import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import com.kvl.cyclotrack.events.TripProgressEvent
+import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -18,17 +17,12 @@ import kotlin.concurrent.timerTask
 
 @HiltViewModel
 class TripInProgressViewModel @Inject constructor(
-    coroutineScopeProvider: CoroutineScope?,
-    private val tripsRepository: TripsRepository,
-    private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
     private val bleService: BleService,
-    private val sharedPreferences: SharedPreferences,
 ) : ViewModel() {
     private val logTag = "TripInProgressViewModel"
-    private val coroutineScope = getViewModelScope(coroutineScopeProvider)
 
     init {
         EventBus.getDefault().register(this)
@@ -42,24 +36,15 @@ class TripInProgressViewModel @Inject constructor(
     private val clockTick = Timer()
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
-    private val _autoCircumference = MutableLiveData<Float?>()
-    private val _userCircumference = MutableLiveData<Float?>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer { timeState ->
         timeState?.let {
             Log.d(logTag, "onChanged current time state observer: ${it.state}")
             currentState = it.state
         }
     }
-    private val currentTripObserver: Observer<Trip> = Observer { trip ->
-        _userCircumference.value = trip.userWheelCircumference
-        _autoCircumference.value = trip.autoWheelCircumference
-    }
-    val circumference: Float?
-        get() = when (sharedPreferences.getBoolean(CyclotrackApp.instance.getString(
-            R.string.preference_key_useAutoCircumference), true)) {
-            true -> _autoCircumference.value ?: _userCircumference.value
-            else -> _userCircumference.value ?: _autoCircumference.value
-        }
+
+    var circumference: Float? = null
+        private set
 
     private fun tripInProgress() = isTripInProgress(currentState)
     fun gpsEnabled(): LiveData<Boolean> = gpsService.accessGranted
@@ -120,6 +105,11 @@ class TripInProgressViewModel @Inject constructor(
         _currentProgress.value = event.tripProgress
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onWheelCircumferenceEvent(event: WheelCircumferenceEvent) {
+        circumference = event.circumference
+    }
+
     fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
 
     private fun getDuration() =
@@ -127,7 +117,6 @@ class TripInProgressViewModel @Inject constructor(
 
     private fun startObserving(tripId: Long, lifecycleOwner: LifecycleOwner) {
         Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
-        tripsRepository.observe(tripId).observe(lifecycleOwner, currentTripObserver)
         timeStateRepository.observeLatest(tripId)
             .observe(lifecycleOwner, currentTimeStateObserver)
         timeStateRepository.observeTimeStates(tripId)

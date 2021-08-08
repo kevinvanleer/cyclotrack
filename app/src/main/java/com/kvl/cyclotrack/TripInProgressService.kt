@@ -14,13 +14,11 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.edit
-import androidx.lifecycle.LifecycleService
-import androidx.lifecycle.Observer
-import androidx.lifecycle.coroutineScope
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import androidx.navigation.NavDeepLinkBuilder
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
+import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -72,7 +70,7 @@ class TripInProgressService @Inject constructor() :
         initialCircDistance = 0.0,
         circumference = null)
 
-    private var userCircumference: Float? = null
+    private val userCircumference: Float?
         get() = getUserCircumferenceOrNull(sharedPreferences)
     private var tripProgress: TripProgress? = null
 
@@ -82,6 +80,8 @@ class TripInProgressService @Inject constructor() :
             true -> circumferenceState.circumference ?: userCircumference
             else -> userCircumference ?: circumferenceState.circumference
         }
+
+    private val liveCircumference = MutableLiveData<Float?>()
 
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
@@ -234,6 +234,7 @@ class TripInProgressService @Inject constructor() :
         tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
             userWheelCircumference = userCircumference,
             autoWheelCircumference = circumference))
+        EventBus.getDefault().post(WheelCircumferenceEvent(this.circumference))
     }
 
     private fun setTripPaused(new: Measurements) {
@@ -350,6 +351,8 @@ class TripInProgressService @Inject constructor() :
         startObserving(tripId)
 
         startForegroundCompat(tripId)
+
+        EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
 
         lifecycleScope.launch(Dispatchers.IO) {
             tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
