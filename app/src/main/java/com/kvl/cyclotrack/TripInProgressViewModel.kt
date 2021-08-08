@@ -55,29 +55,12 @@ class TripInProgressViewModel @Inject constructor(
     var tripId: Long? = null
 
     private fun accumulateDuration(timeStates: Array<TimeState>?) {
-        var durationAcc = 0L
-        var localStartTime = 0L
-
-        timeStates?.forEach { timeState ->
-            when (timeState.state) {
-                TimeStateEnum.START -> {
-                    durationAcc = 0L
-                    localStartTime = timeState.timestamp
-                }
-                TimeStateEnum.PAUSE -> {
-                    durationAcc += timeState.timestamp - localStartTime
-                }
-                TimeStateEnum.RESUME -> {
-                    localStartTime = timeState.timestamp
-                }
-                TimeStateEnum.STOP -> {
-                    durationAcc += timeState.timestamp - localStartTime
-                    localStartTime = 0L
-                }
+        timeStates?.let { ts ->
+            getTripInProgressIntervals(ts).let { intervals ->
+                accumulatedDuration = accumulateTripTime(intervals)
+                startTime = intervals.last().first / 1e3
             }
         }
-        accumulatedDuration = durationAcc / 1e3
-        startTime = localStartTime / 1e3
         Log.v(logTag,
             "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}")
     }
@@ -102,6 +85,7 @@ class TripInProgressViewModel @Inject constructor(
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onTripProgressEvent(event: TripProgressEvent) {
+        Log.d(logTag, "Received trip progress event")
         _currentProgress.value = event.tripProgress
     }
 
@@ -134,8 +118,10 @@ class TripInProgressViewModel @Inject constructor(
         clockTick.scheduleAtFixedRate(timerTask {
             val timeHandler = Handler(Looper.getMainLooper())
             timeHandler.post {
-                Log.v("TIP_TIME_TICK", getDuration().toString())
-                _currentTime.value = getDuration()
+                getDuration().let {
+                    Log.v("TIP_TIME_TICK", it.toString())
+                    _currentTime.value = it
+                }
             }
         }, 1000 - System.currentTimeMillis() % 1000, 500)
     }
