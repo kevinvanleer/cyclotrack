@@ -96,18 +96,26 @@ class TripInProgressService @Inject constructor() :
             cadenceSensor().value,
             speedSensor().value)
         lifecycleScope.launch {
-            val timeStates = timeStateRepository.getTimeStates(tripId)
-            val currentTimeState = timeStates.last()
-            when (currentTimeState.state == TimeStateEnum.RESUME || currentTimeState.state == TimeStateEnum.START) {
-                true -> {
-                    measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)
-                        ?.let { latest ->
-                            setTripProgress(latest, newMeasurement, timeStates, tripId)
+            timeStateRepository.getTimeStates(tripId).let { timeStates ->
+                when (timeStates.isNotEmpty()) {
+                    true -> timeStates.last().let { currentTimeState ->
+                        !(currentTimeState.state == TimeStateEnum.RESUME || currentTimeState.state == TimeStateEnum.START)
+                    }
+                    else -> true
+                }.let { paused ->
+                    when (paused) {
+                        false -> {
+                            measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)
+                                ?.let { latest ->
+                                    setTripProgress(latest, newMeasurement, timeStates, tripId)
+                                }
                         }
+                        else -> setTripPaused(newMeasurement)
+                    }
+                    if (tripId != -1L)
+                        measurementsRepository.insertMeasurements(newMeasurement)
                 }
-                else -> setTripPaused(newMeasurement)
             }
-            measurementsRepository.insertMeasurements(newMeasurement)
         }
     }
 
@@ -382,12 +390,18 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun startObserving(tripId: Long) {
+        if (::thisGpsObserver.isInitialized && gpsService.hasObservers()) {
+            gpsService.removeObserver(thisGpsObserver)
+        }
         if (!::thisGpsObserver.isInitialized || !gpsService.hasObservers()) {
             thisGpsObserver = gpsObserver(tripId)
             gpsService.observe(this, thisGpsObserver)
         }
 
-        if (FeatureFlags.betaBuild) {
+        if (FeatureFlags.betaBuild && tripId != -1L) {
+            if (::thisSensorObserver.isInitialized && onboardSensors.hasObservers()) {
+                onboardSensors.removeObserver(thisSensorObserver)
+            }
             if (!::thisSensorObserver.isInitialized || !onboardSensors.hasObservers()) {
                 thisSensorObserver = sensorObserver(tripId)
                 onboardSensors.observe(this, thisSensorObserver)
@@ -470,5 +484,6 @@ class TripInProgressService @Inject constructor() :
         Log.d(logTag, "tripsRepository=$tripsRepository")
         gpsService.startListening()
         bleService.initialize()
+        startObserving(-1)
     }
 }
