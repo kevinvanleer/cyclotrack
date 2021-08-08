@@ -14,7 +14,10 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.edit
-import androidx.lifecycle.*
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.Observer
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
@@ -80,8 +83,6 @@ class TripInProgressService @Inject constructor() :
             true -> circumferenceState.circumference ?: userCircumference
             else -> userCircumference ?: circumferenceState.circumference
         }
-
-    private val liveCircumference = MutableLiveData<Float?>()
 
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
