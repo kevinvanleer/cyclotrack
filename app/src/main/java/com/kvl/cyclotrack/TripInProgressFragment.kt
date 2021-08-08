@@ -30,8 +30,6 @@ import org.greenrobot.eventbus.ThreadMode
 import java.util.*
 
 
-fun bleFeatureFlag() = true
-
 @AndroidEntryPoint
 class TripInProgressFragment :
     Fragment(), View.OnTouchListener {
@@ -396,47 +394,46 @@ class TripInProgressFragment :
                 }
             }
         })
-        if (bleFeatureFlag()) {
-            viewModel.hrmSensor().observe(viewLifecycleOwner, {
-                Log.d(logTag, "hrm battery: ${it.batteryLevel}")
-                Log.d(logTag, "hrm bpm: ${it.bpm}")
-                if (it.bpm != null) {
-                    heartRateTextView.label = "BPM"
-                    heartRateTextView.value = it.bpm.toString()
+
+        viewModel.hrmSensor().observe(viewLifecycleOwner, {
+            Log.d(logTag, "hrm battery: ${it.batteryLevel}")
+            Log.d(logTag, "hrm bpm: ${it.bpm}")
+            if (it.bpm != null) {
+                heartRateTextView.label = "BPM"
+                heartRateTextView.value = it.bpm.toString()
+            }
+            if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                "${it.batteryLevel}%"
+        })
+        viewModel.cadenceSensor().observe(viewLifecycleOwner, {
+            Log.d(logTag, "cadence battery: ${it.batteryLevel}")
+            Log.d(logTag, "cadence: ${it.rpm}")
+            if (it.rpm != null) {
+                clockView.label = "RPM"
+                clockView.value = when {
+                    it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
+                    else -> clockView.value
                 }
-                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
-                    "${it.batteryLevel}%"
-            })
-            viewModel.cadenceSensor().observe(viewLifecycleOwner, {
-                Log.d(logTag, "cadence battery: ${it.batteryLevel}")
-                Log.d(logTag, "cadence: ${it.rpm}")
-                if (it.rpm != null) {
-                    clockView.label = "RPM"
-                    clockView.value = when {
-                        it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
-                        else -> clockView.value
-                    }
+            }
+            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
+                "${it.batteryLevel}%"
+        })
+        viewModel.speedSensor().observe(viewLifecycleOwner, {
+            Log.d(logTag, "speed battery: ${it.batteryLevel}")
+            Log.d(logTag, "speed rpm: ${it.rpm}")
+            if (it.rpm != null && viewModel.circumference != null) {
+                splitSpeedTextView.label =
+                    getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
+                splitSpeedTextView.value = when {
+                    it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
+                        getUserSpeed(requireContext(),
+                            it.rpm / 60 * viewModel.circumference!!))
+                    else -> splitSpeedTextView.value
                 }
-                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
-                    "${it.batteryLevel}%"
-            })
-            viewModel.speedSensor().observe(viewLifecycleOwner, {
-                Log.d(logTag, "speed battery: ${it.batteryLevel}")
-                Log.d(logTag, "speed rpm: ${it.rpm}")
-                if (it.rpm != null && viewModel.circumference != null) {
-                    splitSpeedTextView.label =
-                        getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
-                    splitSpeedTextView.value = when {
-                        it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
-                            getUserSpeed(requireContext(),
-                                it.rpm / 60 * viewModel.circumference!!))
-                        else -> splitSpeedTextView.value
-                    }
-                }
-                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
-                    "${it.batteryLevel}%"
-            })
-        }
+            }
+            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
+                "${it.batteryLevel}%"
+        })
     }
 
     private fun isMyServiceRunning(serviceClass: Class<*>, context: Context): Boolean {
