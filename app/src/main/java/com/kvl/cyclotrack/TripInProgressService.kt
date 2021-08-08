@@ -485,5 +485,6 @@ class TripInProgressService @Inject constructor() :
         gpsService.startListening()
         bleService.initialize()
         startObserving(-1)
+        EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
     }
 }
