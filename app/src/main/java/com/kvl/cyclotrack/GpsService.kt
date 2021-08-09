@@ -17,39 +17,40 @@ import javax.inject.Singleton
 
 @Singleton
 class GpsService @Inject constructor(context: Application) : LiveData<Location>() {
+    private val logTag = "GpsService"
     private val context = context;
     var accessGranted = MutableLiveData(false);
     private val locationManager =
         (context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
-            Log.v("GPS_SERVICE", "New location result")
-            Log.v("GPS_SERVICE",
+            Log.v(logTag, "New location result")
+            Log.v(logTag,
                 "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                Log.v("GPS_SERVICE",
+                Log.v(logTag,
                     "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
-                Log.v("GPS_SERVICE",
+                Log.v(logTag,
                     "speed: ${location.speed} +/- ${location.speedAccuracyMetersPerSecond}m/s")
-                Log.v("GPS_SERVICE",
+                Log.v(logTag,
                     "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
-                    Log.v("GPS_SERVICE",
-                        "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
+                Log.v(logTag,
+                    "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
                 }
                 value = location
         }
 
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            Log.d("GPS_SERVICE", "GPS status changed")
+            Log.d(logTag, "GPS status changed")
         }
 
         override fun onProviderEnabled(provider: String) {
-            Log.d("GPS_SERVICE", "GPS provider enabled")
+            Log.d(logTag, "GPS provider enabled")
             accessGranted.value = true;
         }
 
         override fun onProviderDisabled(provider: String) {
-            Log.d("GPS_SERVICE", "GPS provider disabled")
+            Log.d(logTag, "GPS provider disabled")
             accessGranted.value = false;
         }
     }
@@ -58,7 +59,7 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
         accessGranted.value = ActivityCompat.checkSelfPermission(context,
             Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         startListening()
-        Log.d("GPS_SERVICE", "GPS service initialized")
+        Log.d(logTag, "GPS service initialized")
     }
 
     fun stopListening() {
@@ -77,7 +78,7 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
-            Log.d("GPS_SERVICE", "User has not granted permission to access fine location data")
+            Log.d(logTag, "User has not granted permission to access fine location data")
             accessGranted.value = false;
             return
         }
