@@ -85,7 +85,10 @@ class StitchWorker @AssistedInject constructor(
         tripsRepository.updateTripStats(TripStats(id = destinationTrip.id,
             distance = splits.last().totalDistance,
             duration = splits.last().totalDuration,
-            averageSpeed = (splits.last().totalDistance / splits.last().totalDuration).toFloat(),
+            averageSpeed = (splits.last().totalDistance / splits.last().totalDuration).toFloat()))
+
+        tripsRepository.updateWheelCircumference(TripWheelCircumference(
+            id = destinationTrip.id,
             userWheelCircumference = destinationTrip.userWheelCircumference,
             autoWheelCircumference = destinationTrip.autoWheelCircumference))
 

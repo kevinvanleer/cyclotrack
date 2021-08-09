@@ -151,7 +151,9 @@ class TripInProgressService @Inject constructor() :
                 TripStats(id = tripId,
                     distance = totalDistance,
                     duration = duration,
-                    averageSpeed = (totalDistance / duration).toFloat(),
+                    averageSpeed = (totalDistance / duration).toFloat()))
+            tripsRepository.updateWheelCircumference(
+                TripWheelCircumference(id = tripId,
                     userWheelCircumference = userCircumference,
                     autoWheelCircumference = circumferenceState.circumference))
 
