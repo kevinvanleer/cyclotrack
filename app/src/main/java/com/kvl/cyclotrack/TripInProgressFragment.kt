@@ -16,6 +16,7 @@ import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import androidx.preference.PreferenceManager
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.android.gms.common.api.ResolvableApiException
@@ -23,6 +24,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.kvl.cyclotrack.events.StartTripEvent
+import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -44,6 +46,22 @@ class TripInProgressFragment :
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
     private val lowBatteryThreshold = 15
+    private lateinit var sharedPreferences: SharedPreferences
+    private val userCircumference: Float?
+        get() = getUserCircumferenceOrNull(sharedPreferences)
+    private var autoCircumference: Float? = null
+
+    val circumference: Float?
+        get() = when (sharedPreferences.getBoolean(requireContext().applicationContext.getString(
+            R.string.preference_key_useAutoCircumference), true)) {
+            true -> autoCircumference ?: userCircumference
+            else -> userCircumference ?: autoCircumference
+        }
+
+    @Subscribe
+    fun onWheelCircumferenceEvent(event: WheelCircumferenceEvent) {
+        autoCircumference = event.circumference
+    }
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -62,6 +80,8 @@ class TripInProgressFragment :
     ): View? {
         setHasOptionsMenu(true)
 
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        
         activity?.window?.apply {
             val params = attributes
             getBrightnessPreference(context).let { brightness ->
@@ -325,7 +345,7 @@ class TripInProgressFragment :
         viewModel.currentProgress.observe(viewLifecycleOwner, {
             Log.d(logTag, "Location observer detected change")
             val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
-            if (viewModel.speedSensor().value?.rpm == null || viewModel.circumference == null) {
+            if (viewModel.speedSensor().value?.rpm == null || circumference == null) {
                 splitSpeedTextView.value =
                     String.format("%.1f", getUserSpeed(requireContext(), it.speed.toDouble()))
             }
@@ -341,11 +361,11 @@ class TripInProgressFragment :
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
 
-            accuracyTextView.text = when (viewModel.circumference == null) {
+            accuracyTextView.text = when (circumference == null) {
                 true -> String.format("%.2f / %d°", it.accuracy, it.bearing.toInt())
                 else -> String.format("%.2f / C%.3f / %d°",
                     it.accuracy,
-                    viewModel.circumference,
+                    circumference,
                     it.bearing.toInt())
             }
         })
@@ -425,13 +445,13 @@ class TripInProgressFragment :
         viewModel.speedSensor().observe(viewLifecycleOwner, {
             Log.d(logTag, "speed battery: ${it.batteryLevel}")
             Log.d(logTag, "speed rpm: ${it.rpm}")
-            if (it.rpm != null && viewModel.circumference != null) {
+            if (it.rpm != null && circumference != null) {
                 splitSpeedTextView.label =
                     getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
                 splitSpeedTextView.value = when {
                     it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
                         getUserSpeed(requireContext(),
-                            it.rpm / 60 * viewModel.circumference!!))
+                            it.rpm / 60 * circumference!!))
                     else -> splitSpeedTextView.value
                 }
             }

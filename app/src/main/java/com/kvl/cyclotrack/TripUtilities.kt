@@ -696,6 +696,12 @@ fun getSpeed(
     } else if (new.speed > speedThreshold) new.speed else 0f
 }
 
+fun getSpeed(
+    new: Measurements,
+    speedThreshold: Float,
+): Float = if (new.speed > speedThreshold) new.speed else 0f
+
+
 fun calculateSlope(
     newSpeed: Float,
     distanceDelta: Float,

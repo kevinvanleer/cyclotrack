@@ -67,22 +67,15 @@ class TripInProgressService @Inject constructor() :
     @Inject
     lateinit var googleFitApiService: GoogleFitApiService
 
+    private val userCircumference: Float?
+        get() = getUserCircumferenceOrNull(sharedPreferences)
 
     private var circumferenceState = CircumferenceState(measuring = false,
         initialCircRevs = 0,
         initialCircDistance = 0.0,
         circumference = null)
 
-    private val userCircumference: Float?
-        get() = getUserCircumferenceOrNull(sharedPreferences)
     private var tripProgress: TripProgress? = null
-
-    val circumference: Float?
-        get() = when (sharedPreferences.getBoolean(applicationContext.getString(
-            R.string.preference_key_useAutoCircumference), true)) {
-            true -> circumferenceState.circumference ?: userCircumference
-            else -> userCircumference ?: circumferenceState.circumference
-        }
 
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
@@ -148,7 +141,7 @@ class TripInProgressService @Inject constructor() :
         if (accurateEnough) {
             val distanceDelta = getDistance(new, old)
             val durationDelta = duration - (trip.duration ?: 0.0)
-            val newSpeed = getSpeed(new, speedThreshold, circumference)
+            val newSpeed = getSpeed(new, speedThreshold)
             val totalDistance = when (newSpeed > speedThreshold) {
                 true -> (trip.distance ?: 0.0) + distanceDelta
                 else -> trip.distance ?: 0.0
@@ -234,14 +227,14 @@ class TripInProgressService @Inject constructor() :
         tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
             userWheelCircumference = userCircumference,
             autoWheelCircumference = circumference))
-        EventBus.getDefault().post(WheelCircumferenceEvent(this.circumference))
+        EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
     }
 
     private fun setTripPaused(new: Measurements) {
         val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
 
         val newSpeed = when (accurateEnough) {
-            true -> getSpeed(new, speedThreshold, circumference)
+            true -> getSpeed(new, speedThreshold)
             else -> 0f
         }
 
@@ -349,8 +342,6 @@ class TripInProgressService @Inject constructor() :
         startObserving(tripId)
 
         startForegroundCompat(tripId)
-
-        EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
 
         lifecycleScope.launch(Dispatchers.IO) {
             tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
@@ -474,6 +465,5 @@ class TripInProgressService @Inject constructor() :
         gpsService.startListening()
         bleService.initialize()
         startObserving(-1)
-        EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
     }
 }

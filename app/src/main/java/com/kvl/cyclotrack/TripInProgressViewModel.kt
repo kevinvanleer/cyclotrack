@@ -6,7 +6,6 @@ import android.util.Log
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import com.kvl.cyclotrack.events.TripProgressEvent
-import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -42,9 +41,6 @@ class TripInProgressViewModel @Inject constructor(
             currentState = it.state
         }
     }
-
-    var circumference: Float? = null
-        private set
 
     private fun tripInProgress() = isTripInProgress(currentState)
     fun gpsEnabled(): LiveData<Boolean> = gpsService.accessGranted
@@ -87,11 +83,6 @@ class TripInProgressViewModel @Inject constructor(
     fun onTripProgressEvent(event: TripProgressEvent) {
         Log.d(logTag, "Received trip progress event")
         _currentProgress.value = event.tripProgress
-    }
-
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onWheelCircumferenceEvent(event: WheelCircumferenceEvent) {
-        circumference = event.circumference
     }
 
     fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
