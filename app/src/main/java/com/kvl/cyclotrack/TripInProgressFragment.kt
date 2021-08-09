@@ -326,16 +326,36 @@ class TripInProgressFragment :
         isTimeTickRegistered = true
 
         view.setOnTouchListener(this)
+
+        viewModel.gpsStatus().observe(viewLifecycleOwner, { location ->
+            if (viewModel.speedSensor().value?.rpm == null || viewModel.circumference == null) {
+                when (location.speed < 0.5) {
+                    true -> 0.0
+                    else ->
+                        (splitSpeedTextView.value.toString().toDoubleOrNull()
+                            ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
+                }
+                    .takeIf { it.isFinite() }
+                    ?.let { oldSpeed ->
+                        exponentialSmoothing(0.1,
+                            getUserSpeed(requireContext(),
+                                location.speed.toDouble()).toDouble(),
+                            oldSpeed)
+                    }.let { speed ->
+                        splitSpeedTextView.value =
+                            String.format("%.1f", speed)
+                    }
+            }
+        })
+
         viewModel.currentProgress.observe(viewLifecycleOwner, {
             Log.d(logTag, "Location observer detected change")
-            val averageSpeed = getUserSpeed(requireContext(), it.distance / it.duration)
-            if (viewModel.speedSensor().value?.rpm == null || viewModel.circumference == null) {
-                splitSpeedTextView.value =
-                    String.format("%.1f", getUserSpeed(requireContext(), it.speed.toDouble()))
-            }
             bearingTextView.text = degreesToCardinal(it.bearing)
-            averageSpeedTextView.value =
-                String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
+
+            getUserSpeed(requireContext(), it.distance / it.duration).let { averageSpeed ->
+                averageSpeedTextView.value =
+                    String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
+            }
 
             distanceTextView.value =
                 String.format("%.2f", getUserDistance(requireContext(), it.distance))

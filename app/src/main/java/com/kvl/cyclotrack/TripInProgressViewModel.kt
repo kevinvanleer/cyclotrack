@@ -66,6 +66,7 @@ class TripInProgressViewModel @Inject constructor(
 
     private fun tripInProgress() = isTripInProgress(currentState)
     fun gpsEnabled(): LiveData<Boolean> = gpsService.accessGranted
+    fun gpsStatus(): LiveData<Location> = gpsService
     fun hrmSensor(): LiveData<HrmData> = bleService.hrmSensor
     fun cadenceSensor(): LiveData<CadenceData> = bleService.cadenceSensor
     fun speedSensor(): LiveData<SpeedData> = bleService.speedSensor
