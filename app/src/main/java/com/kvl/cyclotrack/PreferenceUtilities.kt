@@ -21,8 +21,14 @@ fun getUserCircumferenceOrNull(context: Context): Float? {
 
 fun getUserCircumference(context: Context): Float = getUserCircumferenceOrNull(context) ?: 0f
 
+fun getAutoCircumferenceOrNull(prefs: SharedPreferences): Float? {
+    val storedCircumference = prefs.getFloat("auto_circumference", 0f)
+    Log.d("TRIP_UTILS_PREF", "Auto circumference preference: ${storedCircumference}")
+    return storedCircumference.takeIf { it > 0 }
+}
+
 fun getUserCircumferenceOrNull(prefs: SharedPreferences): Float? {
-    val storedCircumference = prefs.getString("wheel_circumference", "2037")
+    val storedCircumference = prefs.getString("wheel_circumference", "")
     Log.d("TRIP_UTILS_PREF", "Wheel circumference preference: ${storedCircumference}")
     return userCircumferenceToMeters(storedCircumference)
 }
