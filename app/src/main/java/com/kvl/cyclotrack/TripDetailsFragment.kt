@@ -361,15 +361,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             }
             R.id.details_menu_action_delete -> {
                 Log.d(TAG, "Options menu clicked delete")
-                when (hasFitnessPermissions(requireContext())) {
-                    false -> showMustBeLoggedInDialog()
-                    else ->
-                        when (googleFitSyncStatus) {
-                            GoogleFitSyncStatusEnum.SYNCED,
-                            GoogleFitSyncStatusEnum.FAILED,
-                            -> showUnsyncAndDeleteDialog()
-                            else -> showDeleteDialog()
+                when (googleFitSyncStatus) {
+                    GoogleFitSyncStatusEnum.SYNCED, GoogleFitSyncStatusEnum.DIRTY -> {
+                        when (hasFitnessPermissions(requireContext())) {
+                            false -> showMustBeLoggedInDialog()
+                            else -> showUnsyncAndDeleteDialog()
                         }
+                    }
+                    else -> showDeleteDialog()
                 }
                 true
             }
