@@ -164,6 +164,13 @@ class StatisticsTest {
     }
 
     @Test
+    fun incrementalAverage() {
+        val testData = listOf(1.0, 2.0, 3.0, 4.0)
+        val avg = testData.average()
+        Assert.assertEquals(3.0, average(5.0, testData.size + 1, avg), 1e-6)
+    }
+
+    @Test
     fun populationVariance_normalUse() {
         var testData = listOf(100.0, 100.0, 100.0)
         Assert.assertEquals(0.0, testData.populationVariance(), 1e-6)
@@ -227,5 +234,30 @@ class StatisticsTest {
             2.2041716,
             1.98205866)
         Assert.assertEquals(0.1014630613, testData.sampleVariance(), 1e-6)
+    }
+
+    @Test
+    fun incrementalSampleVariance() {
+        var testData = listOf(
+            1.910557887,
+            3.01870131,
+            1.835732132,
+            2.353462463,
+            1.998233796,
+            1.923542099,
+            1.966576393,
+            2.209932945,
+            2.002360733,
+            2.200955598,
+            2.2041716)
+        val variance = testData.sampleVariance()
+        val average = testData.average()
+        val newValue = 1.98205866
+        Assert.assertEquals(0.1014630613,
+            sampleVariance(newValue = newValue,
+                oldVariance = variance,
+                sampleSize = testData.size + 1,
+                oldAverage = average),
+            1e-6)
     }
 }
