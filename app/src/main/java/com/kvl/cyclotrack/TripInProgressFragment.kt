@@ -260,8 +260,12 @@ class TripInProgressFragment :
 
     private fun stopTripListener(tripId: Long): OnClickListener = OnClickListener {
         endTrip(tripId)
-        findNavController()
-            .navigate(TripInProgressFragmentDirections.actionFinishTrip(tripId))
+        when (tripId >= 0) {
+            true -> findNavController()
+                .navigate(TripInProgressFragmentDirections.actionFinishTrip(tripId))
+            else -> findNavController()
+                .navigate(R.id.action_back_to_summaries)
+        }
     }
 
     override fun onDestroy() {
