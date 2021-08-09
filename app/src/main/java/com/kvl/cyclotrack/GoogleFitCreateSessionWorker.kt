@@ -32,20 +32,22 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
         inputData.getLong("tripId", -1).takeIf { it >= 0 }?.let { tripId ->
             Log.i(logTag, "Syncing data with Google Fit for trip ${tripId}")
             try {
-                val trip = tripsRepository.get(tripId)
-                val timeStates = timeStateRepository.getTimeStates(tripId)
-                val measurements = measurementsRepository.getCritical(tripId)
+                if (hasFitnessPermissions(applicationContext)) {
+                    val trip = tripsRepository.get(tripId)
+                    val timeStates = timeStateRepository.getTimeStates(tripId)
+                    val measurements = measurementsRepository.getCritical(tripId)
 
-                googleFitApiService.insertDatasets(measurements,
-                    getEffectiveCircumference(trip, measurements) ?: getUserCircumference(
-                        applicationContext))
-                timeStates.takeIf { it.isNotEmpty() }
-                    ?.let { googleFitApiService.insertSession(trip, it) }
-                    ?: googleFitApiService.insertSession(trip,
-                        measurements.first().time,
-                        measurements.last().time)
+                    googleFitApiService.insertDatasets(measurements,
+                        getEffectiveCircumference(trip, measurements) ?: getUserCircumference(
+                            applicationContext))
+                    timeStates.takeIf { it.isNotEmpty() }
+                        ?.let { googleFitApiService.insertSession(trip, it) }
+                        ?: googleFitApiService.insertSession(trip,
+                            measurements.first().time,
+                            measurements.last().time)
 
-                tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.SYNCED)
+                    tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.SYNCED)
+                }
             } catch (e: Exception) {
                 Log.e(logTag, "Failed to insert trip ${tripId}", e)
                 tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.FAILED)
