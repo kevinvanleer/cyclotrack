@@ -6,8 +6,6 @@ data class TripProgress(
     val bearing: Float,
     val speed: Float,
     val maxSpeed: Float,
-    val acceleration: Float,
-    val maxAcceleration: Float,
     val distance: Double,
     val slope: Double,
     val duration: Double,

@@ -196,19 +196,12 @@ class TripInProgressService @Inject constructor() :
                 tripProgress,
                 durationDelta)
 
-            val newAcceleration = getAcceleration(durationDelta,
-                newSpeed,
-                getSpeed(old, speedThreshold, circumference))
-
             TripProgress(
                 measurements = new,
                 speed = newSpeed,
                 maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f,
                     tripProgress?.maxSpeed ?: 0f),
                 distance = totalDistance,
-                acceleration = newAcceleration,
-                maxAcceleration = max(if (newAcceleration.isFinite()) newAcceleration else 0f,
-                    tripProgress?.maxAcceleration ?: 0f),
                 slope = newSlope,
                 duration = duration,
                 accuracy = new.accuracy,
@@ -222,8 +215,6 @@ class TripInProgressService @Inject constructor() :
                 ?: TripProgress(duration = duration,
                     speed = 0f,
                     maxSpeed = 0f,
-                    acceleration = 0f,
-                    maxAcceleration = 0f,
                     distance = 0.0,
                     slope = 0.0,
                     measurements = null,
@@ -270,8 +261,6 @@ class TripInProgressService @Inject constructor() :
         } ?: TripProgress(duration = 0.0,
             speed = newSpeed,
             maxSpeed = 0f,
-            acceleration = 0f,
-            maxAcceleration = 0f,
             distance = 0.0,
             slope = 0.0,
             measurements = null,
