@@ -346,7 +346,7 @@ fun estimateCaloriesBurned(
 ): Int? {
     val estVo2max = vo2Max ?: restingHeartRate?.let {
         estimateVo2Max(it,
-            maximumHeartRate ?: age!!)
+            maximumHeartRate ?: estimateMaxHeartRate(age!!))
     }
     return if (sex != null && age != null && heartRate != null && estVo2max != null) {
         if (height != null) estimateNetCaloriesBurned(sex,
