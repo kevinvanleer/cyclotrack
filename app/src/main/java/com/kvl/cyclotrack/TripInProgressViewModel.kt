@@ -33,7 +33,8 @@ class TripInProgressViewModel @Inject constructor(
     private val coroutineScope = getViewModelScope(coroutineScopeProvider)
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
-    private var userCircumference: Float? = getUserCircumferenceOrNull(sharedPreferences)
+    private var userCircumference: Float? = null
+        get() = getUserCircumferenceOrNull(sharedPreferences)
     private var _autoCircumference: Float? = null
 
     val autoCircumference: Float?
