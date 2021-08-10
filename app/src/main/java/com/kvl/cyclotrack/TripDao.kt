@@ -35,8 +35,6 @@ data class TripStats(
     val distance: Double?,
     val duration: Double?,
     val averageSpeed: Float?,
-    val userWheelCircumference: Float?,
-    val autoWheelCircumference: Float?,
 )
 
 data class Biometrics(

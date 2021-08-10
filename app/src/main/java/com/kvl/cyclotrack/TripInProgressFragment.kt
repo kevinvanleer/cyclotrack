@@ -16,6 +16,7 @@ import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import androidx.preference.PreferenceManager
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.android.gms.common.api.ResolvableApiException
@@ -23,14 +24,13 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.kvl.cyclotrack.events.StartTripEvent
+import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.util.*
 
-
-fun bleFeatureFlag() = true
 
 @AndroidEntryPoint
 class TripInProgressFragment :
@@ -46,6 +46,22 @@ class TripInProgressFragment :
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
     private val lowBatteryThreshold = 15
+    private lateinit var sharedPreferences: SharedPreferences
+    private val userCircumference: Float?
+        get() = getUserCircumferenceOrNull(sharedPreferences)
+    private var autoCircumference: Float? = null
+
+    val circumference: Float?
+        get() = when (sharedPreferences.getBoolean(requireContext().applicationContext.getString(
+            R.string.preference_key_useAutoCircumference), true)) {
+            true -> autoCircumference ?: userCircumference
+            else -> userCircumference ?: autoCircumference
+        }
+
+    @Subscribe
+    fun onWheelCircumferenceEvent(event: WheelCircumferenceEvent) {
+        autoCircumference = event.circumference
+    }
 
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -64,6 +80,8 @@ class TripInProgressFragment :
     ): View? {
         setHasOptionsMenu(true)
 
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+
         activity?.window?.apply {
             val params = attributes
             getBrightnessPreference(context).let { brightness ->
@@ -74,12 +92,6 @@ class TripInProgressFragment :
                 }
             }
         }
-
-        /*
-        requireActivity().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
-            this.action = getString(R.string.action_initialize_trip_service)
-        })*/
 
         return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
     }
@@ -332,7 +344,7 @@ class TripInProgressFragment :
         view.setOnTouchListener(this)
 
         viewModel.gpsStatus().observe(viewLifecycleOwner, { location ->
-            if (viewModel.speedSensor().value?.rpm == null || viewModel.circumference == null) {
+            if (viewModel.speedSensor().value?.rpm == null || circumference == null) {
                 when (location.speed < 0.5) {
                     true -> 0.0
                     else ->
@@ -369,11 +381,11 @@ class TripInProgressFragment :
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
 
-            accuracyTextView.text = when (viewModel.autoCircumference == null) {
+            accuracyTextView.text = when (circumference == null) {
                 true -> String.format("%.2f / %d°", it.accuracy, it.bearing.toInt())
                 else -> String.format("%.2f / C%.3f / %d°",
                     it.accuracy,
-                    viewModel.circumference,
+                    circumference,
                     it.bearing.toInt())
             }
         })
@@ -426,47 +438,46 @@ class TripInProgressFragment :
                 }
             }
         })
-        if (bleFeatureFlag()) {
-            viewModel.hrmSensor().observe(viewLifecycleOwner, {
-                Log.d(logTag, "hrm battery: ${it.batteryLevel}")
-                Log.d(logTag, "hrm bpm: ${it.bpm}")
-                if (it.bpm != null) {
-                    heartRateTextView.label = "BPM"
-                    heartRateTextView.value = it.bpm.toString()
+
+        viewModel.hrmSensor().observe(viewLifecycleOwner, {
+            Log.d(logTag, "hrm battery: ${it.batteryLevel}")
+            Log.d(logTag, "hrm bpm: ${it.bpm}")
+            if (it.bpm != null) {
+                heartRateTextView.label = "BPM"
+                heartRateTextView.value = it.bpm.toString()
+            }
+            if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+                "${it.batteryLevel}%"
+        })
+        viewModel.cadenceSensor().observe(viewLifecycleOwner, {
+            Log.d(logTag, "cadence battery: ${it.batteryLevel}")
+            Log.d(logTag, "cadence: ${it.rpm}")
+            if (it.rpm != null) {
+                clockView.label = "RPM"
+                clockView.value = when {
+                    it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
+                    else -> clockView.value
                 }
-                if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
-                    "${it.batteryLevel}%"
-            })
-            viewModel.cadenceSensor().observe(viewLifecycleOwner, {
-                Log.d(logTag, "cadence battery: ${it.batteryLevel}")
-                Log.d(logTag, "cadence: ${it.rpm}")
-                if (it.rpm != null) {
-                    clockView.label = "RPM"
-                    clockView.value = when {
-                        it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
-                        else -> clockView.value
-                    }
+            }
+            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
+                "${it.batteryLevel}%"
+        })
+        viewModel.speedSensor().observe(viewLifecycleOwner, {
+            Log.d(logTag, "speed battery: ${it.batteryLevel}")
+            Log.d(logTag, "speed rpm: ${it.rpm}")
+            if (it.rpm != null && circumference != null) {
+                splitSpeedTextView.label =
+                    getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
+                splitSpeedTextView.value = when {
+                    it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
+                        getUserSpeed(requireContext(),
+                            it.rpm / 60 * circumference!!))
+                    else -> splitSpeedTextView.value
                 }
-                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
-                    "${it.batteryLevel}%"
-            })
-            viewModel.speedSensor().observe(viewLifecycleOwner, {
-                Log.d(logTag, "speed battery: ${it.batteryLevel}")
-                Log.d(logTag, "speed rpm: ${it.rpm}")
-                if (it.rpm != null && viewModel.circumference != null) {
-                    splitSpeedTextView.label =
-                        getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
-                    splitSpeedTextView.value = when {
-                        it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
-                            getUserSpeed(requireContext(),
-                                it.rpm / 60 * viewModel.circumference!!))
-                        else -> splitSpeedTextView.value
-                    }
-                }
-                if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
-                    "${it.batteryLevel}%"
-            })
-        }
+            }
+            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
+                "${it.batteryLevel}%"
+        })
     }
 
     private fun isMyServiceRunning(serviceClass: Class<*>, context: Context): Boolean {

@@ -13,23 +13,29 @@ import android.os.Bundle
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.content.edit
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
 import com.kvl.cyclotrack.events.StartTripEvent
+import com.kvl.cyclotrack.events.TripProgressEvent
+import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import javax.inject.Inject
+import kotlin.math.max
 
 @AndroidEntryPoint
-class TripInProgressService @Inject constructor() : LifecycleService() {
+class TripInProgressService @Inject constructor() :
+    LifecycleService() {
     private val logTag = "TripInProgressService"
     private val accuracyThreshold = 7.5f
+    private val speedThreshold = 0.5f
 
     @Inject
     lateinit var tripsRepository: TripsRepository
@@ -61,6 +67,16 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
     @Inject
     lateinit var googleFitApiService: GoogleFitApiService
 
+    private val userCircumference: Float?
+        get() = getUserCircumferenceOrNull(sharedPreferences)
+
+    private var circumferenceState = CircumferenceState(measuring = false,
+        initialCircRevs = 0,
+        initialCircDistance = 0.0,
+        circumference = null)
+
+    private var tripProgress: TripProgress? = null
+
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
     private fun speedSensor() = bleService.speedSensor
@@ -73,59 +89,169 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             cadenceSensor().value,
             speedSensor().value)
         lifecycleScope.launch {
-            measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)?.let { latest ->
-                setTripProgress(latest, newMeasurement, tripId)
+            timeStateRepository.getTimeStates(tripId).let { timeStates ->
+                when (timeStates.lastOrNull()?.let { currentTimeState ->
+                    (currentTimeState.state == TimeStateEnum.RESUME || currentTimeState.state == TimeStateEnum.START)
+                } ?: false) {
+                    true -> {
+                        measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)
+                            ?.let { latest ->
+                                setTripProgress(latest, newMeasurement, timeStates, tripId)
+                            }
+                    }
+                    else -> setTripPaused(newMeasurement)
+                }
             }
-            measurementsRepository.insertMeasurements(newMeasurement)
+            if (tripId >= 0)
+                measurementsRepository.insertMeasurements(newMeasurement)
         }
     }
 
-    private suspend fun setTripProgress(old: Measurements, new: Measurements, tripId: Long) {
-        val timeStates = timeStateRepository.getTimeStates(tripId)
-        val currentTimeState = timeStates.last()
+    private suspend fun setTripProgress(
+        old: Measurements,
+        new: Measurements,
+        timeStates: Array<TimeState>,
+        tripId: Long,
+    ) {
+        val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+        val intervals = getTripInProgressIntervals(timeStates)
+        val duration = accumulateTripTime(intervals)
+        val trip = tripsRepository.get(tripId)
 
-        if (currentTimeState.state == TimeStateEnum.RESUME || currentTimeState.state == TimeStateEnum.START) {
-            val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
-            if (accurateEnough) {
-                val trip = tripsRepository.get(tripId)
-                val intervals = getTripInProgressIntervals(timeStates)
-                val duration = accumulateTripTime(intervals)
-                val distance = (trip.distance ?: 0.0) + getDistance(new, old)
-
-                tripsRepository.updateTripStats(
-                    TripStats(id = tripId,
-                        distance = distance,
-                        duration = duration,
-                        averageSpeed = (distance / duration).toFloat(),
-                        userWheelCircumference = trip.userWheelCircumference,
-                        autoWheelCircumference = trip.autoWheelCircumference))
-
-                if (crossedSplitThreshold(sharedPreferences,
-                        distance,
-                        trip.distance ?: Double.MAX_VALUE)
-                ) {
-                    try {
-                        val lastSplit = splitRepository.getTripSplits(tripId).last()
-                        splitRepository.addSplit(Split(
-                            timestamp = System.currentTimeMillis(),
-                            duration = duration - lastSplit.totalDuration,
-                            distance = distance - lastSplit.totalDistance,
-                            totalDuration = duration,
-                            totalDistance = distance,
-                            tripId = tripId
-                        ))
-                    } catch (e: NoSuchElementException) {
-                        splitRepository.addSplit(Split(
-                            timestamp = System.currentTimeMillis(),
-                            duration = duration,
-                            distance = distance,
-                            totalDuration = duration,
-                            totalDistance = distance,
-                            tripId = tripId
-                        ))
+        tripProgress?.let {
+            it.measurements?.speedRevolutions?.let { revs ->
+                calculateWheelCircumference(
+                    it.measurements,
+                    trip.distance ?: 0.0,
+                    revs,
+                    circumferenceState).also { newState ->
+                    circumferenceState = newState
+                    circumferenceState.circumference?.let { newCirc ->
+                        updateAutoCircumference(tripId, newCirc)
                     }
                 }
             }
+        }
+
+        if (accurateEnough) {
+            val distanceDelta = getDistance(new, old)
+            val durationDelta = duration - (trip.duration ?: 0.0)
+            val newSpeed = getSpeed(new, speedThreshold)
+            val totalDistance = when (newSpeed > speedThreshold) {
+                true -> (trip.distance ?: 0.0) + distanceDelta
+                else -> trip.distance ?: 0.0
+            }
+
+            tripsRepository.updateTripStats(
+                TripStats(id = tripId,
+                    distance = totalDistance,
+                    duration = duration,
+                    averageSpeed = (totalDistance / duration).toFloat()))
+
+            if (crossedSplitThreshold(sharedPreferences,
+                    totalDistance,
+                    trip.distance ?: Double.MAX_VALUE)
+            ) {
+                splitRepository.getTripSplits(tripId).lastOrNull()?.let { lastSplit ->
+                    splitRepository.addSplit(Split(
+                        timestamp = System.currentTimeMillis(),
+                        duration = duration - lastSplit.totalDuration,
+                        distance = totalDistance - lastSplit.totalDistance,
+                        totalDuration = duration,
+                        totalDistance = totalDistance,
+                        tripId = tripId
+                    ))
+                } ?: splitRepository.addSplit(Split(
+                    timestamp = System.currentTimeMillis(),
+                    duration = duration,
+                    distance = totalDistance,
+                    totalDuration = duration,
+                    totalDistance = totalDistance,
+                    tripId = tripId
+                ))
+            }
+
+            val newSlope = calculateSlope(
+                newSpeed,
+                distanceDelta,
+                new,
+                speedThreshold,
+                tripProgress,
+                durationDelta)
+
+            TripProgress(
+                measurements = new,
+                speed = newSpeed,
+                maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f,
+                    tripProgress?.maxSpeed ?: 0f),
+                distance = totalDistance,
+                slope = newSlope,
+                duration = duration,
+                accuracy = new.accuracy,
+                bearing = new.bearing,
+                tracking = true
+            )
+        } else {
+            (tripProgress?.copy(duration = duration,
+                accuracy = new.accuracy,
+                tracking = false)
+                ?: TripProgress(duration = duration,
+                    speed = 0f,
+                    maxSpeed = 0f,
+                    distance = 0.0,
+                    slope = 0.0,
+                    measurements = null,
+                    accuracy = new.accuracy,
+                    bearing = new.bearing,
+                    tracking = false))
+        }.let {
+            EventBus.getDefault().post(TripProgressEvent(it))
+            tripProgress = it
+        }
+    }
+
+    private suspend fun updateAutoCircumference(tripId: Long, circumference: Float) {
+        sharedPreferences.edit {
+            this.putFloat("auto_circumference", circumference)
+        }
+        tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
+            userWheelCircumference = userCircumference,
+            autoWheelCircumference = circumference))
+        EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
+    }
+
+    private fun setTripPaused(new: Measurements) {
+        val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
+
+        val newSpeed = when (accurateEnough) {
+            true -> getSpeed(new, speedThreshold)
+            else -> 0f
+        }
+
+        when (accurateEnough) {
+            true -> {
+                tripProgress?.copy(
+                    speed = newSpeed,
+                    measurements = null,
+                    accuracy = new.accuracy,
+                    tracking = accurateEnough)
+            }
+            else ->
+                tripProgress?.copy(
+                    accuracy = new.accuracy,
+                    measurements = null,
+                    tracking = accurateEnough)
+        } ?: TripProgress(duration = 0.0,
+            speed = newSpeed,
+            maxSpeed = 0f,
+            distance = 0.0,
+            slope = 0.0,
+            measurements = null,
+            accuracy = new.accuracy,
+            bearing = new.bearing,
+            tracking = accurateEnough).let {
+            EventBus.getDefault().post(TripProgressEvent(it))
+            tripProgress = it
         }
     }
 
@@ -194,6 +320,9 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         Log.d(logTag, "measurementsRepository=$measurementsRepository")
         Log.d(logTag, "tripsRepository=$tripsRepository")
         var tripId: Long = -1
+
+        clearState()
+
         lifecycleScope.launch(Dispatchers.IO) {
             tripId = tripsRepository.createNewTrip().also { id ->
                 EventBus.getDefault().post(StartTripEvent(id))
@@ -209,8 +338,8 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
-                userWheelCircumference = getUserCircumferenceOrNull(sharedPreferences),
-                autoWheelCircumference = null))
+                userWheelCircumference = userCircumference,
+                autoWheelCircumference = circumferenceState.circumference))
             tripsRepository.updateBiometrics(
                 getCombinedBiometrics(tripId))
         }
@@ -264,6 +393,15 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         startObserving(tripId)
     }
 
+    private fun clearState() {
+        circumferenceState = CircumferenceState(measuring = false,
+            initialCircRevs = 0,
+            initialCircDistance = 0.0,
+            circumference = null)
+
+        tripProgress = null
+    }
+
     private suspend fun end(tripId: Long) {
         Log.d(logTag, "Called end()")
         var job: Job? = null
@@ -282,6 +420,7 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
             onboardSensors.removeObserver(thisSensorObserver)
         }
 
+        clearState()
         bleService.disconnect()
         gpsService.stopListening()
         job?.join()
@@ -322,5 +461,6 @@ class TripInProgressService @Inject constructor() : LifecycleService() {
         Log.d(logTag, "tripsRepository=$tripsRepository")
         gpsService.startListening()
         bleService.initialize()
+        clearState()
     }
 }
