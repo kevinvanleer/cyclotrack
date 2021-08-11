@@ -50,6 +50,7 @@ class TripInProgressFragment :
     private val userCircumference: Float?
         get() = getUserCircumferenceOrNull(sharedPreferences)
     private var autoCircumference: Float? = null
+    private var autoCircumferenceVariance: Double? = null
 
     val circumference: Float?
         get() = when (sharedPreferences.getBoolean(requireContext().applicationContext.getString(
@@ -61,6 +62,7 @@ class TripInProgressFragment :
     @Subscribe
     fun onWheelCircumferenceEvent(event: WheelCircumferenceEvent) {
         autoCircumference = event.circumference
+        autoCircumferenceVariance = event.variance
     }
 
     private val timeTickReceiver = object : BroadcastReceiver() {
@@ -350,18 +352,24 @@ class TripInProgressFragment :
                     else ->
                         (splitSpeedTextView.value.toString().toDoubleOrNull()
                             ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
+                            .takeIf { it.isFinite() }
+                            ?.let { oldSpeed ->
+                                exponentialSmoothing(0.1,
+                                    getUserSpeed(requireContext(),
+                                        location.speed.toDouble()).toDouble(),
+                                    oldSpeed)
+                            }
+                }.let { speed ->
+                    splitSpeedTextView.value =
+                        String.format("%.1f", speed)
                 }
-                    .takeIf { it.isFinite() }
-                    ?.let { oldSpeed ->
-                        exponentialSmoothing(0.1,
-                            getUserSpeed(requireContext(),
-                                location.speed.toDouble()).toDouble(),
-                            oldSpeed)
-                    }.let { speed ->
-                        splitSpeedTextView.value =
-                            String.format("%.1f", speed)
-                    }
             }
+
+            var debugString = "%.2f".format(location.accuracy)
+            autoCircumference?.let { c -> debugString += " / C%.3f".format(c) }
+            autoCircumferenceVariance?.let { v -> debugString += " / ±%.7f".format(v) }
+            debugString += " / %d°".format(location.bearing.toInt())
+            accuracyTextView.text = debugString
         })
 
         viewModel.currentProgress.observe(viewLifecycleOwner, {
@@ -380,14 +388,6 @@ class TripInProgressFragment :
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
-
-            accuracyTextView.text = when (circumference == null) {
-                true -> String.format("%.2f / %d°", it.accuracy, it.bearing.toInt())
-                else -> String.format("%.2f / C%.3f / %d°",
-                    it.accuracy,
-                    circumference,
-                    it.bearing.toInt())
-            }
         })
         /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
             override fun onChanged(it: SensorModel) {

@@ -9,6 +9,7 @@ import androidx.lifecycle.MediatorLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
+import com.kvl.cyclotrack.data.DerivedTripState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -723,39 +724,13 @@ fun calculateSlope(
 }
 
 fun calculateWheelCircumference(
-    progress: Measurements,
-    totalDistance: Double,
-    speedRevolutions: Int,
-    state: CircumferenceState,
-): CircumferenceState {
-    val autoCircumferenceAccThreshold = 5.0
-    val autoCircumferenceSpeedThreshold = 4.0
-    var newState = state.copy()
-    if (progress.accuracy < autoCircumferenceAccThreshold &&
-        progress.speed >= autoCircumferenceSpeedThreshold && !state.measuring &&
-        progress.speedRevolutions != null && state.circumference == null
-    ) {
-        newState = CircumferenceState(measuring = true,
-            initialCircDistance = totalDistance,
-            initialCircRevs = speedRevolutions,
-            circumference = null)
+    derivedTripState: Array<DerivedTripState>,
+    sampleSize: Int,
+    varianceThreshold: Double,
+): Float? =
+    derivedTripState.takeLast(sampleSize).map { it.circumference }.let {
+        if (it.size >= sampleSize && it.sampleVariance() < varianceThreshold) it.average()
+            .toFloat() else null
     }
-    if (state.measuring && progress.accuracy > autoCircumferenceAccThreshold ||
-        progress.speed < autoCircumferenceSpeedThreshold || state.circumference != null
-    ) {
-        newState = state.copy(measuring = false)
-    }
-    if (state.measuring && (totalDistance - state.initialCircDistance) > 400
-    ) {
-        val revs = progress.speedRevolutions?.minus(state.initialCircRevs)
-        val dist = totalDistance - state.initialCircDistance
-        if (revs != null) {
-            newState = state.copy(
-                measuring = false,
-                circumference = (dist / revs).toFloat())
-        }
-    }
-    return newState
-}
 
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)

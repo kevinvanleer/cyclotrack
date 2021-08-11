@@ -19,6 +19,7 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
+import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
@@ -70,12 +71,11 @@ class TripInProgressService @Inject constructor() :
     private val userCircumference: Float?
         get() = getUserCircumferenceOrNull(sharedPreferences)
 
-    private var circumferenceState = CircumferenceState(measuring = false,
-        initialCircRevs = 0,
-        initialCircDistance = 0.0,
-        circumference = null)
+    private var autoCircumference: Float? = null
 
     private var tripProgress: TripProgress? = null
+
+    private val derivedTripState = ArrayList<DerivedTripState>()
 
     private fun hrmSensor() = bleService.hrmSensor
     private fun cadenceSensor() = bleService.cadenceSensor
@@ -107,6 +107,35 @@ class TripInProgressService @Inject constructor() :
         }
     }
 
+    private fun updateDerivedTripState(
+        tripId: Long,
+        totalDistance: Double,
+        distanceDelta: Double,
+        totalDuration: Double,
+        durationDelta: Double,
+        newMeasurements: Measurements,
+        derivedTripState: ArrayList<DerivedTripState>,
+    ): DerivedTripState {
+
+        val revTotal =
+            derivedTripState.find { it.speedRevolutions != null }?.speedRevolutions?.let { startRevs ->
+                newMeasurements.speedRevolutions?.minus(startRevs)
+            } ?: derivedTripState.lastOrNull()?.revTotal ?: 0
+
+        return DerivedTripState(
+            tripId = tripId,
+            timestamp = newMeasurements.time,
+            duration = totalDuration,
+            durationDelta = durationDelta,
+            totalDistance = totalDistance,
+            distanceDelta = distanceDelta,
+            revTotal = revTotal,
+            circumference = totalDistance / revTotal,
+            slope = 0.0,
+            speedRevolutions = newMeasurements.speedRevolutions
+        )
+    }
+
     private suspend fun setTripProgress(
         old: Measurements,
         new: Measurements,
@@ -118,21 +147,6 @@ class TripInProgressService @Inject constructor() :
         val duration = accumulateTripTime(intervals)
         val trip = tripsRepository.get(tripId)
 
-        tripProgress?.let {
-            it.measurements?.speedRevolutions?.let { revs ->
-                calculateWheelCircumference(
-                    it.measurements,
-                    trip.distance ?: 0.0,
-                    revs,
-                    circumferenceState).also { newState ->
-                    circumferenceState = newState
-                    circumferenceState.circumference?.let { newCirc ->
-                        updateAutoCircumference(tripId, newCirc)
-                    }
-                }
-            }
-        }
-
         if (accurateEnough) {
             val distanceDelta = getDistance(new, old)
             val durationDelta = duration - (trip.duration ?: 0.0)
@@ -141,6 +155,33 @@ class TripInProgressService @Inject constructor() :
                 true -> (trip.distance ?: 0.0) + distanceDelta
                 else -> trip.distance ?: 0.0
             }
+
+            val sampleSize = 100
+            val varianceThreshold = 1e-6
+            derivedTripState.add(updateDerivedTripState(tripId = tripId,
+                totalDistance = totalDistance,
+                distanceDelta = distanceDelta.toDouble(),
+                totalDuration = duration,
+                durationDelta = durationDelta,
+                newMeasurements = new,
+                derivedTripState = derivedTripState))
+
+            if (autoCircumference == null) calculateWheelCircumference(
+                derivedTripState.toTypedArray(),
+                sampleSize,
+                varianceThreshold)?.let { circumference ->
+                autoCircumference = circumference
+                autoCircumference?.let { newCircumference ->
+                    updateAutoCircumference(tripId, newCircumference)
+                }
+            }
+
+            if (FeatureFlags.devBuild) derivedTripState.takeLast(sampleSize)
+                .map { it.circumference }.let {
+                    EventBus.getDefault()
+                        .post(WheelCircumferenceEvent(circumference = it.average().toFloat(),
+                            variance = it.sampleVariance()))
+                }
 
             tripsRepository.updateTripStats(
                 TripStats(id = tripId,
@@ -221,6 +262,8 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun setTripPaused(new: Measurements) {
+        if (!FeatureFlags.devBuild) derivedTripState.clear()
+
         val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
 
         val newSpeed = when (accurateEnough) {
@@ -305,7 +348,7 @@ class TripInProgressService @Inject constructor() :
             }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT })
     }
 
-    suspend fun getCombinedBiometrics(id: Long): Biometrics =
+    private suspend fun getCombinedBiometrics(id: Long): Biometrics =
         getCombinedBiometrics(id,
             System.currentTimeMillis(),
             applicationContext,
@@ -339,7 +382,7 @@ class TripInProgressService @Inject constructor() :
         lifecycleScope.launch(Dispatchers.IO) {
             tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
                 userWheelCircumference = userCircumference,
-                autoWheelCircumference = circumferenceState.circumference))
+                autoWheelCircumference = autoCircumference))
             tripsRepository.updateBiometrics(
                 getCombinedBiometrics(tripId))
         }
@@ -394,12 +437,9 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun clearState() {
-        circumferenceState = CircumferenceState(measuring = false,
-            initialCircRevs = 0,
-            initialCircDistance = 0.0,
-            circumference = null)
-
+        autoCircumference = null
         tripProgress = null
+        if (!FeatureFlags.devBuild) derivedTripState.clear()
     }
 
     private suspend fun end(tripId: Long) {

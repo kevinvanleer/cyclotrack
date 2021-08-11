@@ -92,15 +92,15 @@
 
     <TextView
         android:id="@+id/textview_accuracy"
+        android:layout_height="wrap_content"
         android:layout_width="0dp"
         android:layout_marginStart="4dp"
-        android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_medium"
         android:text="@string/zero"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="@id/image_tracking"
-        app:layout_constraintEnd_toStartOf="@id/textview_time"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/image_tracking"
         app:layout_constraintTop_toTopOf="parent" />
 
