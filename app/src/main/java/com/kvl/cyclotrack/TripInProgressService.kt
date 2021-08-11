@@ -116,11 +116,15 @@ class TripInProgressService @Inject constructor() :
         newMeasurements: Measurements,
         derivedTripState: ArrayList<DerivedTripState>,
     ): DerivedTripState {
-
-        val revTotal =
-            derivedTripState.find { it.speedRevolutions != null }?.speedRevolutions?.let { startRevs ->
+       
+        var revCount = 0
+        var distance = 0.0
+        derivedTripState.find { it.speedRevolutions != null }?.let {
+            revCount = it.speedRevolutions?.let { startRevs ->
                 newMeasurements.speedRevolutions?.minus(startRevs)
             } ?: derivedTripState.lastOrNull()?.revTotal ?: 0
+            distance = totalDistance - it.totalDistance
+        }
 
         return DerivedTripState(
             tripId = tripId,
@@ -129,8 +133,8 @@ class TripInProgressService @Inject constructor() :
             durationDelta = durationDelta,
             totalDistance = totalDistance,
             distanceDelta = distanceDelta,
-            revTotal = revTotal,
-            circumference = totalDistance / revTotal,
+            revTotal = revCount,
+            circumference = distance / revCount,
             slope = 0.0,
             speedRevolutions = newMeasurements.speedRevolutions
         )
@@ -176,7 +180,8 @@ class TripInProgressService @Inject constructor() :
                 }
             }
 
-            if (FeatureFlags.devBuild) derivedTripState.takeLast(sampleSize)
+            if (FeatureFlags.devBuild) derivedTripState.filter { it.circumference.isFinite() }
+                ?.takeLast(sampleSize)
                 .map { it.circumference }.let {
                     EventBus.getDefault()
                         .post(WheelCircumferenceEvent(circumference = it.average().toFloat(),
