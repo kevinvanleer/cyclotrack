@@ -2,6 +2,7 @@ package com.kvl.cyclotrack
 
 import android.app.ActivityManager
 import android.content.*
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.text.format.DateUtils
@@ -30,6 +31,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.util.*
+import kotlin.math.pow
 
 
 @AndroidEntryPoint
@@ -346,19 +348,28 @@ class TripInProgressFragment :
         view.setOnTouchListener(this)
 
         viewModel.gpsStatus().observe(viewLifecycleOwner, { location ->
+            val alpha = 1.0
             if (viewModel.speedSensor().value?.rpm == null || circumference == null) {
                 when (location.speed < 0.5) {
                     true -> 0.0
-                    else ->
+                    else -> {
+                        val weight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                            when (location.hasSpeedAccuracy()) {
+                                true -> (location.speedAccuracyMetersPerSecond.coerceAtMost(
+                                    10f) / 10.0 - 1).pow(8)
+                                else -> 0.0
+                            }
+                        else 0.7
                         (splitSpeedTextView.value.toString().toDoubleOrNull()
                             ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
                             .takeIf { it.isFinite() }
                             ?.let { oldSpeed ->
-                                exponentialSmoothing(0.1,
+                                exponentialSmoothing(alpha * weight,
                                     getUserSpeed(requireContext(),
                                         location.speed.toDouble()).toDouble(),
                                     oldSpeed)
                             }
+                    }
                 }.let { speed ->
                     splitSpeedTextView.value =
                         String.format("%.1f", speed)
