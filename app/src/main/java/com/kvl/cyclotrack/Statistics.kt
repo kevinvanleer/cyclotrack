@@ -69,6 +69,16 @@ fun doubleSmooth(alpha: Double, beta: Double, data: Array<Double>): List<Double>
     }
 }
 
+fun isRangeGreaterThan(left: Pair<Double, Double>, right: Double): Boolean {
+    val leftRange = Pair(left.first - left.second, left.first + left.second)
+    return leftRange.first > right
+}
+
+fun isRangeLessThan(left: Pair<Double, Double>, right: Double): Boolean {
+    val leftRange = Pair(left.first - left.second, left.first + left.second)
+    return leftRange.second < right
+}
+
 fun isRangeGreaterThan(left: Pair<Double, Double>, right: Pair<Double, Double>): Boolean {
     val leftRange = Pair(left.first - left.second, left.first + left.second)
     val rightRange = Pair(right.first - right.second, right.first + right.second)

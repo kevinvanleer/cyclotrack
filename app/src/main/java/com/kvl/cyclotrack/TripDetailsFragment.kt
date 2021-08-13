@@ -446,15 +446,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         view.findViewById<HeadingView>(R.id.trip_details_elevation).value =
             getUserAltitudeUnitLong(requireContext())
 
-
         val elevationAlpha = 0.05
-        fun getElevationChange(measurements: Array<CriticalMeasurements>): Pair<Double, Double> {
-            return smooth(elevationAlpha,
-                measurements.map { Pair(it.altitude, it.verticalAccuracyMeters!!.toDouble()) }
-                    .toTypedArray()).let {
-                accumulateAscentDescent(it)
-            }
-        }
+        fun getElevationChange(measurements: Array<CriticalMeasurements>): Pair<Double, Double> =
+            accumulateAscentDescent(measurements.map {
+                Pair(it.altitude,
+                    it.verticalAccuracyMeters!!.toDouble())
+            })
 
         fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
             var sum = 0f
