@@ -42,6 +42,31 @@ fun getDistance(
     return distanceArray[0]
 }
 
+data class Coordinate(val latitude: Double, val longitude: Double)
+
+fun getDistance(
+    curr: Coordinate,
+    prev: Coordinate,
+): Float {
+    val piRad = PI / 180
+    //L=lat; M=lng
+    //=acos(sin(measurements!L5*PI()/180)*sin(measurements!L6*PI()/180)+
+    // cos(measurements!L5*PI()/180)*cos(measurements!L6*PI()/180)*cos(measurements!M6*pi()/180-measurements!M5*pi()/180))*6371000
+    return (acos(sin(prev.latitude * piRad) *
+            sin(curr.latitude * piRad) +
+            cos(prev.latitude * piRad) *
+            cos(curr.latitude * piRad) *
+            cos((curr.longitude - prev.longitude) * piRad)) * 6371000).toFloat()
+    /*val distanceArray = floatArrayOf(0f)
+    Location.distanceBetween(curr.latitude,
+        curr.longitude,
+        prev.latitude,
+        prev.longitude,
+        distanceArray)
+    return distanceArray[0]*/
+
+}
+
 fun <A, B> zipLiveData(a: LiveData<A>, b: LiveData<B>): LiveData<Pair<A, B>> {
     return MediatorLiveData<Pair<A, B>>().apply {
         var lastA: A? = null

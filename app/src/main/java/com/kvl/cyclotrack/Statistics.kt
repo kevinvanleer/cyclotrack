@@ -1,5 +1,7 @@
 package com.kvl.cyclotrack
 
+import android.util.Log
+import kotlin.math.abs
 import kotlin.math.pow
 
 fun List<Double>.average(): Double =
@@ -47,12 +49,21 @@ fun doubleExponentialSmoothingTrend(
 ) =
     beta * (smooth - smoothLast) + (1 - beta) * trendLast
 
+fun smooth(alpha: Double, data: Array<Double>): List<Double> {
+    var smoothed = data[0]
+    return data.map { datum ->
+        smoothed = exponentialSmoothing(alpha, datum, smoothed)
+        smoothed
+    }
+}
+
 fun smooth(alpha: Double, data: Array<Pair<Double, Double>>): List<Pair<Double, Double>> {
     var smoothedFirst = data[0].first
     var smoothedSecond = data[0].second
     return data.map { datum ->
         smoothedFirst = exponentialSmoothing(alpha, datum.first, smoothedFirst)
-        smoothedSecond = exponentialSmoothing(alpha, datum.second, smoothedSecond)
+        //smoothedSecond = exponentialSmoothing(alpha, datum.second, smoothedSecond)
+        smoothedSecond = datum.second
         Pair(smoothedFirst, smoothedSecond)
     }
 }
@@ -80,32 +91,313 @@ fun isRangeLessThan(left: Pair<Double, Double>, right: Double): Boolean {
 }
 
 fun isRangeGreaterThan(left: Pair<Double, Double>, right: Pair<Double, Double>): Boolean {
-    val leftRange = Pair(left.first - left.second, left.first + left.second)
-    val rightRange = Pair(right.first - right.second, right.first + right.second)
+    val factor = 1.0
+    val leftRange = Pair(left.first - left.second / factor, left.first + left.second / factor)
+    val rightRange = Pair(right.first - right.second / factor, right.first + right.second / factor)
     return leftRange.first > rightRange.second
 }
 
 fun isRangeLessThan(left: Pair<Double, Double>, right: Pair<Double, Double>): Boolean {
-    val leftRange = Pair(left.first - left.second, left.first + left.second)
-    val rightRange = Pair(right.first - right.second, right.first + right.second)
+    val factor = 1.0
+    val leftRange = Pair(left.first - left.second / factor, left.first + left.second / factor)
+    val rightRange = Pair(right.first - right.second / factor, right.first + right.second / factor)
     return leftRange.second < rightRange.first
 }
 
-fun accumulateAscentDescent(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> {
+fun accumulateAscentDescent_kvlRange(
+    elevationData: List<Pair<Double, Double>>,
+    threshold: Double,
+): Pair<Double, Double> {
+    val logTag = "accumulateAscentDescent"
+    var totalAscent = 0.0
+    var totalDescent = 0.0
+    var lastAltitudeTurningPoint = elevationData[0]
+    var altitudeCursor = lastAltitudeTurningPoint
+    var ascending = false
+    var descending = false
+    elevationData.forEach { sample ->
+        if (!descending && isRangeGreaterThan(sample, lastAltitudeTurningPoint)) ascending = true
+        if (!ascending && isRangeLessThan(lastAltitudeTurningPoint, sample)) descending = true
+        //descending
+        if (descending) {
+            if (isRangeLessThan(sample, altitudeCursor)) altitudeCursor = sample
+            if (isRangeGreaterThan(sample, altitudeCursor)) {
+                Log.d(logTag,
+                    "Accumulating descent ${altitudeCursor.first} - ${lastAltitudeTurningPoint.first} =  ${altitudeCursor.first - lastAltitudeTurningPoint.first}")
+                totalDescent += altitudeCursor.first - lastAltitudeTurningPoint.first
+                lastAltitudeTurningPoint = altitudeCursor
+                Log.d(logTag, "Total descent = ${totalDescent}")
+                altitudeCursor = sample
+                descending = false
+            }
+        }
+        //ascending
+        if (ascending) {
+            if (isRangeGreaterThan(sample, altitudeCursor)) altitudeCursor = sample
+            if (isRangeLessThan(sample, altitudeCursor)) {
+                Log.d(logTag,
+                    "Accumulating ascent ${altitudeCursor.first} - ${lastAltitudeTurningPoint.first} =  ${
+                        altitudeCursor.first - lastAltitudeTurningPoint.first
+                    }")
+                totalAscent += altitudeCursor.first - lastAltitudeTurningPoint.first
+                lastAltitudeTurningPoint = altitudeCursor
+                Log.d(logTag, "Total ascent = ${totalAscent}")
+                altitudeCursor = sample
+                ascending = false
+            }
+        }
+    }
+    if (isRangeLessThan(altitudeCursor,
+            lastAltitudeTurningPoint)
+    ) totalDescent += altitudeCursor.first - lastAltitudeTurningPoint.first
+    if (isRangeGreaterThan(altitudeCursor,
+            lastAltitudeTurningPoint)
+    ) totalAscent += altitudeCursor.first - lastAltitudeTurningPoint.first
+    return Pair(totalAscent, totalDescent)
+}
+
+fun accumulateAscentDescent_kvl(
+    elevationData: List<Double>,
+    threshold: Double,
+): Pair<Double, Double> {
+    val logTag = "accumulateAscentDescent"
+    var totalAscent = 0.0
+    var totalDescent = 0.0
+    var lastAltitudeTurningPoint = elevationData[0]
+    var altitudeCursor = lastAltitudeTurningPoint
+    var ascending = false
+    var descending = false
+    elevationData.forEach { sample ->
+        if (!descending && (sample - lastAltitudeTurningPoint > threshold)) ascending = true
+        if (!ascending && (lastAltitudeTurningPoint - sample > threshold)) descending = true
+        //descending
+        if (descending) {
+            if (sample < altitudeCursor) altitudeCursor = sample
+            if (sample > altitudeCursor + threshold) {
+                Log.d(logTag,
+                    "Accumulating descent ${altitudeCursor} - ${lastAltitudeTurningPoint} =  ${altitudeCursor - lastAltitudeTurningPoint}")
+                totalDescent += altitudeCursor - lastAltitudeTurningPoint
+                lastAltitudeTurningPoint = altitudeCursor
+                Log.d(logTag, "Total descent = ${totalDescent}")
+                altitudeCursor = sample
+                descending = false
+            }
+        }
+        //ascending
+        if (ascending) {
+            if (sample > altitudeCursor) altitudeCursor = sample
+            if (sample < altitudeCursor - threshold) {
+                Log.d(logTag,
+                    "Accumulating ascent ${altitudeCursor} - ${lastAltitudeTurningPoint} =  ${
+                        altitudeCursor - lastAltitudeTurningPoint
+                    }")
+                totalAscent += altitudeCursor - lastAltitudeTurningPoint
+                lastAltitudeTurningPoint = altitudeCursor
+                Log.d(logTag, "Total ascent = ${totalAscent}")
+                altitudeCursor = sample
+                ascending = false
+            }
+        }
+    }
+    if (altitudeCursor < lastAltitudeTurningPoint) totalDescent += altitudeCursor - lastAltitudeTurningPoint
+    if (altitudeCursor > lastAltitudeTurningPoint) totalAscent += altitudeCursor - lastAltitudeTurningPoint
+    return Pair(totalAscent, totalDescent)
+}
+
+//const val elevationAlpha = 0.05
+//const val elevationBeta = 0.99
+
+fun accumulateAscentDescent_early(
+    elevationData: List<Pair<Double, Double>>,
+    elevationAlpha: Double,
+): Pair<Double, Double> {
+    var totalAscent = 0.0
+    var totalDescent = 0.0
+    var previous = elevationData[0].first
+
+    smooth(elevationAlpha, elevationData.toTypedArray()).forEach { smoothedAltitude ->
+        when (smoothedAltitude.first > previous) {
+            true -> totalAscent += smoothedAltitude.first - previous
+            else -> totalDescent += smoothedAltitude.first - previous
+        }
+        previous = smoothedAltitude.first
+    }
+
+    return Pair(totalAscent, totalDescent)
+}
+
+fun accumulateAscentDescent_doubleSmooth(
+    elevationData: List<Pair<Double, Double>>,
+    elevationAlpha: Double,
+    elevationBeta: Double,
+): Pair<Double, Double> {
+    var totalAscent = 0.0
+    var totalDescent = 0.0
+    var previous = elevationData[0].first
+
+    doubleSmooth(elevationAlpha, elevationBeta,
+        elevationData.map { it.first }.toTypedArray()).forEach { smoothedAltitude ->
+        when (smoothedAltitude > previous) {
+            true -> totalAscent += smoothedAltitude - previous
+            else -> totalDescent += smoothedAltitude - previous
+        }
+        previous = smoothedAltitude
+    }
+
+    /*
+    var smoothed: Double = measurements[0].altitude
+    var trend: Double = measurements[1].altitude - measurements[0].altitude
+    var smoothedLast = smoothed
+    measurements.forEach {
+        smoothed =
+            doubleExponentialSmoothing(elevationAlpha,
+                it.altitude,
+                smoothedLast, trend)
+        trend =
+            doubleExponentialSmoothingTrend(elevationBeta,
+                smoothed,
+                smoothedLast,
+                trend)
+        when (smoothed > smoothedLast) {
+            true -> totalAscent += smoothed - smoothedLast
+            else -> totalDescent += smoothed - smoothedLast
+        }
+        smoothedLast = smoothed
+    }
+*/
+    return Pair(totalAscent, totalDescent)
+}
+
+fun accumulateAscentDescent_rangeCompare(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> {
     var totalAscent = 0.0
     var totalDescent = 0.0
     var altitudeCursor = elevationData[0]
 
     elevationData.forEach { sample ->
         if (isRangeGreaterThan(sample, altitudeCursor)) {
-            totalAscent += sample.first - altitudeCursor.first
-            altitudeCursor = sample
+            if (sample.first - altitudeCursor.first > 0.5) {
+                totalAscent += sample.first - altitudeCursor.first
+                altitudeCursor = sample
+            }
         }
         if (isRangeLessThan(sample, altitudeCursor)) {
-            totalDescent += sample.first - altitudeCursor.first
-            altitudeCursor = sample
+            if (sample.first - altitudeCursor.first < -0.5) {
+                totalDescent += sample.first - altitudeCursor.first
+                altitudeCursor = sample
+            }
         }
     }
 
     return Pair(totalAscent, totalDescent)
 }
+
+data class DerivedMeasurements(
+    val timestamp: Long,
+    val duration: Long,
+    val latitude: Double,
+    val longitude: Double,
+    val distanceDelta: Double,
+    val distanceTotal: Double,
+    val slopeDelta: Double,
+    val slope: Double,
+    val slopeSlope: Double,
+    val altitudeDelta: Double,
+    val altitude: Double,
+    val accuracy: Double,
+    val verticalAccuracyMeters: Double,
+)
+
+fun getDerivedMeasurements(
+    /*lat: Double,
+    lng: Double,
+    altitude: Double,
+    accuracy: Double,
+    verticalAccuracyMeters: Double,*/
+    measurements: CriticalMeasurements,
+    previous: DerivedMeasurements?,
+): DerivedMeasurements {
+    if (previous == null) return DerivedMeasurements(
+        timestamp = measurements.time,
+        duration = 0L,
+        latitude = measurements.latitude,
+        longitude = measurements.longitude,
+        distanceDelta = 0.0,
+        distanceTotal = 0.0,
+        slopeDelta = 0.0,
+        slope = 0.0,
+        slopeSlope = 0.0,
+        altitude = measurements.altitude,
+        altitudeDelta = 0.0,
+        accuracy = measurements.accuracy.toDouble(),
+        verticalAccuracyMeters = measurements.verticalAccuracyMeters?.toDouble() ?: 0.0
+    )
+
+    val distanceDelta = getDistance(
+        Coordinate(latitude = measurements.latitude, longitude = measurements.longitude),
+        Coordinate(latitude = previous.latitude, longitude = previous.longitude)
+    )
+
+    val distanceTotal = previous.distanceTotal + distanceDelta
+
+    val altitude = exponentialSmoothing(0.05, measurements.altitude, previous.altitude)
+    val altitudeDelta = altitude - previous.altitude
+
+    val slope = altitudeDelta / distanceDelta
+    val slopeDelta = slope - previous.slope
+    val slopeSlope = slopeDelta / distanceDelta
+
+    return DerivedMeasurements(
+        timestamp = measurements.time,
+        duration = measurements.time - previous.timestamp,
+        latitude = measurements.latitude,
+        longitude = measurements.longitude,
+        distanceDelta = distanceDelta.toDouble(),
+        distanceTotal = distanceTotal,
+        slopeDelta = slopeDelta,
+        slope = slope,
+        slopeSlope = slopeSlope,
+        altitude = altitude,
+        altitudeDelta = altitudeDelta,
+        accuracy = measurements.accuracy.toDouble(),
+        verticalAccuracyMeters = measurements.verticalAccuracyMeters?.toDouble() ?: 0.0
+    )
+}
+
+fun accumulateAscentDescent_slope(
+    measurements: List<DerivedMeasurements>,
+    slopeThreshold: Double,
+): Pair<Double, Double> {
+    var last = measurements.first()
+
+    return measurements.fold(Pair(0.0, 0.0), { acc, derivedMeasurements ->
+        var ascent = acc.first
+        var descent = acc.second
+        if (abs((derivedMeasurements.slope - last.slope) / (derivedMeasurements.distanceTotal - last.distanceTotal)) < 5e-1) {
+            if (derivedMeasurements.altitudeDelta >= 0.11) ascent += derivedMeasurements.altitude - last.altitude
+            if (derivedMeasurements.altitudeDelta <= -0.11) descent += derivedMeasurements.altitude - last.altitude
+            last = derivedMeasurements
+        }
+        return@fold Pair(ascent, descent)
+    })
+}
+
+fun getAlpha(elevationData: List<Pair<Double, Double>>) =
+    elevationData.map { it.first }.let {
+        val min = it.minOrNull()!!
+        val max = it.maxOrNull()!!
+        println((max - min).toString())
+        println(max).toString()
+        println(min).toString()
+
+        //val avg = elevationData.map { d -> d.first }.average()
+        //(1.0 / (max - min).pow(2)).coerceIn(0.0, 1.0)
+        max - min
+    }
+
+fun accumulateAscentDescent(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> =
+//accumulateAscentDescent_kvl(smooth(0.05,
+//    elevationData.map { it.first }.toTypedArray()),
+//    5.0)
+//    accumulateAscentDescent_kvlRange(elevationData, 0.0)
+//accumulateAscentDescent_early(elevationData, 0.21)
+    accumulateAscentDescent_rangeCompare(elevationData)

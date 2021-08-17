@@ -170,5 +170,6 @@ dependencies {
             "org.powermock:powermock-core:$powermock_version",
             "org.powermock:powermock-module-junit4:$powermock_version",
             "org.powermock:powermock-api-mockito2:$powermock_version",
+            "org.hamcrest:hamcrest-all:1.3",
             "com.opencsv:opencsv:4.6"
 }

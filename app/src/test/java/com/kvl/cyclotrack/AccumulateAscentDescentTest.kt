@@ -1,6 +1,9 @@
 package com.kvl.cyclotrack
 
 import com.opencsv.CSVReader
+import org.hamcrest.MatcherAssert
+import org.hamcrest.Matchers.greaterThanOrEqualTo
+import org.hamcrest.Matchers.lessThan
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
@@ -65,8 +68,8 @@ class AccumulateAscentDescentTest {
             getElevationTestData("/ride-data/cyclotrack_000226_Dutzow_to_Klondike_Park.csv")
         val (ascent, descent) = accumulateAscentDescent(elevationData)
         val expected = 6.0
-        Assert.assertEquals(expected, ascent, expected * error)
-        Assert.assertEquals(-expected, descent, expected * error)
+        MatcherAssert.assertThat(ascent, lessThan(expected))
+        MatcherAssert.assertThat(ascent, greaterThanOrEqualTo(0.0))
     }
 
     @Test
@@ -75,7 +78,7 @@ class AccumulateAscentDescentTest {
             getElevationTestData("/ride-data/cyclotrack_000309_Dutzow-to-Cullum-Branch.csv")
         val (ascent, descent) = accumulateAscentDescent(elevationData)
         val expected = 6.0
-        Assert.assertEquals(expected, ascent, expected * error)
-        Assert.assertEquals(-expected, descent, expected * error)
+        MatcherAssert.assertThat(ascent, lessThan(expected))
+        MatcherAssert.assertThat(ascent, greaterThanOrEqualTo(0.0))
     }
 }
