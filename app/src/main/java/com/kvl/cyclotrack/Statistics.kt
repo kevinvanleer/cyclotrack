@@ -363,6 +363,18 @@ fun getDerivedMeasurements(
     )
 }
 
+fun accumulateAscentDescent_tryTryAgain(
+    measurements: List<DerivedMeasurements>,
+    slopeThreshold: Double,
+): Pair<Double, Double> {
+/* filter out "high frequency noise"
+   establish a window
+   slide window over data find first last max min altitudes
+   determine noise threshold within window
+ */
+    return Pair(0.0, 0.0)
+}
+
 fun accumulateAscentDescent_slope(
     measurements: List<DerivedMeasurements>,
     slopeThreshold: Double,
@@ -394,10 +406,58 @@ fun getAlpha(elevationData: List<Pair<Double, Double>>) =
         max - min
     }
 
+fun accumulateAscentDescent_production(elevationData: List<Pair<Double, Double>>) =
+    accumulateAscentDescent_rangeCompare(smooth(0.05, elevationData.toTypedArray()))
+
+fun accumulateAscentDescent_0818(
+    elevationData: List<Pair<Double, Double>>,
+): Pair<Double, Double> {
+    var totalAscent = 0.0
+    var totalDescent = 0.0
+    var previous = elevationData[0].first
+
+    var localAscent = 0.0
+    var localDescent = 0.0
+
+    var avg = elevationData[0].first
+    elevationData.map {
+        val weight = (it.second / 10 - 1).pow(8)
+        avg = exponentialSmoothing(weight, it.first, avg)
+        avg
+    }.forEach { smoothedAltitude ->
+        when (smoothedAltitude > previous) {
+            true -> localAscent += smoothedAltitude - previous
+            else -> localDescent += smoothedAltitude - previous
+        }
+        if (localAscent > 5.0) {
+            totalAscent += localAscent
+            localAscent = 0.0
+            localDescent = 0.0
+        }
+        if (localDescent < -5.0) {
+            totalDescent += localDescent
+            localAscent = 0.0
+            localDescent = 0.0
+        }
+        previous = smoothedAltitude
+    }
+
+    return Pair(totalAscent, totalDescent)
+}
+
 fun accumulateAscentDescent(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> =
 //accumulateAscentDescent_kvl(smooth(0.05,
 //    elevationData.map { it.first }.toTypedArray()),
 //    5.0)
 //    accumulateAscentDescent_kvlRange(elevationData, 0.0)
 //accumulateAscentDescent_early(elevationData, 0.21)
-    accumulateAscentDescent_rangeCompare(elevationData)
+    //accumulateAscentDescent_rangeCompare(elevationData)
+    accumulateAscentDescent_0818(elevationData)
+
+
+/*
+So far rangeCompare is the overall best but overshoots by quite bit on flat rides.
+Smoothing the data improves flat rides as one would expect, but not to the desired values.
+Additionally smoothing has a negative impact on hilly rides, reducing the total.
+ */
+
