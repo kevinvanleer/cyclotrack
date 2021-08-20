@@ -181,8 +181,7 @@ class TripInProgressService @Inject constructor() :
             }
 
             if (FeatureFlags.devBuild) derivedTripState.filter { it.circumference.isFinite() }
-                ?.takeLast(sampleSize)
-                .map { it.circumference }.let {
+                ?.takeLast(sampleSize)?.takeIf { it.isNotEmpty() }?.map { it.circumference }?.let {
                     EventBus.getDefault()
                         .post(WheelCircumferenceEvent(circumference = it.average().toFloat(),
                             variance = it.sampleVariance()))
