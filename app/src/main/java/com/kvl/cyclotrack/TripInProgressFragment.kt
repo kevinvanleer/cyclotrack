@@ -380,6 +380,7 @@ class TripInProgressFragment :
             autoCircumference?.let { c -> debugString += " / C%.3f".format(c) }
             autoCircumferenceVariance?.let { v -> debugString += " / ±%.7f".format(v) }
             debugString += " / %d°".format(location.bearing.toInt())
+            viewModel.currentProgress.value?.slope?.let { s -> debugString += " / S%.3f".format(s) }
             accuracyTextView.text = debugString
         })
 
