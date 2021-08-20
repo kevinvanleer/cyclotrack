@@ -7,6 +7,8 @@ data class DerivedTripState constructor(
     val durationDelta: Double = 0.0,
     val totalDistance: Double = 0.0,
     val distanceDelta: Double = 0.0,
+    val altitude: Double = 0.0,
+    val altitudeDelta: Double = 0.0,
     val circumference: Double = 0.0,
     val revTotal: Int = 0,
     val slope: Double = 0.0,

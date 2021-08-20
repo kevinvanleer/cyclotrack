@@ -133,6 +133,10 @@ class TripInProgressService @Inject constructor() :
             durationDelta = durationDelta,
             totalDistance = totalDistance,
             distanceDelta = distanceDelta,
+            altitude = newMeasurements.altitude,
+            altitudeDelta = derivedTripState.lastOrNull()?.altitude?.let { lastAlt ->
+                newMeasurements.altitude - lastAlt
+            } ?: 0.0,
             revTotal = revCount,
             circumference = distance / revCount,
             slope = 0.0,
@@ -216,13 +220,7 @@ class TripInProgressService @Inject constructor() :
                 ))
             }
 
-            val newSlope = calculateSlope(
-                newSpeed,
-                distanceDelta,
-                new,
-                speedThreshold,
-                tripProgress,
-                durationDelta)
+            val newSlope = calculateSlopeLeastSquaresFit(derivedTripState.takeLast(20))
 
             TripProgress(
                 measurements = new,
