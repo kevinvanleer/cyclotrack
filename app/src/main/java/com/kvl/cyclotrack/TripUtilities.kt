@@ -724,26 +724,8 @@ fun calculateSlope(
 
 fun calculateSlopeLeastSquaresFit(
     derivedTripState: List<DerivedTripState>,
-): Double {
-    //https://stats.libretexts.org/Bookshelves/Introductory_Statistics/Book%3A_Introductory_Statistics_(Shafer_and_Zhang)/10%3A_Correlation_and_Regression/10.04%3A_The_Least_Squares_Regression_Line
-
-    var sumx = 0.0
-    var sumy = 0.0
-    var sumxsq = 0.0
-    var sumxy = 0.0
-
-    derivedTripState.forEach {
-        sumx += it.totalDistance
-        sumy += it.altitude
-        sumxsq += it.totalDistance * it.totalDistance
-        sumxy += it.totalDistance * it.altitude
-    }
-
-    val ssxy = sumxy - ((1.0 / derivedTripState.size) * sumx * sumy)
-    val ssxx = sumxsq - ((1.0 / derivedTripState.size) * sumx * sumx)
-
-    return ssxy / ssxx
-}
+): Double =
+    leastSquaresFitSlope(derivedTripState.map { Pair(it.totalDistance, it.altitude) })
 
 fun calculateSlope(
     newSpeed: Float,

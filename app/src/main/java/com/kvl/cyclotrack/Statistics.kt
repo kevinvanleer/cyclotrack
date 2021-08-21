@@ -91,6 +91,27 @@ fun isRangeLessThan(left: Pair<Double, Double>, right: Pair<Double, Double>): Bo
     return leftRange.second < rightRange.first
 }
 
+fun leastSquaresFitSlope(data: List<Pair<Double, Double>>): Double {
+    //https://stats.libretexts.org/Bookshelves/Introductory_Statistics/Book%3A_Introductory_Statistics_(Shafer_and_Zhang)/10%3A_Correlation_and_Regression/10.04%3A_The_Least_Squares_Regression_Line
+
+    var sumx = 0.0
+    var sumy = 0.0
+    var sumxsq = 0.0
+    var sumxy = 0.0
+
+    data.forEach {
+        sumx += it.first
+        sumy += it.second
+        sumxsq += it.first * it.first
+        sumxy += it.first * it.second
+    }
+
+    val ssxy = sumxy - ((1.0 / data.size) * sumx * sumy)
+    val ssxx = sumxsq - ((1.0 / data.size) * sumx * sumx)
+
+    return ssxy / ssxx
+}
+
 fun accumulateAscentDescent(elevationData: List<Pair<Double, Double>>): Pair<Double, Double> {
     var totalAscent = 0.0
     var totalDescent = 0.0
