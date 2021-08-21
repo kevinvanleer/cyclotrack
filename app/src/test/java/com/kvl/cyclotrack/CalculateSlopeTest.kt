@@ -6,47 +6,6 @@ import org.junit.Test
 
 class CalculateSlopeTest {
     @Test
-    fun calculateSlopeTest_allZeros() {
-        Assert.assertEquals(0.0, calculateSlope(newSpeed = 0f,
-            newAltitude = 0.0,
-            oldAltitude = 0.0,
-            distanceDelta = 0f,
-            speedThreshold = 0f,
-            durationDelta = 0.0,
-            verticalAccuracy = 0f,
-            horizontalAccuracy = 0f,
-            oldSlope = 0.0), 0.0)
-    }
-
-    @Test
-    fun calculateSlopeTest_tooFast() {
-        Assert.assertEquals(7.0, calculateSlope(
-            newSpeed = 5f,
-            newAltitude = 1.0,
-            oldAltitude = 0.0,
-            distanceDelta = 1f,
-            speedThreshold = 0f,
-            durationDelta = 0.1,
-            verticalAccuracy = 1f,
-            horizontalAccuracy = 1f,
-            oldSlope = 7.0), 1e-6)
-    }
-
-    @Test
-    fun calculateSlopeTest_one() {
-        Assert.assertEquals(1.0, calculateSlope(
-            newSpeed = 5f,
-            newAltitude = 1.0,
-            oldAltitude = 0.0,
-            distanceDelta = 1f,
-            speedThreshold = 0f,
-            durationDelta = 1.0,
-            verticalAccuracy = 1f,
-            horizontalAccuracy = 1f,
-            oldSlope = 1.0), 1e-6)
-    }
-
-    @Test
     fun calculateSlopeLeastSquares_NaN() {
         val testData = listOf(DerivedTripState(
             tripId = -1L,
@@ -61,7 +20,7 @@ class CalculateSlopeTest {
             revTotal = 0,
             slope = 0.0,
             speedRevolutions = null))
-        Assert.assertEquals(Double.NaN, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(Double.NaN, calculateSlope(
             testData), 1e-6)
     }
 
@@ -80,7 +39,7 @@ class CalculateSlopeTest {
             revTotal = 0,
             slope = 0.0,
             speedRevolutions = null))
-        Assert.assertEquals(Double.NaN, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(Double.NaN, calculateSlope(
             testData), 1e-6)
     }
 
@@ -99,15 +58,15 @@ class CalculateSlopeTest {
             revTotal = 0,
             slope = 0.0,
             speedRevolutions = null)
-        Assert.assertEquals(1.0, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(1.0, calculateSlope(
             listOf(templateDerivedState,
                 templateDerivedState.copy(totalDistance = 10.0, altitude = 10.0))
         ), 1e-6)
-        Assert.assertEquals(0.04443139314, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(0.04443139314, calculateSlope(
             listOf(templateDerivedState.copy(altitude = 122.0980225),
                 templateDerivedState.copy(totalDistance = 2.197911051, altitude = 122.1956787))
         ), 1e-6)
-        Assert.assertEquals(0.1, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(0.1, calculateSlope(
             listOf(templateDerivedState.copy(altitude = 100.0),
                 templateDerivedState.copy(totalDistance = 50.0, altitude = 105.0))
         ), 1e-6)
@@ -156,7 +115,7 @@ class CalculateSlopeTest {
                 slope = 0.0,
                 speedRevolutions = null)
         )
-        Assert.assertEquals(1.0, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(1.0, calculateSlope(
             testData), 1e-6)
     }
 
@@ -183,7 +142,7 @@ class CalculateSlopeTest {
             templateDerivedState.copy(totalDistance = 40.0, altitude = 105.0),
             templateDerivedState.copy(totalDistance = 50.0, altitude = 104.0),
         )
-        Assert.assertEquals(0.0886, calculateSlopeLeastSquaresFit(
+        Assert.assertEquals(0.0886, calculateSlope(
             testData), 1e-3)
     }
 }

@@ -220,7 +220,7 @@ class TripInProgressService @Inject constructor() :
                 ))
             }
 
-            val newSlope = calculateSlopeLeastSquaresFit(derivedTripState.takeLast(20))
+            val newSlope = calculateSlope(derivedTripState.takeLast(20))
 
             TripProgress(
                 measurements = new,

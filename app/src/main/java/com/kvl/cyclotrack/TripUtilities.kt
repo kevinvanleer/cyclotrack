@@ -703,47 +703,9 @@ fun getSpeed(
 ): Float = if (new.speed > speedThreshold) new.speed else 0f
 
 fun calculateSlope(
-    newSpeed: Float,
-    newAltitude: Double,
-    oldAltitude: Double,
-    distanceDelta: Float,
-    speedThreshold: Float,
-    durationDelta: Double,
-    verticalAccuracy: Float,
-    horizontalAccuracy: Float,
-    oldSlope: Double,
-): Double {
-    val slopeAlpha = (verticalAccuracy + horizontalAccuracy / 20 - 1).coerceIn(0f, 1f).pow(8)
-    return if (distanceDelta != 0f) {
-        slopeAlpha * (
-                if (newSpeed > speedThreshold) ((newAltitude - oldAltitude) / distanceDelta)
-                else oldSlope
-                ) + ((1 - slopeAlpha) * oldSlope)
-    } else oldSlope
-}
-
-fun calculateSlopeLeastSquaresFit(
     derivedTripState: List<DerivedTripState>,
 ): Double =
     leastSquaresFitSlope(derivedTripState.map { Pair(it.totalDistance, it.altitude) })
-
-fun calculateSlope(
-    newSpeed: Float,
-    distanceDelta: Float,
-    new: Measurements,
-    speedThreshold: Float,
-    old: TripProgress?,
-    durationDelta: Double,
-): Double =
-    calculateSlope(newSpeed = newSpeed,
-        distanceDelta = distanceDelta,
-        newAltitude = new.altitude,
-        oldAltitude = old?.measurements?.altitude ?: 0.0,
-        speedThreshold = speedThreshold,
-        durationDelta = durationDelta,
-        verticalAccuracy = new.verticalAccuracyMeters,
-        horizontalAccuracy = new.accuracy,
-        oldSlope = old?.slope ?: 0.0)
 
 fun calculateWheelCircumference(
     derivedTripState: Array<DerivedTripState>,
