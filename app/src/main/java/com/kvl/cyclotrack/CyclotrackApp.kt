@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.preference.PreferenceManager
 import androidx.work.Configuration
 import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.HiltAndroidApp
@@ -45,7 +46,10 @@ class CyclotrackApp : Application(), Configuration.Provider {
         super.onCreate()
         instance = this
         createNotificationChannel()
-        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(
+            PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(getString(R.string.preferences_key_enable_analytics), false)
+        )
     }
 
     @Inject

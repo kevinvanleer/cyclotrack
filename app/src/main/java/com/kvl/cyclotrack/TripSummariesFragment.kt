@@ -6,18 +6,22 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import android.view.*
+import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -148,6 +152,14 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         activity?.title = "Cyclotrack"
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         rollupView = view.findViewById(R.id.trips_rollup)
+
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getBoolean(getString(R.string.preference_key_analytics_opt_in_presented), false).let {
+                if (!it) {
+                    Log.d(logTag, "Requesting analytics opt-in")
+                    requestAnalytics()
+                }
+            }
 
         viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
             Log.d("TRIP_SUMMARIES",
@@ -301,6 +313,42 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             }.show()
 
             builder.create()
+        }
+    }
+
+    private fun requestAnalytics() {
+        activity?.let {
+            AlertDialog.Builder(it)
+                .apply {
+                    val optInCheckbox =
+                        View.inflate(context,
+                            R.layout.remove_all_google_fit_dialog_option,
+                            null).findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit)
+                            .also { checkBox ->
+                                checkBox.isChecked = true
+                                checkBox.text = "Allow Cyclotrack to collect data"
+                            }
+                    setPositiveButton("OK"
+                    ) { _, _ ->
+                        Log.d("TRIP_CLEANUP_DIALOG", "CLICKED CLEANUP")
+                        PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                            FirebaseAnalytics.getInstance(requireContext())
+                                .logEvent("AnalyticsOptInDialogOk",
+                                    Bundle().apply {
+                                        putBoolean("analytics_enabled",
+                                            optInCheckbox.isChecked)
+                                    })
+                            putBoolean(getString(R.string.preferences_key_enable_analytics),
+                                optInCheckbox.isChecked)
+                            putBoolean(getString(R.string.preference_key_analytics_opt_in_presented),
+                                true)
+                            commit()
+                        }
+                    }
+                    setTitle("Data collection")
+                    setMessage("Cyclotrack would like to use Google Analytics to collect data about how you use the app to help improve it. Your participation is appreciated. Would you like to enable Google Analytics? You may change this option at any time in the settings menu. See the Cyclotrack privacy policy, available in the Settings menu, for more details.")
+                    setView(optInCheckbox.rootView)
+                }.create().show()
         }
     }
 

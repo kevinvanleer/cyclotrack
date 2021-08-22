@@ -7,11 +7,6 @@
         app:defaultValue="1"
         app:entries="@array/systems_of_measurement"
         app:entryValues="@array/systems_of_measurement_values" />
-    <SwitchPreference
-        app:key="@string/preferences_dashboard_brightness_toggle_key"
-        app:title="Dashboard brightness"
-        app:summary="Increase screen brightness during rides for better visibility"
-        app:defaultValue="true" />
     <SeekBarPreference
         app:key="@string/preferences_dashboard_brightness_key"
         app:defaultValue="50" />
@@ -34,6 +29,11 @@
         app:title="@string/preferences_sync_with_google_fit_title"
         app:summary="@string/preferences_sync_with_google_fit_summary"
         app:isPreferenceVisible="false" />
+    <SwitchPreference
+        app:key="@string/preferences_key_enable_analytics"
+        app:title="Data collection"
+        app:summary="Allow Cyclotrack to collect data to help improve user experience"
+        app:defaultValue="true" />
     <Preference
         app:key="@string/preferences_privacy_policy_key"
         app:title="Privacy policy"
