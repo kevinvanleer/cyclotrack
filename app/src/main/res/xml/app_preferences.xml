@@ -32,7 +32,7 @@
     <SwitchPreference
         app:key="@string/preferences_key_enable_analytics"
         app:title="Data collection"
-        app:summary="Allow Cyclotrack to collect data to help improve user experience"
+        app:summary="Allow Cyclotrack to collect usage data to help improve user experience"
         app:defaultValue="true" />
     <Preference
         app:key="@string/preferences_privacy_policy_key"

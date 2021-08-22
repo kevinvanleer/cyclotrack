@@ -345,7 +345,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                         }
                     }
                     setTitle("Data collection")
-                    setMessage("Cyclotrack would like to use Google Analytics to collect data about how you use the app to help improve it. Your participation is appreciated. Would you like to enable Google Analytics? You may change this option at any time in the settings menu. See the Cyclotrack privacy policy, available in the Settings menu, for more details.")
+                    setMessage("Cyclotrack would like to use Google Analytics to collect data about how you use the app to help improve it. Your participation is appreciated. Would you like to enable Google Analytics? You may change this option at any time from the settings menu. See the Cyclotrack privacy policy, also available in the Settings menu, for more details.")
                     setView(optInCheckbox.rootView)
                 }.create().show()
         }
