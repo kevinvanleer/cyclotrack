@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "503050262704",
+    "project_id": "cyclotrack",
+    "storage_bucket": "cyclotrack.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503050262704:android:f91c68ce2464bc62d00375",
+        "android_client_info": {
+          "package_name": "com.kvl.cyclotrack"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "503050262704-84rqqml8obs6f2m8vip3i7vodufb3kuk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbc2EHAsuIIwlxN-kYPNVX4JtQS5iI9ZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "503050262704-84rqqml8obs6f2m8vip3i7vodufb3kuk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
