@@ -22,10 +22,10 @@ function Privacy() {
         <h3>Privacy Policy</h3>
         Cyclotrack uses location data from GPS receiver on a user device to
         visualize speed, distance, and map a route. All data collected by
-        Cyclotrack is stored on the device. No data is transmitted from the
-        device to the developer of Cyclotrack. No data is transmitted to a third
-        party unless you explicitly enable a third party integration (e.g.
-        Google Fit).
+        Cyclotrack is stored on the device. None of your location or fitness
+        data is transmitted from the device to the developer of Cyclotrack. No
+        data is transmitted to a third party unless you explicitly enable a
+        third party integration (e.g. Google Fit).
         <h4>Google Fit</h4>A user may choose to link Cyclotrack with a Google
         Fit account. This is done by signing in to a Google account in
         Cyclotrack settings. When linked Cyclotrack will:
@@ -55,6 +55,11 @@ function Privacy() {
             , including the Limited Use requirements.
           </i>
         </span>
+        <h4>Google Analytics</h4>Cyclotrack uses Google Analytics to help
+        understand user behavior and improve the overall user experience. The
+        Advertising ID and the Secure Settings Android ID (SSAID) are not
+        collected. You may opt out of analytics collection at any time by
+        disabling &quot;Data collection&quot; in app settings.
         <Spacer height="2em" />
       </Flexbox>
     </Flexbox>
