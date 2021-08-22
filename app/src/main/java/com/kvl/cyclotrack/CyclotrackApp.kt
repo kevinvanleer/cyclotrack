@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.Build
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.google.firebase.analytics.FirebaseAnalytics
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -44,6 +45,7 @@ class CyclotrackApp : Application(), Configuration.Provider {
         super.onCreate()
         instance = this
         createNotificationChannel()
+        FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(false)
     }
 
     @Inject
