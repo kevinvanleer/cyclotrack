@@ -46,6 +46,11 @@ class CyclotrackApp : Application(), Configuration.Provider {
         super.onCreate()
         instance = this
         createNotificationChannel()
+        /*PreferenceManager.getDefaultSharedPreferences(this).edit {
+            putBoolean(getString(R.string.preference_key_analytics_opt_in_presented),
+                false)
+            commit()
+        }*/
         FirebaseAnalytics.getInstance(this).setAnalyticsCollectionEnabled(
             PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(getString(R.string.preferences_key_enable_analytics), false)

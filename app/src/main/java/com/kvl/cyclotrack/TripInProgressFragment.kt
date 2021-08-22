@@ -24,6 +24,8 @@ import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.logEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
@@ -249,6 +251,17 @@ class TripInProgressFragment :
         event.tripId.takeIf { it >= 0 }?.let { tripId ->
             initializeAfterTripCreated(tripId)
             viewModel.startTrip(tripId, viewLifecycleOwner)
+            FirebaseAnalytics.getInstance(requireContext())
+                .logEvent("StartTrip") {
+                    param("CadenceEnabled",
+                        (viewModel.cadenceSensor().value != null).compareTo(false).toLong())
+                    param("HrmEnabled",
+                        (viewModel.hrmSensor().value != null).compareTo(false).toLong())
+                    param("SpeedEnabled",
+                        (viewModel.speedSensor().value != null).compareTo(false).toLong())
+                    param("GpsEnabled",
+                        (viewModel.gpsEnabled().value != null).compareTo(false).toLong())
+                }
         }
     }
 
@@ -570,8 +583,14 @@ class TripInProgressFragment :
 
     override fun onStop() {
         super.onStop()
+
+        FirebaseAnalytics.getInstance(requireContext())
+            .logEvent("StopTrip") {
+                param("TripDuration", viewModel.currentProgress.value?.duration ?: 0.0)
+            }
         WorkManager.getInstance(requireContext())
             .enqueue(OneTimeWorkRequestBuilder<StopTripServiceWorker>().build())
+
         EventBus.getDefault().unregister(this)
     }
 

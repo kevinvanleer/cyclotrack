@@ -22,6 +22,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.logEvent
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -330,14 +331,12 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                             }
                     setPositiveButton("OK"
                     ) { _, _ ->
-                        Log.d("TRIP_CLEANUP_DIALOG", "CLICKED CLEANUP")
+                        FirebaseAnalytics.getInstance(requireContext())
+                            .logEvent("AnalyticsOptInDialogOk") {
+                                param("analytics_enabled",
+                                    optInCheckbox.isChecked.compareTo(false).toLong())
+                            }
                         PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
-                            FirebaseAnalytics.getInstance(requireContext())
-                                .logEvent("AnalyticsOptInDialogOk",
-                                    Bundle().apply {
-                                        putBoolean("analytics_enabled",
-                                            optInCheckbox.isChecked)
-                                    })
                             putBoolean(getString(R.string.preferences_key_enable_analytics),
                                 optInCheckbox.isChecked)
                             putBoolean(getString(R.string.preference_key_analytics_opt_in_presented),
