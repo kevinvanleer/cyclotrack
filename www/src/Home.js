@@ -130,6 +130,14 @@ function Home() {
           Join beta testing from Google Play on Android
         </Link>
         <Spacer height="2em" />
+        <Link
+          color="#669e58"
+          className="App-link"
+          href="https://github.com/kevinvanleer/cyclotrack"
+        >
+          Check out the source code on GitHub
+        </Link>
+        <Spacer height="2em" />
         <RouterLink
           color="#669e58"
           className="App-link"
