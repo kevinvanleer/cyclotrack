@@ -46,23 +46,24 @@ function Home() {
           <img width="25%" src={detailsTop} alt="details screenshot" />
         </Flexbox>
         <Spacer height="3em" />
-        I started Cyclotrack because I could not find a cycle computer app that
-        provided an always-on dashboard with relevant performance data. I also
-        wanted to build an app that was functional using only onboard sensors,
-        primarily GPS. And finally, I wanted a record of my past rides so I
-        could track progress toward my goals and compare with past performance.
+        I started Cyclotrack because I could not find a free cycle computer app
+        that provided an always-on dashboard with relevant performance data. I
+        also wanted to build an app that was functional using only onboard
+        sensors, primarily GPS. And finally, I wanted a record of my past rides
+        so I could track progress toward my goals and compare with past
+        performance.
         <Spacer height="1em" />
-        As I developed Cyclotrack, the shortcomings of smartphone GPS became
-        apparent. The relatively low speed of cycling, shaded bike paths,
-        buildings, and even cloudy days seemed to make tracking speed
-        frustrating and unreliable. As a result I added support for Bluetooth
-        Low Engery (BLE) heart rate, speed, and cadence sensors. This added a
-        new level of fidelity to the data available to Cyclotrack, providing a
-        much more reliable source for speed data and adding the ability to track
-        pedaling cadence. Tracking heart rate provided a missing piece of
-        information crucial to understanding how much effort I was expending on
-        my rides. Over time, I was able to identify my optimal heart rate for
-        pushing myself without burning out.
+        As I developed and tested Cyclotrack, the shortcomings of smartphone GPS
+        became apparent. The relatively low speed of cycling (compared to
+        driving), shaded bike paths, buildings, and even cloudy days seemed to
+        make tracking speed frustrating and unreliable. As a result I added
+        support for Bluetooth Low Engery (BLE) heart rate, speed, and cadence
+        sensors. This added a new level of fidelity to the data available to
+        Cyclotrack, providing a much more reliable source for speed data and
+        adding the ability to track pedaling cadence. Tracking heart rate
+        provided a missing piece of information crucial to understanding how
+        much effort I was expending on my rides. Over time, I was able to
+        identify my optimal heart rate for pushing myself without burning out.
         <Spacer height="1em" />
         I wanted to have rich data analysis without relying on cloud services or
         third-party integrations with platforms like Strava or Google Fit, so
