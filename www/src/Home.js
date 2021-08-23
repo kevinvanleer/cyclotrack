@@ -7,6 +7,7 @@ import detailsTop from './screenshot-details-1.jpg';
 import detailsTwo from './screenshot-details-2.jpg';
 import detailsThree from './screenshot-details-3.jpg';
 import detailsFour from './screenshot-details-4.jpg';
+import { DonateButton } from './components/DonateButton';
 import { Flexbox, Text, Link, Icon, Spacer } from 'kvl-react-ui';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -129,6 +130,9 @@ function Home() {
         >
           Join beta testing from Google Play on Android
         </Link>
+        <Spacer height="2em" />
+        <h3>Support Cyclotrack development</h3>
+        <DonateButton />
         <Spacer height="2em" />
         <Link
           color="#669e58"
