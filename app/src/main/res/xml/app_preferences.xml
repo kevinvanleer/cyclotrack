@@ -7,6 +7,11 @@
         app:defaultValue="1"
         app:entries="@array/systems_of_measurement"
         app:entryValues="@array/systems_of_measurement_values" />
+    <SwitchPreference
+        app:key="@string/preferences_dashboard_brightness_toggle_key"
+        app:title="Dashboard brightness"
+        app:summary="Increase screen brightness during rides for better visibility"
+        app:defaultValue="true" />
     <SeekBarPreference
         app:key="@string/preferences_dashboard_brightness_key"
         app:defaultValue="50" />
