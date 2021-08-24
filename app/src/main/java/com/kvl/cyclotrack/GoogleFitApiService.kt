@@ -561,20 +561,28 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    fun deleteTrip(trip: Trip, timeStates: Array<TimeState>) {
+    fun deleteTrip(tripId: Long, startTime: Long, endTime: Long) {
         val request = DataDeleteRequest.Builder()
-            .setTimeInterval(getStartTime(timeStates)!!,
-                getEndTime(timeStates)!!,
+            .setTimeInterval(startTime,
+                endTime,
                 TimeUnit.MILLISECONDS)
             .deleteAllData()
             .deleteAllSessions().build()
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
             ?.deleteData(request)
-            ?.addOnSuccessListener { Log.d(logTag, "Removing trip ${trip.id} from Google Fit") }
+            ?.addOnSuccessListener { Log.d(logTag, "Removing trip ${tripId} from Google Fit") }
             ?.addOnFailureListener {
                 Log.e(logTag,
-                    "Failed to remove trip ${trip.id} from Google Fit", it)
+                    "Failed to remove trip ${tripId} from Google Fit", it)
             }
+    }
+
+    fun deleteTrip(trip: Trip, timeStates: Array<TimeState>) {
+        timeStates.takeIf { it.isNotEmpty() }?.let {
+            deleteTrip(trip.id!!, getStartTime(it)!!, getEndTime(it)!!)
+        } ?: deleteTrip(trip.id!!,
+            trip.timestamp,
+            (trip.timestamp + (trip.duration?.times(1000) ?: 0L).toLong()))
     }
 
     fun deleteAllData() {
