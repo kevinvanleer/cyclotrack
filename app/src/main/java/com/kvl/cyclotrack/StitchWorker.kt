@@ -36,6 +36,9 @@ class StitchWorker @AssistedInject constructor(
     @Inject
     lateinit var sharedPreferences: SharedPreferences
 
+    @Inject
+    lateinit var googleFitApiService: GoogleFitApiService
+
     override suspend fun doWork(): Result {
         Log.d(logTag, "Doing work...")
         val trips = inputData.getLongArray("tripIds") ?: return Result.failure()
@@ -64,6 +67,8 @@ class StitchWorker @AssistedInject constructor(
                     }))
             }
             Log.d(logTag, "Removing trip: ${tripId}")
+            googleFitApiService.deleteTrip(trip = tripsRepository.get(tripId),
+                timeStates = timeStateRepository.getTimeStates(tripId))
             tripsRepository.removeTrip(tripId)
         }
 
@@ -76,9 +81,10 @@ class StitchWorker @AssistedInject constructor(
         Log.d(logTag, "Processing trip splits: ${destinationTrip.id}")
         splitRepository.removeTripSplits(destinationTrip.id)
 
+        val destinationTimeStates = timeStateRepository.getTimeStates(destinationTrip.id)
         val splits = calculateSplits(destinationTrip.id,
             measurementsRepository.getCritical(destinationTrip.id),
-            timeStateRepository.getTimeStates(destinationTrip.id),
+            destinationTimeStates,
             PreferenceManager.getDefaultSharedPreferences(applicationContext)).toTypedArray()
         splitRepository.addSplits(splits)
 
@@ -92,6 +98,12 @@ class StitchWorker @AssistedInject constructor(
             userWheelCircumference = destinationTrip.userWheelCircumference,
             autoWheelCircumference = destinationTrip.autoWheelCircumference))
 
+        measurementsRepository.getCritical(destinationTrip.id).let { measurements ->
+            googleFitApiService.updateDatasets(measurements,
+                getEffectiveCircumference(destinationTrip, measurements) ?: getUserCircumference(
+                    applicationContext))
+            googleFitApiService.updateSession(destinationTrip, destinationTimeStates)
+        }
         return Result.success()
     }
 }
