@@ -408,7 +408,7 @@ fun metersToUserCircumference(meters: Float, storedCircumference: String?): Stri
             else -> String.format("%.3f", meters)
         }
     } catch (e: NumberFormatException) {
-        Log.e("TRIP_UTILS_PREF", "Couldn't parse wheel circumference")
+        Log.e("TRIP_UTILS_PREF", "metersToUserCircumference: Couldn't parse wheel circumference")
         String.format("%.3f", meters)
     }
 }
@@ -432,7 +432,7 @@ fun userCircumferenceToMeters(input: String?): Float? {
             else -> null
         }
     } catch (e: NumberFormatException) {
-        Log.e("TRIP_UTILS_PREF", "Couldn't parse wheel circumference")
+        Log.e("TRIP_UTILS_PREF", "userCircumferenceToMeters: Couldn't parse wheel circumference")
         null
     }
 }
