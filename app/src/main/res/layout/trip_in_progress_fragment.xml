@@ -12,18 +12,20 @@
         android:id="@+id/textview_distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginVertical="@dimen/tip_measurement_padding"
         app:layout_constraintBottom_toTopOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        measurement_view:textSize="60sp" />
+        measurement_view:textSize="60sp"
+        measurement_view:autoShrinkText="false" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_heart_rate"
         android:layout_width="0dp"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
+        measurement_view:autoShrinkText="true"
         app:layout_constraintBottom_toTopOf="@id/textview_average_speed"
         app:layout_constraintEnd_toStartOf="@id/textview_split_speed"
         app:layout_constraintStart_toStartOf="parent"
@@ -32,8 +34,9 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_split_speed"
         android:layout_width="0dp"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
+        measurement_view:autoShrinkText="true"
         app:layout_constraintBottom_toBottomOf="@id/textview_heart_rate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/textview_heart_rate" />
@@ -41,8 +44,9 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_average_speed"
         android:layout_width="0dp"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
+        measurement_view:autoShrinkText="true"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toTopOf="@id/textview_time"
         app:layout_constraintEnd_toStartOf="@id/textview_speed"
@@ -52,8 +56,9 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_speed"
         android:layout_width="0dp"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
+        measurement_view:autoShrinkText="true"
         android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/textview_average_speed"
@@ -63,10 +68,11 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_duration"
         android:layout_width="0dp"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
+        measurement_view:autoShrinkText="true"
         android:textAppearance="@style/DashboardFontAppearance"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/textview_bearing"
         app:layout_constraintEnd_toStartOf="@+id/textview_time"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/textview_speed" />
@@ -74,8 +80,9 @@
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/textview_time"
         android:layout_width="0dp"
-        android:padding="@dimen/tip_measurement_padding"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
+        measurement_view:autoShrinkText="true"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/textview_duration"
         app:layout_constraintEnd_toEndOf="parent"
@@ -131,22 +138,26 @@
     <Button
         android:id="@+id/pause_button"
         android:layout_width="match_parent"
-        android:layout_height="150dp"
+        android:layout_height="0.9in"
         android:fontFamily="@font/orbitron_medium"
         android:text="@string/pause_label"
         android:textColor="#FFFFFF"
-        android:textSize="36sp"
+        android:textSize="0.2in"
+        android:maxLines="1"
+        android:ellipsize="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/stop_button"
         android:layout_width="0dp"
-        android:layout_height="150dp"
+        android:layout_height="0.9in"
         android:fontFamily="@font/orbitron_medium"
         android:text="@string/stop_label"
         android:textColor="#FFFFFF"
-        android:textSize="36sp"
+        android:textSize="0.2in"
+        android:maxLines="1"
+        android:ellipsize="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/resume_button"
         app:layout_constraintStart_toStartOf="parent" />
@@ -154,12 +165,14 @@
     <Button
         android:id="@+id/resume_button"
         android:layout_width="0dp"
-        android:layout_height="150dp"
+        android:layout_height="0.9in"
         android:fontFamily="@font/orbitron_medium"
         android:text="@string/resume_label"
         android:textAppearance="@style/DashboardFontAppearance"
         android:textColor="#FFFFFF"
-        android:textSize="36sp"
+        android:textSize="0.2in"
+        android:maxLines="1"
+        android:ellipsize="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/stop_button" />

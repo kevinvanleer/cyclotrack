@@ -4,5 +4,6 @@
         <attr name="textSize" format="dimension" />
         <attr name="value" format="string" />
         <attr name="label" format="string" />
+        <attr name="autoShrinkText" format="boolean" />
     </declare-styleable>
 </resources>
