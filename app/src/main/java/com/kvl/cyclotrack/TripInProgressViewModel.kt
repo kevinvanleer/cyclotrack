@@ -44,11 +44,30 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
-    fun gpsEnabled(): LiveData<Boolean> = gpsService.accessGranted
-    fun gpsStatus(): LiveData<Location> = gpsService
-    fun hrmSensor(): LiveData<HrmData> = bleService.hrmSensor
-    fun cadenceSensor(): LiveData<CadenceData> = bleService.cadenceSensor
-    fun speedSensor(): LiveData<SpeedData> = bleService.speedSensor
+   
+    val gpsEnabled: LiveData<Boolean>
+        get() = gpsService.accessGranted
+
+    val gpsStatus: LiveData<Location>
+        get() = gpsService
+
+    val hrmSensor: LiveData<HrmData>
+        get() = bleService.hrmSensor
+
+    val cadenceSensor: LiveData<CadenceData>
+        get() = bleService.cadenceSensor
+
+    val speedSensor: LiveData<SpeedData>
+        get() = bleService.speedSensor
+
+    val currentProgress: LiveData<TripProgress>
+        get() = _currentProgress
+
+    val currentTime: LiveData<Double>
+        get() = _currentTime
+
+    val lastSplit: LiveData<Split>
+        get() = _lastSplitLive
 
     var tripId: Long? = null
 
@@ -72,14 +91,6 @@ class TripInProgressViewModel @Inject constructor(
         }
     }
 
-    val currentProgress: LiveData<TripProgress>
-        get() = _currentProgress
-
-    val currentTime: LiveData<Double>
-        get() = _currentTime
-
-    val lastSplit: LiveData<Split>
-        get() = _lastSplitLive
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onTripProgressEvent(event: TripProgressEvent) {

@@ -253,14 +253,22 @@ class TripInProgressFragment :
             viewModel.startTrip(tripId, viewLifecycleOwner)
             FirebaseAnalytics.getInstance(requireContext())
                 .logEvent("StartTrip") {
-                    param("CadenceEnabled",
-                        (viewModel.cadenceSensor().value != null).compareTo(false).toLong())
-                    param("HrmEnabled",
-                        (viewModel.hrmSensor().value != null).compareTo(false).toLong())
-                    param("SpeedEnabled",
-                        (viewModel.speedSensor().value != null).compareTo(false).toLong())
-                    param("GpsEnabled",
-                        (viewModel.gpsEnabled().value != null).compareTo(false).toLong())
+                    param(
+                        "CadenceEnabled",
+                        (viewModel.cadenceSensor.value != null).compareTo(false).toLong()
+                    )
+                    param(
+                        "HrmEnabled",
+                        (viewModel.hrmSensor.value != null).compareTo(false).toLong()
+                    )
+                    param(
+                        "SpeedEnabled",
+                        (viewModel.speedSensor.value != null).compareTo(false).toLong()
+                    )
+                    param(
+                        "GpsEnabled",
+                        (viewModel.gpsEnabled.value != null).compareTo(false).toLong()
+                    )
                 }
         }
     }
@@ -349,7 +357,7 @@ class TripInProgressFragment :
         splitSpeedTextView.label =
             "GPS ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
 
-        fun hasHeartRate() = viewModel.hrmSensor().value?.bpm ?: 0 > 0
+        fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
 
         accuracyTextView.text = "-.-"
 
@@ -360,16 +368,17 @@ class TripInProgressFragment :
 
         view.setOnTouchListener(this)
 
-        viewModel.gpsStatus().observe(viewLifecycleOwner, { location ->
+        viewModel.gpsStatus.observe(viewLifecycleOwner, { location ->
             val alpha = 1.0
-            if (viewModel.speedSensor().value?.rpm == null || circumference == null) {
+            if (viewModel.speedSensor.value?.rpm == null || circumference == null) {
                 when (location.speed < 0.5) {
                     true -> 0.0
                     else -> {
                         val weight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                             when (location.hasSpeedAccuracy()) {
                                 true -> (location.speedAccuracyMetersPerSecond.coerceAtMost(
-                                    10f) / 10.0 - 1).pow(8)
+                                    10f
+                                ) / 10.0 - 1).pow(8)
                                 else -> 0.0
                             }
                         else 0.7
@@ -414,12 +423,7 @@ class TripInProgressFragment :
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
         })
-        /*viewModel.getSensorData().observe(this, object : Observer<SensorModel> {
-            override fun onChanged(it: SensorModel) {
-                Log.d(TAG, "Sensor observer detected change")
-                //heartRateTextView.text = String.format("%.1f", it.tilt?.get(0))
-            }
-        })*/
+
         viewModel.currentTime.observe(viewLifecycleOwner, {
             durationTextView.value = DateUtils.formatElapsedTime((it).toLong())
         })
@@ -431,7 +435,7 @@ class TripInProgressFragment :
                         (it.distance / it.duration.coerceAtLeast(0.0001))))
         })
 
-        viewModel.gpsEnabled().observe(viewLifecycleOwner, { status ->
+        viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->
             if (!status && gpsEnabled) {
                 gpsEnabled = false
                 trackingImage.visibility = View.INVISIBLE
@@ -440,12 +444,14 @@ class TripInProgressFragment :
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
                     builder.apply {
-                        setPositiveButton("ENABLE"
+                        setPositiveButton(
+                            "ENABLE"
                         ) { _, _ ->
                             Log.d("TIP_GPS_DISABLED", "CLICKED ENABLE")
                             turnOnGps()
                         }
-                        setNegativeButton("CANCEL"
+                        setNegativeButton(
+                            "CANCEL"
                         ) { _, _ ->
                             Log.d("TIP_GPS_DISABLED", "CLICKED CANCEL")
                             findNavController().navigate(R.id.action_finish_trip)
@@ -464,7 +470,7 @@ class TripInProgressFragment :
             }
         })
 
-        viewModel.hrmSensor().observe(viewLifecycleOwner, {
+        viewModel.hrmSensor.observe(viewLifecycleOwner, {
             Log.d(logTag, "hrm battery: ${it.batteryLevel}")
             Log.d(logTag, "hrm bpm: ${it.bpm}")
             if (it.bpm != null) {
@@ -474,7 +480,7 @@ class TripInProgressFragment :
             if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
                 "${it.batteryLevel}%"
         })
-        viewModel.cadenceSensor().observe(viewLifecycleOwner, {
+        viewModel.cadenceSensor.observe(viewLifecycleOwner, {
             Log.d(logTag, "cadence battery: ${it.batteryLevel}")
             Log.d(logTag, "cadence: ${it.rpm}")
             if (it.rpm != null) {
@@ -487,16 +493,20 @@ class TripInProgressFragment :
             if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
                 "${it.batteryLevel}%"
         })
-        viewModel.speedSensor().observe(viewLifecycleOwner, {
+        viewModel.speedSensor.observe(viewLifecycleOwner, {
             Log.d(logTag, "speed battery: ${it.batteryLevel}")
             Log.d(logTag, "speed rpm: ${it.rpm}")
             if (it.rpm != null && circumference != null) {
                 splitSpeedTextView.label =
                     getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
                 splitSpeedTextView.value = when {
-                    it.rpm.isFinite() && it.rpm < 1e4f -> String.format("%.1f",
-                        getUserSpeed(requireContext(),
-                            it.rpm / 60 * circumference!!))
+                    it.rpm.isFinite() && it.rpm < 1e4f -> String.format(
+                        "%.1f",
+                        getUserSpeed(
+                            requireContext(),
+                            it.rpm / 60 * circumference!!
+                        )
+                    )
                     else -> splitSpeedTextView.value
                 }
             }
@@ -568,7 +578,7 @@ class TripInProgressFragment :
             hour,
             Calendar.getInstance().get(Calendar.MINUTE))
         val amPm = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
-        if (viewModel.cadenceSensor().value?.rpm == null) {
+        if (viewModel.cadenceSensor.value?.rpm == null) {
             clockView.value = time
             clockView.label = amPm
         } else {

@@ -49,13 +49,13 @@ class AllDataFragment : Fragment() {
         val allData = MediatorLiveData<AllData>()
         allData.value = AllData()
 
-        allData.addSource(viewModel.speedSensor()) {
+        allData.addSource(viewModel.speedSensor) {
             allData.value = allData.value?.copy(speed = it)
         }
-        allData.addSource(viewModel.cadenceSensor()) {
+        allData.addSource(viewModel.cadenceSensor) {
             allData.value = allData.value?.copy(cadence = it)
         }
-        allData.addSource(viewModel.hrmSensor()) {
+        allData.addSource(viewModel.hrmSensor) {
             allData.value = allData.value?.copy(hrm = it)
         }
         allData.addSource(viewModel.currentProgress) {
