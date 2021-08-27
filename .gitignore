@@ -17,7 +17,8 @@ cyclotrack-keystore
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 /.idea/inspectionProfiles
-/.idea/misc.xml
+/.idea/deploymentTargetDropDown.xml
+
 
 .DS_Store
 /build
