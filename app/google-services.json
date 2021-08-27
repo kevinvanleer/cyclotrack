@@ -36,6 +36,35 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:503050262704:android:b4f6a322c9d2cf46d00375",
+        "android_client_info": {
+          "package_name": "com.kvl.cyclotrack.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "503050262704-84rqqml8obs6f2m8vip3i7vodufb3kuk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbc2EHAsuIIwlxN-kYPNVX4JtQS5iI9ZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "503050262704-84rqqml8obs6f2m8vip3i7vodufb3kuk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:503050262704:android:ba67bd8c05f9763cd00375",
         "android_client_info": {
           "package_name": "com.kvl.cyclotrack.dev"
