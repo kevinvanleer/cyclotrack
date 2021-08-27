@@ -611,8 +611,8 @@ class TripInProgressFragment :
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-        Log.v("TIP_FRAG", event.toString())
-        Log.v("TIP_FRAG", "current state = ${viewModel.currentState}")
+        Log.v(logTag, event.toString())
+        Log.v(logTag, "viewModel.currentState = ${viewModel.currentState}")
 
         return when (event?.action) {
             MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {

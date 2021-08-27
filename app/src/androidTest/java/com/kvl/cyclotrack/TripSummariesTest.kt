@@ -1,6 +1,8 @@
 package com.kvl.cyclotrack
 
 import android.os.SystemClock
+import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
 import androidx.test.espresso.action.ViewActions.click
@@ -43,6 +45,10 @@ class TripSummariesTest {
     val locationPermissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(android.Manifest.permission.ACCESS_FINE_LOCATION)
 
+    @Rule
+    @JvmField
+    var repeatRule = RepeatRule()
+
     @Inject
     lateinit var tripsDao: TripDao
 
@@ -50,6 +56,20 @@ class TripSummariesTest {
     fun init() {
         hiltRule.inject()
         tripsDao.wipe()
+
+        PreferenceManager.getDefaultSharedPreferences(getInstrumentation().targetContext.applicationContext)
+            .edit {
+                putBoolean(
+                    getInstrumentation().targetContext.applicationContext.getString(
+                        R.string.preference_key_analytics_opt_in_presented
+                    ), true
+                )
+                putBoolean(
+                    getInstrumentation().targetContext.applicationContext.getString(
+                        R.string.preferences_key_enable_analytics
+                    ), false
+                )
+            }
     }
 
     @Test
@@ -72,12 +92,12 @@ class TripSummariesTest {
     }
 
     @Test
+    @Repeat(10)
     fun test02_allDataViewStartRide() {
         onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(click())
         //assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
         onView(withText("START")).check(matches(isDisplayed())).perform(click())
 
-        //assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
         onView(withId(R.id.resume_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(CoreMatchers.not(isDisplayed())))
@@ -93,7 +113,7 @@ class TripSummariesTest {
     }
 
     @Test
-    fun test03_allDataViewPauseTrip() {
+    fun test03_startPauseResumePauseStop() {
         onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(click())
         //assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
 
@@ -127,7 +147,7 @@ class TripSummariesTest {
     }
 
     @Test
-    fun test04_allDataViewPauseTrip() {
+    fun test04_fiveSecondTripTrip() {
         onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(click())
         //assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
 

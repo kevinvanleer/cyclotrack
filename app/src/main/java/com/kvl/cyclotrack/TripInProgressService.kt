@@ -374,8 +374,8 @@ class TripInProgressService @Inject constructor() :
 
         lifecycleScope.launch(Dispatchers.IO) {
             tripId = tripsRepository.createNewTrip().also { id ->
-                EventBus.getDefault().post(StartTripEvent(id))
                 timeStateRepository.appendTimeState(TimeState(id, TimeStateEnum.START))
+                EventBus.getDefault().post(StartTripEvent(id))
                 Log.d(logTag, "created new trip with id ${id}")
             }
         }.join()
