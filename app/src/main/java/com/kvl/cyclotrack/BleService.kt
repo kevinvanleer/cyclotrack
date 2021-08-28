@@ -2,6 +2,7 @@ package com.kvl.cyclotrack
 
 import android.app.Application
 import android.bluetooth.*
+import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
@@ -55,7 +56,7 @@ class BleService @Inject constructor(
     var cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
     var speedSensor = MutableLiveData(SpeedData(null, null, null, null))
 
-    private val bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+    private lateinit var bluetoothLeScanner: BluetoothLeScanner
 
     private val updateNotificationDescriptorId = "2902"
     private val cadenceSpeedGattServiceId = "1816"
@@ -373,9 +374,13 @@ class BleService @Inject constructor(
             return
         }
 
+        bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+
         val myMacs =
-            sharedPreferences.getStringSet(context.resources.getString(R.string.preferences_paired_ble_devices_key),
-                HashSet())?.map {
+            sharedPreferences.getStringSet(
+                context.resources.getString(R.string.preferences_paired_ble_devices_key),
+                HashSet()
+            )?.map {
                 try {
                     Gson().fromJson(it, ExternalSensor::class.java)
                 } catch (e: JsonSyntaxException) {

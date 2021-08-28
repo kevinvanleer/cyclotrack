@@ -16,17 +16,16 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
     LiveData<SensorModel>() {
     private var sensorManager: SensorManager =
         context.getSystemService(SENSOR_SERVICE) as SensorManager
-    private var accelerometer: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-    private var gravity: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
-    private var gyroscope: Sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     private val accListener = AccelerometerEventListener()
     private val gravityListener = GravityEventListener()
     private val gyroListener = GyroscopeEventListener()
 
     inner class AccelerometerEventListener : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
-            Log.v("SENSOR",
-                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}")
+            Log.v(
+                "SENSOR",
+                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}"
+            )
 
             var newAccelerometerAverage: FloatArray =
                 value?.accelerometerAverage?.copyOf() ?: event.values.copyOf()
@@ -36,7 +35,8 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
                 newAccelerometerAverage[i] =
                     alpha * event.values[i] + (1 - alpha) * newAccelerometerAverage[i]
             }
-            value = SensorModel(gravity = value?.gravity,
+            value = SensorModel(
+                gravity = value?.gravity,
                 gyroscope = value?.gyroscope,
                 gyroscopeAverage = value?.gyroscopeAverage,
                 tilt = value?.tilt,
@@ -98,8 +98,23 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
 
     override fun onActive() {
         Log.d("UI", "Activating sensor live data")
-        sensorManager.registerListener(gravityListener, gravity, SensorManager.SENSOR_DELAY_NORMAL)
-        sensorManager.registerListener(gyroListener, gyroscope, SensorManager.SENSOR_DELAY_NORMAL)
+        /*sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let { accSensor ->
+            sensorManager.registerListener(gravityListener, accSensor, SensorManager.SENSOR_DELAY_NORMAL)
+        }*/
+        sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)?.let { gravity ->
+            sensorManager.registerListener(
+                gravityListener,
+                gravity,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+        sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)?.let { gyroscope ->
+            sensorManager.registerListener(
+                gyroListener,
+                gyroscope,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
     }
 
     override fun onInactive() {
