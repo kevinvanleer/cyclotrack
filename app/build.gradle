@@ -30,8 +30,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 23
         targetSdkVersion 30
-        versionCode 31
-        versionName "2.5.1"
+        versionCode 32
+        versionName "No crash BLE/GMS"
 
         //testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunner "com.kvl.cyclotrack.CustomTestRunner"
