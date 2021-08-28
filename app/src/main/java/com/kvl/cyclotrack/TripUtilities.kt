@@ -277,72 +277,76 @@ suspend fun plotPath(
         var lastLng = 0.0
 
         var timeStateIdx = 0
-    paths.add(PolylineOptions())
+        paths.add(PolylineOptions())
 
-    fun currTimeState(): TimeState? {
-        return try {
-            timeStates?.get(timeStateIdx)
-        } catch (e: ArrayIndexOutOfBoundsException) {
-            null
+        fun currTimeState(): TimeState? {
+            return try {
+                timeStates?.get(timeStateIdx)
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                null
+            }
         }
-    }
 
-    fun nextTimeState(): TimeState? {
-        return try {
-            timeStates?.get(timeStateIdx + 1)
-        } catch (e: ArrayIndexOutOfBoundsException) {
-            null
+        fun nextTimeState(): TimeState? {
+            return try {
+                timeStates?.get(timeStateIdx + 1)
+            } catch (e: ArrayIndexOutOfBoundsException) {
+                null
+            }
         }
-    }
 
-    measurements.forEach {
-        while (it.time > nextTimeState()?.timestamp ?: Long.MAX_VALUE) {
-            ++timeStateIdx
+        measurements.forEach {
+            while (it.time > nextTimeState()?.timestamp ?: Long.MAX_VALUE) {
+                ++timeStateIdx
+                if (isTripInProgress(currTimeState()?.state)) {
+                    paths.add(PolylineOptions())
+                    lastLat = it.latitude
+                    lastLng = it.longitude
+                }
+            }
+
             if (isTripInProgress(currTimeState()?.state)) {
-                paths.add(PolylineOptions())
+                if (lastLat != 0.0 && lastLng != 0.0) {
+                    val distanceArray = floatArrayOf(0f)
+                    Location.distanceBetween(
+                        lastLat,
+                        lastLng,
+                        it.latitude,
+                        it.longitude,
+                        distanceArray
+                    )
+                    totalDistance += distanceArray[0]
+                }
                 lastLat = it.latitude
                 lastLng = it.longitude
+                paths.last().add(LatLng(it.latitude, it.longitude))
+                northeastLat = max(northeastLat, it.latitude)
+                northeastLng = max(northeastLng, it.longitude)
+                southwestLat = min(southwestLat, it.latitude)
+                southwestLng = min(southwestLng, it.longitude)
             }
         }
+        var bounds: LatLngBounds? = null
+        try {
+            bounds =
+                LatLngBounds(LatLng(southwestLat, southwestLng), LatLng(northeastLat, northeastLng))
+        } catch (err: IllegalArgumentException) {
+            if (measurements.isNotEmpty()) {
+                val boundsBuilder = LatLngBounds.Builder()
+                var included = false
 
-        if (isTripInProgress(currTimeState()?.state)) {
-            if (lastLat != 0.0 && lastLng != 0.0) {
-                val distanceArray = floatArrayOf(0f)
-                Location.distanceBetween(lastLat,
-                    lastLng,
-                    it.latitude,
-                    it.longitude,
-                    distanceArray)
-                totalDistance += distanceArray[0]
-            }
-            lastLat = it.latitude
-            lastLng = it.longitude
-            paths.last().add(LatLng(it.latitude, it.longitude))
-            northeastLat = max(northeastLat, it.latitude)
-            northeastLng = max(northeastLng, it.longitude)
-            southwestLat = min(southwestLat, it.latitude)
-            southwestLng = min(southwestLng, it.longitude)
-        }
-    }
-    var bounds: LatLngBounds? = null
-    try {
-        bounds =
-            LatLngBounds(LatLng(southwestLat, southwestLng), LatLng(northeastLat, northeastLng))
-    } catch (err: IllegalArgumentException) {
-        if (measurements.isNotEmpty()) {
-            val boundsBuilder = LatLngBounds.Builder()
-            var included = false
-
-            measurements.forEach {
+                measurements.forEach {
                     boundsBuilder.include(LatLng(it.latitude, it.longitude))
                     included = true
+                }
+                if (included) bounds = boundsBuilder.build()
             }
-            if (included) bounds = boundsBuilder.build()
+            Log.d(
+                "PLOT_PATH",
+                String.format("Bounds could not be calculated: path size = %d", measurements.size)
+            )
         }
-        Log.d("PLOT_PATH",
-            String.format("Bounds could not be calculated: path size = %d", measurements.size))
-    }
-        return@withContext MapPath(paths.toTypedArray(), bounds)
+        MapPath(paths.toTypedArray(), bounds)
     }
 
 const val METERS_TO_FEET = 3.28084

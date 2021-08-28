@@ -413,8 +413,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         mapView.getMapAsync {
             Log.d(TAG, "GOT MAP")
             map = it
-            map.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(),
-                R.raw.summary_map_style))
+            map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(),
+                    R.raw.summary_map_style
+                )
+            )
             map.uiSettings.setAllGesturesEnabled(false)
         }
 
@@ -992,15 +996,19 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val thisFragment = this
                     viewLifecycleOwner.lifecycleScope.launch {
                         val mapData = plotPath(tripMeasurements, timeStates)
-                        if (mapData.bounds != null) {
+                        if (this@TripDetailsFragment::map.isInitialized && mapData.bounds != null) {
                             Log.d(TAG, "Plotting path")
                             mapData.paths.forEach { path ->
                                 path.startCap(RoundCap())
                                 path.endCap(RoundCap())
                                 path.width(5f)
-                                path.color(ResourcesCompat.getColor(resources,
-                                    R.color.colorAccent,
-                                    null))
+                                path.color(
+                                    ResourcesCompat.getColor(
+                                        resources,
+                                        R.color.colorAccent,
+                                        null
+                                    )
+                                )
                                 map.addPolyline(path)
                             }
                             try {
@@ -1228,22 +1236,25 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         scrollView.startAnimation(marginAnimation)
 
         var camFactory: CameraUpdate? = null
-        when (newHeight) {
-            maxGuide.top -> {
-                if (this::maxCameraPosition.isInitialized) {
-                    camFactory = CameraUpdateFactory.newCameraPosition(maxCameraPosition)
+
+        if (this::map.isInitialized) {
+            when (newHeight) {
+                maxGuide.top -> {
+                    if (this::maxCameraPosition.isInitialized) {
+                        camFactory = CameraUpdateFactory.newCameraPosition(maxCameraPosition)
+                    }
+                    map.uiSettings.setAllGesturesEnabled(true)
                 }
-                map.uiSettings.setAllGesturesEnabled(true)
-            }
-            else -> {
-                if (this::maxCameraPosition.isInitialized) {
-                    camFactory = CameraUpdateFactory.newCameraPosition(defaultCameraPosition)
+                else -> {
+                    if (this::maxCameraPosition.isInitialized) {
+                        camFactory = CameraUpdateFactory.newCameraPosition(defaultCameraPosition)
+                    }
+                    map.uiSettings.setAllGesturesEnabled(false)
                 }
-                map.uiSettings.setAllGesturesEnabled(false)
             }
-        }
-        if (camFactory != null) {
-            map.animateCamera(camFactory, 700, null)
+            if (camFactory != null) {
+                map.animateCamera(camFactory, 700, null)
+            }
         }
 
         return true

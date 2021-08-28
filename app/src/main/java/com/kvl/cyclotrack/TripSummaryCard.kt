@@ -101,8 +101,10 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
     fun drawPath(polyline: PolylineOptions, latLngBounds: LatLngBounds) {
         Log.d("TRIP_SUMMARY_CARD", "DRAW PATH")
         path = polyline
-        map.addPolyline(polyline)
-        map.moveCamera(newLatLngBounds(latLngBounds, 1000, 1000, 100))
+        if (this::map.isInitialized) {
+            map.addPolyline(polyline)
+            map.moveCamera(newLatLngBounds(latLngBounds, 1000, 1000, 100))
+        }
     }
 
     override fun onFinishInflate() {
