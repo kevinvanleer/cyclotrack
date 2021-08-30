@@ -17,6 +17,7 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
     private var sensorManager: SensorManager =
         context.getSystemService(SENSOR_SERVICE) as SensorManager
     private val accListener = AccelerometerEventListener()
+    private val barometerListener = PressureEventListener()
     private val gravityListener = GravityEventListener()
     private val gyroListener = GyroscopeEventListener()
 
@@ -27,7 +28,7 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
                 "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}"
             )
 
-            var newAccelerometerAverage: FloatArray =
+            val newAccelerometerAverage: FloatArray =
                 value?.accelerometerAverage?.copyOf() ?: event.values.copyOf()
 
             val alpha = 0.05f
@@ -36,12 +37,14 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
                     alpha * event.values[i] + (1 - alpha) * newAccelerometerAverage[i]
             }
             value = SensorModel(
+                pressure = value?.pressure,
                 gravity = value?.gravity,
                 gyroscope = value?.gyroscope,
                 gyroscopeAverage = value?.gyroscopeAverage,
                 tilt = value?.tilt,
                 accelerometer = event,
-                accelerometerAverage = newAccelerometerAverage)
+                accelerometerAverage = newAccelerometerAverage
+            )
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -51,15 +54,43 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
 
     inner class GravityEventListener : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
-            Log.v("SENSOR",
-                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}")
+            Log.v(
+                "SENSOR",
+                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}"
+            )
 
-            value = value?.copy(gravity = event) ?: SensorModel(gravity = event,
+            value = value?.copy(gravity = event) ?: SensorModel(
+                gravity = event,
                 gyroscope = null,
                 accelerometer = null,
                 gyroscopeAverage = null,
                 accelerometerAverage = null,
-                tilt = null)
+                tilt = null,
+                pressure = null
+            )
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            Log.v("SENSOR", "${sensor?.name} accuracy changed: $accuracy")
+        }
+    }
+
+    inner class PressureEventListener : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            Log.v(
+                "SENSOR",
+                "${event.sensor.name}: ${event.values[0]}"
+            )
+
+            value = value?.copy(pressure = event) ?: SensorModel(
+                pressure = event,
+                gravity = null,
+                gyroscope = null,
+                accelerometer = null,
+                gyroscopeAverage = null,
+                accelerometerAverage = null,
+                tilt = null
+            )
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -69,12 +100,14 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
 
     inner class GyroscopeEventListener : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
-            Log.v("SENSOR",
-                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}")
+            Log.v(
+                "SENSOR",
+                "${event.sensor.name}: ${event.values[0]},${event.values[1]},${event.values[2]}"
+            )
 
-            var newGyroscopeAverage: FloatArray =
+            val newGyroscopeAverage: FloatArray =
                 value?.gyroscopeAverage?.copyOf() ?: event.values.copyOf()
-            var newTiltArray: FloatArray = value?.tilt?.copyOf() ?: floatArrayOf(0f, 0f, 0f)
+            val newTiltArray: FloatArray = value?.tilt?.copyOf() ?: floatArrayOf(0f, 0f, 0f)
 
             val alpha = 0.53f
             for (i in 0..2) {
@@ -83,12 +116,15 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
                 newTiltArray[i] += event.values[i]
             }
 
-            value = SensorModel(accelerometer = value?.accelerometer,
+            value = SensorModel(
+                accelerometer = value?.accelerometer,
                 accelerometerAverage = value?.accelerometerAverage,
                 gravity = value?.gravity,
                 gyroscope = event,
                 gyroscopeAverage = newGyroscopeAverage,
-                tilt = newTiltArray)
+                tilt = newTiltArray,
+                pressure = value?.pressure
+            )
         }
 
         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
@@ -115,12 +151,20 @@ class SensorLiveData @Inject constructor(@ApplicationContext context: Context) :
                 SensorManager.SENSOR_DELAY_NORMAL
             )
         }
+        sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)?.let { pressure ->
+            sensorManager.registerListener(
+                barometerListener,
+                pressure,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
     }
 
     override fun onInactive() {
         super.onInactive()
         sensorManager.unregisterListener(gravityListener)
         sensorManager.unregisterListener(gyroListener)
+        sensorManager.unregisterListener(barometerListener)
     }
 }
 
@@ -132,4 +176,5 @@ data class SensorModel(
     val gyroscopeAverage: FloatArray?,
     val gyroscope: SensorEvent?,
     val tilt: FloatArray?,
+    val pressure: SensorEvent?,
 )

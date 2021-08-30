@@ -21,6 +21,7 @@ data class OnboardSensors(
     val gyroscopeX: Float?,
     val gyroscopeY: Float?,
     val gyroscopeZ: Float?,
+    val pressure: Float?,
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
 ) {
@@ -32,5 +33,6 @@ data class OnboardSensors(
         gyroscopeX = sensorData.gyroscope?.values?.get(0),
         gyroscopeY = sensorData.gyroscope?.values?.get(1),
         gyroscopeZ = sensorData.gyroscope?.values?.get(2),
+        pressure = sensorData.pressure?.values?.get(0),
     )
 }
