@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.app.ActivityManager
 import android.content.*
 import android.os.Build
 import android.os.Bundle
@@ -515,18 +514,6 @@ class TripInProgressFragment :
         })
     }
 
-    private fun isMyServiceRunning(serviceClass: Class<*>, context: Context): Boolean {
-        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-            if (serviceClass.name == service.service.className) {
-                Log.i("Service already", "running")
-                return true
-            }
-        }
-        Log.i("Service not", "running")
-        return false
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         viewModel.tripId?.let { outState.putLong("tripId", it) }
         super.onSaveInstanceState(outState)
@@ -555,18 +542,13 @@ class TripInProgressFragment :
                 Log.d(logTag, "Resuming trip $tripId")
                 initializeAfterTripCreated(tripId)
                 viewModel.resumeTrip(tripId, viewLifecycleOwner)
-                if (!isMyServiceRunning(TripInProgressService::class.java, requireContext())) {
-                    requireActivity().startService(Intent(requireContext(),
-                        TripInProgressService::class.java).apply {
-                        this.action = getString(R.string.action_start_trip_service)
-                        this.putExtra("tripId", tripId)
-                    })
-                } else {
-                    requireActivity().startService(Intent(requireContext(),
-                        TripInProgressService::class.java).apply {
-                        this.action = getString(R.string.action_initialize_trip_service)
-                    })
-                }
+                requireActivity().startService(Intent(
+                    requireContext(),
+                    TripInProgressService::class.java
+                ).apply {
+                    this.action = getString(R.string.action_start_trip_service)
+                    this.putExtra("tripId", tripId)
+                })
             }
         }
     }

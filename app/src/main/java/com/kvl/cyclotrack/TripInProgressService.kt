@@ -38,6 +38,8 @@ class TripInProgressService @Inject constructor() :
     private val accuracyThreshold = 7.5f
     private val speedThreshold = 0.5f
 
+    private var running = false
+
     @Inject
     lateinit var tripsRepository: TripsRepository
 
@@ -352,6 +354,8 @@ class TripInProgressService @Inject constructor() :
                 setSmallIcon(R.drawable.ic_cyclotrack_notification)
                 setContentIntent(pendingIntent)
             }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT })
+
+        running = true
     }
 
     private suspend fun getCombinedBiometrics(id: Long): Biometrics =
@@ -395,6 +399,8 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun restart(tripId: Long) {
+        if (running) return
+
         Log.d(logTag, "Restart trip")
         Log.d(logTag, "gpsService=$gpsService")
         Log.d(logTag, "bleService=$bleService")
@@ -466,6 +472,7 @@ class TripInProgressService @Inject constructor() :
             onboardSensors.removeObserver(thisSensorObserver)
         }
 
+        running = false
         clearState()
         bleService.disconnect()
         gpsService.stopListening()
@@ -479,7 +486,6 @@ class TripInProgressService @Inject constructor() :
                 getString(R.string.action_initialize_trip_service) -> Log.d(logTag,
                     "Initialize trip service")
                 getString(R.string.action_start_trip_service) -> {
-
                     when (val tripId = it.getLongExtra("tripId", -1)) {
                         -1L -> lifecycleScope.launch { start() }
                         else -> restart(tripId)
