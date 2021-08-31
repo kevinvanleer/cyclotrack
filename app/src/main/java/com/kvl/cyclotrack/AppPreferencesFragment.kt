@@ -59,6 +59,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
             }
         }
 
+        if (!BleService.isBluetoothSupported(requireContext())) {
+            findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
+                this.isVisible = false
+            }
+        }
+
         if (FeatureFlags.devBuild) {
             configureClearPreferences()
         }
