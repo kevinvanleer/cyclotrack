@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.ContentResolver
 import android.content.Intent
 import android.graphics.Color
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -44,9 +45,7 @@ import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.gms.maps.model.RoundCap
+import com.google.android.gms.maps.model.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -84,7 +83,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 exportTripData(requireContext().contentResolver, uri)
             }
         }
-
 
     private fun exportTripData(contentResolver: ContentResolver, uri: Uri) {
         fun getUriFilePart(): String? {
@@ -188,9 +186,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             .addAction(0,
                                 "SHARE",
                                 sharePendingIntent)
-                            .addAction(0,
+                            .addAction(
+                                0,
                                 "DELETE",
-                                deletePendingIntent)
+                                deletePendingIntent
+                            )
                         with(NotificationManagerCompat.from(requireContext())) {
                             cancel(inProgressId)
                             notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
@@ -198,6 +198,79 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
                 }
             })
+    }
+
+    private fun getRotation(start: LatLng, end: LatLng): Float {
+        var results = FloatArray(2)
+        Location.distanceBetween(
+            start.latitude,
+            start.longitude,
+            end.latitude,
+            end.longitude,
+            results
+        )
+        return results[1]
+    }
+
+    private fun drawPath(
+        polyline: PolylineOptions,
+        start: Boolean,
+        end: Boolean,
+        pathIndex: Int,
+    ) {
+        if (polyline.points.isNullOrEmpty()) return
+
+        map.addMarker(MarkerOptions().apply {
+            position(polyline.points.first())
+            zIndex(pathIndex * 2f)
+            when (start) {
+                true -> {
+                    icon(
+                        BitmapDescriptorFactory.fromResource(
+                            R.drawable.baseline_outbound_grey_24dp
+                        )
+                    )
+                    anchor(0.5f, 0.5f)
+                    if (polyline.points.size > 1) rotation(
+                        getRotation(
+                            polyline.points[0],
+                            polyline.points[1]
+                        )
+                    )
+                }
+                else -> {
+                    icon(
+                        BitmapDescriptorFactory.fromResource(
+                            R.drawable.baseline_tour_resume_white_24dp
+                        )
+                    )
+                    anchor(0f, 1f)
+                }
+            }
+        })
+        map.addMarker(MarkerOptions().apply {
+            position(polyline.points.last())
+            zIndex(pathIndex * 2f + 1)
+            when (end) {
+                true -> {
+                    icon(
+                        BitmapDescriptorFactory.fromResource(
+                            R.drawable.baseline_sports_score_white_24dp
+                        )
+                    )
+                    anchor(0f, 1f)
+                }
+                else -> {
+                    icon(
+                        BitmapDescriptorFactory.fromResource(
+                            R.drawable.baseline_tour_pause_white_24dp
+                        )
+                    )
+                    anchor(0f, 1f)
+                }
+            }
+        })
+        map.addPolyline(polyline)
     }
 
     override fun onCreateView(
@@ -980,25 +1053,34 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         elevationChartView.data = data
                         elevationChartView.invalidate()
                     }
-                    Log.d(TAG,
-                        "Recorded ${tripMeasurements.size} measurements for trip ${tripId}")
+                    Log.d(
+                        TAG,
+                        "Recorded ${tripMeasurements.size} measurements for trip ${tripId}"
+                    )
 
                     if (tripMeasurements.isNullOrEmpty()) return@ZipLiveData
                     if (timeStates.isNotEmpty()) titleDateView.text =
-                        String.format("%s: %s - %s",
-                            SimpleDateFormat("MMMM d",
-                                Locale.US).format(Date(timeStates.first().timestamp)),
-                            SimpleDateFormat("h:mm",
-                                Locale.US).format(Date(timeStates.first().timestamp)),
-                            SimpleDateFormat("h:mm",
-                                Locale.US).format(Date(timeStates.last().timestamp)))
+                        String.format(
+                            "%s: %s - %s",
+                            SimpleDateFormat(
+                                "MMMM d",
+                                Locale.US
+                            ).format(Date(timeStates.first().timestamp)),
+                            SimpleDateFormat(
+                                "h:mm",
+                                Locale.US
+                            ).format(Date(timeStates.first().timestamp)),
+                            SimpleDateFormat(
+                                "h:mm",
+                                Locale.US
+                            ).format(Date(timeStates.last().timestamp))
+                        )
 
-                    val thisFragment = this
                     viewLifecycleOwner.lifecycleScope.launch {
                         val mapData = plotPath(tripMeasurements, timeStates)
                         if (this@TripDetailsFragment::map.isInitialized && mapData.bounds != null) {
                             Log.d(TAG, "Plotting path")
-                            mapData.paths.forEach { path ->
+                            mapData.paths.forEachIndexed { idx, path ->
                                 path.startCap(RoundCap())
                                 path.endCap(RoundCap())
                                 path.width(5f)
@@ -1009,7 +1091,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                         null
                                     )
                                 )
-                                map.addPolyline(path)
+                                this@TripDetailsFragment.drawPath(
+                                    path,
+                                    idx == 0,
+                                    idx == mapData.paths.lastIndex,
+                                    idx
+                                )
                             }
                             try {
                                 map.moveCamera(CameraUpdateFactory.newLatLngBounds(mapData.bounds,
@@ -1054,7 +1141,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 "${avgCadence.roundToInt()} rpm (average)"
                             makeCadenceLineChart()
                         }
-                        scrollView.setOnTouchListener(thisFragment)
+                        scrollView.setOnTouchListener(this@TripDetailsFragment)
                     }
                 })
         })
