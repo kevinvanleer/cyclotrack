@@ -11,7 +11,6 @@ import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.lifecycle.MutableLiveData
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.kvl.cyclotrack.events.BluetoothActionEvent
@@ -52,9 +51,9 @@ class BleService @Inject constructor(
     private var scanCallbacks = ArrayList<ScanCallback>()
     private var gatts = ArrayList<BluetoothGatt>()
 
-    var hrmSensor = MutableLiveData(HrmData(null, null))
-    var cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
-    var speedSensor = MutableLiveData(SpeedData(null, null, null, null))
+    private var hrmSensor = HrmData(null, null)
+    private var cadenceSensor = CadenceData(null, null, null, null)
+    private var speedSensor = SpeedData(null, null, null, null)
 
     private lateinit var bluetoothLeScanner: BluetoothLeScanner
 
@@ -237,10 +236,10 @@ class BleService @Inject constructor(
                 val heartRate = characteristic.getIntValue(format, 1)
                 Log.d(logTag, String.format("Received heart rate: %d", heartRate))
                 HrmData(
-                    hrmSensor.value?.batteryLevel,
+                    hrmSensor.batteryLevel,
                     heartRate.toShort()
                 ).let {
-                    hrmSensor.postValue(it)
+                    hrmSensor = it
                     EventBus.getDefault().post(it)
                 }
             }
@@ -249,20 +248,20 @@ class BleService @Inject constructor(
                 Log.d(logTag, "Battery level: $batteryLevel")
                 when (gatt.device.address) {
                     addresses.hrm -> {
-                        hrmSensor.value?.copy(batteryLevel = batteryLevel).let {
-                            hrmSensor.postValue(it)
+                        hrmSensor.copy(batteryLevel = batteryLevel).let {
+                            hrmSensor = it
                             EventBus.getDefault().post(it)
                         }
                     }
                     addresses.speed -> {
-                        speedSensor.value?.copy(batteryLevel = batteryLevel).let {
-                            speedSensor.postValue(it)
+                        speedSensor.copy(batteryLevel = batteryLevel).let {
+                            speedSensor = it
                             EventBus.getDefault().post(it)
                         }
                     }
                     addresses.cadence -> {
-                        cadenceSensor.value?.copy(batteryLevel = batteryLevel).let {
-                            cadenceSensor.postValue(it)
+                        cadenceSensor.copy(batteryLevel = batteryLevel).let {
+                            cadenceSensor = it
                             EventBus.getDefault().post(it)
                         }
                     }
@@ -289,26 +288,26 @@ class BleService @Inject constructor(
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1)
                         val lastEvent =
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 5)
-                        if (revolutionCount != speedSensor.value?.revolutionCount ||
-                            System.currentTimeMillis() - (speedSensor.value?.timestamp
+                        if (revolutionCount != speedSensor.revolutionCount ||
+                            System.currentTimeMillis() - (speedSensor.timestamp
                                 ?: 0) > timeout
                         ) {
                             val rpm = getRpm(
                                 revolutionCount,
-                                (speedSensor.value?.revolutionCount ?: revolutionCount),
+                                (speedSensor.revolutionCount ?: revolutionCount),
                                 lastEvent,
-                                (speedSensor.value?.lastEvent ?: lastEvent)
+                                (speedSensor.lastEvent ?: lastEvent)
                             )
                             Log.d(
                                 logTag,
                                 "Speed sensor: ${revolutionCount} :: ${lastEvent} :: ${rpm}"
                             )
                             SpeedData(
-                                speedSensor.value?.batteryLevel,
+                                speedSensor.batteryLevel,
                                 revolutionCount,
                                 lastEvent, rpm, System.currentTimeMillis()
                             ).let {
-                                speedSensor.postValue(it)
+                                speedSensor = it
                                 EventBus.getDefault().post(it)
                             }
                         }
@@ -322,28 +321,30 @@ class BleService @Inject constructor(
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
                         val lastEvent =
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3)
-                        Log.d(logTag,
-                            "Cadence sensor changed: ${revolutionCount} :: ${lastEvent}")
-                        if (revolutionCount != cadenceSensor.value?.revolutionCount ||
-                            System.currentTimeMillis() - (cadenceSensor.value?.timestamp
+                        Log.d(
+                            logTag,
+                            "Cadence sensor changed: ${revolutionCount} :: ${lastEvent}"
+                        )
+                        if (revolutionCount != cadenceSensor.revolutionCount ||
+                            System.currentTimeMillis() - (cadenceSensor.timestamp
                                 ?: 0) > timeout
                         ) {
                             val rpm = getRpm(
                                 revolutionCount,
-                                (cadenceSensor.value?.revolutionCount ?: revolutionCount),
+                                (cadenceSensor.revolutionCount ?: revolutionCount),
                                 lastEvent,
-                                (cadenceSensor.value?.lastEvent ?: lastEvent)
+                                (cadenceSensor.lastEvent ?: lastEvent)
                             )
                             Log.d(
                                 logTag,
                                 "Cadence sensor update: ${revolutionCount} :: ${lastEvent} :: ${rpm}"
                             )
                             CadenceData(
-                                cadenceSensor.value?.batteryLevel,
+                                cadenceSensor.batteryLevel,
                                 revolutionCount,
                                 lastEvent, rpm, System.currentTimeMillis()
                             ).let {
-                                cadenceSensor.postValue(it)
+                                cadenceSensor = it
                                 EventBus.getDefault().post(it)
                             }
                         }
@@ -468,8 +469,8 @@ class BleService @Inject constructor(
         }
         gatts.clear()
 
-        hrmSensor.value = HrmData(null, null)
-        cadenceSensor.value = CadenceData(null, null, null, null)
-        speedSensor.value = SpeedData(null, null, null, null)
+        hrmSensor = HrmData(null, null)
+        cadenceSensor = CadenceData(null, null, null, null)
+        speedSensor = SpeedData(null, null, null, null)
     }
 }
