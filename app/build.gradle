@@ -30,8 +30,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 23
         targetSdkVersion 30
-        versionCode 32
-        versionName "No crash BLE/GMS"
+        versionCode 33
+        versionName "Trip path flags"
 
         //testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunner "com.kvl.cyclotrack.CustomTestRunner"
