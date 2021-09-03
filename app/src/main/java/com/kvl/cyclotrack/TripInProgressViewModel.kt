@@ -44,21 +44,31 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
-   
+
     val gpsEnabled: LiveData<Boolean>
         get() = gpsService.accessGranted
 
     val gpsStatus: LiveData<Location>
         get() = gpsService
 
-    val hrmSensor: LiveData<HrmData>
-        get() = bleService.hrmSensor
+    val hrmSensor = MutableLiveData(HrmData(null, null))
+    val cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
+    val speedSensor = MutableLiveData(SpeedData(null, null, null, null))
 
-    val cadenceSensor: LiveData<CadenceData>
-        get() = bleService.cadenceSensor
+    @Subscribe
+    fun onHrmData(hrm: HrmData) {
+        hrmSensor.postValue(hrm)
+    }
 
-    val speedSensor: LiveData<SpeedData>
-        get() = bleService.speedSensor
+    @Subscribe
+    fun onCadenceData(cadence: CadenceData) {
+        cadenceSensor.postValue(cadence)
+    }
+
+    @Subscribe
+    fun onSpeedData(speed: SpeedData) {
+        speedSensor.postValue(speed)
+    }
 
     val currentProgress: LiveData<TripProgress>
         get() = _currentProgress

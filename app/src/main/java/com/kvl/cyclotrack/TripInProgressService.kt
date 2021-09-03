@@ -28,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -79,17 +80,34 @@ class TripInProgressService @Inject constructor() :
 
     private val derivedTripState = ArrayList<DerivedTripState>()
 
-    private fun hrmSensor() = bleService.hrmSensor
-    private fun cadenceSensor() = bleService.cadenceSensor
-    private fun speedSensor() = bleService.speedSensor
+    private var hrmBpm: Short? = null
+    private var speed: SpeedData? = null
+    private var cadence: CadenceData? = null
+
+    @Subscribe
+    fun onHrmData(event: HrmData) {
+        hrmBpm = event.bpm
+    }
+
+    @Subscribe
+    fun onCadenceData(event: CadenceData) {
+        cadence = event
+    }
+
+    @Subscribe
+    fun onSpeedData(event: SpeedData) {
+        speed = event
+    }
 
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
-        val newMeasurement = Measurements(tripId,
+        val newMeasurement = Measurements(
+            tripId,
             LocationData(newLocation),
-            hrmSensor().value?.bpm,
-            cadenceSensor().value,
-            speedSensor().value)
+            hrmBpm,
+            cadence,
+            speed,
+        )
         lifecycleScope.launch {
             timeStateRepository.getTimeStates(tripId).let { timeStates ->
                 when (timeStates.lastOrNull()?.let { currentTimeState ->
@@ -442,8 +460,12 @@ class TripInProgressService @Inject constructor() :
     private fun resume(tripId: Long) {
         Log.d(logTag, "Called resume()")
         lifecycle.coroutineScope.launch {
-            timeStateRepository.appendTimeState(TimeState(tripId = tripId,
-                state = TimeStateEnum.RESUME))
+            timeStateRepository.appendTimeState(
+                TimeState(
+                    tripId = tripId,
+                    state = TimeStateEnum.RESUME
+                )
+            )
         }
         startObserving(tripId)
     }
@@ -476,6 +498,7 @@ class TripInProgressService @Inject constructor() :
         clearState()
         bleService.disconnect()
         gpsService.stopListening()
+        EventBus.getDefault().unregister(this)
         job?.join()
         stopSelf()
     }
@@ -514,5 +537,6 @@ class TripInProgressService @Inject constructor() :
         gpsService.startListening()
         bleService.initialize()
         clearState()
+        EventBus.getDefault().register(this)
     }
 }

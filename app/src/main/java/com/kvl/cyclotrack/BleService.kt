@@ -236,21 +236,35 @@ class BleService @Inject constructor(
                 }
                 val heartRate = characteristic.getIntValue(format, 1)
                 Log.d(logTag, String.format("Received heart rate: %d", heartRate))
-                hrmSensor.postValue(HrmData(hrmSensor.value?.batteryLevel,
-                    heartRate.toShort()))
+                HrmData(
+                    hrmSensor.value?.batteryLevel,
+                    heartRate.toShort()
+                ).let {
+                    hrmSensor.postValue(it)
+                    EventBus.getDefault().post(it)
+                }
             }
             batteryLevelCharUuid -> {
                 val batteryLevel = characteristic.value[0]
                 Log.d(logTag, "Battery level: $batteryLevel")
                 when (gatt.device.address) {
                     addresses.hrm -> {
-                        hrmSensor.postValue(hrmSensor.value?.copy(batteryLevel = batteryLevel))
+                        hrmSensor.value?.copy(batteryLevel = batteryLevel).let {
+                            hrmSensor.postValue(it)
+                            EventBus.getDefault().post(it)
+                        }
                     }
                     addresses.speed -> {
-                        speedSensor.postValue(speedSensor.value?.copy(batteryLevel = batteryLevel))
+                        speedSensor.value?.copy(batteryLevel = batteryLevel).let {
+                            speedSensor.postValue(it)
+                            EventBus.getDefault().post(it)
+                        }
                     }
                     addresses.cadence -> {
-                        cadenceSensor.postValue(cadenceSensor.value?.copy(batteryLevel = batteryLevel))
+                        cadenceSensor.value?.copy(batteryLevel = batteryLevel).let {
+                            cadenceSensor.postValue(it)
+                            EventBus.getDefault().post(it)
+                        }
                     }
                     else -> Log.d(logTag,
                         "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel")
@@ -279,15 +293,24 @@ class BleService @Inject constructor(
                             System.currentTimeMillis() - (speedSensor.value?.timestamp
                                 ?: 0) > timeout
                         ) {
-                            val rpm = getRpm(revolutionCount,
+                            val rpm = getRpm(
+                                revolutionCount,
                                 (speedSensor.value?.revolutionCount ?: revolutionCount),
                                 lastEvent,
-                                (speedSensor.value?.lastEvent ?: lastEvent))
-                            Log.d(logTag,
-                                "Speed sensor: ${revolutionCount} :: ${lastEvent} :: ${rpm}")
-                            speedSensor.postValue(SpeedData(speedSensor.value?.batteryLevel,
+                                (speedSensor.value?.lastEvent ?: lastEvent)
+                            )
+                            Log.d(
+                                logTag,
+                                "Speed sensor: ${revolutionCount} :: ${lastEvent} :: ${rpm}"
+                            )
+                            SpeedData(
+                                speedSensor.value?.batteryLevel,
                                 revolutionCount,
-                                lastEvent, rpm, System.currentTimeMillis()))
+                                lastEvent, rpm, System.currentTimeMillis()
+                            ).let {
+                                speedSensor.postValue(it)
+                                EventBus.getDefault().post(it)
+                            }
                         }
                     }
                     (sensorType and cadenceId > 0) -> {
@@ -305,15 +328,24 @@ class BleService @Inject constructor(
                             System.currentTimeMillis() - (cadenceSensor.value?.timestamp
                                 ?: 0) > timeout
                         ) {
-                            val rpm = getRpm(revolutionCount,
+                            val rpm = getRpm(
+                                revolutionCount,
                                 (cadenceSensor.value?.revolutionCount ?: revolutionCount),
                                 lastEvent,
-                                (cadenceSensor.value?.lastEvent ?: lastEvent))
-                            Log.d(logTag,
-                                "Cadence sensor update: ${revolutionCount} :: ${lastEvent} :: ${rpm}")
-                            cadenceSensor.postValue(CadenceData(cadenceSensor.value?.batteryLevel,
+                                (cadenceSensor.value?.lastEvent ?: lastEvent)
+                            )
+                            Log.d(
+                                logTag,
+                                "Cadence sensor update: ${revolutionCount} :: ${lastEvent} :: ${rpm}"
+                            )
+                            CadenceData(
+                                cadenceSensor.value?.batteryLevel,
                                 revolutionCount,
-                                lastEvent, rpm, System.currentTimeMillis()))
+                                lastEvent, rpm, System.currentTimeMillis()
+                            ).let {
+                                cadenceSensor.postValue(it)
+                                EventBus.getDefault().post(it)
+                            }
                         }
                     }
                     else -> {
@@ -436,8 +468,8 @@ class BleService @Inject constructor(
         }
         gatts.clear()
 
-        hrmSensor = MutableLiveData(HrmData(null, null))
-        cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
-        speedSensor = MutableLiveData(SpeedData(null, null, null, null))
+        hrmSensor.value = HrmData(null, null)
+        cadenceSensor.value = CadenceData(null, null, null, null)
+        speedSensor.value = SpeedData(null, null, null, null)
     }
 }
