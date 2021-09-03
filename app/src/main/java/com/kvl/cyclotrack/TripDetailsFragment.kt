@@ -56,7 +56,6 @@ import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment(), View.OnTouchListener {
-    val TAG = "TRIP_DETAILS_FRAGMENT"
     val logTag = "TripDetailsFragment"
 
     private var startHeight: Int = 0
@@ -130,9 +129,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         exportData.splits != null &&
                         exportData.onboardSensors != null
                     ) {
-                        Log.d(TAG,
-                            "Exporting trip...")
-                        Log.d(TAG, "${getFileName()}")
+                        Log.d(
+                            logTag,
+                            "Exporting trip..."
+                        )
+                        Log.d(logTag, "${getFileName()}")
 
                         exportRideToXlsx(contentResolver,
                             uri,
@@ -308,7 +309,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
         inflater.inflate(R.menu.details_menu, menu)
-        Log.d(TAG, "Options menu created")
+        Log.d(logTag, "Options menu created")
         viewModel.tripOverview().observe(viewLifecycleOwner, {
             googleFitSyncStatus = it.googleFitSyncStatus
             configureSyncOptions(menu)
@@ -418,7 +419,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }?.show()
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d(TAG, "Options menu clicked")
+        Log.d(logTag, "Options menu clicked")
         return when (item.itemId) {
             R.id.details_menu_action_edit -> {
                 try {
@@ -428,12 +429,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             titleDateView.text.toString(),
                             notesView.text.toString()))
                 } catch (e: IllegalArgumentException) {
-                    Log.e(TAG, e.message, e)
+                    Log.e(logTag, e.message, e)
                 }
                 true
             }
             R.id.details_menu_action_delete -> {
-                Log.d(TAG, "Options menu clicked delete")
+                Log.d(logTag, "Options menu clicked delete")
                 when (googleFitSyncStatus) {
                     GoogleFitSyncStatusEnum.SYNCED, GoogleFitSyncStatusEnum.DIRTY -> {
                         when (hasFitnessPermissions(requireContext())) {
@@ -484,7 +485,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         mapView = view.findViewById(R.id.trip_details_map_view)
         mapView.onCreate(savedInstanceState)
         mapView.getMapAsync {
-            Log.d(TAG, "GOT MAP")
+            Log.d(logTag, "GOT MAP")
             map = it
             map.setMapStyle(
                 MapStyleOptions.loadRawResourceStyle(
@@ -608,7 +609,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         val tripId = args.tripId
-        Log.d(TAG, String.format("Displaying details for trip %d", tripId))
+        Log.d(logTag, String.format("Displaying details for trip %d", tripId))
         viewModel.tripId = tripId
 
         viewModel.updateSplits()
@@ -703,28 +704,34 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
 
             } else {
-                Log.d(TAG, "overview is null")
+                Log.d(logTag, "overview is null")
             }
             zipLiveData(viewModel.measurements(), viewModel.timeState()).observe(viewLifecycleOwner,
                 ZipLiveData@{ pairs ->
                     val tripMeasurements = pairs.first
                     val timeStates = pairs.second
-                    Log.d(TAG, "Observed change to measurements and time state")
+                    Log.d(logTag, "Observed change to measurements and time state")
 
                     val effectiveCircumference =
                         getEffectiveCircumference(overview, tripMeasurements)
 
-                    Log.d(TAG, "Effective circumference trip $tripId: $effectiveCircumference")
-                    Log.d(TAG,
-                        "Auto circumference trip $tripId: ${overview.autoWheelCircumference}")
+                    Log.d(logTag, "Effective circumference trip $tripId: $effectiveCircumference")
+                    Log.d(
+                        logTag,
+                        "Auto circumference trip $tripId: ${overview.autoWheelCircumference}"
+                    )
                     effectiveCircumference?.let { e ->
                         overview.autoWheelCircumference?.let { a ->
-                            Log.d(TAG,
-                                "Auto circumference variance: ${(a / e - 1f)}")
+                            Log.d(
+                                logTag,
+                                "Auto circumference variance: ${(a / e - 1f)}"
+                            )
                         }
                     }
-                    Log.d(TAG,
-                        "User circumference trip $tripId: ${overview.userWheelCircumference}")
+                    Log.d(
+                        logTag,
+                        "User circumference trip $tripId: ${overview.userWheelCircumference}"
+                    )
 
                     fun getSpeedDataFromGps(
                         entries: ArrayList<Entry>,
@@ -765,7 +772,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             effectiveCircumference ?: overview.autoWheelCircumference
                             ?: overview.userWheelCircumference
                             ?: getUserCircumference(requireContext())
-                        Log.d(TAG, "Using circumference: $circumference")
+                        Log.d(logTag, "Using circumference: $circumference")
 
                         var lastMeasurements: CriticalMeasurements? = null
                         measurementsList.forEach { measurements ->
@@ -1054,7 +1061,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         elevationChartView.invalidate()
                     }
                     Log.d(
-                        TAG,
+                        logTag,
                         "Recorded ${tripMeasurements.size} measurements for trip ${tripId}"
                     )
 
@@ -1079,7 +1086,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     viewLifecycleOwner.lifecycleScope.launch {
                         val mapData = plotPath(tripMeasurements, timeStates)
                         if (this@TripDetailsFragment::map.isInitialized && mapData.bounds != null) {
-                            Log.d(TAG, "Plotting path")
+                            Log.d(logTag, "Plotting path")
                             mapData.paths.forEachIndexed { idx, path ->
                                 path.startCap(RoundCap())
                                 path.endCap(RoundCap())
@@ -1151,7 +1158,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             overview: Trip,
             measurements: Array<CriticalMeasurements>,
         ) {
-            Log.d(TAG, "User weight: ${overview.userWeight}")
+            Log.d(logTag, "User weight: ${overview.userWeight}")
             val avgHr = getAverageHeartRate(measurements)
             try {
                 getCaloriesBurned(
@@ -1178,13 +1185,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             { pairs ->
                 val measurements = pairs.first
                 val overview = pairs.second
-                Log.d(TAG, "Observed change to measurements and overview")
+                Log.d(logTag, "Observed change to measurements and overview")
                 viewLifecycleOwner.lifecycleScope.launch {
                     viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
                         .let { biometrics ->
-                            Log.d(TAG, "biometrics: ${biometrics}")
+                            Log.d(logTag, "biometrics: ${biometrics}")
                             if (biometrics.userWeight != null) {
-                                Log.d(TAG, "Calculating calories burned")
+                                Log.d(logTag, "Calculating calories burned")
                                 getCaloriesBurned(biometrics, overview, measurements)
                             }
                         }
