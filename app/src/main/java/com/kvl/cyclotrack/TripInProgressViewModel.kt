@@ -20,7 +20,6 @@ class TripInProgressViewModel @Inject constructor(
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
-    private val bleService: BleService,
 ) : ViewModel() {
     private val logTag = "TripInProgressViewModel"
 
