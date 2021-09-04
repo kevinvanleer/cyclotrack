@@ -449,10 +449,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             R.id.details_menu_action_export -> {
                 viewModel.tripOverview().observe(viewLifecycleOwner, object : Observer<Trip> {
                     override fun onChanged(t: Trip) {
-                        requestCreateExport.launch("cyclotrack_${
-                            String.format("%06d", t.id)
-                        }_${t.name?.replace(" ", "-") ?: "unknown"}.xlsx")
+                        val prefix = when (FeatureFlags.devBuild) {
+                            true -> "cyclotrack-dev"
+                            else -> "cyclotrack"
+                        }
+                        requestCreateExport.launch(
+                            "${prefix}_${
+                                String.format("%06d", t.id)
+                            }_${t.name?.replace(" ", "-") ?: "unknown"}.xlsx"
+                        )
                         viewModel.tripOverview().removeObserver(this)
+
                     }
                 })
                 true
