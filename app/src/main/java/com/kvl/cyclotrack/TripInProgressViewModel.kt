@@ -47,7 +47,7 @@ class TripInProgressViewModel @Inject constructor(
     val gpsEnabled: LiveData<Boolean>
         get() = gpsService.accessGranted
 
-    val gpsStatus: LiveData<Location>
+    val location: LiveData<Location>
         get() = gpsService
 
     val hrmSensor = MutableLiveData(HrmData(null, null))

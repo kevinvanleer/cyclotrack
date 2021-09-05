@@ -368,7 +368,7 @@ class TripInProgressFragment :
 
         view.setOnTouchListener(this)
 
-        viewModel.gpsStatus.observe(viewLifecycleOwner, { location ->
+        viewModel.location.observe(viewLifecycleOwner, { location ->
             val alpha = 1.0
             if (viewModel.speedSensor.value?.rpm == null || circumference == null) {
                 when (location.speed < 0.5) {
