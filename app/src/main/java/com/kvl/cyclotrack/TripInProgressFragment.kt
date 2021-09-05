@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack
 
 import android.content.*
+import android.location.Location
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
@@ -46,6 +47,16 @@ class TripInProgressFragment :
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
     private lateinit var bottomRightView: MeasurementView
+    private lateinit var middleRightView: MeasurementView
+    private lateinit var topView: MeasurementView
+    private lateinit var bottomLeftView: MeasurementView
+    private lateinit var middleLeftView: MeasurementView
+    private lateinit var topLeftView: MeasurementView
+    private lateinit var topRightView: MeasurementView
+    private lateinit var bottomView: TextView
+    private lateinit var trackingImage: ImageView
+    private lateinit var debugTextView: TextView
+
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
     private val lowBatteryThreshold = 15
@@ -161,7 +172,7 @@ class TripInProgressFragment :
         stopButton.animate().setDuration(100).translationX(0f)
     }
 
-    fun turnOnGps() {
+    private fun turnOnGps() {
         val locationRequest = LocationRequest.create().apply {
             interval = 1000
             fastestInterval = 100
@@ -314,134 +325,34 @@ class TripInProgressFragment :
         }
     }
 
+    private fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
+
         savedInstanceState?.getLong("tripId", -1)
             .takeIf { t -> t != -1L }.let { tripId ->
                 viewModel.tripId = tripId
             }
 
-        pauseButton = view.findViewById(R.id.pause_button)
-        resumeButton = view.findViewById(R.id.resume_button)
-        stopButton = view.findViewById(R.id.stop_button)
-        bottomRightView = view.findViewById(R.id.measurement_bottomRight)
+        initializeViews(view)
+        initializeClockTick()
+        view.setOnTouchListener(this)
+        initializeLocationServiceStateChangeHandler()
+        initializeMeasurementUpdateObservers()
+    }
 
-        val middleRightView: MeasurementView = view.findViewById(R.id.measurement_middleRight)
-        val topView: MeasurementView = view.findViewById(R.id.measurement_top)
-        val bottomLeftView: MeasurementView = view.findViewById(R.id.measurement_bottomLeft)
-        val middleLeftView: MeasurementView = view.findViewById(R.id.measurement_middleLeft)
-        val topLeftView: MeasurementView = view.findViewById(R.id.measurement_topLeft)
-        val topRightView: MeasurementView = view.findViewById(R.id.measurement_topRight)
-        val bottomView: TextView = view.findViewById(R.id.measurement_bottom)
-
-        val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
-        val debugTextView: TextView = view.findViewById(R.id.textview_debug)
-        if (FeatureFlags.productionBuild) {
-            trackingImage.visibility = View.GONE
-            debugTextView.visibility = View.GONE
-        }
-
-        middleRightView.label =
-            "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
-        topView.label =
-            getUserDistanceUnitLong(requireContext()).uppercase(Locale.getDefault())
-        bottomLeftView.label = "DURATION"
-        middleLeftView.label = "AVG ${
-            getUserSpeedUnitShort(requireContext()).uppercase(
-                Locale.getDefault()
-            )
-        }"
-        topLeftView.label = "SLOPE"
-        topRightView.label =
-            "GPS ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
-
-        fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
-
-        debugTextView.text = "-.-"
-
+    private fun initializeClockTick() {
         updateClock()
-
         requireContext().registerReceiver(timeTickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
         isTimeTickRegistered = true
+    }
 
-        view.setOnTouchListener(this)
-
-        viewModel.location.observe(viewLifecycleOwner, { location ->
-            val alpha = 1.0
-            if (viewModel.speedSensor.value?.rpm == null || circumference == null) {
-                when (location.speed < 0.5) {
-                    true -> 0.0
-                    else -> {
-                        val weight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                            when (location.hasSpeedAccuracy()) {
-                                true -> (location.speedAccuracyMetersPerSecond.coerceAtMost(
-                                    10f
-                                ) / 10.0 - 1).pow(8)
-                                else -> 0.0
-                            }
-                        else 0.7
-                        (topRightView.value.toString().toDoubleOrNull()
-                            ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
-                            .takeIf { it.isFinite() }
-                            ?.let { oldSpeed ->
-                                exponentialSmoothing(alpha * weight,
-                                    getUserSpeed(requireContext(),
-                                        location.speed.toDouble()).toDouble(),
-                                    oldSpeed)
-                            }
-                    }
-                }.let { speed ->
-                    topRightView.value =
-                        String.format("%.1f", speed)
-                }
-            }
-
-            var debugString = "%.2f".format(location.accuracy)
-            autoCircumference?.let { c -> debugString += " | C%.3f".format(c) }
-            autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
-            debugString += " | %d°".format(location.bearing.toInt())
-            viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
-            debugTextView.text = debugString
-        })
-
-        viewModel.currentProgress.observe(viewLifecycleOwner, {
-            Log.d(logTag, "Location observer detected change")
-            bottomView.text = degreesToCardinal(it.bearing)
-
-            getUserSpeed(requireContext(), it.distance / it.duration).let { averageSpeed ->
-                middleLeftView.value =
-                    String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
-            }
-
-            topView.value =
-                String.format("%.2f", getUserDistance(requireContext(), it.distance))
-
-            if (!hasHeartRate()) topLeftView.value =
-                String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
-
-            trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
-        })
-
-        viewModel.currentTime.observe(viewLifecycleOwner, {
-            bottomLeftView.value = DateUtils.formatElapsedTime((it).toLong())
-        })
-        viewModel.lastSplit.observe(viewLifecycleOwner, {
-            Log.d(logTag, "Observed last split change")
-            middleRightView.value =
-                String.format(
-                    "%.1f",
-                    getUserSpeed(
-                        requireContext(),
-                        (it.distance / it.duration.coerceAtLeast(0.0001))
-                    )
-                )
-        })
-
+    private fun initializeLocationServiceStateChangeHandler() {
         viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->
             if (!status && gpsEnabled) {
-                gpsEnabled = false
                 trackingImage.visibility = View.INVISIBLE
                 debugTextView.text = getString(R.string.gps_disabled_message)
                 Log.d(logTag, "Location service access disabled")
@@ -466,57 +377,188 @@ class TripInProgressFragment :
 
                     builder.create()
                 }?.show()
+            } else if (status && !gpsEnabled) {
+                debugTextView.text = ""
             } else {
-                if (status) {
-                    gpsEnabled = true
-                    debugTextView.text = ""
-                }
+                Log.d(logTag, "Location service status unchanged")
             }
+            gpsEnabled = status
+        })
+    }
+
+    private fun initializeMeasurementUpdateObservers() {
+        viewModel.location.observe(viewLifecycleOwner, { location ->
+            if (viewModel.speedSensor.value?.rpm == null || circumference == null)
+                topRightView.value =
+                    getGpsSpeed(location, topRightView.value.toString().toDoubleOrNull())
+            bottomView.text = degreesToCardinal(location.bearing)
+            debugTextView.text = getDebugString(location)
         })
 
-        viewModel.hrmSensor.observe(viewLifecycleOwner, {
-            Log.d(logTag, "hrm battery: ${it.batteryLevel}")
-            Log.d(logTag, "hrm bpm: ${it.bpm}")
-            if (it.bpm != null) {
-                topLeftView.label = "BPM"
-                topLeftView.value = it.bpm.toString()
-            }
-            if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) topLeftView.extraInfo =
-                "${it.batteryLevel}%"
+        viewModel.currentProgress.observe(viewLifecycleOwner, {
+            Log.d(logTag, "Location observer detected change")
+
+            topView.value =
+                String.format("%.2f", getUserDistance(requireContext(), it.distance))
+
+            middleLeftView.value =
+                getUserSpeed(requireContext(), it.distance / it.duration).let { averageSpeed ->
+                    String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
+                }
+
+            if (!hasHeartRate()) topLeftView.value =
+                String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
+
+            trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
         })
-        viewModel.cadenceSensor.observe(viewLifecycleOwner, {
-            Log.d(logTag, "cadence battery: ${it.batteryLevel}")
-            Log.d(logTag, "cadence: ${it.rpm}")
-            if (it.rpm != null) {
+
+        viewModel.currentTime.observe(viewLifecycleOwner, {
+            bottomLeftView.value = DateUtils.formatElapsedTime((it).toLong())
+        })
+
+        viewModel.lastSplit.observe(viewLifecycleOwner, { split ->
+            Log.d(logTag, "Observed last split change")
+            middleRightView.value =
+                String.format(
+                    "%.1f",
+                    getUserSpeed(
+                        requireContext(),
+                        (split.distance / split.duration.coerceAtLeast(0.0001))
+                    )
+                )
+        })
+
+        viewModel.hrmSensor.observe(viewLifecycleOwner, { hrm ->
+            Log.d(logTag, "hrm battery: ${hrm.batteryLevel}")
+            Log.d(logTag, "hrm bpm: ${hrm.bpm}")
+            if (hrm.bpm != null) {
+                topLeftView.label = "BPM"
+                topLeftView.value = hrm.bpm.toString()
+            }
+            if (hrm.batteryLevel != null && hrm.batteryLevel!! < lowBatteryThreshold) topLeftView.extraInfo =
+                "${hrm.batteryLevel}%"
+        })
+
+        viewModel.cadenceSensor.observe(viewLifecycleOwner, { cadence ->
+            Log.d(logTag, "cadence battery: ${cadence.batteryLevel}")
+            Log.d(logTag, "cadence: ${cadence.rpm}")
+            if (cadence.rpm != null) {
                 bottomRightView.label = "RPM"
                 bottomRightView.value = when {
-                    it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
+                    cadence.rpm.isFinite() && cadence.rpm < 1e3f -> cadence.rpm.toInt().toString()
                     else -> bottomRightView.value
                 }
             }
-            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) bottomRightView.extraInfo =
-                "${it.batteryLevel}%"
+            if (cadence.batteryLevel != null && cadence.batteryLevel < lowBatteryThreshold) bottomRightView.extraInfo =
+                "${cadence.batteryLevel}%"
         })
-        viewModel.speedSensor.observe(viewLifecycleOwner, {
-            Log.d(logTag, "speed battery: ${it.batteryLevel}")
-            Log.d(logTag, "speed rpm: ${it.rpm}")
-            if (it.rpm != null && circumference != null) {
+
+        viewModel.speedSensor.observe(viewLifecycleOwner, { speed ->
+            Log.d(logTag, "speed battery: ${speed.batteryLevel}")
+            Log.d(logTag, "speed rpm: ${speed.rpm}")
+            if (speed.rpm != null && circumference != null) {
                 topRightView.label =
                     getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
                 topRightView.value = when {
-                    it.rpm.isFinite() && it.rpm < 1e4f -> String.format(
+                    speed.rpm.isFinite() && speed.rpm < 1e4f -> String.format(
                         "%.1f",
                         getUserSpeed(
                             requireContext(),
-                            it.rpm / 60 * circumference!!
+                            speed.rpm / 60 * circumference!!
                         )
                     )
                     else -> topRightView.value
                 }
             }
-            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) topRightView.extraInfo =
-                "${it.batteryLevel}%"
+            if (speed.batteryLevel != null && speed.batteryLevel < lowBatteryThreshold) topRightView.extraInfo =
+                "${speed.batteryLevel}%"
         })
+    }
+
+    private fun initializeViews(view: View) {
+        pauseButton = view.findViewById(R.id.pause_button)
+        resumeButton = view.findViewById(R.id.resume_button)
+        stopButton = view.findViewById(R.id.stop_button)
+        bottomRightView = view.findViewById(R.id.measurement_bottomRight)
+        middleRightView = view.findViewById(R.id.measurement_middleRight)
+        topView = view.findViewById(R.id.measurement_top)
+        bottomLeftView = view.findViewById(R.id.measurement_bottomLeft)
+        middleLeftView = view.findViewById(R.id.measurement_middleLeft)
+        topLeftView = view.findViewById(R.id.measurement_topLeft)
+        topRightView = view.findViewById(R.id.measurement_topRight)
+        bottomView = view.findViewById(R.id.measurement_bottom)
+        trackingImage = view.findViewById(R.id.image_tracking)
+        debugTextView = view.findViewById(R.id.textview_debug)
+
+
+        //TODO: Cleanup below
+        //This is a lot of implementation specific initialization
+
+        if (FeatureFlags.productionBuild) {
+            trackingImage.visibility = View.GONE
+            debugTextView.visibility = View.GONE
+        }
+
+        middleRightView.label =
+            "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
+        topView.label =
+            getUserDistanceUnitLong(requireContext()).uppercase(Locale.getDefault())
+        bottomLeftView.label = "DURATION"
+        middleLeftView.label = "AVG ${
+            getUserSpeedUnitShort(requireContext()).uppercase(
+                Locale.getDefault()
+            )
+        }"
+        topLeftView.label = "SLOPE"
+        topRightView.label =
+            "GPS ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
+
+
+        debugTextView.text = "-.-"
+    }
+
+    private fun getDebugString(
+        location: Location,
+    ): String {
+        var debugString = "%.2f".format(location.accuracy)
+        autoCircumference?.let { c -> debugString += " | C%.3f".format(c) }
+        autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
+        debugString += " | %d°".format(location.bearing.toInt())
+        viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
+        return debugString
+    }
+
+    private fun getGpsSpeed(
+        location: Location,
+        averageSpeed: Double?,
+        alpha: Double = 1.0
+    ) = when (location.speed < 0.5) {
+        true -> 0.0
+        else -> {
+            val weight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                when (location.hasSpeedAccuracy()) {
+                    true -> (location.speedAccuracyMetersPerSecond.coerceAtMost(
+                        10f
+                    ) / 10.0 - 1).pow(8)
+                    else -> 0.0
+                }
+            else 0.7
+            (averageSpeed
+                ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
+                .takeIf { it.isFinite() }
+                ?.let { oldSpeed ->
+                    exponentialSmoothing(
+                        alpha * weight,
+                        getUserSpeed(
+                            requireContext(),
+                            location.speed.toDouble()
+                        ).toDouble(),
+                        oldSpeed
+                    )
+                }
+        }
+    }.let { speed ->
+        String.format("%.1f", speed)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
