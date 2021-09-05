@@ -469,6 +469,10 @@ class BleService @Inject constructor(
         }
         gatts.clear()
 
+        addresses.hrm = null
+        addresses.cadence = null
+        addresses.speed = null
+
         hrmSensor = HrmData(null, null)
         cadenceSensor = CadenceData(null, null, null, null)
         speedSensor = SpeedData(null, null, null, null)
