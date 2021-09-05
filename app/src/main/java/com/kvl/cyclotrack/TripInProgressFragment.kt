@@ -45,7 +45,7 @@ class TripInProgressFragment :
     private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
-    private lateinit var clockView: MeasurementView
+    private lateinit var bottomRightView: MeasurementView
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
     private val lowBatteryThreshold = 15
@@ -326,39 +326,40 @@ class TripInProgressFragment :
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
         stopButton = view.findViewById(R.id.stop_button)
-        clockView = view.findViewById(R.id.textview_time)
+        bottomRightView = view.findViewById(R.id.measurement_bottomRight)
 
-        val speedTextView: MeasurementView = view.findViewById(R.id.textview_speed)
-        val distanceTextView: MeasurementView = view.findViewById(R.id.textview_distance)
-        val durationTextView: MeasurementView = view.findViewById(R.id.textview_duration)
-        val averageSpeedTextView: MeasurementView = view.findViewById(R.id.textview_average_speed)
-        val heartRateTextView: MeasurementView = view.findViewById(R.id.textview_heart_rate)
-        val splitSpeedTextView: MeasurementView = view.findViewById(R.id.textview_split_speed)
-        val bearingTextView: TextView = view.findViewById(R.id.textview_bearing)
+        val middleRightView: MeasurementView = view.findViewById(R.id.measurement_middleRight)
+        val topView: MeasurementView = view.findViewById(R.id.measurement_top)
+        val bottomLeftView: MeasurementView = view.findViewById(R.id.measurement_bottomLeft)
+        val middleLeftView: MeasurementView = view.findViewById(R.id.measurement_middleLeft)
+        val topLeftView: MeasurementView = view.findViewById(R.id.measurement_topLeft)
+        val topRightView: MeasurementView = view.findViewById(R.id.measurement_topRight)
+        val bottomView: TextView = view.findViewById(R.id.measurement_bottom)
 
         val trackingImage: ImageView = view.findViewById(R.id.image_tracking)
-        val accuracyTextView: TextView = view.findViewById(R.id.textview_accuracy)
+        val debugTextView: TextView = view.findViewById(R.id.textview_debug)
         if (FeatureFlags.productionBuild) {
             trackingImage.visibility = View.GONE
-            accuracyTextView.visibility = View.GONE
+            debugTextView.visibility = View.GONE
         }
 
-        speedTextView.label =
+        middleRightView.label =
             "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
-        distanceTextView.label =
+        topView.label =
             getUserDistanceUnitLong(requireContext()).uppercase(Locale.getDefault())
-        durationTextView.label = "DURATION"
-        averageSpeedTextView.label = "AVG ${
+        bottomLeftView.label = "DURATION"
+        middleLeftView.label = "AVG ${
             getUserSpeedUnitShort(requireContext()).uppercase(
-                Locale.getDefault())
+                Locale.getDefault()
+            )
         }"
-        heartRateTextView.label = "SLOPE"
-        splitSpeedTextView.label =
+        topLeftView.label = "SLOPE"
+        topRightView.label =
             "GPS ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
 
         fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
 
-        accuracyTextView.text = "-.-"
+        debugTextView.text = "-.-"
 
         updateClock()
 
@@ -381,7 +382,7 @@ class TripInProgressFragment :
                                 else -> 0.0
                             }
                         else 0.7
-                        (splitSpeedTextView.value.toString().toDoubleOrNull()
+                        (topRightView.value.toString().toDoubleOrNull()
                             ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
                             .takeIf { it.isFinite() }
                             ?.let { oldSpeed ->
@@ -392,7 +393,7 @@ class TripInProgressFragment :
                             }
                     }
                 }.let { speed ->
-                    splitSpeedTextView.value =
+                    topRightView.value =
                         String.format("%.1f", speed)
                 }
             }
@@ -402,43 +403,47 @@ class TripInProgressFragment :
             autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
             debugString += " | %d°".format(location.bearing.toInt())
             viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
-            accuracyTextView.text = debugString
+            debugTextView.text = debugString
         })
 
         viewModel.currentProgress.observe(viewLifecycleOwner, {
             Log.d(logTag, "Location observer detected change")
-            bearingTextView.text = degreesToCardinal(it.bearing)
+            bottomView.text = degreesToCardinal(it.bearing)
 
             getUserSpeed(requireContext(), it.distance / it.duration).let { averageSpeed ->
-                averageSpeedTextView.value =
+                middleLeftView.value =
                     String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
             }
 
-            distanceTextView.value =
+            topView.value =
                 String.format("%.2f", getUserDistance(requireContext(), it.distance))
 
-            if (!hasHeartRate()) heartRateTextView.value =
+            if (!hasHeartRate()) topLeftView.value =
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
         })
 
         viewModel.currentTime.observe(viewLifecycleOwner, {
-            durationTextView.value = DateUtils.formatElapsedTime((it).toLong())
+            bottomLeftView.value = DateUtils.formatElapsedTime((it).toLong())
         })
         viewModel.lastSplit.observe(viewLifecycleOwner, {
             Log.d(logTag, "Observed last split change")
-            speedTextView.value =
-                String.format("%.1f",
-                    getUserSpeed(requireContext(),
-                        (it.distance / it.duration.coerceAtLeast(0.0001))))
+            middleRightView.value =
+                String.format(
+                    "%.1f",
+                    getUserSpeed(
+                        requireContext(),
+                        (it.distance / it.duration.coerceAtLeast(0.0001))
+                    )
+                )
         })
 
         viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->
             if (!status && gpsEnabled) {
                 gpsEnabled = false
                 trackingImage.visibility = View.INVISIBLE
-                accuracyTextView.text = getString(R.string.gps_disabled_message)
+                debugTextView.text = getString(R.string.gps_disabled_message)
                 Log.d(logTag, "Location service access disabled")
                 activity?.let {
                     val builder = AlertDialog.Builder(it)
@@ -464,7 +469,7 @@ class TripInProgressFragment :
             } else {
                 if (status) {
                     gpsEnabled = true
-                    accuracyTextView.text = ""
+                    debugTextView.text = ""
                 }
             }
         })
@@ -473,32 +478,32 @@ class TripInProgressFragment :
             Log.d(logTag, "hrm battery: ${it.batteryLevel}")
             Log.d(logTag, "hrm bpm: ${it.bpm}")
             if (it.bpm != null) {
-                heartRateTextView.label = "BPM"
-                heartRateTextView.value = it.bpm.toString()
+                topLeftView.label = "BPM"
+                topLeftView.value = it.bpm.toString()
             }
-            if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) heartRateTextView.extraInfo =
+            if (it.batteryLevel != null && it.batteryLevel!! < lowBatteryThreshold) topLeftView.extraInfo =
                 "${it.batteryLevel}%"
         })
         viewModel.cadenceSensor.observe(viewLifecycleOwner, {
             Log.d(logTag, "cadence battery: ${it.batteryLevel}")
             Log.d(logTag, "cadence: ${it.rpm}")
             if (it.rpm != null) {
-                clockView.label = "RPM"
-                clockView.value = when {
+                bottomRightView.label = "RPM"
+                bottomRightView.value = when {
                     it.rpm.isFinite() && it.rpm < 1e3f -> it.rpm.toInt().toString()
-                    else -> clockView.value
+                    else -> bottomRightView.value
                 }
             }
-            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) clockView.extraInfo =
+            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) bottomRightView.extraInfo =
                 "${it.batteryLevel}%"
         })
         viewModel.speedSensor.observe(viewLifecycleOwner, {
             Log.d(logTag, "speed battery: ${it.batteryLevel}")
             Log.d(logTag, "speed rpm: ${it.rpm}")
             if (it.rpm != null && circumference != null) {
-                splitSpeedTextView.label =
+                topRightView.label =
                     getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
-                splitSpeedTextView.value = when {
+                topRightView.value = when {
                     it.rpm.isFinite() && it.rpm < 1e4f -> String.format(
                         "%.1f",
                         getUserSpeed(
@@ -506,10 +511,10 @@ class TripInProgressFragment :
                             it.rpm / 60 * circumference!!
                         )
                     )
-                    else -> splitSpeedTextView.value
+                    else -> topRightView.value
                 }
             }
-            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) splitSpeedTextView.extraInfo =
+            if (it.batteryLevel != null && it.batteryLevel < lowBatteryThreshold) topRightView.extraInfo =
                 "${it.batteryLevel}%"
         })
     }
@@ -561,8 +566,8 @@ class TripInProgressFragment :
             Calendar.getInstance().get(Calendar.MINUTE))
         val amPm = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
         if (viewModel.cadenceSensor.value?.rpm == null) {
-            clockView.value = time
-            clockView.label = amPm
+            bottomRightView.value = time
+            bottomRightView.label = amPm
         } else {
             activity?.title = "$time $amPm"
         }

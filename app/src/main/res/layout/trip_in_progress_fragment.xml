@@ -9,11 +9,11 @@
     tools:context=".TripInProgressFragment">
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_distance"
+        android:id="@+id/measurement_top"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginVertical="@dimen/tip_measurement_padding"
-        app:layout_constraintBottom_toTopOf="@id/textview_heart_rate"
+        app:layout_constraintBottom_toTopOf="@id/measurement_topLeft"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,72 +21,72 @@
         measurement_view:autoShrinkText="false" />
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_heart_rate"
+        android:id="@+id/measurement_topLeft"
         android:layout_width="0dp"
         android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         measurement_view:autoShrinkText="true"
-        app:layout_constraintBottom_toTopOf="@id/textview_average_speed"
-        app:layout_constraintEnd_toStartOf="@id/textview_split_speed"
+        app:layout_constraintBottom_toTopOf="@id/measurement_middleLeft"
+        app:layout_constraintEnd_toStartOf="@id/measurement_topRight"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textview_distance" />
+        app:layout_constraintTop_toBottomOf="@id/measurement_top" />
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_split_speed"
+        android:id="@+id/measurement_topRight"
         android:layout_width="0dp"
         android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         measurement_view:autoShrinkText="true"
-        app:layout_constraintBottom_toBottomOf="@id/textview_heart_rate"
+        app:layout_constraintBottom_toBottomOf="@id/measurement_topLeft"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/textview_heart_rate" />
+        app:layout_constraintStart_toEndOf="@id/measurement_topLeft" />
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_average_speed"
+        android:id="@+id/measurement_middleLeft"
         android:layout_width="0dp"
         android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         measurement_view:autoShrinkText="true"
         android:textAppearance="@style/DashboardFontAppearance"
-        app:layout_constraintBottom_toTopOf="@id/textview_time"
-        app:layout_constraintEnd_toStartOf="@id/textview_speed"
+        app:layout_constraintBottom_toTopOf="@id/measurement_bottomRight"
+        app:layout_constraintEnd_toStartOf="@id/measurement_middleRight"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textview_heart_rate" />
+        app:layout_constraintTop_toBottomOf="@id/measurement_topLeft" />
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_speed"
+        android:id="@+id/measurement_middleRight"
         android:layout_width="0dp"
         android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         measurement_view:autoShrinkText="true"
         android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
-        app:layout_constraintBottom_toBottomOf="@id/textview_average_speed"
+        app:layout_constraintBottom_toBottomOf="@id/measurement_middleLeft"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/textview_average_speed" />
+        app:layout_constraintStart_toEndOf="@id/measurement_middleLeft" />
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_duration"
+        android:id="@+id/measurement_bottomLeft"
         android:layout_width="0dp"
         android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         measurement_view:autoShrinkText="true"
         android:textAppearance="@style/DashboardFontAppearance"
-        app:layout_constraintBottom_toTopOf="@id/textview_bearing"
-        app:layout_constraintEnd_toStartOf="@+id/textview_time"
+        app:layout_constraintBottom_toTopOf="@id/measurement_bottom"
+        app:layout_constraintEnd_toStartOf="@+id/measurement_bottomRight"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textview_speed" />
+        app:layout_constraintTop_toBottomOf="@id/measurement_middleRight" />
 
     <com.kvl.cyclotrack.MeasurementView
-        android:id="@+id/textview_time"
+        android:id="@+id/measurement_bottomRight"
         android:layout_width="0dp"
         android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
         measurement_view:autoShrinkText="true"
         android:textAppearance="@style/DashboardFontAppearance"
-        app:layout_constraintBottom_toBottomOf="@id/textview_duration"
+        app:layout_constraintBottom_toBottomOf="@id/measurement_bottomLeft"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/textview_duration" />
+        app:layout_constraintStart_toEndOf="@+id/measurement_bottomLeft" />
 
     <ImageView
         android:id="@+id/image_tracking"
@@ -98,7 +98,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textview_accuracy"
+        android:id="@+id/textview_debug"
         android:layout_height="wrap_content"
         android:layout_width="0dp"
         android:layout_marginStart="4dp"
@@ -112,7 +112,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textview_bearing"
+        android:id="@+id/measurement_bottom"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_medium"
@@ -132,8 +132,8 @@
         android:layout_marginBottom="1dp"
         android:contentDescription="@string/bearing_icon_description"
         android:src="@drawable/baseline_explore_24"
-        app:layout_constraintEnd_toStartOf="@id/textview_bearing"
-        app:layout_constraintBottom_toBottomOf="@id/textview_bearing" />
+        app:layout_constraintEnd_toStartOf="@id/measurement_bottom"
+        app:layout_constraintBottom_toBottomOf="@id/measurement_bottom" />
 
     <Button
         android:id="@+id/pause_button"

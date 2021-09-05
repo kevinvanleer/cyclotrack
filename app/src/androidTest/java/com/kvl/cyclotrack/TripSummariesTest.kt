@@ -102,7 +102,7 @@ class TripSummariesTest {
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(CoreMatchers.not(isDisplayed())))
 
-        onView(withId(R.id.textview_average_speed)).perform(click())
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
         onView(withId(R.id.resume_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
@@ -121,7 +121,7 @@ class TripSummariesTest {
         onView(withId(R.id.resume_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
 
-        onView(withId(R.id.textview_average_speed)).perform(click())
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
         onView(withId(R.id.resume_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
@@ -135,7 +135,7 @@ class TripSummariesTest {
         onView(withId(R.id.resume_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
 
-        onView(withId(R.id.textview_average_speed)).perform(click())
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
         onView(withId(R.id.resume_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(CoreMatchers.not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
@@ -163,10 +163,10 @@ class TripSummariesTest {
         SystemClock.sleep(5000)
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
-        onView(withId(R.id.textview_duration)).check(matches(not("00:00")))
-        onView(withId(R.id.textview_duration)).check(matches(not("--:--")))
+        onView(withId(R.id.measurement_bottomRight)).check(matches(not("00:00")))
+        onView(withId(R.id.measurement_bottomRight)).check(matches(not("--:--")))
 
-        onView(withId(R.id.textview_average_speed)).perform(click())
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
@@ -193,7 +193,7 @@ class TripSummariesTest {
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
 
-        onView(withId(R.id.textview_average_speed)).perform(click())
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
@@ -224,7 +224,7 @@ fun test04_allDataViewPauseTrip() {
     onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
     onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
 
-    onView(withId(R.id.textview_average_speed)).perform(click())
+    onView(withId(R.id.measurement_middleLeft)).perform(click())
     onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
     onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
     onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
@@ -247,7 +247,7 @@ fun test04_allDataViewPauseTrip() {
     onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
     onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
 
-    onView(withId(R.id.textview_average_speed)).perform(click())
+    onView(withId(R.id.measurement_middleLeft)).perform(click())
     onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
     onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
     onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
