@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.core.content.edit
+import androidx.core.text.isDigitsOnly
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import com.google.android.gms.common.api.ApiException
@@ -193,11 +194,16 @@ class BiometricsViewModel constructor(
     val vo2maxHint: String
         get() = try {
             "VO2Max ${
-                if (vo2max.isNullOrEmpty()) getUserRestingHeartRate(sharedPreferences)?.let {
-                    estimateVo2Max(it,
-                        getUserMaxHeartRate(sharedPreferences) ?: getUserAge(sharedPreferences)?.roundToInt()!!)
-                }
-                    ?.let { "(est ${it.toInt()} mL/kg/min)" } ?: "(enter resting/max HR to estimate)" else "(enter resting/max HR to estimate)"
+                if (vo2max.isNullOrEmpty()) restingHeartRate?.takeIf { it.isNotBlank() && it.isDigitsOnly() }
+                    ?.toInt()
+                    ?.let {
+                        estimateVo2Max(
+                            it,
+                            getUserMaxHeartRate(sharedPreferences) ?: getUserAge(sharedPreferences)?.roundToInt()!!
+                        )
+                    }?.let {
+                        "(est ${it.toInt()} mL/kg/min)"
+                    } ?: "(enter resting/max HR to estimate)" else "(enter resting/max HR to estimate)"
             }"
         } catch (e: NullPointerException) {
             "VO2Max (enter resting/max HR to estimate)"
