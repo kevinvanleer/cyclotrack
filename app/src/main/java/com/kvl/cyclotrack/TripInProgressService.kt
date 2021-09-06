@@ -417,7 +417,6 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun restart(tripId: Long) {
-        if (running) return
 
         Log.d(logTag, "Restart trip")
         Log.d(logTag, "gpsService=$gpsService")
@@ -430,8 +429,30 @@ class TripInProgressService @Inject constructor() :
         }*/
 
         Log.d(logTag, "Restart trip service for ID ${tripId}; this=$this")
-        startObserving(tripId)
 
+        lifecycleScope.launch(Dispatchers.IO) {
+            tripsRepository.get(tripId).let {
+                EventBus.getDefault().post(
+                    TripProgressEvent(
+                        TripProgress(
+                            measurements = null,
+                            accuracy = 0f,
+                            bearing = 0f,
+                            speed = 0f,
+                            maxSpeed = 0f,
+                            distance = it.distance ?: 0.0,
+                            slope = calculateSlope(derivedTripState.takeLast(20)),
+                            duration = it.duration ?: 0.0,
+                            tracking = false
+                        )
+                    )
+                )
+            }
+        }
+
+        if (running) return
+
+        startObserving(tripId)
         startForegroundCompat(tripId)
     }
 
