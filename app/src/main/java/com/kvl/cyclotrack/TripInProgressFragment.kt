@@ -221,8 +221,14 @@ class TripInProgressFragment :
     }
 
     private fun endTrip(tripId: Long) {
-        requireActivity().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
+        FirebaseAnalytics.getInstance(requireContext())
+            .logEvent("StopTrip") {
+                param("TripDuration", viewModel.currentProgress.value?.duration ?: 0.0)
+            }
+        requireActivity().startService(Intent(
+            requireContext(),
+            TripInProgressService::class.java
+        ).apply {
             this.action = getString(R.string.action_stop_trip_service)
             this.putExtra("tripId", tripId)
         })
@@ -329,6 +335,7 @@ class TripInProgressFragment :
         super.onViewCreated(view, savedInstanceState)
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
+        FirebaseAnalytics.getInstance(requireContext()).logEvent("EnterDashboard") {}
 
         savedInstanceState?.getLong("tripId", -1)
             .takeIf { t -> t != -1L }.let { tripId ->
@@ -620,12 +627,6 @@ class TripInProgressFragment :
 
     override fun onStop() {
         super.onStop()
-
-        FirebaseAnalytics.getInstance(requireContext())
-            .logEvent("StopTrip") {
-                param("TripDuration", viewModel.currentProgress.value?.duration ?: 0.0)
-            }
-
         EventBus.getDefault().unregister(this)
         Log.d(logTag, "onStop")
     }
@@ -634,6 +635,8 @@ class TripInProgressFragment :
         super.onDestroyView()
         Log.d(logTag, "onDestroyView")
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
+
+        FirebaseAnalytics.getInstance(requireContext()).logEvent("LeaveDashboard") {}
     }
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
