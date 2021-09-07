@@ -502,33 +502,38 @@ class TripInProgressService @Inject constructor() :
         var job: Job? = null
         tripId.takeIf { it >= 0 }?.let { id ->
             job = lifecycle.coroutineScope.launch {
-                timeStateRepository.appendTimeState(TimeState(tripId = id,
-                    state = TimeStateEnum.STOP))
+                timeStateRepository.appendTimeState(
+                    TimeState(
+                        tripId = id,
+                        state = TimeStateEnum.STOP
+                    )
+                )
                 tripsRepository.endTrip(id)
             }
         }
 
-        if (::thisGpsObserver.isInitialized) {
-            gpsService.removeObserver(thisGpsObserver)
-        }
-        if (::thisSensorObserver.isInitialized) {
-            onboardSensors.removeObserver(thisSensorObserver)
-        }
+        if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
+
+        if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
 
         running = false
         clearState()
-        bleService.disconnect()
-        gpsService.stopListening()
-        EventBus.getDefault().unregister(this)
         job?.join()
         stopSelf()
+    }
+
+    private fun shutdown() {
+        Log.d(logTag, "called shutdown()")
+        if (!running) stopSelf()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
-                getString(R.string.action_initialize_trip_service) -> Log.d(logTag,
-                    "Initialize trip service")
+                getString(R.string.action_initialize_trip_service) -> Log.d(
+                    logTag,
+                    "Initialize trip service"
+                )
                 getString(R.string.action_start_trip_service) -> {
                     when (val tripId = it.getLongExtra("tripId", -1)) {
                         -1L -> lifecycleScope.launch { start() }
@@ -542,6 +547,7 @@ class TripInProgressService @Inject constructor() :
                 getString(R.string.action_stop_trip_service) -> lifecycleScope.launch {
                     end(it.getLongExtra("tripId", -1))
                 }
+                getString(R.string.action_shutdown_trip_service) -> shutdown()
                 else -> Log.d(logTag, "Received intent ${intent}")
             }
         }
@@ -559,5 +565,18 @@ class TripInProgressService @Inject constructor() :
         bleService.initialize()
         clearState()
         EventBus.getDefault().register(this)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
+
+        if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
+
+        EventBus.getDefault().unregister(this)
+        bleService.disconnect()
+        gpsService.stopListening()
+        Log.d(logTag, "onDestroy")
     }
 }

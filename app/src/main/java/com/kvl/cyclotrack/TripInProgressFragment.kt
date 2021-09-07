@@ -636,6 +636,13 @@ class TripInProgressFragment :
         Log.d(logTag, "onDestroyView")
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
 
+        if (viewModel.tripId == null)
+            requireContext().startService(Intent(
+                requireContext(),
+                TripInProgressService::class.java
+            ).apply {
+                this.action = getString(R.string.action_shutdown_trip_service)
+            })
         FirebaseAnalytics.getInstance(requireContext()).logEvent("LeaveDashboard") {}
     }
 
