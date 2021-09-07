@@ -498,7 +498,7 @@ class TripInProgressService @Inject constructor() :
     }
 
     private suspend fun end(tripId: Long) {
-        Log.d(logTag, "Called end()")
+        Log.d(logTag, "Called end() with ${tripId}")
         var job: Job? = null
         tripId.takeIf { it >= 0 }?.let { id ->
             job = lifecycle.coroutineScope.launch {

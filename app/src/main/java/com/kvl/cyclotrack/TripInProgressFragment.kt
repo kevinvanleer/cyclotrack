@@ -18,8 +18,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navGraphViewModels
 import androidx.preference.PreferenceManager
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -627,10 +625,9 @@ class TripInProgressFragment :
             .logEvent("StopTrip") {
                 param("TripDuration", viewModel.currentProgress.value?.duration ?: 0.0)
             }
-        WorkManager.getInstance(requireContext())
-            .enqueue(OneTimeWorkRequestBuilder<StopTripServiceWorker>().build())
 
         EventBus.getDefault().unregister(this)
+        Log.d(logTag, "onStop")
     }
 
     override fun onDestroyView() {
