@@ -52,7 +52,9 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    @SuppressWarnings("deprecation")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        //Required for Google Sign-in
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(logTag, "onActivityResult: ${resultCode}")
         when (resultCode) {
