@@ -5,6 +5,8 @@ apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 apply plugin: 'com.google.gms.google-services'
 
+import org.ajoberstar.grgit.Grgit
+
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
@@ -32,6 +34,15 @@ android {
         targetSdkVersion 30
         versionCode 33
         versionName "Trip path flags"
+
+        def lastCommitHash = { ->
+            def git = Grgit.open(dir: project.rootDir)
+            def lastHash = git.head().getAbbreviatedId()
+            println("INFO: Last Git Hash $lastHash")
+            return lastHash
+        }
+        def gitHash = lastCommitHash()
+        buildConfigField "String", "GIT_HASH", "\"$gitHash\""
 
         //testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunner "com.kvl.cyclotrack.CustomTestRunner"
