@@ -42,6 +42,7 @@
     <Preference
         app:key="@string/preferences_privacy_policy_key"
         app:title="Privacy policy"
+        app:persistent="false"
         app:summary="Tap to view privacy policy">
         <intent
             android:action="android.intent.action.VIEW"
@@ -50,7 +51,15 @@
     <Preference
         app:key="@string/preferences_clear_preferences_key"
         app:title="Clear preferences"
+        app:persistent="false"
         app:summary="DEV ENV ONLY: Touch to clear all preferences"
+        app:allowDividerAbove="true"
+        app:isPreferenceVisible="false" />
+    <Preference
+        app:key="@string/preferences_display_app_version"
+        app:title=""
+        app:persistent="false"
+        app:summary="APP VERSION"
         app:allowDividerAbove="true"
         app:isPreferenceVisible="false" />
 </PreferenceScreen>

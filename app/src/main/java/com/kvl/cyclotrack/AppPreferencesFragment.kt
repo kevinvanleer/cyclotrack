@@ -61,12 +61,20 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
 
         if (!BleService.isBluetoothSupported(requireContext())) {
             findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
-                this.isVisible = false
+                isVisible = false
             }
         }
 
         if (FeatureFlags.devBuild) {
             configureClearPreferences()
+        }
+
+        if (FeatureFlags.betaBuild) {
+            findPreference<Preference>(getString(R.string.preferences_display_app_version))?.apply {
+                isVisible = true
+                summary =
+                    "v${BuildConfig.VERSION_CODE}: ${BuildConfig.VERSION_NAME} (${BuildConfig.GIT_HASH})"
+            }
         }
     }
 

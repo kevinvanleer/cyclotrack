@@ -96,4 +96,5 @@
     <string name="preference_key_bike_mass">bike_mass</string>
     <string name="preferences_key_enable_analytics">preference_key_enable_analytics</string>
     <string name="preference_key_analytics_opt_in_presented">preference_key_analytics_opt_in_presented</string>
+    <string name="preferences_display_app_version">preference_key_display_app_version</string>
 </resources>
