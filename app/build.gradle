@@ -43,7 +43,10 @@ android {
         }
         def makeWipCommit = { ->
             def git = Grgit.open(dir: project.rootDir)
-            if (git.status().unstaged.getAllChanges().size() > 0 || git.status().staged.getAllChanges().size() > 0) git.commit(all: true, message: 'wip')
+            if (git.status().unstaged.getAllChanges().size() > 0 || git.status().staged.getAllChanges().size() > 0)
+                if (git.branch.current().getName() == "master") {
+                    throw StopExecutionException("You are on the master branch, either commit the changes or checkout a feature/bug branch")
+                } else git.commit(all: true, message: 'wip')
         }
         makeWipCommit()
         def gitHash = lastCommitHash()
