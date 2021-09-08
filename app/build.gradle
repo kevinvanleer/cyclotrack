@@ -41,6 +41,11 @@ android {
             println("INFO: Last Git Hash $lastHash")
             return lastHash
         }
+        def makeWipCommit = { ->
+            def git = Grgit.open(dir: project.rootDir)
+            if (git.status().unstaged.getAllChanges().size() > 0 || git.status().staged.getAllChanges().size() > 0) git.commit(all: true, message: 'wip')
+        }
+        makeWipCommit()
         def gitHash = lastCommitHash()
         buildConfigField "String", "GIT_HASH", "\"$gitHash\""
 
