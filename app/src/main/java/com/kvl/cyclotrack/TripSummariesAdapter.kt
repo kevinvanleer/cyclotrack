@@ -82,14 +82,12 @@ class TripSummariesAdapter(
             }
         }
 
-        if (FeatureFlags.betaBuild) {
-            holder.tripSummaryView.setOnLongClickListener { view ->
-                multiSelectMode = true
-                multiSelectModeCallback(true)
-                selectedTrips.add(tripId)
-                view.isSelected = true
-                true
-            }
+        holder.tripSummaryView.setOnLongClickListener { view ->
+            multiSelectMode = true
+            multiSelectModeCallback(true)
+            selectedTrips.add(tripId)
+            view.isSelected = true
+            true
         }
     }
 
