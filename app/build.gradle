@@ -32,8 +32,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 23
         targetSdkVersion 30
-        versionCode 33
-        versionName "Trip path flags"
+        versionCode 34
+        versionName "Advanced preferences"
 
         def lastCommitHash = { ->
             def git = Grgit.open(dir: project.rootDir)
