@@ -199,7 +199,9 @@ class BiometricsViewModel constructor(
                     ?.let {
                         estimateVo2Max(
                             it,
-                            getUserMaxHeartRate(sharedPreferences) ?: getUserAge(sharedPreferences)?.roundToInt()!!
+                            getUserMaxHeartRate(sharedPreferences) ?: estimateMaxHeartRate(
+                                getUserAge(sharedPreferences)?.roundToInt()!!
+                            )
                         )
                     }?.let {
                         "(est ${it.toInt()} mL/kg/min)"
