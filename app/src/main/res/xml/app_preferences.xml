@@ -40,6 +40,10 @@
         app:summary="Allow Cyclotrack to collect usage data to help improve user experience"
         app:defaultValue="true" />
     <Preference
+        app:key="@string/preference_key_advanced_preferences"
+        app:title="Advanced"
+        app:summary="Advanced settings"/>
+    <Preference
         app:key="@string/preferences_privacy_policy_key"
         app:title="Privacy policy"
         app:persistent="false"

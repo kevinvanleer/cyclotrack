@@ -136,19 +136,23 @@ class BiometricsViewModel constructor(
         @Bindable
         get() =
             try {
-                when (gfRestingHr != null && useGoogleFitBiometrics) {
+                when (!isRestingHeartRateEditable) {
                     true -> gfRestingHr.toString()
-                    else -> sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                        "")
+                    else -> sharedPreferences.getString(
+                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
+                        ""
+                    )
                 }
             } catch (e: ClassCastException) {
                 ""
             }
         set(newValue) {
-            if (gfRestingHr == null || !useGoogleFitBiometrics) {
+            if (isRestingHeartRateEditable) {
                 sharedPreferences.edit {
-                    this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                        newValue)
+                    this.putString(
+                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
+                        newValue
+                    )
                 }
                 notifyChange()
             }
@@ -165,8 +169,73 @@ class BiometricsViewModel constructor(
             }
         set(newValue) {
             sharedPreferences.edit {
-                this.putBoolean(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-                    newValue)
+                this.putBoolean(
+                    CyclotrackApp.instance.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                    newValue
+                )
+            }
+            notifyChange()
+        }
+
+    var shouldSyncGoogleFitBiometrics: Boolean
+        @Bindable
+        get() =
+            try {
+                sharedPreferences.getBoolean(
+                    CyclotrackApp.instance.getString(R.string.preferences_key_advanced_enable_google_fit_sync_biometrics),
+                    false
+                )
+            } catch (e: ClassCastException) {
+                false
+            }
+        set(shouldSync) {
+            sharedPreferences.edit {
+                this.putBoolean(
+                    CyclotrackApp.instance.getString(R.string.preferences_key_advanced_enable_google_fit_sync_biometrics),
+                    shouldSync
+                )
+            }
+            if (shouldSync) {
+                gfHeight?.let {
+                    height = "%.1f".format(
+                        convertSystemToUserHeight(
+                            it,
+                            CyclotrackApp.instance
+                        )
+                    )
+                }
+                gfWeight?.let {
+                    weight = "%.1f".format(
+                        convertSystemToUserMass(
+                            it,
+                            CyclotrackApp.instance
+                        )
+                    )
+                }
+                gfRestingHr?.let {
+                    restingHeartRate = gfRestingHr.toString()
+                }
+            }
+            notifyChange()
+        }
+
+    var shouldUseGoogleFitRestingHeartRate: Boolean
+        @Bindable
+        get() =
+            try {
+                sharedPreferences.getBoolean(
+                    CyclotrackApp.instance.getString(R.string.preferences_key_advanced_enable_google_fit_resting_heart_rate),
+                    FeatureFlags.betaBuild
+                )
+            } catch (e: ClassCastException) {
+                FeatureFlags.betaBuild
+            }
+        set(newValue) {
+            sharedPreferences.edit {
+                this.putBoolean(
+                    CyclotrackApp.instance.getString(R.string.preferences_key_advanced_enable_google_fit_resting_heart_rate),
+                    newValue
+                )
             }
             notifyChange()
         }
@@ -175,8 +244,10 @@ class BiometricsViewModel constructor(
     @get:Bindable
     val heightHint: String
         get() =
-            when (sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_system_of_measurement),
-                "1")) {
+            when (sharedPreferences.getString(
+                CyclotrackApp.instance.getString(R.string.preference_key_system_of_measurement),
+                "1"
+            )) {
                 "1" -> "Height (inches)"
                 else -> "Height (cm)"
             }
@@ -242,7 +313,7 @@ class BiometricsViewModel constructor(
 
     @get:Bindable
     val isRestingHeartRateEditable
-        get() = !useGoogleFitBiometrics || gfRestingHr == null
+        get() = !useGoogleFitBiometrics || gfRestingHr == null || !shouldUseGoogleFitRestingHeartRate
 
     @get:Bindable
     val isWeightEditable

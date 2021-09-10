@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen  xmlns:app="http://schemas.android.com/apk/res-auto">
+    <SwitchPreference
+        app:key="@string/preferences_key_advanced_onboard_sensors"
+        app:title="Onboard sensors"
+        app:summary="Collect data from onboard sensors. This will significantly increase the amount of data stored by Cyclotrack. Nothing is done with this data at this time, but it may be used for analysis in the future."
+        app:defaultValue="false" />
+</PreferenceScreen>

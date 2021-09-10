@@ -381,11 +381,18 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
     override fun onResume() {
         super.onResume()
         if (this::tripListView.isInitialized) {
-            tripListView.layoutManager?.onRestoreInstanceState(viewModel.tripListState.getParcelable(
-                "MY_KEY"))
+            tripListView.layoutManager?.onRestoreInstanceState(
+                viewModel.tripListState.getParcelable(
+                    "MY_KEY"
+                )
+            )
         }
 
         if (hasFitnessPermissions(requireContext())) WorkManager.getInstance(requireContext())
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        if (shouldSyncGoogleFitBiometrics(requireContext()) &&
+            hasFitnessPermissions(requireContext())
+        ) WorkManager.getInstance(requireContext())
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
     }
 }

@@ -97,4 +97,8 @@
     <string name="preferences_key_enable_analytics">preference_key_enable_analytics</string>
     <string name="preference_key_analytics_opt_in_presented">preference_key_analytics_opt_in_presented</string>
     <string name="preferences_display_app_version">preference_key_display_app_version</string>
+    <string name="preference_key_advanced_preferences">preference_key_advanced_preferences</string>
+    <string name="preferences_key_advanced_onboard_sensors">preferences_key_onboard_sensors</string>
+    <string name="preferences_key_advanced_enable_google_fit_sync_biometrics">enable_gfit_sync_biometrics</string>
+    <string name="preferences_key_advanced_enable_google_fit_resting_heart_rate">enable_google_fit_resting_heart_rate</string>
 </resources>

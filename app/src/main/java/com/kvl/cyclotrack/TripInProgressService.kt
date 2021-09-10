@@ -462,7 +462,7 @@ class TripInProgressService @Inject constructor() :
             gpsService.observe(this, thisGpsObserver)
         }
 
-        if (FeatureFlags.betaBuild) {
+        if (shouldCollectOnboardSensors(applicationContext)) {
             if (!::thisSensorObserver.isInitialized || !onboardSensors.hasObservers()) {
                 thisSensorObserver = sensorObserver(tripId)
                 onboardSensors.observe(this, thisSensorObserver)

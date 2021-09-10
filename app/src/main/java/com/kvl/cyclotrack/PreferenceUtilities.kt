@@ -49,3 +49,22 @@ fun getSystemOfMeasurement(context: Context): String? =
 fun getPreferences(context: Context): SharedPreferences =
     PreferenceManager.getDefaultSharedPreferences(context)
 
+fun useGoogleFitRestingHeartRate(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preferences_key_advanced_enable_google_fit_resting_heart_rate),
+    FeatureFlags.betaBuild
+)
+
+fun useGoogleFitBiometrics(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+    true
+)
+
+fun shouldSyncGoogleFitBiometrics(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preferences_key_advanced_enable_google_fit_sync_biometrics),
+    FeatureFlags.betaBuild
+)
+
+fun shouldCollectOnboardSensors(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preferences_key_advanced_onboard_sensors),
+    FeatureFlags.betaBuild
+)

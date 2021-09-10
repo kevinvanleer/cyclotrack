@@ -211,17 +211,6 @@ fun estimateVo2Max(restingHeartRate: Int, maximumHeartRate: Int): Float {
     return (15.3 * maximumHeartRate / restingHeartRate).toFloat()
 }
 
-fun googleFitBiometricsEnabled(context: Context): Boolean =
-    PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context
-        .getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-        true)
-
-fun googleFitBiometricsEnabled(sharedPreferences: SharedPreferences) =
-    sharedPreferences.getBoolean(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-        true)
-
-
 fun getCaloriesEstimateType(
     sharedPrefs: SharedPreferences,
 ): String {
@@ -488,7 +477,7 @@ suspend fun getCombinedBiometrics(
             )
         }
         Log.d(logTag, "biometrics after trip: ${biometrics}")
-        if (googleFitBiometricsEnabled(context) && googleFitApiService.hasPermission()) {
+        if (useGoogleFitBiometrics(context) && googleFitApiService.hasPermission()) {
             val weightDeferred = async { googleFitApiService.getLatestWeight(timestamp) }
             val heightDeferred = async { googleFitApiService.getLatestHeight(timestamp) }
             val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate(timestamp) }
@@ -501,7 +490,7 @@ suspend fun getCombinedBiometrics(
                 Log.d(logTag, "biometrics google height: ${it}")
                 biometrics = biometrics.copy(userHeight = it)
             }
-            hrDeferred.await().takeIf { FeatureFlags.betaBuild }?.let {
+            hrDeferred.takeIf { useGoogleFitRestingHeartRate(context) }?.await()?.let {
                 Log.d(logTag, "biometrics google resting hr: ${it}")
                 biometrics = biometrics.copy(userRestingHeartRate = it)
             }

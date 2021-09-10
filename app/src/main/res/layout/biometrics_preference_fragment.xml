@@ -21,24 +21,52 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="12dp"
+            android:padding="12dp"
             tools:context=".BiometricsPreferenceFragment">
 
-            <androidx.appcompat.widget.SwitchCompat
+            <com.kvl.cyclotrack.widgets.SwitchPreference
                 android:id="@+id/preference_biometrics_switch_use_google_fit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 android:visibility="@{viewmodel.googleFitEnabled ? View.VISIBLE : View.GONE}"
-                android:checked="@={viewmodel.useGoogleFitBiometrics}"
-                android:text="Use Google Fit Biometrics" />
+                app:checked="@={viewmodel.useGoogleFitBiometrics}"
+                app:title="Use Google Fit Biometrics"
+                app:summary="Use Google Fit height, weight, and resting heart rate." />
+
+            <com.kvl.cyclotrack.widgets.SwitchPreference
+                android:id="@+id/preference_biometrics_switch_sync_google_fit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="12dp"
+                android:layout_marginStart="10dp"
+                android:visibility="@{viewmodel.useGoogleFitBiometrics ? View.VISIBLE : View.GONE}"
+                app:checked="@={viewmodel.shouldSyncGoogleFitBiometrics}"
+                app:title="Sync Google Fit Biometrics"
+                app:summary="Overwrite Cyclotrack stored biometrics with values from Google Fit." />
+
+            <com.kvl.cyclotrack.widgets.SwitchPreference
+                android:id="@+id/preference_biometrics_switch_use_google_fit_resting_heart_rate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_sync_google_fit"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginTop="8dp"
+                android:layout_marginStart="10dp"
+                android:paddingBottom="24dp"
+                android:visibility="@{viewmodel.useGoogleFitBiometrics ? View.VISIBLE : View.GONE}"
+                app:checked="@={viewmodel.shouldUseGoogleFitRestingHeartRate}"
+                app:title="Use Google Fit resting heart rate"
+                app:summary="Enable this if you are tracking you heart rate in Google Fit." />
 
             <TextView
                 android:id="@+id/preference_biometrics_instruction_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit_resting_heart_rate"
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="24dp"
                 android:text="@{viewmodel.instructionText}" />

@@ -27,6 +27,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
     PreferenceFragmentCompat.OnPreferenceDisplayDialogCallback {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "PREFERENCES"
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
@@ -45,6 +46,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                 view?.findNavController()?.let {
                     Log.d(logTag, it.toString())
                     it.navigate(R.id.action_edit_biometrics_preferences)
+                    true
+                } == true
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.preference_key_advanced_preferences))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_advanced_preferences)
                     true
                 } == true
             }

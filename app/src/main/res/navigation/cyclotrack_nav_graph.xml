@@ -70,7 +70,15 @@
         <action
             android:id="@+id/action_edit_bike_specs"
             app:destination="@id/BikeSpecsPreferenceFragment" />
+        <action
+            android:id="@+id/action_advanced_preferences"
+            app:destination="@id/AdvancedPreferencesFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/AdvancedPreferencesFragment"
+        android:name="com.kvl.cyclotrack.preferences.AdvancedPreferencesFragment"
+        android:label="Advanced Preferences"
+        tools:layout="@layout/fragment_advanced_preferences" />
     <fragment
         android:id="@+id/BiometricsPreferenceFragment"
         android:name="com.kvl.cyclotrack.BiometricsPreferenceFragment"

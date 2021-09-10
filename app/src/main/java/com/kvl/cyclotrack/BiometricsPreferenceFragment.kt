@@ -71,7 +71,8 @@ class BiometricsPreferenceFragment : Fragment() {
                         newDate.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
                         viewModel.dob =
                             SimpleDateFormat(dateFormatPattenDob).format(
-                                newDate.time)
+                                newDate.time
+                            )
                         binding.preferenceBiometricsDob.setText(viewModel.dob)
                     }
                 }.create().show()
