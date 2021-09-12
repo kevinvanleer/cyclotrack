@@ -716,7 +716,7 @@ fun calculateWheelCircumference(
     sampleSize: Int,
     varianceThreshold: Double,
 ): Float? =
-    derivedTripState.filter { it.circumference.isFinite() }?.takeLast(sampleSize)
+    derivedTripState.filter { it.circumference.isFinite() }.takeLast(sampleSize)
         .map { it.circumference }.let {
             if (it.size >= sampleSize && it.sampleVariance() < varianceThreshold) it.average()
                 .toFloat() else null
