@@ -8,10 +8,8 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.location.Location
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleService
@@ -334,7 +332,6 @@ class TripInProgressService @Inject constructor() :
 
     private lateinit var thisSensorObserver: Observer<SensorModel>
 
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun createNotificationChannel(channelId: String, channelName: String): String {
         //TODO: MAKE THIS YOUR OWN -- COPIED FROM POST
         val channel = NotificationChannel(channelId,
@@ -347,14 +344,10 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun startForegroundCompat(tripId: Long) {
-        val channelId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(
-                getString(R.string.notification_id_trip_in_progress),
-                getString(R.string.notification_channel_name_trip_in_progress)
-            )
-        } else {
-            getString(R.string.notification_id_trip_in_progress)
-        }
+        val channelId = createNotificationChannel(
+            getString(R.string.notification_id_trip_in_progress),
+            getString(R.string.notification_channel_name_trip_in_progress)
+        )
 
         val pendingIntent = NavDeepLinkBuilder(this).apply {
             setGraph(R.navigation.cyclotrack_nav_graph)

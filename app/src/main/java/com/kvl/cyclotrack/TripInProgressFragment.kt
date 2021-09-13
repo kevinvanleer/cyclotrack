@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.content.*
 import android.location.Location
-import android.os.Build
 import android.os.Bundle
 import android.os.Looper
 import android.text.format.DateUtils
@@ -540,14 +539,13 @@ class TripInProgressFragment :
     ) = when (location.speed < 0.5) {
         true -> 0.0
         else -> {
-            val weight = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            val weight =
                 when (location.hasSpeedAccuracy()) {
                     true -> (location.speedAccuracyMetersPerSecond.coerceAtMost(
                         10f
                     ) / 10.0 - 1).pow(8)
                     else -> 0.0
                 }
-            else 0.7
             (averageSpeed
                 ?: getUserSpeed(requireContext(), location.speed.toDouble()).toDouble())
                 .takeIf { it.isFinite() }

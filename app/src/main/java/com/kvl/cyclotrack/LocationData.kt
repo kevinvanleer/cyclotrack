@@ -24,11 +24,10 @@ data class LocationData(
         location.longitude,
         location.speed,
         location.time) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            this.bearingAccuracyDegrees = location.bearingAccuracyDegrees
-            this.speedAccuracyMetersPerSecond = location.speedAccuracyMetersPerSecond
-            this.verticalAccuracyMeters = location.verticalAccuracyMeters
-        }
+
+        this.bearingAccuracyDegrees = location.bearingAccuracyDegrees
+        this.speedAccuracyMetersPerSecond = location.speedAccuracyMetersPerSecond
+        this.verticalAccuracyMeters = location.verticalAccuracyMeters
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             this.elapsedRealtimeUncertaintyNanos = location.elapsedRealtimeUncertaintyNanos

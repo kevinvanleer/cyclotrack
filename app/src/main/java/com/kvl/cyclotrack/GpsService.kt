@@ -27,7 +27,6 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
             Log.v(logTag, "New location result")
             Log.v(logTag,
                 "location: ${location.latitude},${location.longitude} +/- ${location.accuracy}m")
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 Log.v(logTag,
                     "bearing: ${location.bearing} +/- ${location.bearingAccuracyDegrees}deg")
                 Log.v(logTag,
@@ -36,7 +35,6 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
                     "altitude: ${location.altitude} +/- ${location.verticalAccuracyMeters}m")
                 Log.v(logTag,
                     "timestamp: ${location.elapsedRealtimeNanos}; ${location.time}")
-                }
                 value = location
         }
 
