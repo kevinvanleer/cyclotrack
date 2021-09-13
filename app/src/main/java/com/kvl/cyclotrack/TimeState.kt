@@ -37,7 +37,7 @@ class TimeStateEnumConverter {
 data class TimeState(
     val tripId: Long,
     val state: TimeStateEnum,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = SystemUtils.currentTimeMillis(),
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
     val originalTripId: Long? = tripId,

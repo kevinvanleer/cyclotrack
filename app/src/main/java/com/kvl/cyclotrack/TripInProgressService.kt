@@ -225,7 +225,7 @@ class TripInProgressService @Inject constructor() :
             ) {
                 splitRepository.getTripSplits(tripId).lastOrNull()?.let { lastSplit ->
                     splitRepository.addSplit(Split(
-                        timestamp = System.currentTimeMillis(),
+                        timestamp = SystemUtils.currentTimeMillis(),
                         duration = duration - lastSplit.totalDuration,
                         distance = totalDistance - lastSplit.totalDistance,
                         totalDuration = duration,
@@ -233,7 +233,7 @@ class TripInProgressService @Inject constructor() :
                         tripId = tripId
                     ))
                 } ?: splitRepository.addSplit(Split(
-                    timestamp = System.currentTimeMillis(),
+                    timestamp = SystemUtils.currentTimeMillis(),
                     duration = duration,
                     distance = totalDistance,
                     totalDuration = duration,
@@ -370,12 +370,14 @@ class TripInProgressService @Inject constructor() :
     }
 
     private suspend fun getCombinedBiometrics(id: Long): Biometrics =
-        getCombinedBiometrics(id,
-            System.currentTimeMillis(),
+        getCombinedBiometrics(
+            id,
+            SystemUtils.currentTimeMillis(),
             applicationContext,
             lifecycleScope,
             null,
-            googleFitApiService)
+            googleFitApiService
+        )
 
     private suspend fun start() {
         Log.d(logTag, "Start trip")

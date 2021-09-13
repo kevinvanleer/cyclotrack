@@ -18,7 +18,7 @@ data class Split(
     val totalDuration: Double,
     val distance: Double,
     val totalDistance: Double,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = SystemUtils.currentTimeMillis(),
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
 )

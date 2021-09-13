@@ -75,7 +75,7 @@ data class Trip(
     val distance: Double? = 0.0,
     val duration: Double? = null,
     val averageSpeed: Float? = null,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = SystemUtils.currentTimeMillis(),
     val inProgress: Boolean = true,
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,

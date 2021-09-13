@@ -236,11 +236,17 @@ fun getDatasets(activity: Activity, start: Long, end: Long) {
     }
 }
 
-fun getLatest(activity: Activity, type: DataType, timestamp: Long = System.currentTimeMillis()) {
+fun getLatest(
+    activity: Activity,
+    type: DataType,
+    timestamp: Long = SystemUtils.currentTimeMillis()
+) {
     getGoogleAccount(activity)?.let {
         Fitness.getHistoryClient(activity, it)
-            .readData(DataReadRequest.Builder().read(type).setLimit(1)
-                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())
+            .readData(
+                DataReadRequest.Builder().read(type).setLimit(1)
+                    .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build()
+            )
             .addOnSuccessListener { response ->
                 // Use response data here
                 Log.d(logTag, "getLatest")
@@ -256,7 +262,7 @@ fun getLatest(activity: Activity, type: DataType, timestamp: Long = System.curre
 
 fun getLatestHeartRate(activity: Activity) {
     getGoogleAccount(activity)?.let {
-        val end = System.currentTimeMillis()
+        val end = SystemUtils.currentTimeMillis()
         val start = end - 1000L * 60 * 60 * 24 * 30
         Fitness.getHistoryClient(activity, it)
             .readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)

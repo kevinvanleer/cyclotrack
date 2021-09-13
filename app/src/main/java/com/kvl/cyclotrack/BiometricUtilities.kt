@@ -39,10 +39,13 @@ fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
 
 fun dateStringToAge(dateString: String) =
     try {
-        SimpleDateFormat(dateFormatPattenDob,
-            Locale.US).parse(dateString
+        SimpleDateFormat(
+            dateFormatPattenDob,
+            Locale.US
+        ).parse(
+            dateString
         )
-            ?.let { dateObj -> (System.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+            ?.let { dateObj -> (SystemUtils.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
     } catch (e: ParseException) {
         null
     }

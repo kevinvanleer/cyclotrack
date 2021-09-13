@@ -12,6 +12,7 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.kvl.cyclotrack.data.DerivedTripState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.Clock
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.*
@@ -171,6 +172,7 @@ fun accumulatedTime(timeStates: Array<TimeState>?): Double {
 
 fun getTripInProgressIntervals(
     timeStates: Array<TimeState>?,
+    clock: Clock = Clock.systemUTC()
 ): Array<LongRange> {
     val intervals = ArrayList<LongRange>()
     var intervalStart = -1L
@@ -183,7 +185,7 @@ fun getTripInProgressIntervals(
         }
     }
     if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state)) {
-        intervals.add(LongRange(timeStates.last().timestamp, System.currentTimeMillis()))
+        intervals.add(LongRange(timeStates.last().timestamp, SystemUtils.currentTimeMillis(clock)))
     }
     return intervals.toTypedArray()
 }

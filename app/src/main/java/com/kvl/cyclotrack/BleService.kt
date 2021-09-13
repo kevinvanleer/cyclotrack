@@ -289,7 +289,7 @@ class BleService @Inject constructor(
                         val lastEvent =
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 5)
                         if (revolutionCount != speedSensor.revolutionCount ||
-                            System.currentTimeMillis() - (speedSensor.timestamp
+                            SystemUtils.currentTimeMillis() - (speedSensor.timestamp
                                 ?: 0) > timeout
                         ) {
                             val rpm = getRpm(
@@ -305,7 +305,7 @@ class BleService @Inject constructor(
                             SpeedData(
                                 speedSensor.batteryLevel,
                                 revolutionCount,
-                                lastEvent, rpm, System.currentTimeMillis()
+                                lastEvent, rpm, SystemUtils.currentTimeMillis()
                             ).let {
                                 speedSensor = it
                                 EventBus.getDefault().post(it)
@@ -326,7 +326,7 @@ class BleService @Inject constructor(
                             "Cadence sensor changed: ${revolutionCount} :: ${lastEvent}"
                         )
                         if (revolutionCount != cadenceSensor.revolutionCount ||
-                            System.currentTimeMillis() - (cadenceSensor.timestamp
+                            SystemUtils.currentTimeMillis() - (cadenceSensor.timestamp
                                 ?: 0) > timeout
                         ) {
                             val rpm = getRpm(
@@ -342,7 +342,7 @@ class BleService @Inject constructor(
                             CadenceData(
                                 cadenceSensor.batteryLevel,
                                 revolutionCount,
-                                lastEvent, rpm, System.currentTimeMillis()
+                                lastEvent, rpm, SystemUtils.currentTimeMillis()
                             ).let {
                                 cadenceSensor = it
                                 EventBus.getDefault().post(it)

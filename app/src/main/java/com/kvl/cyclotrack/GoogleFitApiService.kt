@@ -19,7 +19,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     private val logTag = "GoogleFitApiService"
 
     suspend fun getLatestHeight(
-        timestamp: Long = System.currentTimeMillis(),
+        timestamp: Long = SystemUtils.currentTimeMillis(),
     ): Float? {
         var height: Float? = null
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
@@ -37,7 +37,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     suspend fun getLatestWeight(
-        timestamp: Long = System.currentTimeMillis(),
+        timestamp: Long = SystemUtils.currentTimeMillis(),
     ): Float? {
         var weight: Float? = null
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
@@ -54,17 +54,19 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return weight
     }
 
-    suspend fun getLatestRestingHeartRate(timestamp: Long = System.currentTimeMillis()): Int? {
+    suspend fun getLatestRestingHeartRate(timestamp: Long = SystemUtils.currentTimeMillis()): Int? {
         val end = timestamp / 1000
         val start = end - 60 * 60 * 24 * 30
         var hr: Int? = null
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
-            ?.readData(DataReadRequest.Builder()
-                .aggregate(DataSource.Builder()
-                    .setType(DataSource.TYPE_DERIVED)
-                    .setDataType(DataType.TYPE_HEART_RATE_BPM)
-                    .setAppPackageName("com.google.android.gms")
-                    .setStreamName("resting_heart_rate<-merge_heart_rate_bpm")
+            ?.readData(
+                DataReadRequest.Builder()
+                    .aggregate(
+                        DataSource.Builder()
+                            .setType(DataSource.TYPE_DERIVED)
+                            .setDataType(DataType.TYPE_HEART_RATE_BPM)
+                            .setAppPackageName("com.google.android.gms")
+                            .setStreamName("resting_heart_rate<-merge_heart_rate_bpm")
                     .build())
                 .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
                 .setTimeRange(start, end, TimeUnit.SECONDS).build())?.await()
@@ -588,8 +590,9 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     fun deleteAllData() {
         val request = DataDeleteRequest.Builder()
             .setTimeInterval(/*1577836800000*/1262304000000,
-                System.currentTimeMillis(),
-                TimeUnit.MILLISECONDS)
+                SystemUtils.currentTimeMillis(),
+                TimeUnit.MILLISECONDS
+            )
             .deleteAllData()
             .deleteAllSessions().build()
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }

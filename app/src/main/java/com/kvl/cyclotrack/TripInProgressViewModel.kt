@@ -110,7 +110,7 @@ class TripInProgressViewModel @Inject constructor(
     fun currentTimeState(tripId: Long) = timeStateRepository.observeLatest(tripId)
 
     private fun getDuration() =
-        if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (System.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
+        if (startTime.isFinite() && tripInProgress()) accumulatedDuration + (SystemUtils.currentTimeMillis() / 1e3) - startTime else accumulatedDuration
 
     private fun startObserving(tripId: Long, lifecycleOwner: LifecycleOwner) {
         Log.d(logTag, "Start observing trip ID $tripId $currentTimeStateObserver")
@@ -136,7 +136,7 @@ class TripInProgressViewModel @Inject constructor(
                     _currentTime.value = it
                 }
             }
-        }, 1000 - System.currentTimeMillis() % 1000, 500)
+        }, 1000 - SystemUtils.currentTimeMillis() % 1000, 500)
     }
 
     fun resumeTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {

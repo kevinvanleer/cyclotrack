@@ -14,7 +14,7 @@ import androidx.room.PrimaryKey
 @Keep
 data class OnboardSensors(
     val tripId: Long,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = SystemUtils.currentTimeMillis(),
     val gravityX: Float?,
     val gravityY: Float?,
     val gravityZ: Float?,

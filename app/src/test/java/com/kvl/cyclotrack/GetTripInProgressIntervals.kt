@@ -3,12 +3,12 @@ package com.kvl.cyclotrack
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.powermock.api.mockito.PowerMockito
-import org.powermock.core.classloader.annotations.PrepareForTest
 import org.powermock.modules.junit4.PowerMockRunner
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 
 @RunWith(PowerMockRunner::class)
-@PrepareForTest(System::class)
 class GetTripInProgressIntervals {
     @Test
     fun getTripInProgressIntervals_noData() {
@@ -50,22 +50,15 @@ class GetTripInProgressIntervals {
     }
 
     @Test
-    fun getTripInProgressIntervals_oneInterval_open_resolved() {
+    fun getTripInProgressIntervals_oneInterval_open() {
         val testTimeStates = ArrayList<TimeState>()
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
         val intervals =
-            getTripInProgressIntervals(testTimeStates.toTypedArray())
+            getTripInProgressIntervals(
+                testTimeStates.toTypedArray(),
+                Clock.fixed(Instant.ofEpochMilli(4567), ZoneId.systemDefault())
+            )
         Assert.assertArrayEquals(arrayOf(LongRange(1234, 4567)), intervals)
-    }
-
-
-    @Test
-    fun getTripInProgressIntervals_oneInterval_open_unresolved() {
-        val testTimeStates = ArrayList<TimeState>()
-        testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
-        val intervals =
-            getTripInProgressIntervals(testTimeStates.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(123, 456)), intervals)
     }
 
     @Test
@@ -148,9 +141,7 @@ class GetTripInProgressIntervals {
     }
 
     @Test
-    fun getTripInProgressIntervals_multiInterval_open_resolved() {
-        PowerMockito.spy(System::class)
-        PowerMockito.`when`(System.currentTimeMillis()).thenReturn(8901)
+    fun getTripInProgressIntervals_multiInterval_open() {
         val testTimeStates = ArrayList<TimeState>()
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 2345))
@@ -160,27 +151,13 @@ class GetTripInProgressIntervals {
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 6789))
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         val intervals =
-            getTripInProgressIntervals(testTimeStates.toTypedArray())
+            getTripInProgressIntervals(
+                testTimeStates.toTypedArray(),
+                Clock.fixed(Instant.ofEpochMilli(8901), ZoneId.systemDefault())
+            )
         Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
             LongRange(3456, 4567),
             LongRange(5678, 6789),
             LongRange(7890, 8901)), intervals)
-    }
-
-    @Test
-    fun getTripInProgressIntervals_multiInterval_open_unresolved() {
-        val testTimeStates = ArrayList<TimeState>()
-        testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
-        testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 2345))
-        testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 3456))
-        testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 4567))
-        testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 5678))
-        testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 6789))
-        testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
-        val intervals =
-            getTripInProgressIntervals(testTimeStates.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789)), intervals)
     }
 }

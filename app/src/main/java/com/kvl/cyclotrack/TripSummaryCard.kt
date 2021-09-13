@@ -74,8 +74,9 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
         date =
             if (DateUtils.isToday(value)) "earlier today" else DateUtils.getRelativeTimeSpanString(
                 value,
-                System.currentTimeMillis(),
-                DateUtils.DAY_IN_MILLIS).toString()
+                SystemUtils.currentTimeMillis(),
+                DateUtils.DAY_IN_MILLIS
+            ).toString()
     }
 
     fun setDuration(value: Double) {
