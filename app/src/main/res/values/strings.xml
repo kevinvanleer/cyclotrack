@@ -101,4 +101,5 @@
     <string name="preferences_key_advanced_onboard_sensors">preferences_key_onboard_sensors</string>
     <string name="preferences_key_advanced_enable_google_fit_sync_biometrics">enable_gfit_sync_biometrics</string>
     <string name="preferences_key_advanced_enable_google_fit_resting_heart_rate">enable_google_fit_resting_heart_rate</string>
+    <string name="preferences_key_advanced_use_vo2max_calorie_estimate">preferences_key_advanced_use_vo2max_calorie_estimate</string>
 </resources>

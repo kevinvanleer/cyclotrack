@@ -1169,11 +1169,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             val avgHr = getAverageHeartRate(measurements)
             try {
                 getCaloriesBurned(
+                    requireContext(),
                     biometrics,
                     overview,
                     avgHr,
                 )?.let {
                     caloriesHeadingView.label = getCaloriesBurnedLabel(
+                        requireContext(),
                         biometrics,
                         overview,
                         avgHr,

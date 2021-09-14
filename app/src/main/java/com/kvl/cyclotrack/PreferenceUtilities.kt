@@ -68,3 +68,7 @@ fun shouldCollectOnboardSensors(context: Context) = getPreferences(context).getB
     context.getString(R.string.preferences_key_advanced_onboard_sensors),
     FeatureFlags.betaBuild
 )
+
+fun useVo2maxCalorieEstimate(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preferences_key_advanced_use_vo2max_calorie_estimate), false
+)

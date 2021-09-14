@@ -249,70 +249,70 @@ fun getCaloriesEstimateType(
 }
 
 fun getCaloriesBurnedLabel(
+    context: Context,
     biometrics: Biometrics,
     overview: Trip,
     heartRate: Short?,
-): String {
-
-    var label =
-        "Calories (${speedToMets((overview.distance!! / overview.duration!!).toFloat())} METs)"
-
-    val estVo2max = biometrics.userVo2max
-        ?: biometrics.userRestingHeartRate?.let {
-            estimateVo2Max(it,
+): String =
+    (biometrics.userVo2max
+        ?: (biometrics.userRestingHeartRate?.let { restingHr ->
+            estimateVo2Max(
+                restingHr,
                 biometrics.userMaxHeartRate
-                    ?: estimateMaxHeartRate(biometrics.userAge?.roundToInt()!!))
-        }
-
-    if (biometrics.userWeight != null) {
-        if (heartRate != null) {
-            if (estVo2max != null &&
-                biometrics.userSex != null &&
-                biometrics.userAge != null
-            ) {
-                label = "Calories (gross)"
-                if (biometrics.userHeight != null) {
-                    label = "Calories (net)"
-                }
-            }
-        }
+                    ?: estimateMaxHeartRate(biometrics.userAge?.roundToInt()!!)
+            )
+        })).let { estVo2max ->
+        "Calories" + if (biometrics.userSex != null && biometrics.userAge != null && heartRate != null && estVo2max != null) {
+            if (biometrics.userHeight != null || !useVo2maxCalorieEstimate(context)) " (net)"
+            else " (gross)"
+        } else if (biometrics.userSex != null && biometrics.userAge != null && heartRate != null)
+            " (net)" //cycling algorithm
+        else " (${speedToMets((overview.distance!! / overview.duration!!).toFloat())} METs)"
     }
 
-    return label
-}
-
 fun getCaloriesBurnedLabel(
+    context: Context,
     overview: Trip,
     heartRate: Short?,
-    sharedPrefs: SharedPreferences,
 ): String {
-    fun getSex(value: UserSexEnum?) = value ?: getUserSex(sharedPrefs)
-    fun getAge(value: Float?) = (value ?: getUserAge(sharedPrefs))
-    fun getWeight(value: Float?) = value ?: getUserWeight(sharedPrefs)
-    fun getHeight(value: Float?) = value ?: getUserHeight(sharedPrefs)
-    fun getVo2max(value: Float?) = value ?: getUserVo2max(sharedPrefs)
-    fun getRestingHeartRate(value: Int?) = value ?: getUserRestingHeartRate(sharedPrefs)
-    fun getMaxHeartRate(value: Int?) = value ?: getUserMaxHeartRate(sharedPrefs)
+    fun getSex(value: UserSexEnum?) = value ?: getUserSex(context)
+    fun getAge(value: Float?) = value ?: getUserAge(context)
+    fun getWeight(value: Float?) = value ?: getUserWeight(context)
+    fun getHeight(value: Float?) = value ?: getUserHeight(context)
+    fun getVo2max(value: Float?) = value ?: getUserVo2max(context)
+    fun getRestingHeartRate(value: Int?) = value ?: getUserRestingHeartRate(context)
+    fun getMaxHeartRate(value: Int?) = value ?: getUserMaxHeartRate(context)
 
-    return getCaloriesBurnedLabel(Biometrics(
-        0,
-        userAge = getAge(overview.userAge),
-        userSex = getSex(overview.userSex),
-        userWeight = getWeight(overview.userWeight),
-        userHeight = getHeight(overview.userHeight),
-        userVo2max = getVo2max(overview.userVo2max),
-        userRestingHeartRate = getRestingHeartRate(overview.userRestingHeartRate),
-        userMaxHeartRate = getMaxHeartRate(overview.userMaxHeartRate),
-    ), overview, heartRate)
+    return getCaloriesBurnedLabel(
+        context, Biometrics(
+            0,
+            userAge = getAge(overview.userAge),
+            userSex = getSex(overview.userSex),
+            userWeight = getWeight(overview.userWeight),
+            userHeight = getHeight(overview.userHeight),
+            userVo2max = getVo2max(overview.userVo2max),
+            userRestingHeartRate = getRestingHeartRate(overview.userRestingHeartRate),
+            userMaxHeartRate = getMaxHeartRate(overview.userMaxHeartRate),
+        ), overview, heartRate
+    )
 }
 
 fun getCaloriesBurned(
+    context: Context,
     biometrics: Biometrics,
     overview: Trip,
     heartRate: Short?,
-): Int? {
-
-    return estimateCaloriesBurned(biometrics.userSex?.name,
+): Int = when (useVo2maxCalorieEstimate(context)) {
+    false -> estimateCaloriesBurned(
+        biometrics.userSex?.name,
+        biometrics.userAge?.roundToInt(),
+        biometrics.userWeight!!,
+        overview.duration?.toFloat()!!,
+        overview.distance?.toFloat()!!,
+        heartRate
+    )
+    else -> estimateCaloriesBurnedVo2max(
+        biometrics.userSex?.name,
         biometrics.userAge?.roundToInt(),
         biometrics.userWeight!!,
         biometrics.userHeight,
@@ -321,10 +321,23 @@ fun getCaloriesBurned(
         biometrics.userMaxHeartRate,
         overview.duration?.toFloat()!!,
         overview.distance?.toFloat()!!,
-        heartRate)
+        heartRate
+    )
 }
 
 fun estimateCaloriesBurned(
+    sex: String?,
+    age: Int?,
+    weight: Float,
+    duration: Float,
+    distance: Float,
+    heartRate: Short?,
+): Int =
+    if (sex != null && age != null && heartRate != null)
+        estimateCyclingCaloriesBurned(sex, age, weight, duration, heartRate)
+    else estimateCaloriesBurnedMets(weight, distance, duration)
+
+fun estimateCaloriesBurnedVo2max(
     sex: String?,
     age: Int?,
     weight: Float,
@@ -335,25 +348,33 @@ fun estimateCaloriesBurned(
     duration: Float,
     distance: Float,
     heartRate: Short?,
-): Int? {
+): Int {
     val estVo2max = vo2Max ?: restingHeartRate?.let {
-        estimateVo2Max(it,
-            maximumHeartRate ?: estimateMaxHeartRate(age!!))
+        estimateVo2Max(
+            it,
+            maximumHeartRate ?: estimateMaxHeartRate(age!!)
+        )
     }
     return if (sex != null && age != null && heartRate != null && estVo2max != null) {
-        if (height != null) estimateNetCaloriesBurned(sex,
+        if (height != null) estimateNetCaloriesBurned(
+            sex,
             age,
             weight,
             height,
             estVo2max,
             duration,
-            heartRate) else estimateGrossCaloriesBurned(sex,
+            heartRate
+        ) else estimateGrossCaloriesBurned(
+            sex,
             age,
             weight,
             estVo2max,
             duration,
-            heartRate)
-    } else estimateCaloriesBurnedMets(weight, distance, duration)
+            heartRate
+        )
+    } else if (sex != null && age != null && heartRate != null)
+        estimateCyclingCaloriesBurned(sex, age, weight, duration, heartRate)
+    else estimateCaloriesBurnedMets(weight, distance, duration)
 }
 
 fun estimateCaloriesBurnedMets(
@@ -390,15 +411,35 @@ fun estimateNetCaloriesBurned(
     duration: Float,
     heartRate: Short,
 ): Int {
-    return (estimateGrossCaloriesBurned(sex,
+    return (estimateGrossCaloriesBurned(
+        sex,
         age,
         weight,
         vo2Max,
         duration,
-        heartRate) - (estimateBasalMetabolicRate(sex,
+        heartRate
+    ) - (estimateBasalMetabolicRate(
+        sex,
         weight,
         height,
-        age).toFloat() / (24 * 3600) * duration)).toInt()
+        age
+    ).toFloat() / (24 * 3600) * duration)).toInt()
+}
+
+fun estimateCyclingCaloriesBurned(
+    sex: String,
+    age: Int,
+    weight: Float,
+    duration: Float,
+    heartRate: Short,
+): Int {
+/*  https://tourdevines.com.au/blog/how-many-calories-does-cycling-burn/
+    Men: [(Age x 0.2017) — (Weight x 0.09036) + (Heart Rate x 0.6309) — 55.0969] x Time / 4.184.
+    Women: [(Age x 0.074) — (Weight x 0.05741) + (Heart Rate x 0.4472) — 20.4022] x Time / 4.184.*/
+    return (when (sex) {
+        "MALE" -> age * 0.2017 - weight * 0.09036 + heartRate * 0.6309 - 55.0969
+        else -> age * 0.074 - weight * 0.05741 + heartRate * 0.4472 - 20.4022
+    } * (duration / 60) / 4.184).roundToInt()
 }
 
 fun estimateGrossCaloriesBurned(
@@ -410,10 +451,10 @@ fun estimateGrossCaloriesBurned(
     heartRate: Short,
 ): Int {
     //http://www.shapesense.com/fitness-exercise/calculators/heart-rate-based-calorie-burn-calculator.shtml
-    return when (sex) {
-        "MALE" -> ((-95.7735 + (0.634 * heartRate) + (0.404 * vo2Max) + (0.394 * weight) + (0.271 * age)) / 4.184) * (duration / 60)
-        else -> ((-59.3954 + (0.45 * heartRate) + (0.380 * vo2Max) + (0.103 * weight) + (0.274 * age)) / 4.184) * (duration / 60)
-    }.roundToInt()
+    return (when (sex) {
+        "MALE" -> (-95.7735 + (0.634 * heartRate) + (0.404 * vo2Max) + (0.394 * weight) + (0.271 * age))
+        else -> (-59.3954 + (0.45 * heartRate) + (0.380 * vo2Max) + (0.103 * weight) + (0.274 * age))
+    } / 4.184 * (duration / 60)).roundToInt()
 }
 
 fun estimateBasalMetabolicRate(sex: String, weight: Float, height: Float, age: Int): Int {
@@ -481,15 +522,16 @@ suspend fun getCombinedBiometrics(
         }
         Log.d(logTag, "biometrics after trip: ${biometrics}")
         if (useGoogleFitBiometrics(context) && googleFitApiService.hasPermission()) {
+            Log.d(logTag, "Getting GFit biometrics")
             val weightDeferred = async { googleFitApiService.getLatestWeight(timestamp) }
             val heightDeferred = async { googleFitApiService.getLatestHeight(timestamp) }
             val hrDeferred = async { googleFitApiService.getLatestRestingHeartRate(timestamp) }
 
-            weightDeferred.await().let {
+            weightDeferred.await()?.let {
                 Log.d(logTag, "biometrics google weight: ${it}")
                 biometrics = biometrics.copy(userWeight = it)
             }
-            heightDeferred.await().let {
+            heightDeferred.await()?.let {
                 Log.d(logTag, "biometrics google height: ${it}")
                 biometrics = biometrics.copy(userHeight = it)
             }

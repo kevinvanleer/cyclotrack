@@ -6,77 +6,128 @@ import org.junit.Test
 class BiometricUtilitiesTests {
 
     @Test
-    fun estimateCaloriesBurned_invalid_sex_defaults_female() {
+    fun estimateCaloriesBurnedVo2max_invalid_sex_defaults_female() {
         val duration = 40 * 60f
         val distance = 16000f
         val heartRate = 169.toShort()
-        Assert.assertEquals(460,
-            estimateCaloriesBurned("OTTER",
+        Assert.assertEquals(
+            460,
+            estimateCaloriesBurnedVo2max(
+                "OTTER",
                 20, 70f, null, null,
                 60,
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
     }
 
     @Test
-    fun estimateCaloriesBurned_missing_resting_heart_rate() {
+    fun estimateCaloriesBurnedVo2max_missing_resting_heart_rate() {
         val bodyMass = 70f
         val duration = 40 * 60f
         val distance = 16000f
         val heartRate = 169.toShort()
-        Assert.assertEquals(estimateCaloriesBurnedMets(bodyMass, distance, duration),
-            estimateCaloriesBurned("MALE",
+        Assert.assertEquals(
+            estimateCyclingCaloriesBurned("MALE", 20, bodyMass, duration, heartRate),
+            estimateCaloriesBurnedVo2max(
+                "MALE",
                 20, bodyMass, null, null,
                 null,
                 null,
                 duration,
                 distance,
-                heartRate))
-        Assert.assertEquals(estimateCaloriesBurnedMets(bodyMass, distance, duration),
-            estimateCaloriesBurned("FEMALE",
+                heartRate
+            )
+        )
+        Assert.assertEquals(
+            estimateCyclingCaloriesBurned("FEMALE", 20, bodyMass, duration, heartRate),
+            estimateCaloriesBurnedVo2max(
+                "FEMALE",
                 20, bodyMass, null, null,
                 null,
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            )
+        )
     }
 
     @Test
-    fun estimateCaloriesBurned_no_heart_rate_defaults() {
+    fun estimateCaloriesBurnedVo2max_missing_heartRate() {
+        val age = 20
+        val bodyMass = 70f
+        val duration = 40 * 60f
+        val distance = 16000f
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(bodyMass, distance, duration),
+            estimateCaloriesBurnedVo2max(
+                "MALE",
+                age, bodyMass, null, null,
+                null,
+                null,
+                duration,
+                distance,
+                null
+            )
+        )
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(bodyMass, distance, duration),
+            estimateCaloriesBurnedVo2max(
+                "FEMALE",
+                age, bodyMass, null, null,
+                null,
+                null,
+                duration,
+                distance,
+                null
+            )
+        )
+    }
+
+
+    @Test
+    fun estimateCaloriesBurnedVo2max_no_heart_rate_defaults() {
         val bodyMass = 86.12f
         val duration = 58.5f * 60f
         val distance = 22853f
         val heartRate = null
-        Assert.assertEquals(estimateCaloriesBurnedMets(bodyMass, distance, duration),
-            estimateCaloriesBurned("MALE",
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(bodyMass, distance, duration),
+            estimateCaloriesBurnedVo2max(
+                "MALE",
                 40, bodyMass, null, null,
                 60,
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
     }
 
     @Test
-    fun estimateCaloriesBurned_only_required_fields() {
+    fun estimateCaloriesBurnedVo2max_only_required_fields() {
         val duration = 40 * 60f
         val distance = 16000f
         val heartRate = 169.toShort()
-        Assert.assertEquals(615,
-            estimateCaloriesBurned("MALE",
+        Assert.assertEquals(
+            615,
+            estimateCaloriesBurnedVo2max(
+                "MALE",
                 20, 70f, null, null,
                 60,
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            )
+        )
     }
 
     @Test
-    fun estimateCaloriesBurned_netCalories_vo2maxKnown() {
+    fun estimateCaloriesBurnedVo2max_netCalories_vo2maxKnown() {
         var sex = "MALE"
         var age = 40
         var weight = 86.18f
@@ -86,14 +137,17 @@ class BiometricUtilitiesTests {
         val distance = 16000f
         val heartRate = 169.toShort()
 
-        Assert.assertEquals(estimateNetCaloriesBurned(sex,
+        Assert.assertEquals(
+            estimateNetCaloriesBurned(
+                sex,
             age,
             weight,
             height,
             vo2max,
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -102,7 +156,8 @@ class BiometricUtilitiesTests {
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         sex = "FEMALE"
         age = 20
@@ -113,7 +168,8 @@ class BiometricUtilitiesTests {
             vo2max,
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -122,7 +178,8 @@ class BiometricUtilitiesTests {
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         weight = 60f
         vo2max = 40f
@@ -134,7 +191,8 @@ class BiometricUtilitiesTests {
             vo2max,
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -143,30 +201,34 @@ class BiometricUtilitiesTests {
                 null,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
     }
 
     @Test
-    fun estimateCaloriesBurned_netCalories_vo2maxUnknown() {
+    fun estimateCaloriesBurnedVo2max_netCalories_vo2maxUnknown() {
         var sex = "MALE"
         var age = 40
         var weight = 86.18f
         var height = 1.822f
-        var vo2max: Float? = null
-        var restingHr = 60
+        val vo2max: Float? = null
+        val restingHr = 60
         var maxHr: Int? = null
         val duration = 40 * 60f
         val distance = 16000f
         val heartRate = 169.toShort()
 
-        Assert.assertEquals(estimateNetCaloriesBurned(sex,
-            age,
-            weight,
-            height,
-            estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
+        Assert.assertEquals(
+            estimateNetCaloriesBurned(
+                sex,
+                age,
+                weight,
+                height,
+                estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -175,7 +237,8 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         sex = "FEMALE"
         age = 20
@@ -186,7 +249,8 @@ class BiometricUtilitiesTests {
             estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -195,7 +259,8 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         weight = 60f
         height = 1.6f
@@ -207,7 +272,8 @@ class BiometricUtilitiesTests {
             estimateVo2Max(restingHr, maxHr),
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -216,17 +282,18 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
     }
 
     @Test
-    fun estimateCaloriesBurned_grossCalories_heightUnknown() {
+    fun estimateCaloriesBurnedVo2max_grossCalories_heightUnknown() {
         var sex = "MALE"
         var age = 40
         var weight = 86.18f
-        var height: Float? = null
+        val height: Float? = null
         var vo2max: Float? = null
-        var restingHr = 60
+        val restingHr = 60
         var maxHr: Int? = null
         val duration = 40 * 60f
         val distance = 16000f
@@ -238,7 +305,8 @@ class BiometricUtilitiesTests {
             estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -247,7 +315,8 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         sex = "FEMALE"
         age = 20
@@ -257,7 +326,8 @@ class BiometricUtilitiesTests {
             estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -266,7 +336,8 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         weight = 60f
         maxHr = 190
@@ -276,7 +347,8 @@ class BiometricUtilitiesTests {
             estimateVo2Max(restingHr, maxHr),
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -285,7 +357,8 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
 
         vo2max = 50f
         Assert.assertEquals(estimateGrossCaloriesBurned(sex,
@@ -294,7 +367,8 @@ class BiometricUtilitiesTests {
             vo2max,
             duration,
             heartRate),
-            estimateCaloriesBurned(sex,
+            estimateCaloriesBurnedVo2max(
+                sex,
                 age,
                 weight,
                 height,
@@ -303,7 +377,8 @@ class BiometricUtilitiesTests {
                 maxHr,
                 duration,
                 distance,
-                heartRate))
+                heartRate
+            ))
     }
 
     @Test
@@ -356,12 +431,62 @@ class BiometricUtilitiesTests {
 
     @Test
     fun estimateCaloriesBurnedMets_valid() {
-        Assert.assertEquals(602,
-            estimateCaloriesBurnedMets(bodyMass = 86.12f, distance = 16000f, duration = 2400f))
-        Assert.assertEquals(880,
-            estimateCaloriesBurnedMets(bodyMass = 86.12f, distance = 22853f, duration = 3504f))
-        Assert.assertEquals(880,
-            estimateCaloriesBurnedMets(bodyMass = 86.12f, distance = 22853f, duration = 3504f))
+        Assert.assertEquals(
+            602,
+            estimateCaloriesBurnedMets(bodyMass = 86.12f, distance = 16000f, duration = 2400f)
+        )
+        Assert.assertEquals(
+            880,
+            estimateCaloriesBurnedMets(bodyMass = 86.12f, distance = 22853f, duration = 3504f)
+        )
+        Assert.assertEquals(
+            880,
+            estimateCaloriesBurnedMets(bodyMass = 86.12f, distance = 22853f, duration = 3504f)
+        )
+    }
+
+    @Test
+    fun estimateCyclingCaloriesBurned_valid() {
+        Assert.assertEquals(
+            497,
+            estimateCyclingCaloriesBurned("MALE", 40, 86.18f, 40 * 60f + 8f, 169)
+        )
+        Assert.assertEquals(
+            381,
+            estimateCyclingCaloriesBurned("MALE", 40, 86.18f, 40 * 60f, 150)
+        )
+        Assert.assertEquals(
+            734,
+            estimateCyclingCaloriesBurned("MALE", 40, 86f, 3600f, 168)
+        )
+        Assert.assertEquals(
+            738,
+            estimateCyclingCaloriesBurned("MALE", 40, 83f, 3600f, 168)
+        )
+        Assert.assertEquals(
+            427,
+            estimateCyclingCaloriesBurned("FEMALE", 40, 86.18f, 40 * 60f, 150)
+        )
+        Assert.assertEquals(
+            342,
+            estimateCyclingCaloriesBurned("FEMALE", 40, 86.18f, 40 * 60f, 130)
+        )
+    }
+
+    @Test
+    fun grossVsCycling() {
+        Assert.assertEquals(
+            1091,
+            estimateGrossCaloriesBurned("MALE", 40, 83f, 54f, 3600f, 168)
+        )
+        Assert.assertEquals(
+            1017,
+            estimateNetCaloriesBurned("MALE", 40, 83f, 1.822f, 54f, 3600f, 168)
+        )
+        Assert.assertEquals(
+            738,
+            estimateCyclingCaloriesBurned("MALE", 40, 83f, 3600f, 168)
+        )
     }
 
     @Test
@@ -371,11 +496,114 @@ class BiometricUtilitiesTests {
         Assert.assertEquals(51f, estimateVo2Max(60, 200), 1e0f)
         Assert.assertEquals(53f, estimateVo2Max(55, 190), 1e0f)
         Assert.assertEquals(48f, estimateVo2Max(60, 190), 1e0f)
+        Assert.assertEquals(55f, estimateVo2Max(54, 194), 1e0f)
     }
 
     @Test
     fun estimateBasalMetabolicRate_valid() {
         Assert.assertEquals(1810, estimateBasalMetabolicRate("MALE", 86.18f, 1.829f, 40))
+        Assert.assertEquals(1778, estimateBasalMetabolicRate("MALE", 83f, 1.829f, 40))
         Assert.assertEquals(1644, estimateBasalMetabolicRate("FEMALE", 86.18f, 1.829f, 40))
+        Assert.assertEquals(1610, estimateBasalMetabolicRate("FEMALE", 90.72f, 1.702f, 40))
+        Assert.assertEquals(1383, estimateBasalMetabolicRate("FEMALE", 68f, 1.702f, 40))
+    }
+
+    @Test
+    fun estimateCaloriesBurned_useCyclingEquation() {
+        val sex = "MALE"
+        val age = 20
+        val mass = 80f
+        val duration = 3600f
+        val distance = 30000f
+        val hr = 160.toShort()
+
+        Assert.assertEquals(
+            estimateCyclingCaloriesBurned(
+                sex = sex,
+                age = age,
+                weight = mass,
+                duration = duration,
+                heartRate = hr
+            ),
+            estimateCaloriesBurned(
+                sex = sex,
+                age = age,
+                weight = mass,
+                duration = duration,
+                distance = distance,
+                heartRate = hr
+            )
+        )
+    }
+
+    @Test
+    fun estimateCaloriesBurned_useMets() {
+        val sex = "MALE"
+        val age = 20
+        val mass = 80f
+        val duration = 3600f
+        val distance = 30000f
+        val hr = 160.toShort()
+
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(
+                bodyMass = mass,
+                duration = duration,
+                distance = distance
+            ),
+            estimateCaloriesBurned(
+                null,
+                age = age,
+                weight = mass,
+                duration = duration,
+                distance = distance,
+                heartRate = hr
+            )
+        )
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(
+                bodyMass = mass,
+                duration = duration,
+                distance = distance
+            ),
+            estimateCaloriesBurned(
+                sex = sex,
+                age = null,
+                weight = mass,
+                duration = duration,
+                distance = distance,
+                heartRate = hr
+            )
+        )
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(
+                bodyMass = mass,
+                duration = duration,
+                distance = distance
+            ),
+            estimateCaloriesBurned(
+                sex = null,
+                age = age,
+                weight = mass,
+                duration = duration,
+                distance = distance,
+                heartRate = hr
+            )
+        )
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(
+                bodyMass = mass,
+                duration = duration,
+                distance = distance
+            ),
+            estimateCaloriesBurned(
+                sex = sex,
+                age = age,
+                weight = mass,
+                duration = duration,
+                distance = distance,
+                heartRate = null
+            )
+        )
     }
 }

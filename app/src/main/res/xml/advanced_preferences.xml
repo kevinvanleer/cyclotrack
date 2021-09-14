@@ -5,4 +5,9 @@
         app:title="Onboard sensors"
         app:summary="Collect data from onboard sensors. This will significantly increase the amount of data stored by Cyclotrack. Nothing is done with this data at this time, but it may be used for analysis in the future."
         app:defaultValue="false" />
+    <SwitchPreference
+        app:key="@string/preferences_key_advanced_use_vo2max_calorie_estimate"
+        app:title="Use VO2Max based calorie estimates"
+        app:summary="VO2Max estimates are roughly 25% higher than the cycling specific estimate used by default."
+        app:defaultValue="false" />
 </PreferenceScreen>
