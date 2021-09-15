@@ -70,7 +70,7 @@ class AccumulateAscentDescentTest {
     }
 
     @Test
-    fun ride_000226_cullumBranch() {
+    fun ride_000309_cullumBranch() {
         val elevationData =
             getElevationTestData("/ride-data/cyclotrack_000309_Dutzow-to-Cullum-Branch.csv")
         val (ascent, descent) = accumulateAscentDescent(elevationData)

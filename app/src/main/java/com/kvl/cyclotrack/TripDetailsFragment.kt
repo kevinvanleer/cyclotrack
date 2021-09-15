@@ -517,13 +517,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val heartRateChartView: LineChart = view.findViewById(R.id.trip_details_heart_rate_chart)
         val heartRateView: HeadingView = view.findViewById(R.id.trip_details_heart_rate)
         val cadenceChartView: LineChart = view.findViewById(R.id.trip_details_cadence_chart)
-        val cadenceView: HeadingView = view.findViewById(R.id.trip_details_cadence)
+        val cadenceHeadingView: HeadingView = view.findViewById(R.id.trip_details_cadence)
 
         scrollView = view.findViewById(R.id.trip_details_scroll_view)
 
         heartRateView.visibility = View.GONE
         heartRateChartView.visibility = View.GONE
-        cadenceView.visibility = View.GONE
+        cadenceHeadingView.visibility = View.GONE
         cadenceChartView.visibility = View.GONE
         notesView.visibility = View.GONE
 
@@ -534,8 +534,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val elevationAlpha = 0.05
         fun getElevationChange(measurements: Array<CriticalMeasurements>): Pair<Double, Double> =
             accumulateAscentDescent(measurements.map {
-                Pair(it.altitude,
-                    it.verticalAccuracyMeters!!.toDouble())
+                Pair(
+                    it.altitude,
+                    it.verticalAccuracyMeters!!.toDouble()
+                )
             })
 
         fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
@@ -558,27 +560,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return try {
                 val speedMeasurements = measurements.filter { it.speedRevolutions != null }
                 val totalRevs = speedMeasurements.last().speedRevolutions?.let {
-                    getDifferenceRollover(it,
-                        speedMeasurements.first().speedRevolutions!!)
+                    getDifferenceRollover(
+                        it,
+                        speedMeasurements.first().speedRevolutions!!
+                    )
                 }
                 val duration =
                     (speedMeasurements.last().time - speedMeasurements.first().time) / 1000 / 60
-
-                totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false }
-            } catch (e: Exception) {
-                null
-            }
-        }
-
-        fun getAverageCadence(measurements: Array<CriticalMeasurements>): Float? {
-            return try {
-                val cadenceMeasurements = measurements.filter { it.cadenceRevolutions != null }
-                val totalRevs = cadenceMeasurements.last().cadenceRevolutions?.let {
-                    getDifferenceRollover(it,
-                        cadenceMeasurements.first().cadenceRevolutions!!)
-                }
-                val duration =
-                    (cadenceMeasurements.last().time - cadenceMeasurements.first().time) / 1000 / 60
 
                 totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false }
             } catch (e: Exception) {
@@ -1149,9 +1137,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                         val avgCadence = getAverageCadence(tripMeasurements)
                         if (avgCadence != null) {
-                            cadenceView.visibility = View.VISIBLE
+                            cadenceHeadingView.visibility = View.VISIBLE
                             cadenceChartView.visibility = View.VISIBLE
-                            cadenceView.value =
+                            cadenceHeadingView.value =
                                 "${avgCadence.roundToInt()} rpm (average)"
                             makeCadenceLineChart()
                         }

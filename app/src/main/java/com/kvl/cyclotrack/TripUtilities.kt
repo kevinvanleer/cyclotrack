@@ -672,17 +672,84 @@ fun degreesToCardinal(degrees: Float): String {
     }
 }
 
-fun validateCadence(current: CriticalMeasurements, previous: CriticalMeasurements): Boolean {
-    val cadenceDidNotUpdate = current.cadenceLastEvent == previous.cadenceLastEvent
+fun didDeviceFail(current: CriticalMeasurements, previous: CriticalMeasurements): Boolean {
     val doubleRollover =
         (current.cadenceLastEvent!! < previous.cadenceLastEvent!! && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
     val prematureRollover =
-        (previous.cadenceRevolutions!! < 65500f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
+        (previous.cadenceRevolutions!! < 65525f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
     val veryPrematureRollover =
-        (previous.cadenceRevolutions < 64000f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
+        (previous.cadenceRevolutions < 65400f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
     val deviceReset = prematureRollover && doubleRollover
 
-    return !(cadenceDidNotUpdate || deviceReset || veryPrematureRollover)
+    return deviceReset || veryPrematureRollover
+}
+
+fun validateCadence(current: CriticalMeasurements, previous: CriticalMeasurements): Boolean {
+    val cadenceDidNotUpdate = current.cadenceLastEvent == previous.cadenceLastEvent
+    return !(cadenceDidNotUpdate || didDeviceFail(current, previous))
+}
+
+fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CriticalMeasurements>): Float {
+    Log.d("getAverageCadenceTheHardWay", "called")
+    var totalTime = 0L
+    var totalRevs = 0
+    var lastMeasurements: CriticalMeasurements? = null
+    cadenceMeasurements.filter { it.cadenceRevolutions != null }.forEach { measurements ->
+        lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+            ?.let { last ->
+                if (!didDeviceFail(measurements, last)) {
+                    totalRevs += getDifferenceRollover(
+                        measurements.cadenceRevolutions!!,
+                        last.cadenceRevolutions!!
+                    )
+                    totalTime += getDifferenceRollover(
+                        measurements.cadenceLastEvent!!,
+                        last.cadenceLastEvent!!
+                    )
+                }
+            }
+        lastMeasurements = measurements
+    }
+    return totalRevs.toFloat() / totalTime * 1024f * 60f
+}
+
+fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CriticalMeasurements>): Float? {
+    Log.d("getAverageCadenceTheEasyWay", "called")
+    val totalRevs = cadenceMeasurements.last().cadenceRevolutions?.let {
+        getDifferenceRollover(
+            it,
+            cadenceMeasurements.first().cadenceRevolutions!!
+        )
+    }
+    val duration =
+        (cadenceMeasurements.last().time - cadenceMeasurements.first().time) / 1000f / 60f
+
+    return totalRevs?.toFloat()?.div(duration)
+}
+
+fun getAverageCadence(measurements: Array<CriticalMeasurements>): Float? {
+
+    return try {
+        val cadenceMeasurements = measurements.filter { it.cadenceRevolutions != null }
+            .sortedBy { it.time }
+        var hardWay = false
+        var lastMeasurements: CriticalMeasurements? = null
+        cadenceMeasurements.filter { it.cadenceRevolutions != null }
+            .forEach { meas ->
+                lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+                    ?.let { last ->
+                        if (didDeviceFail(meas, last)) {
+                            hardWay = true
+                        }
+                    }
+                lastMeasurements = meas
+            }
+
+        return if (hardWay) getAverageCadenceTheHardWay(cadenceMeasurements)
+        else getAverageCadenceTheEasyWay(cadenceMeasurements)
+    } catch (e: Exception) {
+        null
+    }
 }
 
 fun getAcceleration(
