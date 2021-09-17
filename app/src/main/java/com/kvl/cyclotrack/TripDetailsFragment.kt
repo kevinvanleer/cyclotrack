@@ -1161,7 +1161,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     biometrics,
                     overview,
                     avgHr,
-                )?.let {
+                ).let {
                     caloriesHeadingView.label = getCaloriesBurnedLabel(
                         requireContext(),
                         biometrics,
