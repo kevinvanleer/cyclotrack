@@ -351,7 +351,7 @@ class TripInProgressService @Inject constructor() :
 
         val pendingIntent = NavDeepLinkBuilder(this).apply {
             setGraph(R.navigation.cyclotrack_nav_graph)
-            setDestination(R.id.TripInProgressFragment)
+            setDestination(R.id.DashboardActivity)
             setArguments(Bundle().apply { putLong("tripId", tripId) })
         }.createPendingIntent()
 

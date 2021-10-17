@@ -13,6 +13,7 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     }
 
     suspend fun getNewest(): Trip = tripDao.getNewestTrip()
+    fun observeNewest(): LiveData<Trip> = tripDao.observeNewestTrip()
 
     fun observeAll(): LiveData<Array<Trip>> {
         return tripDao.susbscribeAll()
@@ -20,6 +21,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
 
     suspend fun getAll() = tripDao.loadAll()
     suspend fun getAfter(tripId: Long) = tripDao.loadAfter(tripId)
+
+    fun observeDateRange(start: Long, end: Long) = tripDao.subscribeDateRange(start, end)
 
     fun observeRealTrips(): LiveData<Array<Trip>> {
         return tripDao.subscribeRealTrips()
@@ -64,9 +67,17 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         tripId: Long,
         googleFitSyncStatus: GoogleFitSyncStatusEnum,
     ) =
-        tripDao.updateGoogleFitSyncStatus(TripGoogleFitSync(id = tripId,
-            googleFitSyncStatus = googleFitSyncStatus))
+        tripDao.updateGoogleFitSyncStatus(
+            TripGoogleFitSync(
+                id = tripId,
+                googleFitSyncStatus = googleFitSyncStatus
+            )
+        )
 
     suspend fun getGoogleFitUnsynced() = tripDao.loadGoogleFitUnsyncedTrips()
     suspend fun getGoogleFitDirty() = tripDao.loadGoogleFitDirtyTrips()
+
+    fun longestTrips(limit: Int = 10) = tripDao.longestTrips(limit)
+
+    fun observeTripTotals(start: Long, end: Long) = tripDao.subscribeTotals(start, end)
 }

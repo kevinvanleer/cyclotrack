@@ -3,90 +3,70 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cyclotrack_nav_graph"
-    app:startDestination="@id/TripSummariesFragment">
+    app:startDestination="@id/AnalyticsFragment">
 
-    <include app:graph="@navigation/dashboard_nav_graph" />
+    <include app:graph="@navigation/trip_details_nav_graph" />
 
+    <activity
+        android:id="@+id/PreferencesActivity"
+        android:name="com.kvl.cyclotrack.PreferencesActivity"
+        android:label="DashboardActivity"
+        android:layout="@layout/activity_preferences" />
+    <activity
+        android:id="@+id/DashboardActivity"
+        android:name="com.kvl.cyclotrack.DashboardActivity"
+        android:label="DashboardActivity"
+        android:layout="@layout/activity_dashboard">
+        <argument
+            android:name="tripId"
+            app:argType="long" />
+    </activity>
+    <activity
+        android:id="@+id/TripDetailsActivity"
+        android:name="com.kvl.cyclotrack.TripDetailsActivity"
+        android:label="TripDetailsActivity"
+        tools:layout="@layout/activity_trip_details" />
+    <fragment
+        android:id="@+id/AnalyticsFragment"
+        android:name="com.kvl.cyclotrack.AnalyticsFragment"
+        android:label="Analytics"
+        tools:layout="@layout/fragment_analytics">
+        <action
+            android:id="@+id/action_start_trip"
+            app:destination="@id/DashboardActivity">
+            <argument
+                android:name="tripId"
+                app:argType="long" />
+        </action>
+    </fragment>
     <fragment
         android:id="@+id/TripSummariesFragment"
         android:name="com.kvl.cyclotrack.TripSummariesFragment"
         android:label="@string/trip_summaries_fragment_label"
-        tools:layout="@layout/trip_summaries_fragment">
+        tools:layout="@layout/fragment_trip_summaries">
 
         <action
             android:id="@+id/action_start_trip"
-            app:destination="@id/dashboard_nav_graph" />
+            app:destination="@id/DashboardActivity">
+            <argument
+                android:name="tripId"
+                app:argType="long" />
+        </action>
         <action
             android:id="@+id/action_view_trip_details"
-            app:destination="@id/TripDetailsFragment" />
-        <action
-            android:id="@+id/action_go_to_settings"
-            app:destination="@id/AppPreferencesFragment" />
+            app:destination="@id/TripDetailsActivity">
+            <argument
+                android:name="tripId"
+                app:argType="long" />
+        </action>
     </fragment>
-    <fragment
-        android:id="@+id/TripDetailsFragment"
-        android:name="com.kvl.cyclotrack.TripDetailsFragment"
-        android:label="TripDetailsFragment"
-        tools:layout="@layout/trip_details_fragment">
-        <argument
-            android:name="tripId"
-            app:argType="long" />
-        <action
-            android:id="@+id/action_remove_trip"
-            app:destination="@id/TripSummariesFragment"
-            app:launchSingleTop="true"
-            app:popUpTo="@id/cyclotrack_nav_graph"
-            app:popUpToInclusive="true" />
-        <action
-            android:id="@+id/action_edit_trip"
-            app:destination="@id/EditTripFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/EditTripFragment"
-        android:name="com.kvl.cyclotrack.EditTripFragment"
-        android:label="EditTripFragment"
-        tools:layout="@layout/edit_trip_fragment">
-        <argument
-            android:name="tripId"
-            app:argType="long" />
-        <argument
-            android:name="tripName"
-            app:argType="string" />
-        <argument
-            android:name="tripDate"
-            app:argType="string" />
-        <argument
-            android:name="tripNotes"
-            app:argType="string" />
-    </fragment>
-    <fragment
-        android:id="@+id/AppPreferencesFragment"
-        android:name="com.kvl.cyclotrack.AppPreferencesFragment"
-        android:label="Preferences"
-        tools:layout="@layout/fragment_app_preferences">
-        <action
-            android:id="@+id/action_edit_biometrics_preferences"
-            app:destination="@id/BiometricsPreferenceFragment" />
-        <action
-            android:id="@+id/action_edit_bike_specs"
-            app:destination="@id/BikeSpecsPreferenceFragment" />
-        <action
-            android:id="@+id/action_advanced_preferences"
-            app:destination="@id/AdvancedPreferencesFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/AdvancedPreferencesFragment"
-        android:name="com.kvl.cyclotrack.preferences.AdvancedPreferencesFragment"
-        android:label="Advanced Preferences"
-        tools:layout="@layout/fragment_advanced_preferences" />
     <fragment
         android:id="@+id/BiometricsPreferenceFragment"
         android:name="com.kvl.cyclotrack.BiometricsPreferenceFragment"
         android:label="Biometrics"
-        tools:layout="@layout/biometrics_preference_fragment" />
-    <fragment
-        android:id="@+id/BikeSpecsPreferenceFragment"
-        android:name="com.kvl.cyclotrack.BikeSpecsPreferenceFragment"
-        android:label="Bike Specs"
-        tools:layout="@layout/bike_specs_preference_fragment" />
+        tools:layout="@layout/fragment_biometrics_preference">
+        <action
+            android:id="@+id/action_go_to_settings"
+            app:destination="@id/PreferencesActivity" />
+    </fragment>
 </navigation>

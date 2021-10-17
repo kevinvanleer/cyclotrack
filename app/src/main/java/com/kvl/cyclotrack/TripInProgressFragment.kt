@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.core.view.doOnPreDraw
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.navigation.navGraphViewModels
 import androidx.preference.PreferenceManager
 import com.google.android.gms.common.api.ResolvableApiException
@@ -40,6 +41,7 @@ class TripInProgressFragment :
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.dashboard_nav_graph) {
         defaultViewModelProviderFactory
     }
+    private val args: TripInProgressFragmentArgs by navArgs()
     private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
@@ -106,7 +108,7 @@ class TripInProgressFragment :
             }
         }
 
-        return inflater.inflate(R.layout.trip_in_progress_fragment, container, false)
+        return inflater.inflate(R.layout.fragment_trip_in_progress, container, false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -311,8 +313,19 @@ class TripInProgressFragment :
     private fun stopTripListener(tripId: Long): OnClickListener = OnClickListener {
         endTrip(tripId)
         when (tripId >= 0) {
-            true -> findNavController()
-                .navigate(TripInProgressFragmentDirections.actionFinishTrip(tripId))
+            true -> {
+                Log.d(
+                    "backStack", "${
+                        findNavController().backQueue.map { it.destination.label }
+                    }"
+                )
+                requireActivity().finish()
+                findNavController().navigate(
+                    TripInProgressFragmentDirections.actionFinishTrip(
+                        tripId
+                    )
+                )
+            }
             else -> findNavController()
                 .navigate(R.id.action_back_to_summaries)
         }
@@ -334,6 +347,11 @@ class TripInProgressFragment :
         super.onViewCreated(view, savedInstanceState)
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
+        Log.d(
+            "backStack", "${
+                findNavController().backQueue.map { it.destination.label }
+            }"
+        )
         FirebaseAnalytics.getInstance(requireContext()).logEvent("EnterDashboard") {}
 
         savedInstanceState?.getLong("tripId", -1)
@@ -577,14 +595,16 @@ class TripInProgressFragment :
         pauseButton.setOnClickListener(startTripListener)
         pauseButton.text = getString(R.string.start_label)
 
-        arguments?.getLong("tripId", -1)
-            .takeIf { tripId -> tripId != -1L }?.let { tripId ->
-                viewModel.tripId = tripId
-            }
+        //arguments?.getLong("tripId", args.tripId ?: -1)
+        args.tripId.takeIf { tripId -> tripId != -1L }?.let { tripId ->
+            viewModel.tripId = tripId
+        }
 
         when (val tripId = viewModel.tripId) {
-            null -> requireActivity().startService(Intent(requireContext(),
-                TripInProgressService::class.java).apply {
+            null -> requireActivity().startService(Intent(
+                requireContext(),
+                TripInProgressService::class.java
+            ).apply {
                 this.action = getString(R.string.action_initialize_trip_service)
             })
             else -> {
@@ -592,9 +612,10 @@ class TripInProgressFragment :
                 Log.d(logTag, "Resuming trip $tripId")
                 initializeAfterTripCreated(tripId)
                 viewModel.resumeTrip(tripId, viewLifecycleOwner)
-                requireActivity().startService(Intent(
-                    requireContext(),
-                    TripInProgressService::class.java
+                requireActivity().startService(
+                    Intent(
+                        requireContext(),
+                        TripInProgressService::class.java
                 ).apply {
                     this.action = getString(R.string.action_start_trip_service)
                     this.putExtra("tripId", tripId)

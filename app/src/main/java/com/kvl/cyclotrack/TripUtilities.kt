@@ -94,8 +94,16 @@ fun <A, B, C> zipLiveData(
     }
 }
 
-fun formatDuration(value: Double): String {
-    return when {
+fun formatDurationHours(value: Double): String =
+    when (val hours: Double = value / 3600) {
+        0.0 -> "0"
+        in 0.0..10.0 -> "%.1f".format(hours)
+        else -> hours.toInt().toString()
+    }
+
+
+fun formatDuration(value: Double): String =
+    when {
         value < 1.0 -> {
             "zero seconds"
         }
@@ -119,7 +127,6 @@ fun formatDuration(value: Double): String {
             "${hourPart}h ${minutePart}m ${secondPart}s"
         }
     }
-}
 
 fun isTripInProgress(state: TimeStateEnum?) =
     state == null || state == TimeStateEnum.RESUME || state == TimeStateEnum.START

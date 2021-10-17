@@ -278,7 +278,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-        return inflater.inflate(R.layout.trip_details_fragment, container, false)
+        return inflater.inflate(R.layout.fragment_trip_details, container, false)
     }
 
     private fun configureSyncOptions(menu: Menu) {
@@ -308,9 +308,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.details_menu, menu)
+        inflater.inflate(R.menu.menu_details, menu)
         Log.d(logTag, "Options menu created")
-        viewModel.tripOverview().observe(viewLifecycleOwner, {
+        viewModel.tripOverview.observe(viewLifecycleOwner, {
             googleFitSyncStatus = it.googleFitSyncStatus
             configureSyncOptions(menu)
         })
@@ -337,25 +337,46 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     }
 
     private fun unsyncAndDeleteTrip() {
+        viewModel.tripOverview.removeObservers(viewLifecycleOwner)
+        viewModel.measurements.removeObservers(viewLifecycleOwner)
+        viewModel.splits.removeObservers(viewLifecycleOwner)
+        viewModel.timeState.removeObservers(viewLifecycleOwner)
+        viewModel.onboardSensors.removeObservers(viewLifecycleOwner)
         WorkManager.getInstance(requireContext())
-            .beginWith(listOf(
-                OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
-                    .setInputData(workDataOf("tripIds" to arrayOf(
-                        viewModel.tripId)))
-                    .build()))
-            .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
-                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
-                .build())
+            .beginWith(
+                listOf(
+                    OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                        .setInputData(
+                            workDataOf(
+                                "tripIds" to arrayOf(viewModel.tripId)
+                            )
+                        ).build()
+                )
+            )
+            .then(
+                OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                    .build()
+            )
             .enqueue()
-        findNavController().navigate(R.id.action_remove_trip)
+        requireActivity().finish()
     }
 
     private fun deleteTrip() {
+        Log.d(logTag, "trip overview has observers: ${viewModel.tripOverview.hasObservers()}")
+        viewModel.tripOverview.removeObservers(viewLifecycleOwner)
+        viewModel.measurements.removeObservers(viewLifecycleOwner)
+        viewModel.splits.removeObservers(viewLifecycleOwner)
+        viewModel.timeState.removeObservers(viewLifecycleOwner)
+        viewModel.onboardSensors.removeObservers(viewLifecycleOwner)
+        Log.d(logTag, "trip overview has observers: ${viewModel.tripOverview.hasObservers()}")
         WorkManager.getInstance(requireContext())
-            .enqueue(OneTimeWorkRequestBuilder<RemoveTripWorker>()
-                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
-                .build())
-        findNavController().navigate(R.id.action_remove_trip)
+            .enqueue(
+                OneTimeWorkRequestBuilder<RemoveTripWorker>()
+                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                    .build()
+            )
+        requireActivity().finish()
     }
 
     private fun showUnsyncAndDeleteDialog() =
@@ -447,7 +468,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 true
             }
             R.id.details_menu_action_export -> {
-                viewModel.tripOverview().observe(viewLifecycleOwner, object : Observer<Trip> {
+                viewModel.tripOverview.observe(viewLifecycleOwner, object : Observer<Trip> {
                     override fun onChanged(t: Trip) {
                         val prefix = when (FeatureFlags.devBuild) {
                             true -> "cyclotrack-dev"
@@ -458,7 +479,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 String.format("%06d", t.id)
                             }_${t.name?.replace(" ", "-") ?: "unknown"}.xlsx"
                         )
-                        viewModel.tripOverview().removeObserver(this)
+                        viewModel.tripOverview.removeObserver(this)
 
                     }
                 })
@@ -481,7 +502,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setHasOptionsMenu(true)
-        activity?.title = "Cyclotrack"
+        activity?.title = ""
+        Log.d(
+            "backStack", "${
+                findNavController().backQueue.map { it.destination.label }
+            }"
+        )
 
         constraintLayout = view.findViewById(R.id.TripDetailsFragment)
         maxGuide = view.findViewById(R.id.trip_details_max_map_guide)
@@ -608,7 +634,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         viewModel.tripId = tripId
 
         viewModel.updateSplits()
-        viewModel.splits().observe(viewLifecycleOwner, { splits ->
+        viewModel.splits.observe(viewLifecycleOwner, { splits ->
             fun makeSplitsGrid() {
                 splitsGridView.removeAllViews()
                 splitsGridView.visibility = View.VISIBLE
@@ -679,17 +705,22 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             makeSplitsGrid()
         })
 
-        viewModel.tripOverview().observe(viewLifecycleOwner, { overview ->
+        viewModel.tripOverview.observe(viewLifecycleOwner, { overview ->
             if (overview != null) {
                 distanceHeadingView.value =
-                    String.format("%.2f %s",
+                    String.format(
+                        "%.2f %s",
                         getUserDistance(requireContext(), overview.distance ?: 0.0),
-                        getUserDistanceUnitShort(requireContext()))
+                        getUserDistanceUnitShort(requireContext())
+                    )
                 durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
-                speedHeadingView.value = String.format("%.1f %s (average)",
-                    getUserSpeed(requireContext(),
+                speedHeadingView.value = String.format(
+                    "%.1f %s (average)",
+                    getUserSpeed(
+                        requireContext(),
                         overview.distance ?: 0.0,
-                        overview.duration ?: 1.0),
+                        overview.duration ?: 1.0
+                    ),
                     getUserSpeedUnitShort(requireContext()))
 
                 titleNameView.text = overview.name
@@ -701,7 +732,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             } else {
                 Log.d(logTag, "overview is null")
             }
-            zipLiveData(viewModel.measurements(), viewModel.timeState()).observe(viewLifecycleOwner,
+            zipLiveData(viewModel.measurements, viewModel.timeState).observe(
+                viewLifecycleOwner,
                 ZipLiveData@{ pairs ->
                     val tripMeasurements = pairs.first
                     val timeStates = pairs.second
@@ -833,14 +865,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         trendData.setDrawCircles(false)
                         trendData.setDrawValues(false)
                         dataset.color =
-                            ResourcesCompat.getColor(resources,
-                                R.color.colorGraphSecondary,
-                                null)
+                            ResourcesCompat.getColor(
+                                resources,
+                                R.color.secondaryGraphColor,
+                                null
+                            )
                         dataset.lineWidth = 10f
                         trendData.color =
-                            ResourcesCompat.getColor(resources,
-                                R.color.colorAccent,
-                                null)
+                            ResourcesCompat.getColor(
+                                resources,
+                                R.color.accentColor,
+                                null
+                            )
                         trendData.lineWidth = 3f
                         return Pair(dataset, trendData)
                     }
@@ -884,9 +920,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         dataset.setDrawCircles(false)
                         dataset.setDrawValues(false)
                         dataset.color =
-                            ResourcesCompat.getColor(resources,
-                                R.color.colorAccent,
-                                null)
+                            ResourcesCompat.getColor(
+                                resources,
+                                R.color.accentColor,
+                                null
+                            )
                         dataset.lineWidth = 3f
                         return dataset
                     }
@@ -958,14 +996,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         trendData.setDrawCircles(false)
                         trendData.setDrawValues(false)
                         dataset.color =
-                            ResourcesCompat.getColor(resources,
-                                R.color.colorGraphSecondary,
-                                null)
+                            ResourcesCompat.getColor(
+                                resources,
+                                R.color.secondaryGraphColor,
+                                null
+                            )
                         dataset.lineWidth = 10f
                         trendData.color =
-                            ResourcesCompat.getColor(resources,
-                                R.color.colorAccent,
-                                null)
+                            ResourcesCompat.getColor(
+                                resources,
+                                R.color.accentColor,
+                                null
+                            )
                         trendData.lineWidth = 3f
                         return Pair(dataset, trendData)
                     }
@@ -1018,9 +1060,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         dataset.setDrawCircles(false)
                         dataset.setDrawValues(false)
                         dataset.color =
-                            ResourcesCompat.getColor(resources,
-                                R.color.colorAccent,
-                                null)
+                            ResourcesCompat.getColor(
+                                resources,
+                                R.color.accentColor,
+                                null
+                            )
                         dataset.lineWidth = 3f
                         return dataset
                     }
@@ -1089,7 +1133,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 path.color(
                                     ResourcesCompat.getColor(
                                         resources,
-                                        R.color.colorAccent,
+                                        R.color.accentColor,
                                         null
                                     )
                                 )
@@ -1177,7 +1221,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.e(tag, "Failed to calculate calories burned", e)
             }
         }
-        zipLiveData(viewModel.measurements(), viewModel.tripOverview()).observe(
+        zipLiveData(viewModel.measurements, viewModel.tripOverview).observe(
             viewLifecycleOwner,
             { pairs ->
                 val measurements = pairs.first
@@ -1195,22 +1239,38 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
             })
         if (FeatureFlags.devBuild) {
-            viewModel.tripOverview().observe(viewLifecycleOwner, { trip ->
-                getDatasets(requireActivity(),
-                    trip.timestamp,
-                    (trip.timestamp + (trip.duration?.times(
-                        1000) ?: 1).toLong()))
+            viewModel.tripOverview.observe(viewLifecycleOwner, { trip ->
+                trip?.timestamp?.let { timestamp ->
+                    getDatasets(
+                        requireActivity(),
+                        timestamp,
+                        (timestamp + (trip.duration?.times(
+                            1000
+                        ) ?: 1).toLong())
+                    )
+                }
             })
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(logTag, "CREATING TRIP DETAILS FRAGMENT")
+        Log.d(
+            "backStack", "${
+                findNavController().backQueue.map { it.destination.label }
+            }"
+        )
         if (this::mapView.isInitialized) mapView.onCreate(savedInstanceState)
     }
 
     override fun onResume() {
         super.onResume()
+        Log.d(
+            "backStack", "${
+                findNavController().backQueue.map { it.destination.label }
+            }"
+        )
         if (this::mapView.isInitialized) mapView.onResume()
     }
 

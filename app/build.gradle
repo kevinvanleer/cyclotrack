@@ -32,8 +32,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 36
-        versionName "Calories and Cadence"
+        versionCode 37
+        versionName "Main Activity Bottom Bar"
 
         def lastCommitHash = { ->
             def git = Grgit.open(dir: project.rootDir)
@@ -103,11 +103,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_15
-        targetCompatibility JavaVersion.VERSION_15
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '15'
+        jvmTarget = '11'
     }
     testOptions {
         unitTests {

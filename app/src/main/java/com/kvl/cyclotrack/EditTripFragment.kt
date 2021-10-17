@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +11,7 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -27,12 +29,18 @@ class EditTripFragment : Fragment() {
         savedInstanceState: Bundle?,
     ): View? {
         viewModel.setTrip(args.tripId)
-        return inflater.inflate(R.layout.edit_trip_fragment, container, false)
+        return inflater.inflate(R.layout.fragment_edit_trip, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        Log.d(
+            "backStack", "${
+                findNavController().backQueue.map { it.destination.label }
+            }"
+        )
+       
         val tripName: EditText = view.findViewById(R.id.edit_trip_name)
         val tripNotes: EditText = view.findViewById(R.id.edit_trip_notes)
         val tripWheelCirc: EditText = view.findViewById(R.id.edit_trip_wheel_circumference)

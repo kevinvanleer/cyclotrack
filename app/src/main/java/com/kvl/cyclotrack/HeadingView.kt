@@ -26,7 +26,7 @@ class HeadingView(context: Context, attrs: AttributeSet) : ConstraintLayout(cont
 
 
     init {
-        View.inflate(context, R.layout.heading, this)
+        View.inflate(context, R.layout.view_heading, this)
 
         val attributes = context.obtainStyledAttributes(attrs, R.styleable.Heading, 0, 0)
 

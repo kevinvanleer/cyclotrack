@@ -1,0 +1,127 @@
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:theme="@style/AppTheme.Widget"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:dayOfWeek="1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/weeklySummaryTable_divider1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        style="@style/AppTheme.Widget.Divider.Vertical"
+        android:id="@+id/weeklySummaryTable_divider1"
+        app:layout_constraintTop_toTopOf="@id/day_summary_1"
+        app:layout_constraintBottom_toBottomOf="@id/day_summary_1"
+        app:layout_constraintEnd_toStartOf="@id/day_summary_2"
+        app:layout_constraintStart_toEndOf="@id/day_summary_1" />
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_2"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dayOfWeek="2"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/weeklySummaryTable_divider1"
+        app:layout_constraintEnd_toStartOf="@id/weeklySummaryTable_divider2"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        style="@style/AppTheme.Widget.Divider.Vertical"
+        android:id="@+id/weeklySummaryTable_divider2"
+        app:layout_constraintTop_toTopOf="@id/day_summary_2"
+        app:layout_constraintBottom_toBottomOf="@id/day_summary_2"
+        app:layout_constraintEnd_toStartOf="@id/day_summary_3"
+        app:layout_constraintStart_toEndOf="@id/day_summary_2" />
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_3"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dayOfWeek="3"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/weeklySummaryTable_divider2"
+        app:layout_constraintEnd_toStartOf="@id/weeklySummaryTable_divider3"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        style="@style/AppTheme.Widget.Divider.Vertical"
+        android:id="@+id/weeklySummaryTable_divider3"
+        app:layout_constraintTop_toTopOf="@id/day_summary_3"
+        app:layout_constraintBottom_toBottomOf="@id/day_summary_3"
+        app:layout_constraintEnd_toStartOf="@id/day_summary_4"
+        app:layout_constraintStart_toEndOf="@id/day_summary_3" />
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_4"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dayOfWeek="4"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/weeklySummaryTable_divider3"
+        app:layout_constraintEnd_toStartOf="@id/weeklySummaryTable_divider4"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        style="@style/AppTheme.Widget.Divider.Vertical"
+        android:id="@+id/weeklySummaryTable_divider4"
+        app:layout_constraintTop_toTopOf="@id/day_summary_4"
+        app:layout_constraintBottom_toBottomOf="@id/day_summary_4"
+        app:layout_constraintEnd_toStartOf="@id/day_summary_5"
+        app:layout_constraintStart_toEndOf="@id/day_summary_4" />
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_5"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dayOfWeek="5"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/weeklySummaryTable_divider4"
+        app:layout_constraintEnd_toStartOf="@id/weeklySummaryTable_divider5"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        style="@style/AppTheme.Widget.Divider.Vertical"
+        android:id="@+id/weeklySummaryTable_divider5"
+        app:layout_constraintTop_toTopOf="@id/day_summary_5"
+        app:layout_constraintBottom_toBottomOf="@id/day_summary_5"
+        app:layout_constraintEnd_toStartOf="@id/day_summary_6"
+        app:layout_constraintStart_toEndOf="@id/day_summary_5" />
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_6"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dayOfWeek="6"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/weeklySummaryTable_divider5"
+        app:layout_constraintEnd_toStartOf="@id/weeklySummaryTable_divider6"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <View
+        style="@style/AppTheme.Widget.Divider.Vertical"
+        android:id="@+id/weeklySummaryTable_divider6"
+        app:layout_constraintTop_toTopOf="@id/day_summary_6"
+        app:layout_constraintBottom_toBottomOf="@id/day_summary_6"
+        app:layout_constraintEnd_toStartOf="@id/day_summary_7"
+        app:layout_constraintStart_toEndOf="@id/day_summary_6" />
+
+    <com.kvl.cyclotrack.widgets.DaySummary
+        android:id="@+id/day_summary_7"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        app:dayOfWeek="7"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/weeklySummaryTable_divider6"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</merge>

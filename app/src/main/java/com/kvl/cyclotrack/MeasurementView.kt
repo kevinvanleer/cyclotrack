@@ -59,7 +59,7 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
             drawableId, null))
 
     init {
-        View.inflate(context, R.layout.measurement_view, this)
+        View.inflate(context, R.layout.view_measurement_view, this)
         initialize(attrs)
     }
 

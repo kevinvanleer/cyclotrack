@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="StatView">
+        <attr name="value" />
+        <attr name="units" format="string" />
+        <attr name="orientation" format="string" />
+        <attr name="textSizeValue" format="dimension" />
+        <attr name="textSizeUnits" format="dimension" />
+    </declare-styleable>
+</resources>

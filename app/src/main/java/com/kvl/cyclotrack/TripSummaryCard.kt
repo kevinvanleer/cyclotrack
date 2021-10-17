@@ -35,8 +35,12 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
 
     override fun setSelected(selected: Boolean) {
         when (selected) {
-            true -> setCardBackgroundColor(ResourcesCompat.getColor(context.resources,
-                R.color.colorAccent, null))
+            true -> setCardBackgroundColor(
+                ResourcesCompat.getColor(
+                    context.resources,
+                    R.color.accentColor, null
+                )
+            )
             else -> if (this::defaultBackgroundColor.isInitialized) setCardBackgroundColor(
                 defaultBackgroundColor)
         }

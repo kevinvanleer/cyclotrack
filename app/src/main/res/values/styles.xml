@@ -1,18 +1,35 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.DayNight">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="android:colorBackground">@color/colorBackground</item>
+        <item name="colorPrimary">@color/primaryColor</item>
+        <item name="colorPrimaryDark">@color/primaryDarkColor</item>
+        <item name="colorSecondary">@color/secondaryColor</item>
+        <item name="colorAccent">@color/accentColor</item>
+        <item name="colorOnPrimary">@color/primaryTextColor</item>
+        <item name="colorOnSecondary">@color/secondaryTextColor</item>
+        <item name="android:colorBackground">@color/backgroundColor</item>
+        <item name="colorSurface">@color/backgroundColor</item>
         <!--item name="android:textColor">@color/colorText</item-->
         <item name="android:datePickerStyle">@style/DateOfBirthPicker</item>
+        <!--item name="android:windowTranslucentStatus">true</item-->
+
+        <item name="toolbarStyle">@style/Widget.App.Toolbar</item>
+        <item name="appBarLayoutStyle">@style/Widget.App.Toolbar</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="Widget.App.AppBar" parent="Widget.MaterialComponents.AppBarLayout.Surface">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
+
+    <style name="Widget.App.Toolbar" parent="Widget.MaterialComponents.Toolbar.Surface">
+        <item name="android:background">@android:color/transparent</item>
     </style>
 
     <!--style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" /-->
@@ -33,15 +50,48 @@
         <item name="android:textSize">60sp</item>
     </style>
 
-    <style name="Widget.AppTheme.MyView" parent="">
-        <item name="android:background">@color/gray_400</item>
-        <item name="exampleColor">@color/light_blue_400</item>
-    </style>
-
     <style name="DateOfBirthPicker" parent="@android:style/Widget.DeviceDefault.DatePicker">
         <item name="android:datePickerMode">spinner</item>
         <item name="android:spinnersShown">true</item>
         <item name="android:calendarViewShown">false</item>
     </style>
 
+    <style name="AppTheme.Widget">
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="AppTheme.Widget.WeeklySummaryTable">
+        <item name="exampleColor">@color/light_blue_400</item>
+    </style>
+
+    <style name="AppTheme.Widget.Divider">
+        <item name="android:background">?android:attr/listDivider</item>
+    </style>
+
+    <style name="AppTheme.Widget.Divider.Vertical">
+        <item name="android:layout_width">1dp</item>
+        <item name="android:layout_height">0dp</item>
+    </style>
+
+    <style name="AppTheme.Widget.Divider.Horizontal">
+        <item name="android:layout_height">1dp</item>
+        <item name="android:layout_width">0dp</item>
+    </style>
+
+    <style name="StatView"></style>
+
+    <style name="StatView.Large">
+        <item name="textSizeUnits">14sp</item>
+        <item name="textSizeValue">24sp</item>
+    </style>
+
+    <style name="AppTheme.Widget.DaySquare"></style>
+
+    <style name="TextAppearance.AppCompat.CardHeading" parent="TextAppearance.AppCompat.Display1">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="TextAppearance.AppCompat.CardHeading.Stat">
+        <item name="android:textSize">24sp</item>
+    </style>
 </resources>

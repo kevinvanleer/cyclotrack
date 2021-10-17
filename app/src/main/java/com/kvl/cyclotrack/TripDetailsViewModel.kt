@@ -3,10 +3,7 @@ package com.kvl.cyclotrack
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,16 +21,30 @@ class TripDetailsViewModel @Inject constructor(
 ) : ViewModel() {
     val logTag = "TRIP_DETAILS_VIEW_MODEL"
     var tripId: Long = 0
+        set(value) {
+            tripOverview = tripsRepository.observe(value)
+            timeState = timeStateRepository.observeTimeStates(value)
+            splits = splitRepository.observeTripSplits(value)
+            measurements = measurementsRepository.observeCritical(value)
+            exportMeasurements = measurementsRepository.observe(value)
+            onboardSensors = onboardSensorsRepository.observeDecimated(value)
+            field = value
+        }
 
-    fun tripOverview() = tripsRepository.observe(tripId)
-    fun timeState() = timeStateRepository.observeTimeStates(tripId)
-    fun splits() = splitRepository.observeTripSplits(tripId)
+    lateinit var tripOverview: LiveData<Trip> private set
+    lateinit var timeState: LiveData<Array<TimeState>> private set
+    lateinit var splits: LiveData<Array<Split>> private set
+    lateinit var measurements: LiveData<Array<CriticalMeasurements>> private set
+    lateinit var onboardSensors: LiveData<Array<OnboardSensors>> private set
+    private lateinit var exportMeasurements: LiveData<Array<Measurements>>
+
     fun updateSplits() = viewModelScope.launch {
         val splits = splitRepository.getTripSplits(tripId)
         var areSplitsInSystem = false
         if (splits.isNotEmpty()) areSplitsInSystem =
-            abs(getSplitThreshold(sharedPreferences) * splits[0].totalDistance - 1.0) < 0.01
+            abs(getSplitThreshold(sharedPreferences) - splits[0].totalDistance) > 50.0
         if (true || splits.isEmpty() || !areSplitsInSystem) {
+            // Force true. TripInProgressService doesn't add the last partial split
             Log.d(logTag, "Recomputing splits")
             clearSplits()
             addSplits()
@@ -47,10 +58,6 @@ class TripDetailsViewModel @Inject constructor(
 
     fun removeTrip() =
         viewModelScope.launch { tripsRepository.removeTrip(tripId) }
-
-    fun measurements() = measurementsRepository.observeCritical(tripId)
-    private fun exportMeasurements() = measurementsRepository.observe(tripId)
-    fun onboardSensors() = onboardSensorsRepository.observeDecimated(tripId)
 
     suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics =
         getCombinedBiometrics(tripId,
@@ -70,30 +77,30 @@ class TripDetailsViewModel @Inject constructor(
 
     fun exportData() = MediatorLiveData<ExportData>().apply {
         value = ExportData()
-        addSource(tripOverview()) {
+        addSource(tripOverview) {
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export trip")
             value = value?.copy(summary = it)
         }
-        addSource(exportMeasurements()) {
+        addSource(exportMeasurements) {
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export measurements")
             value = value?.copy(measurements = it)
         }
-        addSource(timeState()) {
+        addSource(timeState) {
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export timeStates")
             value = value?.copy(timeStates = it)
         }
-        addSource(splits()) {
+        addSource(splits) {
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export splits")
             value = value?.copy(splits = it)
         }
-        addSource(onboardSensors()) {
+        addSource(onboardSensors) {
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export onboardSensors")
             value = value?.copy(onboardSensors = it)
         }
     }
 
     fun addSplits() {
-        val combined = zipLiveData(measurements(), timeState())
+        val combined = zipLiveData(measurements, timeState)
         combined.observeForever(object :
             Observer<Pair<Array<CriticalMeasurements>, Array<TimeState>>> {
             override fun onChanged(pair: Pair<Array<CriticalMeasurements>, Array<TimeState>>) {

@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.kvl.cyclotrack.TripSummaryCard xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:id="@+id/trip_summary_card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
-    card_view:cardCornerRadius="8dp"
-    card_view:contentPadding="0dp">
+    app:cardCornerRadius="8dp"
+    app:contentPadding="0dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

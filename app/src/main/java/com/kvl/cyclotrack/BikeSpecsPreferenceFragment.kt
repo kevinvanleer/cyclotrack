@@ -9,7 +9,7 @@ import android.widget.EditText
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import com.kvl.cyclotrack.databinding.BikeSpecsPreferenceFragmentBinding
+import com.kvl.cyclotrack.databinding.FragmentBikeSpecsPreferenceBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -20,18 +20,23 @@ class BikeSpecsPreferenceFragment : Fragment() {
     }
 
     private lateinit var viewModel: BikeSpecsPreferenceViewModel
-    private lateinit var binding: BikeSpecsPreferenceFragmentBinding
+    private lateinit var binding: FragmentBikeSpecsPreferenceBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
         viewModel =
-            BikeSpecsPreferenceViewModel(PreferenceManager.getDefaultSharedPreferences(
-                requireContext()))
-        binding = BikeSpecsPreferenceFragmentBinding.inflate(inflater,
+            BikeSpecsPreferenceViewModel(
+                PreferenceManager.getDefaultSharedPreferences(
+                    requireContext()
+                )
+            )
+        binding = FragmentBikeSpecsPreferenceBinding.inflate(
+            inflater,
             container,
-            false)
+            false
+        )
         binding.viewmodel = viewModel
 
         activity?.title = "Settings: Bike specs"

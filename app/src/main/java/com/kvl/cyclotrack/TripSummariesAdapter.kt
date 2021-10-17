@@ -43,7 +43,7 @@ class TripSummariesAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder {
         val tripSummaryView = LayoutInflater.from(parent.context)
-            .inflate(R.layout.trip_summary_card, parent, false) as TripSummaryCard
+            .inflate(R.layout.view_trip_summary_card, parent, false) as TripSummaryCard
         return TripSummaryViewHolder(tripSummaryView)
     }
 
@@ -67,11 +67,16 @@ class TripSummariesAdapter(
             } else {
                 try {
                     if (tripInProgress) {
-                        view.findNavController().navigate(R.id.action_start_trip,
+                        view.findNavController().navigate(
+                            TripSummariesFragmentDirections.actionStartTrip(
+                                tripId
+                            )
+                        )
+                        /*view.findNavController().navigate(R.id.action_start_trip,
                             Bundle().apply {
                                 Log.d(logTag, "Start dashboard with trip ${tripId}")
                                 putLong("tripId", tripId)
-                            })
+                            })*/
                     } else {
                         view.findNavController()
                             .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
@@ -129,9 +134,11 @@ class TripSummariesAdapter(
                     path.startCap(RoundCap())
                     path.endCap(RoundCap())
                     path.width(5f)
-                    path.color(ResourcesCompat.getColor(context.resources,
-                        R.color.colorAccent,
-                        null))
+                    path.color(ResourcesCompat.getColor(
+                        context.resources,
+                        R.color.accentColor,
+                        null
+                    ))
                     holder.tripSummaryView.drawPath(path, mapData.bounds)
                 }
             }
@@ -170,9 +177,11 @@ class TripSummariesAdapter(
                     path.startCap(RoundCap())
                     path.endCap(RoundCap())
                     path.width(5f)
-                    path.color(ResourcesCompat.getColor(context.resources,
-                        R.color.colorAccent,
-                        null))
+                    path.color(ResourcesCompat.getColor(
+                        context.resources,
+                        R.color.accentColor,
+                        null
+                    ))
                     holder.tripSummaryView.drawPath(path, mapData.bounds)
                 }
             }

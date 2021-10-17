@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="Stats" android:icon="@drawable/ic_analytics" android:id="@id/AnalyticsFragment" />
+    <item android:title="Rides" android:icon="@drawable/ic_list_alt" android:id="@id/TripSummariesFragment" />
+    <item android:title="Profile" android:icon="@drawable/ic_person" android:id="@id/BiometricsPreferenceFragment" />
+</menu>

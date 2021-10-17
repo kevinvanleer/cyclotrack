@@ -102,4 +102,6 @@
     <string name="preferences_key_advanced_enable_google_fit_sync_biometrics">enable_gfit_sync_biometrics</string>
     <string name="preferences_key_advanced_enable_google_fit_resting_heart_rate">enable_google_fit_resting_heart_rate</string>
     <string name="preferences_key_advanced_use_vo2max_calorie_estimate">preferences_key_advanced_use_vo2max_calorie_estimate</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

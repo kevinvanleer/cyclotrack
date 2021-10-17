@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/preferences_nav_graph"
+    app:startDestination="@id/AppPreferencesFragment">
+
+    <fragment
+        android:id="@+id/AppPreferencesFragment"
+        android:name="com.kvl.cyclotrack.AppPreferencesFragment"
+        android:label="Preferences"
+        tools:layout="@layout/fragment_app_preferences">
+        <action
+            android:id="@+id/action_edit_bike_specs"
+            app:destination="@id/BikeSpecsPreferenceFragment" />
+        <action
+            android:id="@+id/action_advanced_preferences"
+            app:destination="@id/AdvancedPreferencesFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/AdvancedPreferencesFragment"
+        android:name="com.kvl.cyclotrack.preferences.AdvancedPreferencesFragment"
+        android:label="Advanced Preferences"
+        tools:layout="@layout/fragment_advanced_preferences" />
+    <fragment
+        android:id="@+id/BikeSpecsPreferenceFragment"
+        android:name="com.kvl.cyclotrack.BikeSpecsPreferenceFragment"
+        android:label="Bike Specs"
+        tools:layout="@layout/fragment_bike_specs_preference" />
+</navigation>

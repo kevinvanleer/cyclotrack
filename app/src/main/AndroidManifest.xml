@@ -26,7 +26,6 @@
         android:name="google_analytics_default_allow_ad_personalization_signals"
         android:value="false" />
 
-
     <application
         android:name=".CyclotrackApp"
         android:allowBackup="true"
@@ -35,6 +34,15 @@
         android:roundIcon="@mipmap/cyclotrack_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name=".PreferencesActivity"
+            android:exported="true" />
+        <activity
+            android:name=".TripDetailsActivity"
+            android:exported="true" />
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="true" />
 
         <provider
             android:name="androidx.work.impl.WorkManagerInitializer"
@@ -47,8 +55,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

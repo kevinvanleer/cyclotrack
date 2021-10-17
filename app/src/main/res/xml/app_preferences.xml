@@ -16,7 +16,7 @@
         app:key="@string/preferences_dashboard_brightness_key"
         app:defaultValue="50" />
     <com.kvl.cyclotrack.DiscoverSensorDialogPreference
-        android:dialogLayout="@layout/discovered_sensor_list"
+        android:dialogLayout="@layout/view_discovered_sensor_list"
         android:dialogTitle="Discover and link sensors"
         android:key="@string/preferences_paired_ble_devices_key"
         android:title="Link BLE sensors"
@@ -25,10 +25,6 @@
         app:key="@string/preference_key_bike_specs"
         app:title="Bike specs"
         app:summary="Help calculate speed and other metrics" />
-    <Preference
-        app:key="@string/preferences_biometrics_key"
-        app:title="Biometrics"
-        app:summary="Height, weight, age, and other information" />
     <Preference
         app:key="@string/preferences_key_google_fit"
         app:title="@string/preferences_sync_with_google_fit_title"

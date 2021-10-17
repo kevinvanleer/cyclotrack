@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:heading_view="http://schemas.android.com/apk/res-auto"
     android:id="@+id/TripDetailsFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -42,7 +41,7 @@
         android:id="@+id/trip_details_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:background="@color/colorBackground"
+        android:background="@color/backgroundColor"
         android:layout_marginTop="300dp"
         app:layout_constraintTop_toTopOf="@id/trip_details_min_map_guide"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -89,7 +88,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_distance"
-                heading_view:headingLabel="Distance"
+                app:headingLabel="Distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
@@ -99,7 +98,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_time"
-                heading_view:headingLabel="Duration"
+                app:headingLabel="Duration"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:layout_constraintStart_toStartOf="parent"
@@ -108,7 +107,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_calories"
-                heading_view:headingLabel="Calories (net)"
+                app:headingLabel="Calories (net)"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
@@ -119,7 +118,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_heart_rate"
-                heading_view:headingLabel="Heart rate"
+                app:headingLabel="Heart rate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
@@ -138,7 +137,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_cadence"
-                heading_view:headingLabel="Cadence"
+                app:headingLabel="Cadence"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
@@ -156,7 +155,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_speed"
-                heading_view:headingLabel="Speed"
+                app:headingLabel="Speed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
@@ -174,7 +173,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_splits"
-                heading_view:headingLabel="Splits"
+                app:headingLabel="Splits"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
@@ -206,7 +205,7 @@
 
             <com.kvl.cyclotrack.HeadingView
                 android:id="@+id/trip_details_elevation"
-                heading_view:headingLabel="Elevation"
+                app:headingLabel="Elevation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"

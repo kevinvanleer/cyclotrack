@@ -15,4 +15,10 @@ class SplitRepository @Inject constructor(private val splitDao: SplitDao) {
     suspend fun addSplits(splits: Array<Split>) = splitDao.add(splits)
 
     suspend fun removeTripSplits(tripId: Long) = splitDao.removeTripSplits(tripId)
+
+    fun observeFastestDistances(distance: Double, limit: Int = 10) = splitDao.fastestDistances(
+        distanceLowerBound = kotlin.math.floor(distance),
+        distanceUpperBound = distance + 20,
+        limit = limit
+    )
 }

@@ -4,29 +4,38 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/dashboard_nav_graph"
     app:startDestination="@id/TripInProgressFragment">
+    <activity
+        android:id="@+id/MainActivity"
+        android:name="com.kvl.cyclotrack.MainActivity"
+        android:label="MainActivity"
+        tools:layout="@layout/activity_main" />
+    <activity
+        android:id="@+id/TripDetailsActivity"
+        android:name="com.kvl.cyclotrack.TripDetailsActivity"
+        android:label="TripDetailsActivity"
+        tools:layout="@layout/activity_trip_details" />
     <fragment
         android:id="@+id/TripInProgressFragment"
         android:name="com.kvl.cyclotrack.TripInProgressFragment"
         android:label="Dashboard"
-        tools:layout="@layout/trip_in_progress_fragment">
+        tools:layout="@layout/fragment_trip_in_progress">
+        <argument
+            android:name="tripId"
+            app:argType="long" />
         <action
             android:id="@+id/action_to_debug_view"
             app:destination="@id/AllDataFragment" />
         <action
             android:id="@+id/action_finish_trip"
-            app:destination="@id/TripDetailsFragment"
-            app:launchSingleTop="true"
-            app:popUpTo="@id/TripSummariesFragment">
+            app:destination="@id/TripDetailsActivity">
             <argument
                 android:name="tripId"
                 app:argType="long" />
         </action>
         <action
             android:id="@+id/action_back_to_summaries"
-            app:destination="@id/TripSummariesFragment"
-            app:launchSingleTop="true"
-            app:popUpTo="@id/cyclotrack_nav_graph"
-            app:popUpToInclusive="true" />
+            app:destination="@id/MainActivity"
+            app:launchSingleTop="true" />
     </fragment>
     <fragment
         android:id="@+id/AllDataFragment"

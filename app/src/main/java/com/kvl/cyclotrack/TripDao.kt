@@ -37,6 +37,12 @@ data class TripStats(
     val averageSpeed: Float?,
 )
 
+data class TripAggregation(
+    val totalDistance: Double,
+    val totalDuration: Double,
+    val tripCount: Int,
+)
+
 data class Biometrics(
     val id: Long,
     val userSex: UserSexEnum? = null,
@@ -89,6 +95,9 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE id > :tripId ORDER BY id DESC")
     suspend fun loadAfter(tripId: Long): Array<Trip>
 
+    @Query("SELECT * FROM trip WHERE timestamp >= :start and timestamp < :end ORDER BY timestamp ASC")
+    fun subscribeDateRange(start: Long, end: Long): LiveData<Array<Trip>>
+
     @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 0 and inProgress = 0 ORDER BY id DESC")
     suspend fun loadGoogleFitUnsyncedTrips(): Array<Trip>
 
@@ -98,14 +107,23 @@ interface TripDao {
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun subscribeRealTrips(): LiveData<Array<Trip>>
 
-    @Query("SELECT * from trip WHERE id = (SELECT max(id) FROM trip)")
+    @Query("SELECT * from trip ORDER BY distance DESC LIMIT :limit")
+    fun longestTrips(limit: Int): LiveData<Array<Trip>>
+
+    @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
     suspend fun getNewestTrip(): Trip
+
+    @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
+    fun observeNewestTrip(): LiveData<Trip>
 
     @Query("SELECT * from trip WHERE distance < 1 OR duration < 60")
     suspend fun getCleanupTrips(): Array<Trip>
 
     @Query("SELECT id,userSex,userWeight,userHeight,userAge,userVo2max,userRestingHeartRate,userMaxHeartRate from trip where timestamp = (SELECT min(timestamp) from trip where userWeight is not null and id >= :tripId)")
     suspend fun getDefaultBiometrics(tripId: Long): Biometrics?
+
+    @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip where timestamp >= :start and timestamp < :end")
+    fun subscribeTotals(start: Long, end: Long): LiveData<TripAggregation>
 
     @Delete(entity = Trip::class)
     suspend fun removeTrip(id: TripId)

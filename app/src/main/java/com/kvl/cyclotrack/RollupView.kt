@@ -40,7 +40,7 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
     }
 
     init {
-        View.inflate(context, R.layout.rollup_view, this)
+        View.inflate(context, R.layout.view_rollup_view, this)
     }
 
     override fun onFinishInflate() {

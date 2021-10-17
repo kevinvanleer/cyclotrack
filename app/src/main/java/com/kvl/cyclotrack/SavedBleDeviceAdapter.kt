@@ -17,9 +17,11 @@ class SavedBleDeviceAdapter(
         viewType: Int,
     ): SavedBleDeviceViewHolder {
         return SavedBleDeviceViewHolder(LayoutInflater.from(parent.context)
-            .inflate(R.layout.discovered_sensor_item,
+            .inflate(
+                R.layout.view_discovered_sensor_item,
                 parent,
-                false) as DiscoveredBleDevice)
+                false
+            ) as DiscoveredBleDevice)
     }
 
     override fun onBindViewHolder(holder: SavedBleDeviceViewHolder, position: Int) {

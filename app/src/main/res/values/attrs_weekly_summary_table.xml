@@ -1,0 +1,12 @@
+<resources>
+    <declare-styleable name="WeeklySummaryTable"></declare-styleable>
+    <declare-styleable name="DayOfWeekAttrs">
+        <attr name="dayOfWeek" format="integer" />
+    </declare-styleable>
+    <declare-styleable name="DaySummary">
+        <attr name="dayOfWeek" />
+    </declare-styleable>
+    <declare-styleable name="DaySquare">
+        <attr name="dayOfWeek" />
+    </declare-styleable>
+</resources>

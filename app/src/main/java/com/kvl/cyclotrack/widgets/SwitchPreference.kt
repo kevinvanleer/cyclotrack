@@ -37,7 +37,7 @@ class SwitchPreference : ConstraintLayout {
     }
 
     init {
-        View.inflate(context, R.layout.switch_preference, this)
+        View.inflate(context, R.layout.view_switch_preference, this)
     }
 
     var checked: Boolean

@@ -23,6 +23,13 @@ interface SplitDao {
     @Query("SELECT * FROM split WHERE timestamp = (SELECT max(timestamp) FROM split WHERE tripId = :tripId)")
     fun subscribeLast(tripId: Long): LiveData<Split>
 
+    @Query("select * from split where totalDistance >= :distanceLowerBound and totalDistance < :distanceUpperBound order by totalDuration asc limit :limit")
+    fun fastestDistances(
+        distanceLowerBound: Double,
+        distanceUpperBound: Double,
+        limit: Int
+    ): LiveData<Split>
+
     @Query("DELETE FROM split WHERE tripId = :tripId")
     suspend fun removeTripSplits(tripId: Long)
 

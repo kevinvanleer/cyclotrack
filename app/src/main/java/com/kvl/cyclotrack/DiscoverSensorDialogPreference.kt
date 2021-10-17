@@ -17,7 +17,7 @@ class DiscoverSensorDialogPreference(context: Context, attrs: AttributeSet) :
 
     init {
         isPersistent = true
-        dialogLayoutResource = R.layout.discovered_sensor_list
+        dialogLayoutResource = R.layout.view_discovered_sensor_list
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder?) {

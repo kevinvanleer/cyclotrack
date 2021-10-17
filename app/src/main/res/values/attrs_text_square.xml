@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="TextSquare">
+        <attr name="primaryText" format="string" />
+        <attr name="topText" format="string" />
+        <attr name="bottomText" format="string" />
+        <attr name="android:textColor" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AnalyticsFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.kvl.cyclotrack.RollupView
+                android:id="@+id/trips_rollup"
+                android:layout_margin="10dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                app:contentPadding="10dp"
+                app:cardCornerRadius="8dp">
+
+                <include layout="@layout/fragment_weekly_summary" />
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                app:contentPadding="10dp"
+                app:cardCornerRadius="8dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/fragmentAnalytics_monthlyHeading"
+                        style="@style/TextAppearance.AppCompat.CardHeading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        android:text="This month"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
+
+                    <com.kvl.cyclotrack.widgets.StatView
+                        style="@style/StatView.Large"
+                        android:id="@+id/fragmentAnalytics_monthlyTripCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_monthlyHeading"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.kvl.cyclotrack.widgets.StatView
+                        style="@style/StatView.Large"
+                        android:id="@+id/fragmentAnalytics_monthlyTotalDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_monthlyTripCount"
+                        app:layout_constraintEnd_toStartOf="@id/fragmentAnalytics_monthlyTotalDuration"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <com.kvl.cyclotrack.widgets.StatView
+                        style="@style/StatView.Large"
+                        android:id="@+id/fragmentAnalytics_monthlyTotalDuration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_monthlyTotalDistance"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                app:contentPadding="10dp"
+                app:cardCornerRadius="8dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:id="@+id/fragmentAnalytics_yearlyHeading"
+                        style="@style/TextAppearance.AppCompat.CardHeading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        android:text="This year"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent" />
+
+                    <com.kvl.cyclotrack.widgets.StatView
+                        style="@style/StatView.Large"
+                        android:id="@+id/fragmentAnalytics_yearlyTripCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_yearlyHeading"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <com.kvl.cyclotrack.widgets.StatView
+                        style="@style/StatView.Large"
+                        android:id="@+id/fragmentAnalytics_yearlyTotalDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_yearlyTripCount"
+                        app:layout_constraintEnd_toStartOf="@id/fragmentAnalytics_yearlyTotalDuration"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+
+                    <com.kvl.cyclotrack.widgets.StatView
+                        style="@style/StatView.Large"
+                        android:id="@+id/fragmentAnalytics_yearlyTotalDuration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="10dp"
+                        android:paddingHorizontal="10dp"
+                        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_yearlyTotalDistance"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintBottom_toBottomOf="parent" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                app:contentPadding="10dp"
+                app:cardCornerRadius="8dp">
+
+                <include layout="@layout/fragment_top_rides" />
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+    </ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
