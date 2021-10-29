@@ -91,15 +91,11 @@ class BiometricsPreferenceFragment : Fragment() {
         return binding.root
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
         requireActivity().findViewById<FloatingActionButton>(R.id.fab).apply {
             visibility = GONE
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.updateGoogleFitBiometrics()
         }
