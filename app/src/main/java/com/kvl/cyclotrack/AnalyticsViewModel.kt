@@ -16,4 +16,6 @@ class AnalyticsViewModel @Inject constructor(
     fun longestTrips(limit: Int = 3) = tripsRepository.longestTrips(limit)
     fun tripTotals(start: Long, end: Long = Instant.now().toEpochMilli()) =
         tripsRepository.observeTripTotals(start, end)
+
+    fun monthlyTotals() = tripsRepository.observeMonthlyTotals(3)
 }

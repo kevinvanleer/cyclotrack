@@ -60,9 +60,9 @@ class StatView : ConstraintLayout {
             a.getString(R.styleable.StatView_units)
                 ?.let { statUnits = it }
             a.getDimension(R.styleable.StatView_textSizeUnits, -1f)
-                ?.takeIf { it > 0f }?.let { attrTextSizeUnits = it }
+                .takeIf { it > 0f }?.let { attrTextSizeUnits = it }
             a.getDimension(R.styleable.StatView_textSizeValue, -1f)
-                ?.takeIf { it > 0f }?.let { attrTextSizeValue = it }
+                .takeIf { it > 0f }?.let { attrTextSizeValue = it }
             a.recycle()
         }
     }

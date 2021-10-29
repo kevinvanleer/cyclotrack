@@ -41,28 +41,16 @@ class WeeklySummaryTable : ConstraintLayout {
         View.inflate(context, R.layout.view_weekly_summary_table, this)
     }
 
-    constructor(context: Context) : super(context) {
-        init(null, 0)
-    }
+    constructor(context: Context) : super(context)
 
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        init(attrs, 0)
-    }
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(
         context,
         attrs,
         defStyle
-    ) {
-        init(attrs, defStyle)
-    }
+    )
 
-    private fun init(attrs: AttributeSet?, defStyle: Int) {
-        // Load attributes
-        val a = context.obtainStyledAttributes(
-            attrs, R.styleable.WeeklySummaryTable, defStyle, 0
-        )
-    }
 
     override fun onFinishInflate() {
         super.onFinishInflate()

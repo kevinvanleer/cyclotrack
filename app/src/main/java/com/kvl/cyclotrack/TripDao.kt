@@ -37,6 +37,13 @@ data class TripStats(
     val averageSpeed: Float?,
 )
 
+data class PeriodTotals(
+    val period: String,
+    val totalDistance: Double,
+    val totalDuration: Double,
+    val tripCount: Int,
+)
+
 data class TripAggregation(
     val totalDistance: Double,
     val totalDuration: Double,
@@ -124,6 +131,9 @@ interface TripDao {
 
     @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip where timestamp >= :start and timestamp < :end")
     fun subscribeTotals(start: Long, end: Long): LiveData<TripAggregation>
+
+    @Query("select strftime('%Y-%m',  datetime(round(timestamp/1000),'unixepoch','localtime') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip  group by period order by totalDistance desc limit :limit")
+    fun subscribeMonthlyTotals(limit: Int): LiveData<Array<PeriodTotals>>
 
     @Delete(entity = Trip::class)
     suspend fun removeTrip(id: TripId)

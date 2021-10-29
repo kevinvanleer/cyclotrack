@@ -230,7 +230,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                 return true
             }
         }
-        //super.onDisplayPreferenceDialog(pref)
         return false
     }
 }

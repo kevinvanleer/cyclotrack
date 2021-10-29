@@ -7,17 +7,12 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.navGraphViewModels
 import com.kvl.cyclotrack.data.DailySummary
-import com.kvl.cyclotrack.widgets.StatView
-import com.kvl.cyclotrack.widgets.TripTable
-import com.kvl.cyclotrack.widgets.WeeklySummaryTable
+import com.kvl.cyclotrack.widgets.*
 import dagger.hilt.android.AndroidEntryPoint
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
-import java.time.temporal.WeekFields
-import java.util.*
 import kotlin.math.roundToInt
 
 @AndroidEntryPoint
@@ -120,6 +115,27 @@ class AnalyticsFragment : Fragment() {
                 statUnits = "HOURS"
             }
         })
+        viewModel.monthlyTotals().observe(viewLifecycleOwner, {
+            view.findViewById<Table>(R.id.fragmentAnalytics_topMonthlyTrips).apply {
+                columns = listOf(
+                    TableColumn(id = "period", label = "DATE"),
+                    TableColumn(id = "distance", label = "DISTANCE"),
+                    TableColumn(id = "duration", label = "DURATION"),
+                    TableColumn(id = "count", label = "RIDES"),
+                )
+                populate(it.map {
+                    listOf(
+                        it.period,
+                        "%.1f %s".format(
+                            getUserDistance(context, it.totalDistance),
+                            getUserDistanceUnitShort(context)
+                        ),
+                        formatDuration(it.totalDuration),
+                        it.tripCount.toString()
+                    )
+                })
+            }
+        })
     }
 
     private fun doTopRides(view: View) {
@@ -133,11 +149,6 @@ class AnalyticsFragment : Fragment() {
         weeklySummaryStatRight =
             view.findViewById(R.id.fragmentAnalytics_lastSevenDayTotalStatRight)
         thisWeekSummaryTable = view.findViewById(R.id.analyticsFragment_thisWeekSummaryTable)
-
-        val firstDayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
-        val daysInWeek = DayOfWeek.values().size
-        val offset = 7 - (firstDayOfWeek.value + 7 - Instant.now()
-            .atZone(ZoneId.systemDefault()).dayOfWeek.value) % daysInWeek
 
         // replace minus(6, DAYS) with minus(offset.toLong, DAYS)
         // for this week instead of last 7 days

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -11,39 +10,23 @@
         android:id="@+id/tripTableRow_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/tripTableRow_name"
         android:text="YYYY/MM/DD" />
 
     <TextView
         android:id="@+id/tripTableRow_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/tripTableRow_date"
-        app:layout_constraintEnd_toStartOf="@id/tripTableRow_distance"
         android:text="Name" />
 
     <TextView
         android:id="@+id/tripTableRow_distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/tripTableRow_name"
-        app:layout_constraintEnd_toStartOf="@id/tripTableRow_duration"
         android:text="distance" />
 
     <TextView
         android:id="@+id/tripTableRow_duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/tripTableRow_distance"
-        app:layout_constraintEnd_toEndOf="parent"
         android:text="00h 00m 00s" />
 </merge>
