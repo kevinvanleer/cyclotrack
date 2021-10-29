@@ -18,4 +18,5 @@ class AnalyticsViewModel @Inject constructor(
         tripsRepository.observeTripTotals(start, end)
 
     fun monthlyTotals() = tripsRepository.observeMonthlyTotals(3)
+    fun weeklyTotals() = tripsRepository.observeWeeklyTotals(3)
 }

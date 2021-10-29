@@ -118,7 +118,7 @@ class AnalyticsFragment : Fragment() {
         viewModel.monthlyTotals().observe(viewLifecycleOwner, {
             view.findViewById<Table>(R.id.fragmentAnalytics_topMonthlyTrips).apply {
                 columns = listOf(
-                    TableColumn(id = "period", label = "DATE"),
+                    TableColumn(id = "period", label = "TOP MONTH"),
                     TableColumn(id = "distance", label = "DISTANCE"),
                     TableColumn(id = "duration", label = "DURATION"),
                     TableColumn(id = "count", label = "RIDES"),
@@ -196,5 +196,26 @@ class AnalyticsFragment : Fragment() {
                         thisWeekSummaryTable.populate(summaryData.toTypedArray())
                     })
             }
+        viewModel.weeklyTotals().observe(viewLifecycleOwner, {
+            view.findViewById<Table>(R.id.fragmentAnalytics_topWeeklyTrips).apply {
+                columns = listOf(
+                    TableColumn(id = "period", label = "TOP WEEK"),
+                    TableColumn(id = "distance", label = "DISTANCE"),
+                    TableColumn(id = "duration", label = "DURATION"),
+                    TableColumn(id = "count", label = "RIDES"),
+                )
+                populate(it.map {
+                    listOf(
+                        it.period,
+                        "%.1f %s".format(
+                            getUserDistance(context, it.totalDistance),
+                            getUserDistanceUnitShort(context)
+                        ),
+                        formatDuration(it.totalDuration),
+                        it.tripCount.toString()
+                    )
+                })
+            }
+        })
     }
 }
