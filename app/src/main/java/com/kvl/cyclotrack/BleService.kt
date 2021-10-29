@@ -8,8 +8,6 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
@@ -131,10 +129,9 @@ class BleService @Inject constructor(
                     Log.i(logTag, "Connected to GATT server ${gatt.device.address}.")
                     Log.i(logTag,
                         "Attempting to start service discovery: ${gatt.discoverServices()}")
-                    gatts.add(gatt)
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
-                    Log.i(logTag, "Disconnected from GATT server.")
+                    Log.i(logTag, "Disconnected ${gatt.device.address} from GATT server.")
                 }
             }
         }
@@ -390,13 +387,14 @@ class BleService @Inject constructor(
         }
 
         fun enableBluetooth(context: Context) {
-            val bluetoothManager =
-                context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            val bluetoothAdapter = bluetoothManager.adapter
-            if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
-                Log.d(logTag, "Requesting to enable Bluetooth")
-                EventBus.getDefault()
-                    .post(BluetoothActionEvent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).let { bluetoothManager ->
+                bluetoothManager.adapter.let { bluetoothAdapter ->
+                    if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                        Log.d(logTag, "Requesting to enable Bluetooth")
+                        EventBus.getDefault()
+                            .post(BluetoothActionEvent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
+                    }
+                }
             }
         }
     }
@@ -441,22 +439,32 @@ class BleService @Inject constructor(
                 Log.d(logTag,
                     "Connecting to ${device.name}, ${device.type}: ${device.address}")
                 //TODO: Store BLE service for each device and use corresponding callback
-                device.connectGatt(context, true, genericGattCallback)
+                gatts.add(device.connectGatt(context, true, genericGattCallback))
             }
-        }
-        if (scanCallbacks.isNotEmpty()) {
-            Handler(Looper.getMainLooper()).postDelayed({
-                stopAllScans()
-            }, 5L * 60 * 1000)
         }
     }
 
     fun stopAllScans() {
+        Log.d(logTag, "Stop all scans")
         scanCallbacks.forEach {
             Log.d(logTag, "Stopping device scan")
             bluetoothLeScanner.stopScan(it)
         }
         scanCallbacks.clear()
+
+        (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).let { bluetoothManager ->
+            gatts.filter {
+                bluetoothManager.getConnectionState(
+                    it.device,
+                    BluetoothProfile.GATT
+                ) != BluetoothProfile.STATE_CONNECTED
+            }
+                .forEach { gatt ->
+                    Log.d(logTag, "Closing GATT for ${gatt.device.address}")
+                    gatt.close()
+                    gatts.remove(gatt)
+                }
+        }
     }
 
     fun disconnect() {
@@ -465,7 +473,6 @@ class BleService @Inject constructor(
         gatts.forEach { gatt ->
             Log.d(logTag, "Disconnecting ${gatt.device.address}")
             gatt.close()
-            gatt.disconnect()
         }
         gatts.clear()
 

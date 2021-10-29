@@ -1184,7 +1184,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             cadenceHeadingView.visibility = View.VISIBLE
                             cadenceChartView.visibility = View.VISIBLE
                             cadenceHeadingView.value =
-                                "${avgCadence.roundToInt()} rpm (average)"
+                                "${
+                                    avgCadence.takeIf { it.isFinite() }?.roundToInt() ?: 0
+                                } rpm (average)"
                             makeCadenceLineChart()
                         }
                         scrollView.setOnTouchListener(this@TripDetailsFragment)

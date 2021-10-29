@@ -22,9 +22,7 @@ import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
@@ -533,6 +531,12 @@ class TripInProgressService @Inject constructor() :
                     when (val tripId = it.getLongExtra("tripId", -1)) {
                         -1L -> lifecycleScope.launch { start() }
                         else -> restart(tripId)
+                    }
+                    lifecycleScope.launchWhenCreated {
+                        withContext(Dispatchers.IO) {
+                            delay(5L * 60 * 1000)
+                        }
+                        bleService.stopAllScans()
                     }
                 }
                 getString(R.string.action_pause_trip_service) ->
