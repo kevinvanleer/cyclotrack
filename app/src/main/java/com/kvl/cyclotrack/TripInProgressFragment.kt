@@ -7,7 +7,7 @@ import android.os.Looper
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.*
-import android.view.View.OnClickListener
+import android.view.View.*
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -55,6 +55,7 @@ class TripInProgressFragment :
     private lateinit var bottomView: TextView
     private lateinit var trackingImage: ImageView
     private lateinit var debugTextView: TextView
+    private lateinit var timeOfDayTextView: TextView
 
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
@@ -511,6 +512,7 @@ class TripInProgressFragment :
         bottomView = view.findViewById(R.id.measurement_bottom)
         trackingImage = view.findViewById(R.id.image_tracking)
         debugTextView = view.findViewById(R.id.textview_debug)
+        timeOfDayTextView = view.findViewById(R.id.dashboard_textview_timeOfDay)
 
 
         //TODO: Cleanup below
@@ -627,15 +629,21 @@ class TripInProgressFragment :
     private fun updateClock() {
         var hour = Calendar.getInstance().get(Calendar.HOUR)
         if (hour == 0) hour = 12
-        val time = String.format("%d:%02d",
+        val time = String.format(
+            "%d:%02d",
             hour,
-            Calendar.getInstance().get(Calendar.MINUTE))
+            Calendar.getInstance().get(Calendar.MINUTE)
+        )
         val amPm = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
         if (viewModel.cadenceSensor.value?.rpm == null) {
+            timeOfDayTextView.visibility = INVISIBLE
             bottomRightView.value = time
             bottomRightView.label = amPm
         } else {
-            activity?.title = "$time $amPm"
+            timeOfDayTextView.apply {
+                visibility = VISIBLE
+                text = "$time $amPm"
+            }
         }
     }
 
