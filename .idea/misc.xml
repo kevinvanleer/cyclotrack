@@ -15,10 +15,10 @@
         <entry key="app/src/main/res/layout/content_main.xml" value="0.11005434782608696" />
         <entry key="app/src/main/res/layout/day_square.xml" value="4.0" />
         <entry key="app/src/main/res/layout/day_summary.xml" value="0.1" />
-        <entry key="app/src/main/res/layout/fragment_analytics.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/fragment_analytics.xml" value="0.39294306335204493" />
         <entry key="app/src/main/res/layout/fragment_top_rides.xml" value="0.3541666666666667" />
         <entry key="app/src/main/res/layout/fragment_trip_in_progress.xml" value="0.36574074074074076" />
-        <entry key="app/src/main/res/layout/fragment_weekly_summary.xml" value="0.335" />
+        <entry key="app/src/main/res/layout/fragment_weekly_summary.xml" value="0.1" />
         <entry key="app/src/main/res/layout/sample_day_square.xml" value="0.45740740740740743" />
         <entry key="app/src/main/res/layout/sample_week_summary_table.xml" value="0.4824074074074074" />
         <entry key="app/src/main/res/layout/sample_weekly_summary_table.xml" value="0.45740740740740743" />
@@ -33,7 +33,10 @@
         <entry key="app/src/main/res/layout/view_day_summary.xml" value="0.29583333333333334" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_item.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_list.xml" value="0.253125" />
+        <entry key="app/src/main/res/layout/view_stat_view.xml" value="0.346875" />
         <entry key="app/src/main/res/layout/view_text_square.xml" value="1.0" />
+        <entry key="app/src/main/res/layout/view_three_stat.xml" value="0.346875" />
+        <entry key="app/src/main/res/layout/view_trip_summary_card_wrapper.xml" value="0.346875" />
         <entry key="app/src/main/res/layout/view_trip_table_row.xml" value="0.378125" />
         <entry key="app/src/main/res/layout/view_weekly_summary_table.xml" value="0.29583333333333334" />
         <entry key="app/src/main/res/layout/weekly_summary_table.xml" value="0.1" />

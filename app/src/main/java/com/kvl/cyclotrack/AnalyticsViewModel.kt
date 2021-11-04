@@ -8,6 +8,8 @@ import javax.inject.Inject
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
+    private val measurementsRepository: MeasurementsRepository,
+    private val timeStateRepository: TimeStateRepository
 ) : ViewModel() {
     val allTrips = tripsRepository.observeAll()
     fun recentTrips(start: Long, end: Long = Instant.now().toEpochMilli()) =
@@ -19,4 +21,8 @@ class AnalyticsViewModel @Inject constructor(
 
     fun monthlyTotals() = tripsRepository.observeMonthlyTotals(3)
     fun weeklyTotals() = tripsRepository.observeWeeklyTotals(3)
+
+    suspend fun getTripMeasurements(tripId: Long) = measurementsRepository.getCritical(tripId)
+    suspend fun getTripTimeStates(tripId: Long) = timeStateRepository.getTimeStates(tripId)
+
 }

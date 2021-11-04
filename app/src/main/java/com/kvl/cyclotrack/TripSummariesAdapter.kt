@@ -41,11 +41,12 @@ class TripSummariesAdapter(
     class TripSummaryViewHolder(val tripSummaryView: TripSummaryCard) :
         RecyclerView.ViewHolder(tripSummaryView)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder {
-        val tripSummaryView = LayoutInflater.from(parent.context)
-            .inflate(R.layout.view_trip_summary_card, parent, false) as TripSummaryCard
-        return TripSummaryViewHolder(tripSummaryView)
-    }
+    //TODO: Instantiate TripSummaryCard without inflating layout
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder =
+        TripSummaryViewHolder(
+            LayoutInflater.from(parent.context)
+                .inflate(R.layout.view_trip_summary_card_wrapper, parent, false) as TripSummaryCard
+        )
 
     override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
         val tripId = trips[position].id ?: 0L
@@ -72,11 +73,6 @@ class TripSummariesAdapter(
                                 tripId
                             )
                         )
-                        /*view.findNavController().navigate(R.id.action_start_trip,
-                            Bundle().apply {
-                                Log.d(logTag, "Start dashboard with trip ${tripId}")
-                                putLong("tripId", tripId)
-                            })*/
                     } else {
                         view.findNavController()
                             .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))

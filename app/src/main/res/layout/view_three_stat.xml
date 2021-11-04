@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:theme="@style/AppTheme.Widget.DaySquare"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
+    <com.kvl.cyclotrack.widgets.StatView
+        style="@style/StatView.Large"
+        android:id="@+id/threeStat_statOne"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="10dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/threeStat_statTwo"
+        app:layout_constraintTop_toBottomOf="@id/fragmentAnalytics_thisMonthHeading" />
+
+    <com.kvl.cyclotrack.widgets.StatView
+        style="@style/StatView.Large"
+        android:id="@+id/threeStat_statTwo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="10dp"
+        app:layout_constraintStart_toEndOf="@id/threeStat_statOne"
+        app:layout_constraintEnd_toStartOf="@id/threeStat_statThree"
+        app:layout_constraintTop_toTopOf="@id/threeStat_statOne"
+        app:layout_constraintBottom_toBottomOf="@id/threeStat_statOne" />
+
+    <com.kvl.cyclotrack.widgets.StatView
+        style="@style/StatView.Large"
+        android:id="@+id/threeStat_statThree"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="10dp"
+        app:layout_constraintStart_toEndOf="@id/threeStat_statTwo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/threeStat_statOne"
+        app:layout_constraintBottom_toBottomOf="@id/threeStat_statOne" />
+</merge>

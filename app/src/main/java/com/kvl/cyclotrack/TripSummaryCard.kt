@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.util.Log
+import android.view.View
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
@@ -18,20 +19,47 @@ import com.google.android.gms.maps.model.PolylineOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
-class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context, attrs) {
+class TripSummaryCard : CardView {
     private lateinit var defaultBackgroundColor: ColorStateList
-    private lateinit var dateView: TextView
-    private lateinit var titleView: TextView
-    private lateinit var startTimeView: TextView
-    private lateinit var durationView: TextView
-    private lateinit var mapView: MapView
     private lateinit var map: GoogleMap
+    private var dateView: TextView
+    private var titleView: TextView
+    private var startTimeView: TextView
+    private var durationView: TextView
+    private var mapView: MapView
     private var path: PolylineOptions? = null
 
     var tripId: Long = 0L
     var showSelectionIndicator = false
 
     private val logTag = "TripSummaryCard"
+
+    init {
+        Log.d(logTag, "initialize")
+        View.inflate(context, R.layout.view_trip_summary_card, this)
+        titleView = findViewById(R.id.trip_summary_title)
+        startTimeView = findViewById(R.id.trip_summary_start_time)
+        dateView = findViewById(R.id.trip_summary_date)
+        durationView = findViewById((R.id.trip_summary_duration))
+        mapView = findViewById(R.id.trip_summary_map)
+        mapView.onCreate(null)
+    }
+
+    constructor(context: Context) : super(context) {
+        //init(null, 0)
+    }
+
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
+        //init(attrs, 0)
+    }
+
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(
+        context,
+        attrs,
+        defStyle
+    ) {
+        //init(attrs, defStyle)
+    }
 
     override fun setSelected(selected: Boolean) {
         when (selected) {
@@ -114,12 +142,8 @@ class TripSummaryCard(context: Context, attrs: AttributeSet) : CardView(context,
 
     override fun onFinishInflate() {
         super.onFinishInflate()
-        titleView = findViewById(R.id.trip_summary_title)
-        startTimeView = findViewById(R.id.trip_summary_start_time)
-        dateView = findViewById(R.id.trip_summary_date)
-        durationView = findViewById((R.id.trip_summary_duration))
-        mapView = findViewById(R.id.trip_summary_map)
-        mapView.onCreate(null)
+
+        Log.d(logTag, "onFinishInflate")
 
         defaultBackgroundColor = cardBackgroundColor
 

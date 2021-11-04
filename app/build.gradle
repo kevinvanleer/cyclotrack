@@ -32,8 +32,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 37
-        versionName "Main Activity Bottom Bar"
+        versionCode 38
+        versionName "Cleanup analytics"
 
         def lastCommitHash = { ->
             def git = Grgit.open(dir: project.rootDir)

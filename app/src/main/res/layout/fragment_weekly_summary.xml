@@ -11,61 +11,29 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
         android:paddingHorizontal="10dp"
-        android:text="Last 7 days"
+        android:text="This week"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/analyticsFragment_thisWeekSummaryTable"
+        app:layout_constraintBottom_toTopOf="@id/fragmentAnalytics_threeStat_thisThisWeek"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <com.kvl.cyclotrack.widgets.StatView
-        style="@style/StatView.Large"
-        android:id="@+id/fragmentAnalytics_lastSevenDayTotalStatLeft"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="10dp"
-        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_lastSevenDayHeading"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/analyticsFragment_thisWeekSummaryTable" />
 
-
-    <com.kvl.cyclotrack.widgets.StatView
-        style="@style/StatView.Large"
-        android:id="@+id/fragmentAnalytics_lastSevenDayTotalStatRight"
-        android:layout_width="wrap_content"
+    <com.kvl.cyclotrack.widgets.ThreeStat
+        android:id="@+id/fragmentAnalytics_threeStat_thisThisWeek"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingHorizontal="10dp"
-        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_lastSevenDayTotalStatLeft"
-        app:layout_constraintTop_toTopOf="@id/fragmentAnalytics_lastSevenDayTotalStatLeft"
-        app:layout_constraintBottom_toBottomOf="@id/fragmentAnalytics_lastSevenDayTotalStatLeft" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/fragmentAnalytics_thisWeekSummaryTable"
+        app:layout_constraintTop_toBottomOf="@id/fragmentAnalytics_lastSevenDayHeading" />
 
-    <com.kvl.cyclotrack.widgets.StatView
-        style="@style/StatView.Large"
-        android:id="@+id/fragmentAnalytics_lastSevenDayTotalStatThree"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="10dp"
-        android:visibility="invisible"
-        app:layout_constraintStart_toEndOf="@id/fragmentAnalytics_lastSevenDayTotalStatRight"
-        app:layout_constraintTop_toTopOf="@id/fragmentAnalytics_lastSevenDayTotalStatLeft"
-        app:layout_constraintBottom_toBottomOf="@id/fragmentAnalytics_lastSevenDayTotalStatLeft" />
 
     <com.kvl.cyclotrack.widgets.WeeklySummaryTable
-        android:id="@+id/analyticsFragment_thisWeekSummaryTable"
+        android:id="@+id/fragmentAnalytics_thisWeekSummaryTable"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/fragmentAnalytics_lastSevenDayTotalStatLeft"
-        app:layout_constraintBottom_toTopOf="@id/fragmentAnalytics_topWeeklyTrips"
-        android:layout_marginVertical="10dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <com.kvl.cyclotrack.widgets.Table
-        android:id="@+id/fragmentAnalytics_topWeeklyTrips"
-        app:layout_constraintTop_toBottomOf="@id/analyticsFragment_thisWeekSummaryTable"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/fragmentAnalytics_threeStat_thisThisWeek"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginVertical="10dp"
-        android:paddingHorizontal="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 </androidx.constraintlayout.widget.ConstraintLayout>

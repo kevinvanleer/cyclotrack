@@ -38,6 +38,13 @@
                 android:name="tripId"
                 app:argType="long" />
         </action>
+        <action
+            android:id="@+id/action_view_trip_details"
+            app:destination="@id/TripDetailsActivity">
+            <argument
+                android:name="tripId"
+                app:argType="long" />
+        </action>
     </fragment>
     <fragment
         android:id="@+id/TripSummariesFragment"

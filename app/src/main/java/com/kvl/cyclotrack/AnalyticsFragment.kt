@@ -1,14 +1,21 @@
 package com.kvl.cyclotrack
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
 import androidx.navigation.navGraphViewModels
+import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
 import com.kvl.cyclotrack.widgets.*
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -17,6 +24,7 @@ import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class AnalyticsFragment : Fragment() {
+    private val logTag = AnalyticsFragment::class.simpleName
 
     fun initializeWeeklySummaryData(startDay: Instant): MutableList<DailySummary> {
         val summaries = mutableListOf<DailySummary>()
@@ -39,6 +47,7 @@ class AnalyticsFragment : Fragment() {
     private lateinit var weeklySummaryStatLeft: StatView
     private lateinit var weeklySummaryStatRight: StatView
     private lateinit var longestTrips: TripTable
+    private lateinit var spotlightTripCard: TripSummaryCard
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,8 +60,11 @@ class AnalyticsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         rollupView = view.findViewById(R.id.trips_rollup)
+        spotlightTripCard = view.findViewById(R.id.fragmentAnalytics_spotlightRide)
+        Log.d(logTag, "inflate spotlight")
         viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
             rollupView.rollupTripData(trips)
+            doSpotlightRide(trips.find { !it.inProgress })
         })
 
         doWeeklySummary(view)
@@ -61,33 +73,78 @@ class AnalyticsFragment : Fragment() {
         doTopRides(view)
     }
 
-    private fun doAnnualTotals(view: View) {
-            viewModel.tripTotals(
-                Instant.now().atZone(ZoneId.systemDefault()).with(
-                    TemporalAdjusters.firstDayOfYear()
-                ).truncatedTo(ChronoUnit.DAYS)
-                    .toInstant().toEpochMilli(),
-                Instant.now().atZone(ZoneId.systemDefault()).with(
-                    TemporalAdjusters.lastDayOfYear()
-                ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
-                    .toInstant().toEpochMilli()
-            ).observe(viewLifecycleOwner, {
-                view.findViewById<StatView>(R.id.fragmentAnalytics_yearlyTripCount).apply {
-                    statValue = it.tripCount.toString()
-                    statUnits = "RIDES"
-                }
-                view.findViewById<StatView>(R.id.fragmentAnalytics_yearlyTotalDistance).apply {
-                    statValue =
-                        getUserDistance(requireContext(), it.totalDistance).roundToInt().toString()
-                    statUnits = getUserDistanceUnitShort(requireContext()).uppercase()
-                }
+    private fun doSpotlightRide(trip: Trip?) {
+        Log.d(logTag, "doSpotlightRide")
+        spotlightTripCard.apply {
+            if (trip == null) visibility = View.GONE
+            else {
+                tripId = trip.id!!
+                title = trip.name ?: "Unnamed trip"
+                setStartTime(trip.timestamp)
+                setDate(trip.timestamp)
+                setTripDetails(trip.duration ?: 0.0, trip.distance ?: 0.0)
+                onResumeMap()
+                clearMap()
+                showSelectionIndicator = false
+                isSelected = false
 
-                view.findViewById<StatView>(R.id.fragmentAnalytics_yearlyTotalDuration).apply {
-                    statValue = formatDurationHours(it.totalDuration)
-                    statUnits = "HOURS"
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val measurements = viewModel.getTripMeasurements(tripId)
+                    val timeStates = viewModel.getTripTimeStates(tripId)
+                    val mapData = plotPath(measurements, timeStates)
+                    if (mapData.bounds != null) {
+                        mapData.paths.forEach { path ->
+                            path.startCap(RoundCap())
+                            path.endCap(RoundCap())
+                            path.width(5f)
+                            path.color(
+                                ResourcesCompat.getColor(
+                                    context.resources,
+                                    R.color.accentColor,
+                                    null
+                                )
+                            )
+                            drawPath(path, mapData.bounds)
+                        }
+                    }
                 }
-            })
+                setOnClickListener { view ->
+                    view.findNavController()
+                        .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
+                }
+            }
         }
+    }
+
+    private fun doAnnualTotals(view: View) {
+        viewModel.tripTotals(
+            Instant.now().atZone(ZoneId.systemDefault()).with(
+                TemporalAdjusters.firstDayOfYear()
+            ).truncatedTo(ChronoUnit.DAYS)
+                .toInstant().toEpochMilli(),
+            Instant.now().atZone(ZoneId.systemDefault()).with(
+                TemporalAdjusters.lastDayOfYear()
+            ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+                .toInstant().toEpochMilli()
+        ).observe(viewLifecycleOwner, {
+            view.findViewById<ThreeStat>(R.id.fragmentAnalytics_threeStat_thisYear).apply {
+                populate(
+                    arrayOf(
+                        Pair("RIDES", it.tripCount.toString()),
+                        Pair(
+                            getUserDistanceUnitShort(requireContext()).uppercase(),
+                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                                .toString()
+                        ),
+                        Pair(
+                            "HOURS",
+                            formatDurationHours(it.totalDuration)
+                        )
+                    )
+                )
+            }
+        })
+    }
 
     private fun doMonthlyTotals(view: View) {
         viewModel.tripTotals(
@@ -100,38 +157,40 @@ class AnalyticsFragment : Fragment() {
             ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner, {
-            view.findViewById<StatView>(R.id.fragmentAnalytics_monthlyTripCount).apply {
-                statValue = it.tripCount.toString()
-                statUnits = "RIDES"
-            }
-            view.findViewById<StatView>(R.id.fragmentAnalytics_monthlyTotalDistance).apply {
-                statValue =
-                    getUserDistance(requireContext(), it.totalDistance).roundToInt().toString()
-                statUnits = getUserDistanceUnitShort(requireContext()).uppercase()
-            }
-
-            view.findViewById<StatView>(R.id.fragmentAnalytics_monthlyTotalDuration).apply {
-                statValue = formatDurationHours(it.totalDuration)
-                statUnits = "HOURS"
+            view.findViewById<ThreeStat>(R.id.fragmentAnalytics_threeStat_thisMonth).apply {
+                populate(
+                    arrayOf(
+                        Pair("RIDES", it.tripCount.toString()),
+                        Pair(
+                            getUserDistanceUnitShort(requireContext()).uppercase(),
+                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                                .toString()
+                        ),
+                        Pair(
+                            "HOURS",
+                            formatDurationHours(it.totalDuration)
+                        )
+                    )
+                )
             }
         })
         viewModel.monthlyTotals().observe(viewLifecycleOwner, {
             view.findViewById<Table>(R.id.fragmentAnalytics_topMonthlyTrips).apply {
                 columns = listOf(
-                    TableColumn(id = "period", label = "TOP MONTH"),
+                    TableColumn(id = "period", label = "MONTH"),
+                    TableColumn(id = "count", label = "RIDES"),
                     TableColumn(id = "distance", label = "DISTANCE"),
                     TableColumn(id = "duration", label = "DURATION"),
-                    TableColumn(id = "count", label = "RIDES"),
                 )
                 populate(it.map {
                     listOf(
                         it.period,
+                        it.tripCount.toString(),
                         "%.1f %s".format(
                             getUserDistance(context, it.totalDistance),
                             getUserDistanceUnitShort(context)
                         ),
                         formatDuration(it.totalDuration),
-                        it.tripCount.toString()
                     )
                 })
             }
@@ -139,24 +198,24 @@ class AnalyticsFragment : Fragment() {
     }
 
     private fun doTopRides(view: View) {
-        longestTrips = view.findViewById(R.id.fragmentTopTrips_longestTrips)
+        longestTrips = view.findViewById(R.id.fragmentAnalytics_longestTrips)
         viewModel.longestTrips(3)
             .observe(viewLifecycleOwner, { trips -> longestTrips.populate(trips) })
     }
 
     private fun doWeeklySummary(view: View) {
-        weeklySummaryStatLeft = view.findViewById(R.id.fragmentAnalytics_lastSevenDayTotalStatLeft)
-        weeklySummaryStatRight =
-            view.findViewById(R.id.fragmentAnalytics_lastSevenDayTotalStatRight)
-        thisWeekSummaryTable = view.findViewById(R.id.analyticsFragment_thisWeekSummaryTable)
+        thisWeekSummaryTable = view.findViewById(R.id.fragmentAnalytics_thisWeekSummaryTable)
 
-        // replace minus(6, DAYS) with minus(offset.toLong, DAYS)
-        // for this week instead of last 7 days
-        //Instant.parse("2021-09-04T05:00:00.00Z").atZone(ZoneId.systemDefault())
-        //    .truncatedTo(ChronoUnit.DAYS)
-        Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
-            //.minus(offset.toLong(), ChronoUnit.DAYS).toInstant()
-            .minus(6, ChronoUnit.DAYS).toInstant()
+        Instant.now().atZone(ZoneId.systemDefault()).with(
+            TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)
+        ).truncatedTo(ChronoUnit.DAYS)
+            .toInstant()
+            // replace minus(6, DAYS) with minus(offset.toLong, DAYS)
+            // for this week instead of last 7 days
+            //Instant.parse("2021-09-04T05:00:00.00Z").atZone(ZoneId.systemDefault())
+            //    .truncatedTo(ChronoUnit.DAYS)
+            //Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
+            //.minus(6, ChronoUnit.DAYS).toInstant()
             .let { startDay ->
                 viewModel.recentTrips(
                     startDay.toEpochMilli(),
@@ -181,38 +240,48 @@ class AnalyticsFragment : Fragment() {
                                 }
 
                         }
-                        weeklySummaryStatLeft.statValue =
-                            (summaryData.mapNotNull { it.distance }.ifEmpty { null }
-                                ?.reduce { acc, it -> acc + it } ?: 0.0)
-                                .let { getUserDistance(requireContext(), it) }.roundToInt()
-                                .toString()
-                        weeklySummaryStatLeft.statUnits =
-                            getUserDistanceUnitShort(requireContext()).uppercase()
-                        weeklySummaryStatRight.statValue =
-                            (summaryData.mapNotNull { it.duration }.ifEmpty { null }
-                                ?.reduce { acc, it -> acc + it } ?: 0.0)
-                                .let { formatDurationHours(it) }
-                        weeklySummaryStatRight.statUnits = "HOURS"
+                        view.findViewById<ThreeStat>(R.id.fragmentAnalytics_threeStat_thisThisWeek)
+                            .apply {
+                                populate(
+                                    arrayOf(
+                                        Pair("RIDES", trips.size.toString()),
+                                        Pair(
+                                            getUserDistanceUnitShort(requireContext()).uppercase(),
+                                            (summaryData.mapNotNull { it.distance }.ifEmpty { null }
+                                                ?.reduce { acc, it -> acc + it } ?: 0.0)
+                                                .let { getUserDistance(requireContext(), it) }
+                                                .roundToInt()
+                                                .toString()
+                                        ),
+                                        Pair(
+                                            "HOURS",
+                                            (summaryData.mapNotNull { it.duration }.ifEmpty { null }
+                                                ?.reduce { acc, it -> acc + it } ?: 0.0)
+                                                .let { formatDurationHours(it) }
+                                        )
+                                    )
+                                )
+                            }
                         thisWeekSummaryTable.populate(summaryData.toTypedArray())
                     })
             }
         viewModel.weeklyTotals().observe(viewLifecycleOwner, {
             view.findViewById<Table>(R.id.fragmentAnalytics_topWeeklyTrips).apply {
                 columns = listOf(
-                    TableColumn(id = "period", label = "TOP WEEK"),
+                    TableColumn(id = "period", label = "WEEK"),
+                    TableColumn(id = "count", label = "RIDES"),
                     TableColumn(id = "distance", label = "DISTANCE"),
                     TableColumn(id = "duration", label = "DURATION"),
-                    TableColumn(id = "count", label = "RIDES"),
                 )
                 populate(it.map {
                     listOf(
                         it.period,
+                        it.tripCount.toString(),
                         "%.1f %s".format(
                             getUserDistance(context, it.totalDistance),
                             getUserDistanceUnitShort(context)
                         ),
                         formatDuration(it.totalDuration),
-                        it.tripCount.toString()
                     )
                 })
             }
