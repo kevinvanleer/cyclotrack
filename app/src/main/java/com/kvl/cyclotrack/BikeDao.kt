@@ -10,10 +10,10 @@ data class BikeId(val id: Long)
 @Dao
 interface BikeDao {
     @Insert
-    fun saveBike(bike: Bike): Long
+    fun save(bike: Bike): Long
 
     @Update
-    fun updateBikes(vararg bikes: Bike)
+    fun update(vararg bikes: Bike)
 
     @Delete(entity = Bike::class)
     suspend fun removeBike(id: BikeId)
