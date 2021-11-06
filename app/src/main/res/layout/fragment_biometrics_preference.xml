@@ -8,10 +8,6 @@
         <variable
             name="viewmodel"
             type="com.kvl.cyclotrack.BiometricsViewModel" />
-
-        <variable
-            name="featureflags"
-            type="com.kvl.cyclotrack.FeatureFlags" />
     </data>
 
     <ScrollView
