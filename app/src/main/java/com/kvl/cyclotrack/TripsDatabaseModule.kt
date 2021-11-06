@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.kvl.cyclotrack.model.BikeDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -197,5 +198,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideOnboardSensorsDao(db: TripsDatabase): OnboardSensorsDao {
         return db.onboardSensorsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBikeDao(db: TripsDatabase): BikeDao {
+        return db.bikeDao()
     }
 }

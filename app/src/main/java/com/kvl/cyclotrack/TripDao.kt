@@ -132,7 +132,6 @@ interface TripDao {
     @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip where timestamp >= :start and timestamp < :end")
     fun subscribeTotals(start: Long, end: Long): LiveData<TripAggregation>
 
-
     @Query("select strftime('%Y-%m-%d',  datetime(round(timestamp/1000),'unixepoch','localtime','start of day','weekday 6', '-6 day') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip  group by period order by totalDistance desc limit :limit")
     fun subscribeWeeklyTotals(limit: Int): LiveData<Array<PeriodTotals>>
 
