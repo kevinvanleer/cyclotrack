@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.databinding.BindingAdapter
+import androidx.databinding.InverseBindingAdapter
 import androidx.databinding.InverseBindingListener
 import com.kvl.cyclotrack.R
 
@@ -46,7 +47,6 @@ class SwitchPreference : ConstraintLayout {
         }
 
     companion object {
-        /*
         @BindingAdapter("enabled")
         @JvmStatic
         fun setEnabled(view: SwitchPreference, newValue: Boolean) {
@@ -64,8 +64,7 @@ class SwitchPreference : ConstraintLayout {
         @JvmStatic
         fun setChecked(view: SwitchPreference, newValue: Boolean) {
             view.checked = newValue
-        }*/
-
+        }
 
         @BindingAdapter(value = ["onCheckedChanged", "checkedAttrChanged"], requireAll = false)
         @JvmStatic
