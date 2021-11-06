@@ -6,21 +6,13 @@ import android.widget.TableRow
 import android.widget.TextView
 
 class TextTableRow : TableRow {
-    constructor(context: Context) : super(context) {
-        init(null, 0)
-    }
+    constructor(context: Context) : super(context)
 
     constructor(context: Context, rowData: List<String>) : super(context) {
-        init(null, 0)
         setFields(rowData)
     }
 
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        init(attrs, 0)
-    }
-
-    private fun init(attrs: AttributeSet?, defStyle: Int) {
-    }
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
 
     fun setFields(rowData: List<String>) {
         removeAllViews()
