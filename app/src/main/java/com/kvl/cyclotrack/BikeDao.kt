@@ -1,9 +1,7 @@
 package com.kvl.cyclotrack
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.Update
+import androidx.lifecycle.LiveData
+import androidx.room.*
 
 data class BikeId(val id: Long)
 
@@ -14,6 +12,9 @@ interface BikeDao {
 
     @Update
     fun update(vararg bikes: Bike)
+
+    @Query("SELECT * FROM trip WHERE id = :bikeId")
+    fun subscribe(bikeId: Long): LiveData<Bike>
 
     @Delete(entity = Bike::class)
     suspend fun removeBike(id: BikeId)
