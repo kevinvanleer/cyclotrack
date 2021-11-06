@@ -1,4 +1,4 @@
-package com.kvl.cyclotrack.model
+package com.kvl.cyclotrack
 
 import androidx.room.Dao
 import androidx.room.Delete

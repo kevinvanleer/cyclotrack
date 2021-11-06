@@ -1,4 +1,4 @@
-package com.kvl.cyclotrack.model
+package com.kvl.cyclotrack
 
 import androidx.annotation.Keep
 import androidx.room.Entity
