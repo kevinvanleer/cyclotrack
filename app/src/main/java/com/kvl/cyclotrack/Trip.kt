@@ -1,9 +1,7 @@
 package com.kvl.cyclotrack
 
 import androidx.annotation.Keep
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
+import androidx.room.*
 import java.util.*
 
 enum class GoogleFitSyncStatusEnum(val value: Int) {
@@ -68,7 +66,15 @@ fun getDefaultTripName(): String {
     }
 }
 
-@Entity
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = Bike::class,
+        parentColumns = arrayOf("id"),
+        childColumns = arrayOf("bikeId"),
+        onDelete = ForeignKey.SET_DEFAULT
+    )],
+    indices = [Index(value = ["bikeId"])]
+)
 @Keep
 data class Trip(
     val name: String? = getDefaultTripName(),

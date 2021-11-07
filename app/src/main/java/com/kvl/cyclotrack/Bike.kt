@@ -7,10 +7,10 @@ import androidx.room.PrimaryKey
 @Entity
 @Keep
 data class Bike(
-    val name: String,
+    val name: String? = null,
     val sensors: String? = null,
-    val dataOfPurchase: Long,
-    val weight: Float,
-    val wheelCircumference: Float,
+    val dataOfPurchase: Long? = null,
+    val weight: Float? = null,
+    val wheelCircumference: Float? = null,
     @PrimaryKey(autoGenerate = true) val id: Long? = null
 )
