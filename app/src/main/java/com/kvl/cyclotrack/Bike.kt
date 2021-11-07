@@ -9,7 +9,7 @@ import androidx.room.PrimaryKey
 data class Bike(
     val name: String? = null,
     val sensors: String? = null,
-    val dataOfPurchase: Long? = null,
+    val dateOfPurchase: Long? = null,
     val weight: Float? = null,
     val wheelCircumference: Float? = null,
     @PrimaryKey(autoGenerate = true) val id: Long? = null
