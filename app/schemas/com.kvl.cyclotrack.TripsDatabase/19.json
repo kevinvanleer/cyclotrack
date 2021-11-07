@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 19,
-    "identityHash": "caaab1269cb0888510591f1216d89db1",
+    "identityHash": "69144cf38b6dee569e71f2d34047c493",
     "entities": [
       {
         "tableName": "Trip",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `distance` REAL, `duration` REAL, `averageSpeed` REAL, `timestamp` INTEGER NOT NULL, `inProgress` INTEGER NOT NULL, `bikeId` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `notes` TEXT, `userWheelCircumference` REAL, `autoWheelCircumference` REAL, `userSex` INTEGER, `userWeight` REAL, `userHeight` REAL, `userAge` REAL, `userVo2max` REAL, `userRestingHeartRate` INTEGER, `userMaxHeartRate` INTEGER, `googleFitSyncStatus` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `distance` REAL, `duration` REAL, `averageSpeed` REAL, `timestamp` INTEGER NOT NULL, `inProgress` INTEGER NOT NULL, `bikeId` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `notes` TEXT, `userWheelCircumference` REAL, `autoWheelCircumference` REAL, `userSex` INTEGER, `userWeight` REAL, `userHeight` REAL, `userAge` REAL, `userVo2max` REAL, `userRestingHeartRate` INTEGER, `userMaxHeartRate` INTEGER, `googleFitSyncStatus` INTEGER NOT NULL, FOREIGN KEY(`bikeId`) REFERENCES `Bike`(`id`) ON UPDATE NO ACTION ON DELETE SET DEFAULT )",
         "fields": [
           {
             "fieldPath": "name",
@@ -129,8 +129,29 @@
           ],
           "autoGenerate": true
         },
-        "indices": [],
-        "foreignKeys": []
+        "indices": [
+          {
+            "name": "index_Trip_bikeId",
+            "unique": false,
+            "columnNames": [
+              "bikeId"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_Trip_bikeId` ON `${TABLE_NAME}` (`bikeId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "Bike",
+            "onDelete": "SET DEFAULT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "bikeId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       },
       {
         "tableName": "Measurements",
@@ -532,13 +553,13 @@
       },
       {
         "tableName": "Bike",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `sensors` TEXT, `dataOfPurchase` INTEGER NOT NULL, `weight` REAL NOT NULL, `wheelCircumference` REAL NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `sensors` TEXT, `dataOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `id` INTEGER PRIMARY KEY AUTOINCREMENT)",
         "fields": [
           {
             "fieldPath": "name",
             "columnName": "name",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "sensors",
@@ -550,19 +571,19 @@
             "fieldPath": "dataOfPurchase",
             "columnName": "dataOfPurchase",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "weight",
             "columnName": "weight",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "wheelCircumference",
             "columnName": "wheelCircumference",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "id",
@@ -584,7 +605,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'caaab1269cb0888510591f1216d89db1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '69144cf38b6dee569e71f2d34047c493')"
     ]
   }
 }
