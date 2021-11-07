@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 19,
-    "identityHash": "f8b2f1cf8a2a44f0ebd7ee95eac8b49c",
+    "identityHash": "163f7c8994bbe629e0b65390f921552d",
     "entities": [
       {
         "tableName": "Trip",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `distance` REAL, `duration` REAL, `averageSpeed` REAL, `timestamp` INTEGER NOT NULL, `inProgress` INTEGER NOT NULL, `bikeId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `notes` TEXT, `userWheelCircumference` REAL, `autoWheelCircumference` REAL, `userSex` INTEGER, `userWeight` REAL, `userHeight` REAL, `userAge` REAL, `userVo2max` REAL, `userRestingHeartRate` INTEGER, `userMaxHeartRate` INTEGER, `googleFitSyncStatus` INTEGER NOT NULL, FOREIGN KEY(`bikeId`) REFERENCES `Bike`(`id`) ON UPDATE NO ACTION ON DELETE SET DEFAULT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `distance` REAL, `duration` REAL, `averageSpeed` REAL, `timestamp` INTEGER NOT NULL, `inProgress` INTEGER NOT NULL, `bikeId` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `notes` TEXT, `userWheelCircumference` REAL, `autoWheelCircumference` REAL, `userSex` INTEGER, `userWeight` REAL, `userHeight` REAL, `userAge` REAL, `userVo2max` REAL, `userRestingHeartRate` INTEGER, `userMaxHeartRate` INTEGER, `googleFitSyncStatus` INTEGER NOT NULL, FOREIGN KEY(`bikeId`) REFERENCES `Bike`(`id`) ON UPDATE NO ACTION ON DELETE SET DEFAULT )",
         "fields": [
           {
             "fieldPath": "name",
@@ -48,7 +48,7 @@
             "fieldPath": "bikeId",
             "columnName": "bikeId",
             "affinity": "INTEGER",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "id",
@@ -605,7 +605,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f8b2f1cf8a2a44f0ebd7ee95eac8b49c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '163f7c8994bbe629e0b65390f921552d')"
     ]
   }
 }
