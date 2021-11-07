@@ -13,7 +13,7 @@ interface BikeDao {
     @Update
     fun update(vararg bikes: Bike)
 
-    @Query("SELECT * FROM trip WHERE id = :bikeId")
+    @Query("SELECT * FROM Bike WHERE id = :bikeId")
     fun subscribe(bikeId: Long): LiveData<Bike>
 
     @Delete(entity = Bike::class)

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 19,
-    "identityHash": "0c1990159fbc2f3fb3337f418db3871c",
+    "identityHash": "f8b2f1cf8a2a44f0ebd7ee95eac8b49c",
     "entities": [
       {
         "tableName": "Trip",
@@ -553,7 +553,7 @@
       },
       {
         "tableName": "Bike",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `sensors` TEXT, `dataOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `id` INTEGER PRIMARY KEY AUTOINCREMENT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT, `sensors` TEXT, `dateOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `id` INTEGER PRIMARY KEY AUTOINCREMENT)",
         "fields": [
           {
             "fieldPath": "name",
@@ -568,8 +568,8 @@
             "notNull": false
           },
           {
-            "fieldPath": "dataOfPurchase",
-            "columnName": "dataOfPurchase",
+            "fieldPath": "dateOfPurchase",
+            "columnName": "dateOfPurchase",
             "affinity": "INTEGER",
             "notNull": false
           },
@@ -605,7 +605,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0c1990159fbc2f3fb3337f418db3871c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f8b2f1cf8a2a44f0ebd7ee95eac8b49c')"
     ]
   }
 }
