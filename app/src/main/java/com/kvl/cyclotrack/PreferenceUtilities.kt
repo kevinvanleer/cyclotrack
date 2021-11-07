@@ -26,7 +26,7 @@ fun userMassToKilograms(context: Context, input: String?): Float? {
             context
         )
             .getString("display_units", "1")) {
-            "1" -> 1 / POUNDS_TO_KG
+            "1" -> POUNDS_TO_KG
             else -> 1.0
         }).toFloat()
     } catch (e: NumberFormatException) {
