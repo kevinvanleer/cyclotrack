@@ -146,7 +146,7 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
 
 val MIGRATION_18_19 = object : Migration(18, 19) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE `Bike` (`name` STRING, `sensors` STRING, `dateOfPurchase` INTEGER, `wheelCircumference` FLOAT, `weight` FLOAT, `id` INTEGER PRIMARY KEY)")
+        database.execSQL("CREATE TABLE IF NOT EXISTS `Bike` (`name` STRING, `sensors` STRING, `dateOfPurchase` INTEGER, `wheelCircumference` FLOAT, `weight` FLOAT, `id` INTEGER PRIMARY KEY AUTOINCREMENT)")
         database.execSQL("ALTER TABLE `Trip` ADD COLUMN `bikeId` INTEGER NOT NULL DEFAULT 0 REFERENCES Bike(id)")
         database.execSQL("CREATE INDEX index_Trip_bikeId on Trip(`bikeId`)")
         database.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
