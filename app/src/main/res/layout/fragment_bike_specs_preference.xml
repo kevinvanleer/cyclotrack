@@ -43,7 +43,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_edit_wheel_circumference"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:ems="10"
                     android:inputType="numberDecimal"
                     android:text="@={viewmodel.circumference}" />
@@ -52,7 +52,7 @@
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/preference_bike_specs_switch_useAutoCircumference"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:checked="@={viewmodel.useAutoCircumference}"
                 android:text="@string/preference_bike_specs_useAutoCircumference_description"
@@ -72,7 +72,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_edit_bikeMass"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:ems="10"
                     android:inputType="numberDecimal"
                     android:text="@={viewmodel.bikeMass}" />
