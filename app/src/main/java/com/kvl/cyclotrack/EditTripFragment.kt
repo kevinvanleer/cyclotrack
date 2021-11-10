@@ -61,9 +61,9 @@ class EditTripFragment : Fragment() {
                 requireContext(),
                 android.R.layout.simple_spinner_item,
                 bikes.map { bike -> bike.name ?: "Bike ${bike.id}" }
-            ).also { adapter ->
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                tripBikeSelect.setAdapter(adapter)
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                tripBikeSelect.setAdapter(this)
             }
             tripBikeSelect.setSelection(
                 bikes.indexOf(bikes.find { bike -> bike.id == viewModel.tripInfo.bikeId })
