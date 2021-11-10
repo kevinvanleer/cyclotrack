@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kvl.cyclotrack.repos.BikeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -11,6 +12,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EditTripViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
+    private val bikesRepository: BikeRepository
 ) : ViewModel(
 ) {
     val TAG = "EditTripVm"
@@ -19,6 +21,8 @@ class EditTripViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             tripInfo = tripsRepository.get(tripId)
         }
+
+    fun observeBikes() = bikesRepository.observeAll()
 
     fun updateTripName(value: String) {
         try {

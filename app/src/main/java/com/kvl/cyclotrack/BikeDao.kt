@@ -16,6 +16,9 @@ interface BikeDao {
     @Query("SELECT * FROM Bike WHERE id = :bikeId")
     fun subscribe(bikeId: Long): LiveData<Bike>
 
+    @Query("SELECT * FROM Bike")
+    fun subscribeAll(): LiveData<Array<Bike>>
+
     @Delete(entity = Bike::class)
     suspend fun removeBike(id: BikeId)
 
