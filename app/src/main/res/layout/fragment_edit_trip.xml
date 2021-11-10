@@ -93,10 +93,10 @@
         app:layout_constraintTop_toBottomOf="@id/edit_trip_wheel_circumference_layout"
         app:layout_constraintStart_toStartOf="parent">
 
-        <AutoCompleteTextView
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/edit_trip_spinner_bike_select"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="48dp" />
     </com.google.android.material.textfield.TextInputLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
