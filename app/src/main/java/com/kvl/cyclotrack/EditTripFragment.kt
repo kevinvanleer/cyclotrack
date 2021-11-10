@@ -65,7 +65,10 @@ class EditTripFragment : Fragment() {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 tripBikeSelect.setAdapter(adapter)
             }
-            tripBikeSelect.setSelection(bikes.indexOf(bikes.find { bike -> bike.id == viewModel.tripInfo.bikeId }))
+            tripBikeSelect.setSelection(
+                bikes.indexOf(bikes.find { bike -> bike.id == viewModel.tripInfo.bikeId })
+                    .coerceAtLeast(0)
+            )
         })
 
         tripName.addTextChangedListener(object : TextWatcher {

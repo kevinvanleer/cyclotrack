@@ -85,6 +85,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        style="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
         android:id="@+id/edit_trip_bike_spinner_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
