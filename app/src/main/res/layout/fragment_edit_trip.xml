@@ -83,12 +83,19 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Spinner
-        android:id="@+id/edit_trip_spinner_bike_select"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/edit_trip_bike_spinner_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:spinnerMode="dropdown"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/edit_trip_wheel_circumference_layout" />
+        android:layout_marginTop="30dp"
+        app:layout_constraintTop_toBottomOf="@id/edit_trip_wheel_circumference_layout">
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Spinner
+            android:id="@+id/edit_trip_spinner_bike_select"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:spinnerMode="dropdown" />
+    </com.google.android.material.textfield.TextInputLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
