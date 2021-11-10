@@ -66,6 +66,7 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
+        style="Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:id="@+id/edit_trip_wheel_circumference_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
