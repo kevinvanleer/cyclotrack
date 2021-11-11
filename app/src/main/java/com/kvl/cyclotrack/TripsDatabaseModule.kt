@@ -152,7 +152,7 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
             put("wheelCircumference", getUserCircumferenceOrNull(CyclotrackApp.instance))
             put("sensors", Gson().toJson(getPairedBleSensors(CyclotrackApp.instance)))
         })
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `bikeId` INTEGER NOT NULL DEFAULT 0 REFERENCES Bike(id) ON DELETE SET DEFAULT")
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `bikeId` INTEGER NOT NULL DEFAULT 1 REFERENCES Bike(id) ON DELETE SET DEFAULT")
         database.execSQL("CREATE INDEX index_Trip_bikeId on Trip(`bikeId`)")
     }
 }
