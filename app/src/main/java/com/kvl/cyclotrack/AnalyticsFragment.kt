@@ -61,6 +61,7 @@ class AnalyticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         rollupView = view.findViewById(R.id.trips_rollup)
         spotlightTripCard = view.findViewById(R.id.fragmentAnalytics_spotlightRide)
+        spotlightTripCard.visibility = View.GONE
         Log.d(logTag, "inflate spotlight")
         viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
             rollupView.rollupTripData(trips)
@@ -78,6 +79,7 @@ class AnalyticsFragment : Fragment() {
         spotlightTripCard.apply {
             if (trip == null) visibility = View.GONE
             else {
+                visibility = View.VISIBLE
                 tripId = trip.id!!
                 title = trip.name ?: "Unnamed trip"
                 setStartTime(trip.timestamp)
