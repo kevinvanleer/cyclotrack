@@ -61,6 +61,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         tripDao.updateBiometrics(biometrics)
     }
 
+    suspend fun updateBikeId(id: Long, bikeId: Long) = tripDao.updateBikeId(id, bikeId)
+
     suspend fun getDefaultBiometrics(tripId: Long) = tripDao.getDefaultBiometrics(tripId)
 
     suspend fun setGoogleFitSyncStatus(

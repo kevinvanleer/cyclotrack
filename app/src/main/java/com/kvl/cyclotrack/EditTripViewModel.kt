@@ -48,6 +48,12 @@ class EditTripViewModel @Inject constructor(
         }
     }
 
+    fun updateTripBikeId(bikeId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            tripsRepository.updateBikeId(tripInfo.id!!, bikeId)
+        }
+    }
+
     private fun changeDetails(name: String, notes: String?, circumference: Float?) =
         viewModelScope.launch(Dispatchers.IO) {
             if (tripsRepository.get(tripInfo.id!!).googleFitSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {

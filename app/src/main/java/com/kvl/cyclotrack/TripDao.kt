@@ -87,6 +87,9 @@ interface TripDao {
     @Update(entity = Trip::class)
     suspend fun updateGoogleFitSyncStatus(googleFitSyncStatus: TripGoogleFitSync)
 
+    @Query("UPDATE trip SET bikeId=:bikeId where id = :id")
+    suspend fun updateBikeId(id: Long, bikeId: Long)
+
     @Query("SELECT * FROM trip WHERE id = :tripId")
     fun subscribe(tripId: Long): LiveData<Trip>
 

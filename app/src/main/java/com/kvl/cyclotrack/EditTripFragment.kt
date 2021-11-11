@@ -7,10 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import android.widget.EditText
-import android.widget.TextView
+import android.widget.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -56,20 +53,27 @@ class EditTripFragment : Fragment() {
         viewModel.tripInfo.userWheelCircumference?.let {
             tripWheelCirc.setText(metersToUserCircumference(requireContext(), it))
         }
-        viewModel.observeBikes().observe(viewLifecycleOwner, { bikes ->
+        viewModel.observeBikes().observe(viewLifecycleOwner) { bikes ->
+            Log.d("asdf", bikes.size.toString())
             ArrayAdapter(
                 requireContext(),
-                android.R.layout.simple_spinner_item,
+                R.layout.view_spinner_item,
                 bikes.map { bike -> bike.name ?: "Bike ${bike.id}" }
             ).also { adapter ->
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 tripBikeSelect.setAdapter(adapter)
+                tripBikeSelect.setText(bikes.find { bike -> bike.id == viewModel.tripInfo.bikeId }
+                    ?.let { bike ->
+                        bike.name ?: "Bike ${bike.id}"
+                    }, false)
             }
-            tripBikeSelect.setSelection(
-                bikes.indexOf(bikes.find { bike -> bike.id == viewModel.tripInfo.bikeId })
-                    .coerceAtLeast(0)
-            )
-        })
+            tripBikeSelect.onItemClickListener =
+                AdapterView.OnItemClickListener { p0, p1, position, p3 ->
+                    Log.d("asdf", position.toString())
+                    viewModel.updateTripBikeId(bikes[position].id!!)
+                }
+        }
+
 
         tripName.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(

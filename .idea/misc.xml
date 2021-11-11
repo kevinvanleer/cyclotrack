@@ -37,6 +37,7 @@
         <entry key="app/src/main/res/layout/view_day_summary.xml" value="0.29583333333333334" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_item.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_list.xml" value="0.253125" />
+        <entry key="app/src/main/res/layout/view_spinner_options.xml" value="0.3415384615384615" />
         <entry key="app/src/main/res/layout/view_stat_view.xml" value="0.346875" />
         <entry key="app/src/main/res/layout/view_text_square.xml" value="1.0" />
         <entry key="app/src/main/res/layout/view_three_stat.xml" value="0.346875" />
