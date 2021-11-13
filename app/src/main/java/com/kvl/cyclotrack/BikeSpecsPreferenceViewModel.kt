@@ -2,8 +2,8 @@ package com.kvl.cyclotrack
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import androidx.databinding.Observable
 import androidx.lifecycle.ViewModel
-import com.kvl.cyclotrack.repos.BikeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -11,8 +11,16 @@ import javax.inject.Inject
 class BikeSpecsPreferenceViewModel @Inject constructor(
     private val bikesRepository: BikeRepository,
     private val sharedPreferences: SharedPreferences,
-) : ViewModel() {
+) : ViewModel(), Observable {
     private val logTag = "BikeSpecsViewModel"
+
+    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+        TODO("Not yet implemented")
+    }
+
+    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
+        TODO("Not yet implemented")
+    }
 
     var currentBikeId: Long = 1
 
@@ -20,17 +28,12 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
 
     var circumference
         get() =
-            sharedPreferences.getString(
-                CyclotrackApp.instance.getString(R.string.preference_key_wheel_circumference),
-                ""
-            )
+            bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference
         set(newValue) {
-            sharedPreferences.edit {
-                this.putString(
-                    CyclotrackApp.instance.getString(R.string.preference_key_wheel_circumference),
-                    newValue
-                )
-            }
+            bikesRepository.update(
+                bikes.value!!.find { bike -> bike.id == currentBikeId }!!
+                    .copy(wheelCircumference = newValue)
+            )
         }
 
     var useAutoCircumference: Boolean
@@ -93,5 +96,4 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
 
     val instructionText: String
         get() = "Cyclotrack uses your bike's specs along with sensor data to calculate speed and other metrics. BLE speed sensor required to utilize wheel circumference."
-
 }
