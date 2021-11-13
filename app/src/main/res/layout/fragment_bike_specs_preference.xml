@@ -99,7 +99,7 @@
                 android:id="@+id/preference_preference_bike_specs_purchase_date_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="24dp"
                 app:layout_constraintTop_toBottomOf="@id/preference_bike_specs_bike_mass"
                 app:layout_constraintStart_toStartOf="parent"
                 android:hint="@string/preference_bike_specs_label_purchase_date">
