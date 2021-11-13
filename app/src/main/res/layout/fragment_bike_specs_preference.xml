@@ -42,7 +42,7 @@
                 android:hint="Bike">
 
                 <AutoCompleteTextView
-                    android:id="@+id/edit_trip_spinner_bike_select"
+                    android:id="@+id/preference_bike_specs_spinner_bike_select"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:inputType="none" />
