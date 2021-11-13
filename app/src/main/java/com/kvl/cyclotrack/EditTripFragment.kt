@@ -68,7 +68,7 @@ class EditTripFragment : Fragment() {
                     }, false)
             }
             tripBikeSelect.onItemClickListener =
-                AdapterView.OnItemClickListener { p0, p1, position, p3 ->
+                AdapterView.OnItemClickListener { _, _, position, _ ->
                     Log.d("asdf", position.toString())
                     viewModel.updateTripBikeId(bikes[position].id!!)
                 }
