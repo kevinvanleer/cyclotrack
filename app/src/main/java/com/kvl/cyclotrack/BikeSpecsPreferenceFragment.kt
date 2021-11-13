@@ -102,7 +102,7 @@ class BikeSpecsPreferenceFragment : Fragment() {
             EditorInfo.TYPE_CLASS_NUMBER or EditorInfo.TYPE_NUMBER_FLAG_DECIMAL
         circumferencePref.isSingleLine = true
         val bikeSelect =
-            view.findViewById<AutoCompleteTextView>(R.id.preference_bike_specs_bike_spinner)
+            view.findViewById<AutoCompleteTextView>(R.id.preference_bike_specs_spinner_bike_select)
 
         viewModel.bikes.observe(viewLifecycleOwner) { bikes ->
             ArrayAdapter(
