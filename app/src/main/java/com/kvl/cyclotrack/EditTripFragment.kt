@@ -53,8 +53,8 @@ class EditTripFragment : Fragment() {
         viewModel.tripInfo.userWheelCircumference?.let {
             tripWheelCirc.setText(metersToUserCircumference(requireContext(), it))
         }
+
         viewModel.observeBikes().observe(viewLifecycleOwner) { bikes ->
-            Log.d("asdf", bikes.size.toString())
             ArrayAdapter(
                 requireContext(),
                 R.layout.view_spinner_item,
@@ -69,7 +69,6 @@ class EditTripFragment : Fragment() {
             }
             tripBikeSelect.onItemClickListener =
                 AdapterView.OnItemClickListener { _, _, position, _ ->
-                    Log.d("asdf", position.toString())
                     viewModel.updateTripBikeId(bikes[position].id!!)
                 }
         }

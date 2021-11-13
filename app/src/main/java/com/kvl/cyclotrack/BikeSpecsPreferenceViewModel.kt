@@ -14,6 +14,10 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
 ) : ViewModel() {
     private val logTag = "BikeSpecsViewModel"
 
+    var currentBikeId: Long = 1
+
+    val bikes = bikesRepository.observeAll()
+
     var circumference
         get() =
             sharedPreferences.getString(
