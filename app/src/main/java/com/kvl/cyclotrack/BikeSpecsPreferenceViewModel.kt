@@ -2,24 +2,28 @@ package com.kvl.cyclotrack
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
+import androidx.databinding.Observable
 
 
 class BikeSpecsPreferenceViewModel constructor(
     private val sharedPreferences: SharedPreferences,
-) : BaseObservable() {
+) : Observable() {
     private val logTag = "BikeSpecsViewModel"
 
     var circumference
         @Bindable
         get() =
-            sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_wheel_circumference),
-                "")
+            sharedPreferences.getString(
+                CyclotrackApp.instance.getString(R.string.preference_key_wheel_circumference),
+                ""
+            )
         set(newValue) {
             sharedPreferences.edit {
-                this.putString(CyclotrackApp.instance.getString(R.string.preference_key_wheel_circumference),
-                    newValue)
+                this.putString(
+                    CyclotrackApp.instance.getString(R.string.preference_key_wheel_circumference),
+                    newValue
+                )
             }
             notifyChange()
         }
