@@ -9,7 +9,7 @@ import androidx.databinding.Bindable
 class BikeSpecsPreferenceViewModel constructor(
     private val sharedPreferences: SharedPreferences,
 ) : BaseObservable() {
-    private val logTag = "WheelPrefViewModel"
+    private val logTag = "BikeSpecsViewModel"
 
     var circumference
         @Bindable
@@ -35,8 +35,10 @@ class BikeSpecsPreferenceViewModel constructor(
             }
         set(newValue) {
             sharedPreferences.edit {
-                this.putBoolean(CyclotrackApp.instance.getString(R.string.preference_key_useAutoCircumference),
-                    newValue)
+                this.putBoolean(
+                    CyclotrackApp.instance.getString(R.string.preference_key_useAutoCircumference),
+                    newValue
+                )
             }
             notifyChange()
         }
@@ -44,12 +46,33 @@ class BikeSpecsPreferenceViewModel constructor(
     var bikeMass
         @Bindable
         get() =
-            sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
-                "")
+            sharedPreferences.getString(
+                CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
+                ""
+            )
         set(newValue) {
             sharedPreferences.edit {
-                this.putString(CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
-                    newValue)
+                this.putString(
+                    CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
+                    newValue
+                )
+            }
+            notifyChange()
+        }
+
+    var purchaseDate
+        @Bindable
+        get() =
+            sharedPreferences.getString(
+                CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
+                ""
+            )
+        set(newValue) {
+            sharedPreferences.edit {
+                this.putString(
+                    CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
+                    newValue
+                )
             }
             notifyChange()
         }
