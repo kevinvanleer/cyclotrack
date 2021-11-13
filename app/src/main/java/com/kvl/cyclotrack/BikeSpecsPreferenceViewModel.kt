@@ -2,13 +2,16 @@ package com.kvl.cyclotrack
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
-import androidx.databinding.Observable
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-
-class BikeSpecsPreferenceViewModel constructor(
+@HiltViewModel
+class BikeSpecsPreferenceViewModel @Inject constructor(
+    private val bikesRepository: BikeRepository,
     private val sharedPreferences: SharedPreferences,
-) : Observable() {
+) : BaseObservable() {
     private val logTag = "BikeSpecsViewModel"
 
     var circumference
