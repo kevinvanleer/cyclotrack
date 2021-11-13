@@ -2,8 +2,9 @@ package com.kvl.cyclotrack
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
+import androidx.lifecycle.ViewModel
+import com.kvl.cyclotrack.repos.BikeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -11,7 +12,7 @@ import javax.inject.Inject
 class BikeSpecsPreferenceViewModel @Inject constructor(
     private val bikesRepository: BikeRepository,
     private val sharedPreferences: SharedPreferences,
-) : BaseObservable() {
+) : ViewModel() {
     private val logTag = "BikeSpecsViewModel"
 
     var circumference
@@ -28,7 +29,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     newValue
                 )
             }
-            notifyChange()
         }
 
     var useAutoCircumference: Boolean
@@ -47,7 +47,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     newValue
                 )
             }
-            notifyChange()
         }
 
     var bikeMass
@@ -64,7 +63,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     newValue
                 )
             }
-            notifyChange()
         }
 
     var purchaseDate
@@ -81,7 +79,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     newValue
                 )
             }
-            notifyChange()
         }
 
     @get:Bindable
