@@ -2,7 +2,9 @@ package com.kvl.cyclotrack
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import androidx.databinding.Bindable
 import androidx.databinding.Observable
+import androidx.databinding.PropertyChangeRegistry
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -14,19 +16,34 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
 ) : ViewModel(), Observable {
     private val logTag = "BikeSpecsViewModel"
 
-    override fun addOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
-        TODO("Not yet implemented")
+    private val callbacks: PropertyChangeRegistry = PropertyChangeRegistry()
+
+    override fun addOnPropertyChangedCallback(
+        callback: Observable.OnPropertyChangedCallback
+    ) {
+        callbacks.add(callback)
     }
 
-    override fun removeOnPropertyChangedCallback(callback: Observable.OnPropertyChangedCallback?) {
-        TODO("Not yet implemented")
+    override fun removeOnPropertyChangedCallback(
+        callback: Observable.OnPropertyChangedCallback
+    ) {
+        callbacks.remove(callback)
+    }
+
+    private fun notifyChange() {
+        callbacks.notifyCallbacks(this, 0, null)
     }
 
     var currentBikeId: Long = 1
+        set(newValue) {
+            field = newValue
+            notifyChange()
+        }
 
     val bikes = bikesRepository.observeAll()
 
     var circumference
+        @Bindable
         get() =
             bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference.toString()
         set(newValue) {
