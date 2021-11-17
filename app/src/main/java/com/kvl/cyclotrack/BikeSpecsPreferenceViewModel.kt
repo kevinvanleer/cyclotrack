@@ -90,7 +90,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 viewModelScope.launch(Dispatchers.IO) {
                     bikesRepository.update(
                         bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(weight = newValue.toFloat())
+                            .copy(weight = newValue.toFloatOrNull())
                     )
                 }
             }
@@ -111,7 +111,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     bikeList.find { bike -> bike.id == currentBikeId }!!
                         .copy(dateOfPurchase = newValue.epochSecond)
                 )
-                notifyChange()
             }
         }
     }
@@ -131,16 +130,15 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
-                        bikesRepository.update(
-                            bikeList.find { bike -> bike.id == currentBikeId }!!
-                                .copy(
-                                    dateOfPurchase = LocalDate.parse(
-                                        newValue,
-                                        DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
-                                    ).atStartOfDay(ZoneId.systemDefault()).toEpochSecond()
-                                )
-                        )
-                        notifyChange()
+                    bikesRepository.update(
+                        bikeList.find { bike -> bike.id == currentBikeId }!!
+                            .copy(
+                                dateOfPurchase = LocalDate.parse(
+                                    newValue,
+                                    DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
+                                ).atStartOfDay(ZoneId.systemDefault()).toEpochSecond()
+                            )
+                    )
                 }
             }
         }
