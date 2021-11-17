@@ -111,7 +111,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 viewModelScope.launch(Dispatchers.IO) {
                     bikesRepository.update(
                         bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(dateOfPurchase = Instant.parse(newValue).toEpochMilli())
+                            .copy(dateOfPurchase = newValue.toLong())
                     )
                 }
             }
