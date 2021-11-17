@@ -11,8 +11,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -134,10 +134,10 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                         bikesRepository.update(
                             bikeList.find { bike -> bike.id == currentBikeId }!!
                                 .copy(
-                                    dateOfPurchase = ZonedDateTime.parse(
+                                    dateOfPurchase = LocalDateTime.parse(
                                         newValue,
                                         DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
-                                    ).toEpochSecond()
+                                    ).atZone(ZoneId.systemDefault()).toEpochSecond()
                                 )
                         )
                         notifyChange()
