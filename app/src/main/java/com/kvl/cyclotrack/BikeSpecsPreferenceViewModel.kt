@@ -114,7 +114,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         }
     }
 
-    var purchaseDate: String
+    var purchaseDate: String = "0000-00-00"
         @get:Bindable
         get() =
             try {
