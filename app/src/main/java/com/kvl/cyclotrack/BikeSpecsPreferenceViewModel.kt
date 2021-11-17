@@ -47,10 +47,12 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         get() =
             bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference.toString()
         set(newValue) {
-            bikesRepository.update(
-                bikes.value?.find { bike -> bike.id == currentBikeId }!!
-                    .copy(wheelCircumference = newValue.toFloat())
-            )
+            bikes.value?.let { bikeList ->
+                bikesRepository.update(
+                    bikeList.find { bike -> bike.id == currentBikeId }!!
+                        .copy(wheelCircumference = newValue.toFloat())
+                )
+            }
         }
 
     var useAutoCircumference: Boolean
