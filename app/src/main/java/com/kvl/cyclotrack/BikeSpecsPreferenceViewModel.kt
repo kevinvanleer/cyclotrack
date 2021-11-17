@@ -98,10 +98,14 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     var purchaseDate: String
         @get:Bindable
         get() =
-            bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
-                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ISO_LOCAL_DATE)
-            }!!
+            try {
+                bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
+                    Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ISO_LOCAL_DATE)
+                }!!
+            } catch (e: NullPointerException) {
+                ""
+            }
         set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
