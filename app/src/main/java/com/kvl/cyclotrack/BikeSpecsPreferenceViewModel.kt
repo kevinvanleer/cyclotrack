@@ -116,7 +116,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         }
     }
 
-    var purchaseDate: String = ""
+    var purchaseDate: String
         @Bindable
         get() =
             try {
@@ -143,7 +143,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                         notifyChange()
                 }
             }
-            field = newValue
         }
 
     val circumferenceHint: String
