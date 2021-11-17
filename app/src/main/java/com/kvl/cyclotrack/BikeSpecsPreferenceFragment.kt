@@ -15,6 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 @AndroidEntryPoint
@@ -45,8 +46,11 @@ class BikeSpecsPreferenceFragment : Fragment() {
                         val newDate = GregorianCalendar.getInstance()
                         newDate.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
                         viewModel.purchaseDate = newDate.toInstant()
-                        /*binding.preferencePreferenceBikeSpecsPurchaseDate.setText(viewModel.purchaseDate.atZone(
-                            ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE))*/
+                        binding.preferencePreferenceBikeSpecsPurchaseDate.setText(
+                            newDate.toInstant().atZone(
+                                ZoneId.systemDefault()
+                            ).format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        )
                     }
                 }.create().show()
             }
