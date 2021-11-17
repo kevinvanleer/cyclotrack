@@ -136,7 +136,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                                 .copy(
                                     dateOfPurchase = ZonedDateTime.parse(
                                         newValue,
-                                        DateTimeFormatter.ISO_LOCAL_DATE
+                                        DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
                                     ).toEpochSecond()
                                 )
                         )
