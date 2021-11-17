@@ -45,7 +45,8 @@
                     android:id="@+id/preference_bike_specs_spinner_bike_select"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:inputType="none" />
+                    android:inputType="text"
+                    android:text="@={viewmodel.name}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout

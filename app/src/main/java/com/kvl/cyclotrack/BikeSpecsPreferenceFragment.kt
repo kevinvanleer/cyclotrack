@@ -69,12 +69,6 @@ class BikeSpecsPreferenceFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        /*viewModel =
-            BikeSpecsPreferenceViewModel(
-                PreferenceManager.getDefaultSharedPreferences(
-                    requireContext()
-                )
-            )*/
         binding = FragmentBikeSpecsPreferenceBinding.inflate(
             inflater,
             container,
