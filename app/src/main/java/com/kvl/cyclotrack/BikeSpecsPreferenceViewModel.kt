@@ -143,6 +143,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                         notifyChange()
                 }
             }
+            field = newValue
         }
 
     val circumferenceHint: String
