@@ -57,7 +57,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 viewModelScope.launch(Dispatchers.IO) {
                     bikesRepository.update(
                         bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(wheelCircumference = newValue.toFloat())
+                            .copy(wheelCircumference = newValue.toFloatOrNull())
                     )
                 }
             }
