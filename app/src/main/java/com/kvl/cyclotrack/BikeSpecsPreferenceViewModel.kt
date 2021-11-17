@@ -36,7 +36,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         callbacks.remove(callback)
     }
 
-    private fun notifyChange() {
+    fun notifyChange() {
         callbacks.notifyCallbacks(this, 0, null)
     }
 
@@ -58,7 +58,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 viewModelScope.launch(Dispatchers.IO) {
                     bikesRepository.update(
                         bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(name = newValue)
+                            .copy(name = newValue?.takeIf { it.isNotEmpty() })
                     )
                 }
             }
