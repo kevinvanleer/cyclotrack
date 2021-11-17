@@ -6,7 +6,10 @@ import androidx.databinding.Bindable
 import androidx.databinding.Observable
 import androidx.databinding.PropertyChangeRegistry
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -48,10 +51,12 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference.toString()
         set(newValue) {
             bikes.value?.let { bikeList ->
-                bikesRepository.update(
-                    bikeList.find { bike -> bike.id == currentBikeId }!!
-                        .copy(wheelCircumference = newValue.toFloat())
-                )
+                viewModelScope.launch(Dispatchers.IO) {
+                    bikesRepository.update(
+                        bikeList.find { bike -> bike.id == currentBikeId }!!
+                            .copy(wheelCircumference = newValue.toFloat())
+                    )
+                }
             }
         }
 
