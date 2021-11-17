@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -109,6 +110,7 @@ class BikeSpecsPreferenceFragment : Fragment() {
             }
             bikeSelect.onItemClickListener =
                 AdapterView.OnItemClickListener { _, _, position, _ ->
+                    Log.d("asdf", bikeSelect.text.toString())
                     viewModel.currentBikeId = bikes[position].id!!
                 }
         }
