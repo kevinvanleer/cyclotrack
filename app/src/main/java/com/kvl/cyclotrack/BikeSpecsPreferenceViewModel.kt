@@ -116,7 +116,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     }
 
     var purchaseDate: String
-        @get:Bindable
+        @Bindable
         get() =
             try {
                 bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
@@ -128,17 +128,17 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 ""
             }
         set(newValue) {
-                bikes.value?.let { bikeList ->
-                    viewModelScope.launch(Dispatchers.IO) {
-                        try {
-                            bikesRepository.update(
-                                bikeList.find { bike -> bike.id == currentBikeId }!!
-                                    .copy(dateOfPurchase = newValue.toLong())
-                            )
-                        } catch (e: Exception) {
-                        }
+            bikes.value?.let { bikeList ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        bikesRepository.update(
+                            bikeList.find { bike -> bike.id == currentBikeId }!!
+                                .copy(dateOfPurchase = newValue.toLong())
+                        )
+                    } catch (e: Exception) {
                     }
                 }
+            }
         }
 
     val circumferenceHint: String
