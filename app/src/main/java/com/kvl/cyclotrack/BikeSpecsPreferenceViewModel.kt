@@ -48,6 +48,21 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
 
     val bikes = bikesRepository.observeAll()
 
+    var name
+        @get:Bindable
+        get() =
+            bikes.value?.find { bike -> bike.id == currentBikeId }?.name
+        set(newValue) {
+            bikes.value?.let { bikeList ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    bikesRepository.update(
+                        bikeList.find { bike -> bike.id == currentBikeId }!!
+                            .copy(name = newValue)
+                    )
+                }
+            }
+        }
+
     var circumference
         @get:Bindable
         get() =
@@ -126,21 +141,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             } catch (e: Exception) {
                 ""
             }
-        /*set(newValue) {
-            bikes.value?.let { bikeList ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    bikesRepository.update(
-                        bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(
-                                dateOfPurchase = LocalDate.parse(
-                                    newValue,
-                                    DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault())
-                                ).atStartOfDay(ZoneId.systemDefault()).toEpochSecond()
-                            )
-                    )
-                }
-            }
-        }*/
         private set
 
     val circumferenceHint: String

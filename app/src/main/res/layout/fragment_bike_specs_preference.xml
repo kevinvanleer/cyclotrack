@@ -49,11 +49,29 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/preference_wheel_circumference_layout"
+                android:id="@+id/preference_bike_specs_bike_name_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 app:layout_constraintTop_toBottomOf="@id/preference_bike_specs_bike_spinner_layout"
+                app:layout_constraintStart_toStartOf="parent"
+                android:hint="Name">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/preference_bike_specs_bike_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ems="10"
+                    android:inputType="text"
+                    android:text="@={viewmodel.name}" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/preference_wheel_circumference_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                app:layout_constraintTop_toBottomOf="@id/preference_bike_specs_bike_name_layout"
                 app:layout_constraintStart_toStartOf="parent"
                 android:hint="@{viewmodel.circumferenceHint}">
 
