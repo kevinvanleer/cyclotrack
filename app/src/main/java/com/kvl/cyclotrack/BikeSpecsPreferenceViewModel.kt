@@ -11,6 +11,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -93,22 +95,44 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             }
         }
 
-    var purchaseDate: Instant?
+    fun getPurchaseDateInstant(): Instant? = try {
+        bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
+            Instant.ofEpochSecond(it)
+        }!!
+    } catch (e: Exception) {
+        null
+    }
+
+    fun setPurchaseDateInstant(newValue: Instant) {
+        bikes.value?.let { bikeList ->
+            viewModelScope.launch(Dispatchers.IO) {
+                bikesRepository.update(
+                    bikeList.find { bike -> bike.id == currentBikeId }!!
+                        .copy(dateOfPurchase = newValue.epochSecond)
+                )
+                notifyChange()
+            }
+        }
+    }
+
+    var purchaseDate: String
         @get:Bindable
         get() =
             try {
                 bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
-                    Instant.ofEpochSecond(it)
+                    Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault()).format(
+                        DateTimeFormatter.ISO_LOCAL_DATE
+                    )
                 }!!
             } catch (e: Exception) {
-                null
+                ""
             }
         set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
                     bikesRepository.update(
                         bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(dateOfPurchase = newValue.epochSecond)
+                            .copy(dateOfPurchase = newValue.toLong())
                     )
                 }
             }
