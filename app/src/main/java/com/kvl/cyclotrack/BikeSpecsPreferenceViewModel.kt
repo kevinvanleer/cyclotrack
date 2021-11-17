@@ -128,13 +128,16 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 ""
             }
         set(newValue) {
-            bikes.value?.let { bikeList ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    bikesRepository.update(
-                        bikeList.find { bike -> bike.id == currentBikeId }!!
-                            .copy(dateOfPurchase = newValue.toLong())
-                    )
+            try {
+                bikes.value?.let { bikeList ->
+                    viewModelScope.launch(Dispatchers.IO) {
+                        bikesRepository.update(
+                            bikeList.find { bike -> bike.id == currentBikeId }!!
+                                .copy(dateOfPurchase = newValue.toLong())
+                        )
+                    }
                 }
+            } catch (e: Exception) {
             }
         }
 
