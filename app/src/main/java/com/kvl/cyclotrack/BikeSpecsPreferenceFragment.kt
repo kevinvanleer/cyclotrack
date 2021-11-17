@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 @AndroidEntryPoint
 class BikeSpecsPreferenceFragment : Fragment() {
@@ -51,9 +52,13 @@ class BikeSpecsPreferenceFragment : Fragment() {
                             0,
                             0,
                             ZoneId.systemDefault()
-                        ).toInstant()
-                        viewModel.setPurchaseDateInstant(newDate)
-                        binding.preferencePreferenceBikeSpecsPurchaseDate.setText(viewModel.purchaseDate)
+                        )
+                        viewModel.setPurchaseDateInstant(newDate.toInstant())
+                        binding.preferencePreferenceBikeSpecsPurchaseDate.setText(
+                            newDate.format(
+                                DateTimeFormatter.ISO_LOCAL_DATE
+                            )
+                        )
                     }
                 }.create().show()
             }
