@@ -114,7 +114,6 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             }
         }*/
         purchaseDate = newValue.epochSecond.toString()
-        notifyChange()
     }
 
     var purchaseDate: String
@@ -137,6 +136,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                             bikeList.find { bike -> bike.id == currentBikeId }!!
                                 .copy(dateOfPurchase = newValue.toLong())
                         )
+                        notifyChange()
                     } catch (e: Exception) {
                     }
                 }
