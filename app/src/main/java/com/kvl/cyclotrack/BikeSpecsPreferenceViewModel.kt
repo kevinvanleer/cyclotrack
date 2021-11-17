@@ -43,7 +43,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     val bikes = bikesRepository.observeAll()
 
     var circumference
-        @Bindable
+        @get:Bindable
         get() =
             bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference.toString()
         set(newValue) {
