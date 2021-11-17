@@ -104,7 +104,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     }
 
     fun setPurchaseDateInstant(newValue: Instant) {
-        bikes.value?.let { bikeList ->
+        /*bikes.value?.let { bikeList ->
             viewModelScope.launch(Dispatchers.IO) {
                 bikesRepository.update(
                     bikeList.find { bike -> bike.id == currentBikeId }!!
@@ -112,7 +112,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 )
                 notifyChange()
             }
-        }
+        }*/
+        purchaseDate = newValue.epochSecond.toString()
     }
 
     var purchaseDate: String
