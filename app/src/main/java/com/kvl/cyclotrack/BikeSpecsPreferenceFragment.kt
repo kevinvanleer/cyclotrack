@@ -59,7 +59,7 @@ class BikeSpecsPreferenceFragment : Fragment() {
                     setPositiveButton("OK") { _, _ ->
                         val newDate = GregorianCalendar.getInstance()
                         newDate.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
-                        viewModel.purchaseDate = newDate.timeInMillis.toString()
+                        viewModel.purchaseDate = newDate.toInstant().epochSecond.toString()
                         binding.preferencePreferenceBikeSpecsPurchaseDate.setText(viewModel.purchaseDate)
                     }
                 }.create().show()

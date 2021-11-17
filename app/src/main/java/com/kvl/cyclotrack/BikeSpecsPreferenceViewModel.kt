@@ -100,7 +100,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         get() =
             try {
                 bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
-                    Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault())
+                    Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())
                         .format(DateTimeFormatter.ISO_LOCAL_DATE)
                 }!!
             } catch (e: NullPointerException) {
