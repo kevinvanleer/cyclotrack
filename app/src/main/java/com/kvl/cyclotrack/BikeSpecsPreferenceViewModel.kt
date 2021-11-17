@@ -48,7 +48,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference.toString()
         set(newValue) {
             bikesRepository.update(
-                bikes.value!!.find { bike -> bike.id == currentBikeId }!!
+                bikes.value?.find { bike -> bike.id == currentBikeId }!!
                     .copy(wheelCircumference = newValue.toFloat())
             )
         }
