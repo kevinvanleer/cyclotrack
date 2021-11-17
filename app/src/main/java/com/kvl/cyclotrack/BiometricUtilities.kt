@@ -13,7 +13,7 @@ import java.util.*
 import kotlin.math.roundToInt
 
 const val POUNDS_TO_KG = 0.453592
-val dateFormatPattenDob = "yyyy-MM-dd"
+const val dateFormatPattenDob = "yyyy-MM-dd"
 
 
 fun convertSystemToUserMass(mass: Float, context: Context) =

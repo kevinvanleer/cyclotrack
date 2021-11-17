@@ -10,6 +10,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -92,10 +95,13 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             }
         }
 
-    var purchaseDate
+    var purchaseDate: String
         @get:Bindable
         get() =
-            bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase.toString()
+            bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
+                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ISO_LOCAL_DATE)
+            }!!
         set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
