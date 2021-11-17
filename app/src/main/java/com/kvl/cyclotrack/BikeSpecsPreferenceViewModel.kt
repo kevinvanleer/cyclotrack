@@ -128,17 +128,17 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 ""
             }
         set(newValue) {
-            try {
                 bikes.value?.let { bikeList ->
                     viewModelScope.launch(Dispatchers.IO) {
-                        bikesRepository.update(
-                            bikeList.find { bike -> bike.id == currentBikeId }!!
-                                .copy(dateOfPurchase = newValue.toLong())
-                        )
+                        try {
+                            bikesRepository.update(
+                                bikeList.find { bike -> bike.id == currentBikeId }!!
+                                    .copy(dateOfPurchase = newValue.toLong())
+                            )
+                        } catch (e: Exception) {
+                        }
                     }
                 }
-            } catch (e: Exception) {
-            }
         }
 
     val circumferenceHint: String
