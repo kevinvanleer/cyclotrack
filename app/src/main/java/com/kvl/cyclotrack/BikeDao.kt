@@ -14,6 +14,9 @@ interface BikeDao {
     fun update(vararg bikes: Bike)
 
     @Query("SELECT * FROM Bike WHERE id = :bikeId")
+    fun get(bikeId: Long): Bike
+
+    @Query("SELECT * FROM Bike WHERE id = :bikeId")
     fun subscribe(bikeId: Long): LiveData<Bike>
 
     @Query("SELECT * FROM Bike")
