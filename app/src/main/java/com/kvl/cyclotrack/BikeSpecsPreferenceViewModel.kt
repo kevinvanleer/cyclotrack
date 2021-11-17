@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
@@ -104,7 +105,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     }
 
     fun setPurchaseDateInstant(newValue: Instant) {
-        /*bikes.value?.let { bikeList ->
+        bikes.value?.let { bikeList ->
             viewModelScope.launch(Dispatchers.IO) {
                 bikesRepository.update(
                     bikeList.find { bike -> bike.id == currentBikeId }!!
@@ -112,8 +113,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                 )
                 notifyChange()
             }
-        }*/
-        purchaseDate = newValue.epochSecond.toString()
+        }
     }
 
     var purchaseDate: String
@@ -131,14 +131,16 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
-                    try {
                         bikesRepository.update(
                             bikeList.find { bike -> bike.id == currentBikeId }!!
-                                .copy(dateOfPurchase = newValue.toLong())
+                                .copy(
+                                    dateOfPurchase = ZonedDateTime.parse(
+                                        newValue,
+                                        DateTimeFormatter.ISO_LOCAL_DATE
+                                    ).toEpochSecond()
+                                )
                         )
                         notifyChange()
-                    } catch (e: Exception) {
-                    }
                 }
             }
         }
