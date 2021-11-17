@@ -103,7 +103,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     Instant.ofEpochSecond(it).atZone(ZoneId.systemDefault())
                         .format(DateTimeFormatter.ISO_LOCAL_DATE)
                 }!!
-            } catch (e: NullPointerException) {
+            } catch (e: Exception) {
                 ""
             }
         set(newValue) {
