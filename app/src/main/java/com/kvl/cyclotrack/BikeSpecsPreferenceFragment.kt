@@ -1,7 +1,6 @@
 package com.kvl.cyclotrack
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,8 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import com.kvl.cyclotrack.databinding.FragmentBikeSpecsPreferenceBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.text.ParseException
-import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
 import java.util.*
 
 @AndroidEntryPoint
@@ -29,29 +28,15 @@ class BikeSpecsPreferenceFragment : Fragment() {
 
     private fun initializePurchaseDate() {
         binding.preferencePreferenceBikeSpecsPurchaseDate.setOnClickListener {
-            val purchaseDate = viewModel.purchaseDate?.let {
-                try {
-                    viewModel.purchaseDate?.let {
-                        SimpleDateFormat(
-                            dateFormatPattenDob,
-                            Locale.US
-                        ).parse(it)
-                    }
-                } catch (e: ParseException) {
-                    Log.e(tag, "Could not parse preference data", e)
-                    null
-                }
-            }
-
-            val default = GregorianCalendar.getInstance()
-            val c = GregorianCalendar()
-            c.time = purchaseDate ?: default.time
-            val year = c.get(GregorianCalendar.YEAR)
-            val month = c.get(GregorianCalendar.MONTH)
-            val day = c.get(GregorianCalendar.DAY_OF_MONTH)
+            val purchaseDate =
+                (viewModel.purchaseDate ?: Instant.now()).atZone(ZoneId.systemDefault())
 
             val datePicker = DatePicker(context)
-            datePicker.updateDate(year, month, day)
+            datePicker.updateDate(
+                purchaseDate.year,
+                purchaseDate.monthValue,
+                purchaseDate.dayOfMonth
+            )
             context?.let { thisContext ->
                 AlertDialog.Builder(thisContext).apply {
                     setTitle("Date of birth")
@@ -59,8 +44,9 @@ class BikeSpecsPreferenceFragment : Fragment() {
                     setPositiveButton("OK") { _, _ ->
                         val newDate = GregorianCalendar.getInstance()
                         newDate.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
-                        viewModel.purchaseDate = newDate.toInstant().epochSecond.toString()
-                        binding.preferencePreferenceBikeSpecsPurchaseDate.setText(viewModel.purchaseDate)
+                        viewModel.purchaseDate = newDate.toInstant()
+                        /*binding.preferencePreferenceBikeSpecsPurchaseDate.setText(viewModel.purchaseDate.atZone(
+                            ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE))*/
                     }
                 }.create().show()
             }
