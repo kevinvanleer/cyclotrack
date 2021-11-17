@@ -53,7 +53,10 @@ class BikeSpecsPreferenceFragment : Fragment() {
                             0,
                             ZoneId.systemDefault()
                         )
-                        viewModel.setPurchaseDateInstant(newDate.toInstant())
+                        //viewModel.setPurchaseDateInstant(newDate.toInstant())
+                        viewModel.purchaseDate = newDate.format(
+                            DateTimeFormatter.ISO_LOCAL_DATE
+                        )
                         binding.preferencePreferenceBikeSpecsPurchaseDate.setText(
                             newDate.format(
                                 DateTimeFormatter.ISO_LOCAL_DATE
