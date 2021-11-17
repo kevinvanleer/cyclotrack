@@ -78,32 +78,32 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         }
 
     var bikeMass
+        @get:Bindable
         get() =
-            sharedPreferences.getString(
-                CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
-                ""
-            )
+            bikes.value?.find { bike -> bike.id == currentBikeId }?.weight.toString()
         set(newValue) {
-            sharedPreferences.edit {
-                this.putString(
-                    CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
-                    newValue
-                )
+            bikes.value?.let { bikeList ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    bikesRepository.update(
+                        bikeList.find { bike -> bike.id == currentBikeId }!!
+                            .copy(weight = newValue.toFloat())
+                    )
+                }
             }
         }
 
     var purchaseDate
+        @get:Bindable
         get() =
-            sharedPreferences.getString(
-                CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
-                ""
-            )
+            bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase.toString()
         set(newValue) {
-            sharedPreferences.edit {
-                this.putString(
-                    CyclotrackApp.instance.getString(R.string.preference_key_bike_mass),
-                    newValue
-                )
+            bikes.value?.let { bikeList ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    bikesRepository.update(
+                        bikeList.find { bike -> bike.id == currentBikeId }!!
+                            .copy(dateOfPurchase = newValue.toLong())
+                    )
+                }
             }
         }
 
