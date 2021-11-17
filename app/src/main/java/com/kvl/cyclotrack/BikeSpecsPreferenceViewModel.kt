@@ -114,6 +114,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             }
         }*/
         purchaseDate = newValue.epochSecond.toString()
+        notifyChange()
     }
 
     var purchaseDate: String

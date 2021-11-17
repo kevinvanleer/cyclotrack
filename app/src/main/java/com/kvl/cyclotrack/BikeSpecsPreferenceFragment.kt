@@ -15,7 +15,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
-import java.util.*
+import java.time.ZonedDateTime
 
 @AndroidEntryPoint
 class BikeSpecsPreferenceFragment : Fragment() {
@@ -42,9 +42,17 @@ class BikeSpecsPreferenceFragment : Fragment() {
                     setTitle("Date of birth")
                     setView(datePicker)
                     setPositiveButton("OK") { _, _ ->
-                        val newDate = GregorianCalendar.getInstance()
-                        newDate.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
-                        viewModel.setPurchaseDateInstant(newDate.toInstant())
+                        val newDate = ZonedDateTime.of(
+                            datePicker.year,
+                            datePicker.month + 1,
+                            datePicker.dayOfMonth,
+                            0,
+                            0,
+                            0,
+                            0,
+                            ZoneId.systemDefault()
+                        ).toInstant()
+                        viewModel.setPurchaseDateInstant(newDate)
                         binding.preferencePreferenceBikeSpecsPurchaseDate.setText(viewModel.purchaseDate)
                     }
                 }.create().show()
