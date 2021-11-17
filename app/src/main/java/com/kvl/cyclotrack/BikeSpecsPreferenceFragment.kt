@@ -101,10 +101,10 @@ class BikeSpecsPreferenceFragment : Fragment() {
             ).also { adapter ->
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 bikeSelect.setAdapter(adapter)
-                bikeSelect.setText(bikes.find { bike -> bike.id == viewModel.currentBikeId }
+                /*bikeSelect.setText(bikes.find { bike -> bike.id == viewModel.currentBikeId }
                     ?.let { bike ->
                         bike.name ?: "Bike ${bike.id}"
-                    }, false)
+                    }, false)*/
             }
             bikeSelect.onItemClickListener =
                 AdapterView.OnItemClickListener { _, _, position, _ ->

@@ -51,7 +51,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     var name
         @get:Bindable
         get() =
-            bikes.value?.find { bike -> bike.id == currentBikeId }?.name
+            bikes.value?.find { bike -> bike.id == currentBikeId }
+                ?.let { bike -> bike.name ?: "Bike ${bike.id}" }
         set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
