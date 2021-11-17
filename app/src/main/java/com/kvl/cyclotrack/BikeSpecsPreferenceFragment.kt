@@ -34,7 +34,7 @@ class BikeSpecsPreferenceFragment : Fragment() {
             val datePicker = DatePicker(context)
             datePicker.updateDate(
                 purchaseDate.year,
-                purchaseDate.monthValue,
+                purchaseDate.monthValue - 1,
                 purchaseDate.dayOfMonth
             )
             context?.let { thisContext ->
