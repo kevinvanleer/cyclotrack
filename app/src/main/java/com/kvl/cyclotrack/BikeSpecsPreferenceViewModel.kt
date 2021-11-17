@@ -11,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -116,7 +115,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
     }
 
     var purchaseDate: String
-        @Bindable
+        @get:Bindable
         get() =
             try {
                 bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
@@ -127,7 +126,7 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             } catch (e: Exception) {
                 ""
             }
-        set(newValue) {
+        /*set(newValue) {
             bikes.value?.let { bikeList ->
                 viewModelScope.launch(Dispatchers.IO) {
                     bikesRepository.update(
@@ -141,7 +140,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
                     )
                 }
             }
-        }
+        }*/
+        private set
 
     val circumferenceHint: String
         get() = "Wheel circumference (in or mm)"

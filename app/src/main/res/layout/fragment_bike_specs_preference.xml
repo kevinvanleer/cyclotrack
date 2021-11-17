@@ -109,7 +109,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:text="@={viewmodel.purchaseDate}"
+                    android:text="@{viewmodel.purchaseDate}"
                     android:focusable="false"
                     android:inputType="date" />
             </com.google.android.material.textfield.TextInputLayout>
