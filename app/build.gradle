@@ -35,6 +35,7 @@ android {
         versionCode 39
         versionName "Cleanup analytics"
 
+        def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
             def git = Grgit.open(dir: project.rootDir)
             def lastHash = git.head().getAbbreviatedId()
@@ -44,15 +45,20 @@ android {
         def makeWipCommit = { ->
             def git = Grgit.open(dir: project.rootDir)
             if (git.status().unstaged.getAllChanges().size() > 0 || git.status().staged.getAllChanges().size() > 0)
-                if (git.branch.current().getName() == "master") {
-                    throw StopExecutionException("You are on the master branch, either commit the changes or checkout a feature/bug branch")
+                if (noWipBranches.contains(git.branch.current().name)) {
+                    throw StopExecutionException("You are on a protected branch, either commit the changes or checkout a feature/bug branch")
                 } else git.commit(all: true, message: 'wip')
         }
-        makeWipCommit()
-        def gitHash = lastCommitHash()
-        buildConfigField "String", "GIT_HASH", "\"$gitHash\""
+        def currentBranch = { ->
+            def git = Grgit.open(dir: project.rootDir)
+            return git.branch.current()
+        }
+        if (!noWipBranches.contains(currentBranch().name)) {
+            makeWipCommit()
+            def gitHash = lastCommitHash()
+            buildConfigField "String", "GIT_HASH", "\"$gitHash\""
+        }
 
-        //testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunner "com.kvl.cyclotrack.CustomTestRunner"
 
         kapt {
