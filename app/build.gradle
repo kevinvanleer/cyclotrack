@@ -55,9 +55,9 @@ android {
         }
         if (!noWipBranches.contains(currentBranch().name)) {
             makeWipCommit()
-            def gitHash = lastCommitHash()
-            buildConfigField "String", "GIT_HASH", "\"$gitHash\""
         }
+        def gitHash = lastCommitHash()
+        buildConfigField "String", "GIT_HASH", "\"$gitHash\""
 
         testInstrumentationRunner "com.kvl.cyclotrack.CustomTestRunner"
 
