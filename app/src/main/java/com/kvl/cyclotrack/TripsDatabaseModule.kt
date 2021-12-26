@@ -1,7 +1,10 @@
 package com.kvl.cyclotrack
 
+import android.content.ContentValues
 import android.content.Context
+import androidx.room.OnConflictStrategy
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
@@ -141,6 +144,63 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
     }
 }
 
+val MIGRATION_18_19 = object : Migration(18, 19) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE IF NOT EXISTS `Bike` (`name` TEXT, `dateOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `isDefault` INTEGER NOT NULL DEFAULT 0, `id` INTEGER PRIMARY KEY AUTOINCREMENT)")
+        database.execSQL(
+            """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_insert
+            AFTER INSERT ON Bike
+            FOR EACH ROW
+            WHEN NEW.isDefault = 1 AND (SELECT sum(isDefault) FROM Bike) > 1
+            BEGIN 
+                UPDATE Bike SET isDefault = 0 WHERE id != NEW.id and isDefault = 1;
+            END
+            """
+        )
+        database.execSQL(
+            """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_update 
+            AFTER UPDATE OF `isDefault` ON Bike
+            FOR EACH ROW
+            WHEN NEW.isDefault = 1 AND OLD.isDefault = 0 AND (SELECT sum(isDefault) FROM Bike) > 1
+            BEGIN 
+                UPDATE Bike SET isDefault = 0 WHERE id != NEW.id and isDefault = 1;
+            END
+            """
+        )
+        database.execSQL(
+            """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_delete
+            AFTER DELETE ON Bike
+            FOR EACH ROW
+            WHEN OLD.isDefault = 1
+            BEGIN 
+                UPDATE Bike SET isDefault = 1 WHERE id = (SELECT min(id) FROM Bike);
+            END
+            """
+        )
+        database.execSQL(
+            """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_update 
+            AFTER UPDATE OF `isDefault` ON Bike
+            FOR EACH ROW
+            WHEN NEW.isDefault = 0 AND OLD.isDefault = 1 AND (SELECT sum(isDefault) FROM Bike) = 0
+            BEGIN 
+                UPDATE Bike SET isDefault = 1 WHERE id = (SELECT min(id) FROM Bike) AND (SELECT sum(isDefault) FROM Bike) = 0;
+            END
+            """
+        )
+        database.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
+            put("weight", getBikeMassOrNull(CyclotrackApp.instance))
+            put("wheelCircumference", getUserCircumferenceOrNull(CyclotrackApp.instance))
+            put("isDefault", 1)
+        })
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `bikeId` INTEGER NOT NULL DEFAULT 1 REFERENCES Bike(id) ON DELETE SET DEFAULT")
+        database.execSQL("CREATE INDEX index_Trip_bikeId on Trip(`bikeId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -167,7 +227,19 @@ object TripsDatabaseModule {
                 MIGRATION_15_16,
                 MIGRATION_16_17,
                 MIGRATION_17_18,
-            ).build()
+                MIGRATION_18_19,
+            )
+            .addCallback(object : RoomDatabase.Callback() {
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    super.onCreate(db)
+
+                    db.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
+                        put("weight", getBikeMassOrNull(appContext))
+                        put("wheelCircumference", getUserCircumferenceOrNull(appContext))
+                        put("isDefault", 1)
+                    })
+                }
+            }).build()
 
     @Provides
     @Singleton
@@ -197,5 +269,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideOnboardSensorsDao(db: TripsDatabase): OnboardSensorsDao {
         return db.onboardSensorsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideBikeDao(db: TripsDatabase): BikeDao {
+        return db.bikeDao()
     }
 }

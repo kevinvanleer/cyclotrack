@@ -15,22 +15,50 @@ fun getBrightnessPreference(context: Context): Float {
     } else -1f
 }
 
-fun getUserCircumferenceOrNull(context: Context): Float? {
-    return getUserCircumferenceOrNull(getPreferences(context))
+fun userMassToKilograms(context: Context, input: String?): Float? {
+    return try {
+        (input?.toFloat()
+            ?: Float.NEGATIVE_INFINITY) * (when (PreferenceManager.getDefaultSharedPreferences(
+            context
+        )
+            .getString("display_units", "1")) {
+            "1" -> POUNDS_TO_KG
+            else -> 1.0
+        }).toFloat()
+    } catch (e: NumberFormatException) {
+        Log.e("TRIP_UTILS_PREF", "userCircumferenceToMeters: Couldn't parse wheel circumference")
+        null
+    }
 }
 
-fun getUserCircumference(context: Context): Float = getUserCircumferenceOrNull(context) ?: 0f
-
-fun getAutoCircumferenceOrNull(prefs: SharedPreferences): Float? {
-    val storedCircumference = prefs.getFloat("auto_circumference", 0f)
-    Log.d("TRIP_UTILS_PREF", "Auto circumference preference: ${storedCircumference}")
-    return storedCircumference.takeIf { it > 0 }
+fun getBikeMassOrNull(context: Context): Float? {
+    return userMassToKilograms(
+        context,
+        getBikeMassOrNull(
+            getPreferences(context),
+            context.getString(R.string.preference_key_bike_mass)
+        )
+    )
 }
 
-fun getUserCircumferenceOrNull(prefs: SharedPreferences): Float? {
-    val storedCircumference = prefs.getString("wheel_circumference", "")
-    Log.d("TRIP_UTILS_PREF", "Wheel circumference preference: ${storedCircumference}")
-    return userCircumferenceToMeters(storedCircumference)
+fun getPairedBleSensors(context: Context): Set<String>? =
+    PreferenceManager.getDefaultSharedPreferences(context).getStringSet(
+        context.resources.getString(R.string.preferences_paired_ble_devices_key),
+        HashSet()
+    )
+
+fun getUserCircumferenceOrNull(context: Context): Float? =
+    userCircumferenceToMeters(
+        getPreferences(context).getString(
+            context.getString(R.string.preference_key_wheel_circumference),
+            ""
+        )
+    )
+
+fun getBikeMassOrNull(prefs: SharedPreferences, key: String): String? {
+    val stored = prefs.getString(key, "")
+    Log.d("PreferenceUtilities", "Bike mass preference: ${stored}")
+    return stored
 }
 
 fun metersToUserCircumference(context: Context, meters: Float): String {

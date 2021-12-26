@@ -20,6 +20,9 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
     lateinit var tripsRepository: TripsRepository
 
     @Inject
+    lateinit var bikeRepository: BikeRepository
+
+    @Inject
     lateinit var measurementsRepository: MeasurementsRepository
 
     @Inject
@@ -37,14 +40,19 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                     val timeStates = timeStateRepository.getTimeStates(tripId)
                     val measurements = measurementsRepository.getCritical(tripId)
 
-                    googleFitApiService.insertDatasets(measurements,
-                        getEffectiveCircumference(trip, measurements) ?: getUserCircumference(
-                            applicationContext))
+                    googleFitApiService.insertDatasets(
+                        measurements,
+                        getEffectiveCircumference(trip, measurements)
+                            ?: userCircumferenceToMeters(bikeRepository.get(trip.bikeId).wheelCircumference)
+                            ?: 0f
+                    )
                     timeStates.takeIf { it.isNotEmpty() }
                         ?.let { googleFitApiService.insertSession(trip, it) }
-                        ?: googleFitApiService.insertSession(trip,
+                        ?: googleFitApiService.insertSession(
+                            trip,
                             measurements.first().time,
-                            measurements.last().time)
+                            measurements.last().time
+                        )
 
                     tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.SYNCED)
                 }

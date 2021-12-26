@@ -11,6 +11,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EditTripViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
+    private val bikesRepository: BikeRepository
 ) : ViewModel(
 ) {
     val TAG = "EditTripVm"
@@ -19,6 +20,8 @@ class EditTripViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             tripInfo = tripsRepository.get(tripId)
         }
+
+    fun observeBikes() = bikesRepository.observeAll()
 
     fun updateTripName(value: String) {
         try {
@@ -41,6 +44,12 @@ class EditTripViewModel @Inject constructor(
             changeDetails(tripInfo.name!!, tripInfo.notes, userCircumferenceToMeters(value))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update trip with user edits", e)
+        }
+    }
+
+    fun updateTripBikeId(bikeId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            tripsRepository.updateBikeId(tripInfo.id!!, bikeId)
         }
     }
 

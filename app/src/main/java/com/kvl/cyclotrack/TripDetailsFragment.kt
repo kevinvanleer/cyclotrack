@@ -783,7 +783,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                     }
 
-                    fun getSpeedDataFromSensor(
+                    suspend fun getSpeedDataFromSensor(
                         entries: ArrayList<Entry>,
                         trend: ArrayList<Entry>,
                         measurementsList: Array<CriticalMeasurements>,
@@ -794,11 +794,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         var trendLast =
                             getUserSpeed(requireContext(), measurementsList[0].speed.toDouble())
                         var trendAlpha = 0.5f
-
+                        Log.d(
+                            logTag,
+                            viewModel.getBikeWheelCircumference(overview.bikeId).toString()
+                        )
                         val circumference =
                             effectiveCircumference ?: overview.autoWheelCircumference
                             ?: overview.userWheelCircumference
-                            ?: getUserCircumference(requireContext())
+                            ?: viewModel.getBikeWheelCircumference(overview.bikeId)
                         Log.d(logTag, "Using circumference: $circumference")
 
                         var lastMeasurements: CriticalMeasurements? = null
@@ -838,17 +841,20 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                     }
 
-                    fun makeSpeedDataset(
+                    suspend fun makeSpeedDataset(
                         measurements: Array<CriticalMeasurements>,
                         intervals: Array<LongRange>,
                     ): Pair<LineDataSet, LineDataSet> {
                         val entries = ArrayList<Entry>()
                         val trend = ArrayList<Entry>()
 
-                        if (measurements.isNullOrEmpty()) return Pair(LineDataSet(
-                            entries,
-                            "Speed"),
-                            LineDataSet(trend, "Trend"))
+                        if (measurements.isNullOrEmpty()) return Pair(
+                            LineDataSet(
+                                entries,
+                                "Speed"
+                            ),
+                            LineDataSet(trend, "Trend")
+                        )
 
                         if (measurements.isNotEmpty()) {
                             if (getAverageSpeedRpm(measurements) == null) {
@@ -881,7 +887,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         return Pair(dataset, trendData)
                     }
 
-                    fun makeSpeedLineChart() {
+                    suspend fun makeSpeedLineChart() {
                         configureLineChart(speedChartView)
 
                         val intervals = getTripIntervals(timeStates, tripMeasurements)
@@ -889,8 +895,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val data = LineData()
 
                         legs.forEachIndexed { idx, leg ->
-                            val (raw, trend) = makeSpeedDataset(leg,
-                                intervals.sliceArray(IntRange(0, idx)))
+                            val (raw, trend) = makeSpeedDataset(
+                                leg,
+                                intervals.sliceArray(IntRange(0, idx))
+                            )
 
                             data.addDataSet(raw)
                             data.addDataSet(trend)

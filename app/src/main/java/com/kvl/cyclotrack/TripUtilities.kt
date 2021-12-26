@@ -426,10 +426,10 @@ fun metersToUserCircumference(meters: Float, storedCircumference: String?): Stri
     }
 }
 
-fun userCircumferenceToMeters(input: String?): Float? {
+fun userCircumferenceToMeters(input: Float?): Float? {
     return try {
         return when (val circumference =
-            input?.toFloat() ?: Float.NEGATIVE_INFINITY) {
+            input ?: Float.NEGATIVE_INFINITY) {
             in 0.9f..10f -> {
                 //meters
                 circumference
@@ -449,6 +449,9 @@ fun userCircumferenceToMeters(input: String?): Float? {
         null
     }
 }
+
+fun userCircumferenceToMeters(input: String?): Float? =
+    userCircumferenceToMeters(input?.takeIf { it != "" }?.toFloat())
 
 fun getUserAltitude(context: Context, meters: Double): Double {
     val userConversionFactor =

@@ -4,6 +4,7 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="../../../../layout/custom_preview.xml" value="0.5675925925925925" />
+        <entry key="app/src/main/res/drawable/baseline_delete_sweep_24.xml" value="0.3203125" />
         <entry key="app/src/main/res/drawable/bottom_menu_item.xml" value="0.25833333333333336" />
         <entry key="app/src/main/res/drawable/rounded_corner.xml" value="0.31197916666666664" />
         <entry key="app/src/main/res/layout/activity_dashboard.xml" value="0.1984375" />
@@ -16,7 +17,11 @@
         <entry key="app/src/main/res/layout/day_square.xml" value="4.0" />
         <entry key="app/src/main/res/layout/day_summary.xml" value="0.1" />
         <entry key="app/src/main/res/layout/fragment_analytics.xml" value="0.39294306335204493" />
+        <entry key="app/src/main/res/layout/fragment_bike_specs_preference.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/fragment_biometrics_preference.xml" value="0.37864583333333335" />
+        <entry key="app/src/main/res/layout/fragment_edit_trip.xml" value="0.33" />
         <entry key="app/src/main/res/layout/fragment_top_rides.xml" value="0.3541666666666667" />
+        <entry key="app/src/main/res/layout/fragment_trip_details.xml" value="0.37037037037037035" />
         <entry key="app/src/main/res/layout/fragment_trip_in_progress.xml" value="0.36574074074074076" />
         <entry key="app/src/main/res/layout/fragment_weekly_summary.xml" value="0.1" />
         <entry key="app/src/main/res/layout/sample_day_square.xml" value="0.45740740740740743" />
@@ -33,6 +38,7 @@
         <entry key="app/src/main/res/layout/view_day_summary.xml" value="0.29583333333333334" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_item.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_list.xml" value="0.253125" />
+        <entry key="app/src/main/res/layout/view_spinner_options.xml" value="0.3415384615384615" />
         <entry key="app/src/main/res/layout/view_stat_view.xml" value="0.346875" />
         <entry key="app/src/main/res/layout/view_text_square.xml" value="1.0" />
         <entry key="app/src/main/res/layout/view_three_stat.xml" value="0.346875" />
@@ -41,8 +47,11 @@
         <entry key="app/src/main/res/layout/view_weekly_summary_table.xml" value="0.29583333333333334" />
         <entry key="app/src/main/res/layout/weekly_summary_table.xml" value="0.1" />
         <entry key="app/src/main/res/menu/main_activity_bottom_menu.xml" value="0.37604166666666666" />
+        <entry key="app/src/main/res/menu/menu_details.xml" value="0.30416666666666664" />
         <entry key="app/src/main/res/menu/menu_main_activity_bottom.xml" value="0.36875" />
         <entry key="app/src/main/res/menu/menu_profile.xml" value="0.4638888888888889" />
+        <entry key="app/src/main/res/menu/menu_rides.xml" value="0.30416666666666664" />
+        <entry key="app/src/main/res/menu/menu_settings_bikes.xml" value="0.30416666666666664" />
         <entry key="app/src/main/res/xml/advanced_preferences.xml" value="0.3541666666666667" />
       </map>
     </option>

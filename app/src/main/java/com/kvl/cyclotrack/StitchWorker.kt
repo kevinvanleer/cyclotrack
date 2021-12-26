@@ -22,6 +22,9 @@ class StitchWorker @AssistedInject constructor(
     lateinit var tripsRepository: TripsRepository
 
     @Inject
+    lateinit var bikeRepository: BikeRepository
+
+    @Inject
     lateinit var measurementsRepository: MeasurementsRepository
 
     @Inject
@@ -99,9 +102,12 @@ class StitchWorker @AssistedInject constructor(
             autoWheelCircumference = destinationTrip.autoWheelCircumference))
 
         measurementsRepository.getCritical(destinationTrip.id).let { measurements ->
-            googleFitApiService.updateDatasets(measurements,
-                getEffectiveCircumference(destinationTrip, measurements) ?: getUserCircumference(
-                    applicationContext))
+            googleFitApiService.updateDatasets(
+                measurements,
+                getEffectiveCircumference(destinationTrip, measurements)
+                    ?: userCircumferenceToMeters(bikeRepository.get(destinationTrip.bikeId).wheelCircumference)
+                    ?: 0f
+            )
             googleFitApiService.updateSession(destinationTrip, destinationTimeStates)
         }
         return Result.success()

@@ -92,7 +92,7 @@
     <string name="useGoogleFitBiometricsDialog_message">Enable this option to read height, weight, and resting heart rate data from Google Fit. If this option is disabled, the values stored in Cyclotrack will be used. Update this option at any time in biometrics settings.</string>
     <string name="preference_key_useAutoCircumference">useAutoCircumference</string>
     <string name="preference_key_bike_specs">preference_key_bike_specs</string>
-    <string name="preference_bike_specs_useAutoCircumference_description">Let Cyclotrack use GPS to determine circumference</string>
+    <string name="switch_preference_useAutoCircumference_description">Let Cyclotrack use GPS to calibrate circumference</string>
     <string name="preference_key_bike_mass">bike_mass</string>
     <string name="preferences_key_enable_analytics">preference_key_enable_analytics</string>
     <string name="preference_key_analytics_opt_in_presented">preference_key_analytics_opt_in_presented</string>
@@ -102,6 +102,10 @@
     <string name="preferences_key_advanced_enable_google_fit_sync_biometrics">enable_gfit_sync_biometrics</string>
     <string name="preferences_key_advanced_enable_google_fit_resting_heart_rate">enable_google_fit_resting_heart_rate</string>
     <string name="preferences_key_advanced_use_vo2max_calorie_estimate">preferences_key_advanced_use_vo2max_calorie_estimate</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="preference_bike_specs_label_purchase_date">Purchase date</string>
+    <string name="action_new">New</string>
+    <string name="snackbar_message_cannot_delete_bike">Cannot delete, associated with rides</string>
+    <string name="switch_preference_useAutoCircumference_title">Speed sensor GPS calibration</string>
+    <string name="preference_bike_specs_isDefaultBike_description">This bike will be used for new rides.</string>
 </resources>

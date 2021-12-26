@@ -87,6 +87,9 @@ interface TripDao {
     @Update(entity = Trip::class)
     suspend fun updateGoogleFitSyncStatus(googleFitSyncStatus: TripGoogleFitSync)
 
+    @Query("UPDATE trip SET bikeId=:bikeId where id = :id")
+    suspend fun updateBikeId(id: Long, bikeId: Long)
+
     @Query("SELECT * FROM trip WHERE id = :tripId")
     fun subscribe(tripId: Long): LiveData<Trip>
 
@@ -132,7 +135,6 @@ interface TripDao {
     @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip where timestamp >= :start and timestamp < :end")
     fun subscribeTotals(start: Long, end: Long): LiveData<TripAggregation>
 
-
     @Query("select strftime('%Y-%m-%d',  datetime(round(timestamp/1000),'unixepoch','localtime','start of day','weekday 6', '-6 day') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip  group by period order by totalDistance desc limit :limit")
     fun subscribeWeeklyTotals(limit: Int): LiveData<Array<PeriodTotals>>
 
@@ -147,4 +149,7 @@ interface TripDao {
 
     @Query("DELETE from trip")
     fun wipe()
+
+    @Query("select * from trip WHERE bikeId = :bikeId")
+    fun getTripsForBike(bikeId: Long): Array<Trip>
 }

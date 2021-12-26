@@ -66,7 +66,6 @@ class SwitchPreference : ConstraintLayout {
             view.checked = newValue
         }
 
-
         @BindingAdapter(value = ["onCheckedChanged", "checkedAttrChanged"], requireAll = false)
         @JvmStatic
         fun setListeners(

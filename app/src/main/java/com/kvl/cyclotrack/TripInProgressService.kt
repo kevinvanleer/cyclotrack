@@ -36,9 +36,13 @@ class TripInProgressService @Inject constructor() :
     private val speedThreshold = 0.5f
 
     private var running = false
+    lateinit var bike: Bike
 
     @Inject
     lateinit var tripsRepository: TripsRepository
+
+    @Inject
+    lateinit var bikesRepository: BikeRepository
 
     @Inject
     lateinit var measurementsRepository: MeasurementsRepository
@@ -68,7 +72,7 @@ class TripInProgressService @Inject constructor() :
     lateinit var googleFitApiService: GoogleFitApiService
 
     private val userCircumference: Float?
-        get() = getUserCircumferenceOrNull(sharedPreferences)
+        get() = userCircumferenceToMeters(bike.wheelCircumference)
 
     private var autoCircumference: Float? = null
 
@@ -388,11 +392,13 @@ class TripInProgressService @Inject constructor() :
         clearState()
 
         lifecycleScope.launch(Dispatchers.IO) {
-            tripId = tripsRepository.createNewTrip().also { id ->
-                timeStateRepository.appendTimeState(TimeState(id, TimeStateEnum.START))
-                EventBus.getDefault().post(StartTripEvent(id))
-                Log.d(logTag, "created new trip with id ${id}")
-            }
+            bike = bikesRepository.getDefaultBike()
+            tripId =
+                tripsRepository.createNewTrip(bike.id ?: 1).also { id ->
+                    timeStateRepository.appendTimeState(TimeState(id, TimeStateEnum.START))
+                    EventBus.getDefault().post(StartTripEvent(id))
+                    Log.d(logTag, "created new trip with id ${id}")
+                }
         }.join()
 
         Log.d(logTag, "Start trip service for ID ${tripId}; this=$this")

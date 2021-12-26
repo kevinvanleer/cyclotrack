@@ -32,8 +32,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         return tripDao.getCleanupTrips()
     }
 
-    fun createNewTrip(): Long {
-        return tripDao.save(Trip())
+    fun createNewTrip(bikeId: Long = 1): Long {
+        return tripDao.save(Trip(bikeId = bikeId))
     }
 
     suspend fun removeTrip(tripId: Long) {
@@ -61,6 +61,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         tripDao.updateBiometrics(biometrics)
     }
 
+    suspend fun updateBikeId(id: Long, bikeId: Long) = tripDao.updateBikeId(id, bikeId)
+
     suspend fun getDefaultBiometrics(tripId: Long) = tripDao.getDefaultBiometrics(tripId)
 
     suspend fun setGoogleFitSyncStatus(
@@ -82,4 +84,5 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     fun observeTripTotals(start: Long, end: Long) = tripDao.subscribeTotals(start, end)
     fun observeMonthlyTotals(limit: Int) = tripDao.subscribeMonthlyTotals(limit)
     fun observeWeeklyTotals(limit: Int) = tripDao.subscribeWeeklyTotals(limit)
+    fun getTripsForBike(bikeId: Long) = tripDao.getTripsForBike(bikeId)
 }

@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import androidx.appcompat.widget.SwitchCompat
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
@@ -213,7 +214,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
                 false
         }
 
-        activity?.title = "Settings"
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
@@ -225,11 +225,18 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         if (pref != null && DiscoverSensorDialogPreference::class.isInstance(pref)) {
             DiscoverSensorDialogFragmentCompat.getInstance(pref.key).let {
                 it.setTargetFragment(this, 0)
-                it.show(this.parentFragmentManager,
-                    "androidx.preference.PreferenceFragment.DIALOG")
+                it.show(
+                    this.parentFragmentManager,
+                    "androidx.preference.PreferenceFragment.DIALOG"
+                )
                 return true
             }
         }
         return false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
     }
 }

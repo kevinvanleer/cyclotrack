@@ -36,7 +36,7 @@ import kotlin.math.pow
 
 @AndroidEntryPoint
 class TripInProgressFragment :
-    Fragment(), View.OnTouchListener {
+    Fragment(), OnTouchListener {
     val logTag = "TripInProgressFragment"
     private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.dashboard_nav_graph) {
         defaultViewModelProviderFactory
@@ -62,7 +62,7 @@ class TripInProgressFragment :
     private val lowBatteryThreshold = 15
     private lateinit var sharedPreferences: SharedPreferences
     private val userCircumference: Float?
-        get() = getUserCircumferenceOrNull(sharedPreferences)
+        get() = viewModel.bikeWheelCircumference
     private var autoCircumference: Float? = null
     private var autoCircumferenceVariance: Double? = null
 

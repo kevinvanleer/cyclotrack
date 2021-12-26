@@ -8,6 +8,8 @@ import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import com.kvl.cyclotrack.events.TripProgressEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -17,14 +19,21 @@ import kotlin.concurrent.timerTask
 
 @HiltViewModel
 class TripInProgressViewModel @Inject constructor(
+    private val bikeRepository: BikeRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
 ) : ViewModel() {
     private val logTag = "TripInProgressViewModel"
 
+    var bikeWheelCircumference: Float? = null
     init {
         EventBus.getDefault().register(this)
+        viewModelScope.launch(Dispatchers.IO) {
+            bikeWheelCircumference =
+                userCircumferenceToMeters(bikeRepository.getDefaultBike().wheelCircumference)
+            Log.d(logTag, bikeWheelCircumference.toString())
+        }
     }
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP

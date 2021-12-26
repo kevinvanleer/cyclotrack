@@ -23,8 +23,8 @@
         android:summary="Collect heart rate, cadence, and speed sensor data during your rides" />
     <Preference
         app:key="@string/preference_key_bike_specs"
-        app:title="Bike specs"
-        app:summary="Help calculate speed and other metrics" />
+        app:title="Bikes"
+        app:summary="Track key information about your equipment" />
     <Preference
         app:key="@string/preferences_key_google_fit"
         app:title="@string/preferences_sync_with_google_fit_title"

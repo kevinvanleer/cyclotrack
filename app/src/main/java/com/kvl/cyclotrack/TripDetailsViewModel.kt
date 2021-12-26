@@ -12,6 +12,7 @@ import kotlin.math.abs
 @HiltViewModel
 class TripDetailsViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
+    private val bikeRepository: BikeRepository,
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
@@ -37,6 +38,9 @@ class TripDetailsViewModel @Inject constructor(
     lateinit var measurements: LiveData<Array<CriticalMeasurements>> private set
     lateinit var onboardSensors: LiveData<Array<OnboardSensors>> private set
     private lateinit var exportMeasurements: LiveData<Array<Measurements>>
+
+    suspend fun getBikeWheelCircumference(bikeId: Long) =
+        userCircumferenceToMeters(bikeRepository.get(bikeId).wheelCircumference) ?: 0f
 
     fun updateSplits() = viewModelScope.launch {
         val splits = splitRepository.getTripSplits(tripId)
