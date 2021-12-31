@@ -37,6 +37,18 @@ data class TripStats(
     val averageSpeed: Float?,
 )
 
+data class BikeTotals(
+    val bikeId: Long,
+    val distance: Double,
+    val duration: Double,
+    val count: Int,
+)
+
+data class DataBucket(
+    val bucket: Int,
+    val count: Int,
+)
+
 data class PeriodTotals(
     val period: String,
     val totalDistance: Double,
@@ -152,4 +164,10 @@ interface TripDao {
 
     @Query("select * from trip WHERE bikeId = :bikeId")
     fun getTripsForBike(bikeId: Long): Array<Trip>
+
+    @Query("select round(distance * :bucketFactor) as bucket, count(*) as count from trip group by bucket order by count desc")
+    fun getMostPopularDistances(bucketFactor: Double): LiveData<Array<DataBucket>>
+
+    @Query("select total(distance) as distance, total(duration) as duration, count(*) as count, bikeId from trip group by bikeId")
+    fun subscribeBikeTotals(): LiveData<Array<BikeTotals>>
 }

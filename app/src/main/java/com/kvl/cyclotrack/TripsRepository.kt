@@ -85,4 +85,5 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     fun observeMonthlyTotals(limit: Int) = tripDao.subscribeMonthlyTotals(limit)
     fun observeWeeklyTotals(limit: Int) = tripDao.subscribeWeeklyTotals(limit)
     fun getTripsForBike(bikeId: Long) = tripDao.getTripsForBike(bikeId)
+    fun observeBikeTotals() = tripDao.subscribeBikeTotals()
 }

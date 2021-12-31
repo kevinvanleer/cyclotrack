@@ -30,6 +30,9 @@ interface SplitDao {
         limit: Int
     ): LiveData<Split>
 
+    @Query("select *, totalDistance * 0.000621371 as miles, totalDistance/totalDuration as speed from split where round(miles) = :distance group by tripId order by speed desc limit :limit")
+    fun fastestDistance(distance: Int, limit: Int): LiveData<Split>
+
     @Query("DELETE FROM split WHERE tripId = :tripId")
     suspend fun removeTripSplits(tripId: Long)
 

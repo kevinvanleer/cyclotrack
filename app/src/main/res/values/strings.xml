@@ -108,4 +108,5 @@
     <string name="snackbar_message_cannot_delete_bike">Cannot delete, associated with rides</string>
     <string name="switch_preference_useAutoCircumference_title">Speed sensor GPS calibration</string>
     <string name="preference_bike_specs_isDefaultBike_description">This bike will be used for new rides.</string>
+    <string name="heading_placeholder">Heading placeholder</string>
 </resources>

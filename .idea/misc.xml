@@ -40,6 +40,7 @@
         <entry key="app/src/main/res/layout/view_discovered_sensor_list.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_spinner_options.xml" value="0.3415384615384615" />
         <entry key="app/src/main/res/layout/view_stat_view.xml" value="0.346875" />
+        <entry key="app/src/main/res/layout/view_table_card.xml" value="0.22407407407407406" />
         <entry key="app/src/main/res/layout/view_text_square.xml" value="1.0" />
         <entry key="app/src/main/res/layout/view_three_stat.xml" value="0.346875" />
         <entry key="app/src/main/res/layout/view_trip_summary_card_wrapper.xml" value="0.346875" />

@@ -25,4 +25,6 @@ class AnalyticsViewModel @Inject constructor(
     suspend fun getTripMeasurements(tripId: Long) = measurementsRepository.getCritical(tripId)
     suspend fun getTripTimeStates(tripId: Long) = timeStateRepository.getTimeStates(tripId)
 
+    val bikeTotals = tripsRepository.observeBikeTotals()
+
 }
