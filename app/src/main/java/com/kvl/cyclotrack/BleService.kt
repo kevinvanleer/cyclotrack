@@ -17,7 +17,7 @@ import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class HrmData(var batteryLevel: Byte?, var bpm: Short?)
+data class HrmData(val batteryLevel: Byte?, val bpm: Short?)
 
 data class SpeedData(
     val batteryLevel: Byte?,

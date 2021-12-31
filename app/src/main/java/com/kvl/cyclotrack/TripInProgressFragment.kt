@@ -458,7 +458,7 @@ class TripInProgressFragment :
                 topLeftView.label = "BPM"
                 topLeftView.value = hrm.bpm.toString()
             }
-            if (hrm.batteryLevel != null && hrm.batteryLevel!! < lowBatteryThreshold) topLeftView.extraInfo =
+            if (hrm.batteryLevel != null && hrm.batteryLevel < lowBatteryThreshold) topLeftView.extraInfo =
                 "${hrm.batteryLevel}%"
         })
 
