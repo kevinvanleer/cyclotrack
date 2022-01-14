@@ -7,12 +7,9 @@ import androidx.cardview.widget.CardView
 import com.kvl.cyclotrack.R
 
 class AnalyticsCard : CardView {
-    lateinit var heading: TextView
-        private set
-    lateinit var threeStat: ThreeStat
-        private set
-    lateinit var table: Table
-        private set
+    val heading: TextView
+    val threeStat: ThreeStat
+    val table: Table
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
