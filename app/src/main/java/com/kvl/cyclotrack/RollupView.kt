@@ -12,28 +12,26 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
     lateinit var totalDurationView: TextView
     lateinit var inspiringMessageView: TextView
 
-    fun rollupTripData(trips: Array<Trip>) {
+    fun applyTotals(totals: TripAggregation) {
         var distanceText = "Welcome to"
         var durationText = "Cyclotrack"
         var inspiringMessage =
             context.getString(R.string.initial_inspiring_message)
 
-        if (!trips.isNullOrEmpty()) {
-            var totalDistance = 0.0
-            var totalDuration = 0.0
+        with(totals) {
+            if (tripCount > 0) {
+                distanceText = String.format(
+                    "%.2f %s",
+                    getUserDistance(context, totalDistance),
+                    getUserDistanceUnitLong(context)
+                )
+                durationText = formatDuration(totalDuration)
 
-            trips.forEach { trip ->
-                totalDistance += trip.distance ?: 0.0
-                totalDuration += trip.duration ?: 0.0
+                inspiringMessage =
+                    getInspiringMessage(SystemUtils.currentTimeMillis() - lastStart)
             }
-            distanceText = String.format("%.2f %s",
-                getUserDistance(context, totalDistance),
-                getUserDistanceUnitLong(context))
-            durationText = formatDuration(totalDuration)
-
-            inspiringMessage =
-                getInspiringMessage(SystemUtils.currentTimeMillis() - trips.first().timestamp)
         }
+       
         totalDistanceView.text = distanceText
         totalDurationView.text = durationText
         inspiringMessageView.text = inspiringMessage

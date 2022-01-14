@@ -11,6 +11,13 @@ class AnalyticsCard : CardView {
     val threeStat: ThreeStat
     val table: Table
 
+    init {
+        inflate(context, R.layout.view_analytics_card, this)
+        heading = findViewById(R.id.analyticsCard_heading)
+        threeStat = findViewById(R.id.analyticsCard_threeStat)
+        table = findViewById(R.id.analyticsCard_table)
+    }
+
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(
@@ -18,11 +25,4 @@ class AnalyticsCard : CardView {
         attrs,
         defStyle
     )
-
-    init {
-        inflate(context, R.layout.view_analytics_card, this)
-        heading = findViewById(R.id.analyticsCard_heading)
-        threeStat = findViewById(R.id.analyticsCard_threeStat)
-        table = findViewById(R.id.analyticsCard_table)
-    }
 }

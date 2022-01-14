@@ -80,8 +80,11 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     suspend fun getGoogleFitDirty() = tripDao.loadGoogleFitDirtyTrips()
 
     fun longestTrips(limit: Int = 10) = tripDao.longestTrips(limit)
+    fun mostPopularDistances(conversionFactor: Double, limit: Int = 3) =
+        tripDao.getMostPopularDistances(conversionFactor, limit)
 
     fun observeTripTotals(start: Long, end: Long) = tripDao.subscribeTotals(start, end)
+    fun observeTripTotals() = tripDao.subscribeTotals()
     fun observeMonthlyTotals(limit: Int) = tripDao.subscribeMonthlyTotals(limit)
     fun observeWeeklyTotals(limit: Int) = tripDao.subscribeWeeklyTotals(limit)
     fun getTripsForBike(bikeId: Long) = tripDao.getTripsForBike(bikeId)

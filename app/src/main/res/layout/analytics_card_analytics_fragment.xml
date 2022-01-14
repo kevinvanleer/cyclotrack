@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.kvl.cyclotrack.widgets.AnalyticsCard xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="10dp"
+    android:layout_marginBottom="20dp"
+    app:contentPadding="10dp"
+    app:cardCornerRadius="8dp" />

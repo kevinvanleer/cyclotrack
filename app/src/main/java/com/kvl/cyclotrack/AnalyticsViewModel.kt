@@ -2,22 +2,22 @@ package com.kvl.cyclotrack
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
+    private val splitRepository: SplitRepository,
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository
 ) : ViewModel() {
-    val allTrips = tripsRepository.observeAll()
-    fun recentTrips(start: Long, end: Long = Instant.now().toEpochMilli()) =
+    val realTrips = tripsRepository.observeRealTrips()
+    fun recentTrips(start: Long, end: Long) =
         tripsRepository.observeDateRange(start, end)
 
     fun longestTrips(limit: Int = 3) = tripsRepository.longestTrips(limit)
-    fun tripTotals(start: Long, end: Long = Instant.now().toEpochMilli()) =
-        tripsRepository.observeTripTotals(start, end)
+    fun tripTotals(start: Long, end: Long) = tripsRepository.observeTripTotals(start, end)
+    val tripTotals = tripsRepository.observeTripTotals()
 
     fun monthlyTotals() = tripsRepository.observeMonthlyTotals(3)
     fun weeklyTotals() = tripsRepository.observeWeeklyTotals(3)
@@ -26,5 +26,10 @@ class AnalyticsViewModel @Inject constructor(
     suspend fun getTripTimeStates(tripId: Long) = timeStateRepository.getTimeStates(tripId)
 
     val bikeTotals = tripsRepository.observeBikeTotals()
+    fun popularDistances(conversionFactor: Double, limit: Int = 3) =
+        tripsRepository.mostPopularDistances(conversionFactor, limit)
+
+    fun fastestDistance(distance: Int, conversionFactor: Double, limit: Int = 3) =
+        splitRepository.observeFastestDistance(distance, conversionFactor, limit)
 
 }

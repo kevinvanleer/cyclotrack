@@ -1,11 +1,11 @@
 package com.kvl.cyclotrack
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -13,12 +13,16 @@ import androidx.navigation.findNavController
 import androidx.navigation.navGraphViewModels
 import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
-import com.kvl.cyclotrack.widgets.*
+import com.kvl.cyclotrack.widgets.AnalyticsCard
+import com.kvl.cyclotrack.widgets.TableColumn
+import com.kvl.cyclotrack.widgets.ThreeStat
+import com.kvl.cyclotrack.widgets.WeeklySummaryTable
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.roundToInt
@@ -28,7 +32,7 @@ import kotlin.math.roundToInt
 class AnalyticsFragment : Fragment() {
     private val logTag = AnalyticsFragment::class.simpleName
 
-    fun initializeWeeklySummaryData(startDay: Instant): MutableList<DailySummary> {
+    private fun initializeWeeklySummaryData(startDay: Instant): MutableList<DailySummary> {
         val summaries = mutableListOf<DailySummary>()
         (0..6).forEach {
             summaries.add(
@@ -46,78 +50,100 @@ class AnalyticsFragment : Fragment() {
     }
     private lateinit var rollupView: RollupView
     private lateinit var thisWeekSummaryTable: WeeklySummaryTable
-    private lateinit var longestTrips: TripTable
     private lateinit var spotlightTripCard: TripSummaryCard
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_analytics, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        rollupView = view.findViewById(R.id.trips_rollup)
-        spotlightTripCard = view.findViewById(R.id.fragmentAnalytics_spotlightRide)
-        spotlightTripCard.visibility = View.GONE
-        Log.d(logTag, "inflate spotlight")
-        viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
-            rollupView.rollupTripData(trips)
-            doSpotlightRide(trips.find { !it.inProgress })
-        })
-
-        viewModel.bikeTotals.observe(viewLifecycleOwner, { bikes ->
-            if (bikes != null && bikes.size > 1) {
-                doBikeTotals(view, bikes)
-            }
-        })
-
-        doWeeklySummary(view)
-        doTopWeeks(view)
-        doMonthlyTotals(view)
-        doTopMonths(view)
-        doAnnualTotals(view)
-        doTopRides(view)
+    private lateinit var spotlightTripHeading: TextView
+    private lateinit var topLinearLayout: LinearLayout
 
 
-    }
-
-    private fun doBikeTotals(view: View, bikes: Array<BikeTotals>) {
-        view.findViewById<LinearLayout>(R.id.fragmentAnalytics_topLinearLayout).apply {
-            addView(
+    private fun insertAnalyticsCard(
+        parentLayout: LinearLayout = topLinearLayout,
+        id: Int,
+        position: Int = -1,
+        initializeCardFun: AnalyticsCard.() -> Unit,
+    ) {
+        parentLayout.apply {
+            findViewById<AnalyticsCard>(id)?.apply(initializeCardFun) ?: addView(
                 (LayoutInflater.from(context).inflate(
-                    R.layout.view_analytics_card,
-                    this, false
-                ) as AnalyticsCard).apply {
-                    heading.text = "Bike totals"
-                    threeStat.visibility = View.GONE
-                    table.apply {
-                        columns = listOf(
-                            TableColumn(id = "bikeName", label = "BIKE"),
-                            TableColumn(id = "count", label = "RIDES"),
-                            TableColumn(id = "distance", label = "DISTANCE"),
-                            TableColumn(id = "duration", label = "DURATION"),
-                        )
-                        populate(bikes.map {
-                            listOf(
-                                it.bikeId.toString(),
-                                it.count.toString(),
-                                "%.1f %s".format(
-                                    getUserDistance(context, it.distance),
-                                    getUserDistanceUnitShort(context)
-                                ),
-                                formatDuration(it.duration),
-                            )
-                        })
-                    }
+                    R.layout.analytics_card_analytics_fragment,
+                    this,
+                    false
+                ) as AnalyticsCard)
+                    .apply(initializeCardFun).apply { this.id = id }, position
+            )
+        }
+    }
+
+    private fun insertPrCard(
+        view: View,
+        id: Int,
+        position: Int = -1,
+        initializeCardFun: AnalyticsCard.() -> Unit,
+    ) = insertAnalyticsCard(
+        view.findViewById(R.id.fragmentAnalytics_prLinearLayout),
+        id,
+        position,
+        initializeCardFun
+    )
+
+    private fun buildPeriodTotalsTable(
+        analyticsCard: AnalyticsCard,
+        periodTotals: Array<PeriodTotals>,
+        headingText: String,
+        periodHeaderText: String,
+    ) {
+        analyticsCard.apply {
+            heading.text = headingText
+            threeStat.visibility = View.GONE
+            table.apply {
+                columns = listOf(
+                    TableColumn(id = "period", label = periodHeaderText),
+                    TableColumn(id = "count", label = "RIDES"),
+                    TableColumn(id = "distance", label = "DISTANCE"),
+                    TableColumn(id = "duration", label = "DURATION"),
+                )
+                populate(periodTotals.map {
+                    listOf(
+                        it.period,
+                        it.tripCount.toString(),
+                        "%.1f %s".format(
+                            getUserDistance(context, it.totalDistance),
+                            getUserDistanceUnitShort(context)
+                        ),
+                        formatDuration(it.totalDuration),
+                    )
                 })
+            }
+        }
+    }
+
+    private fun doBikeTotals(bikes: Array<BikeTotals>) {
+        insertAnalyticsCard(id = "Bike totals".hashCode()) {
+            heading.text = "Bike totals"
+            threeStat.visibility = View.GONE
+            table.apply {
+                columns = listOf(
+                    TableColumn(id = "bikeName", label = "BIKE"),
+                    TableColumn(id = "count", label = "RIDES"),
+                    TableColumn(id = "distance", label = "DISTANCE"),
+                    TableColumn(id = "duration", label = "DURATION"),
+                )
+                populate(bikes.map {
+                    listOf(
+                        it.name,
+                        it.count.toString(),
+                        "%.1f %s".format(
+                            getUserDistance(context, it.distance),
+                            getUserDistanceUnitShort(context)
+                        ),
+                        formatDuration(it.duration),
+                    )
+                })
+            }
         }
     }
 
     private fun doSpotlightRide(trip: Trip?) {
-        Log.d(logTag, "doSpotlightRide")
+        spotlightTripHeading.visibility = if (trip == null) View.GONE else View.VISIBLE
         spotlightTripCard.apply {
             if (trip == null) visibility = View.GONE
             else {
@@ -171,8 +197,10 @@ class AnalyticsFragment : Fragment() {
             ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner, {
-            view.findViewById<ThreeStat>(R.id.fragmentAnalytics_threeStat_thisYear).apply {
-                populate(
+            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear).apply {
+                table.visibility = View.GONE
+                heading.text = "This year"
+                threeStat.populate(
                     arrayOf(
                         Pair("RIDES", it.tripCount.toString()),
                         Pair(
@@ -201,8 +229,10 @@ class AnalyticsFragment : Fragment() {
             ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner, {
-            view.findViewById<ThreeStat>(R.id.fragmentAnalytics_threeStat_thisMonth).apply {
-                populate(
+            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
+                table.visibility = View.GONE
+                heading.text = "This month"
+                threeStat.populate(
                     arrayOf(
                         Pair("RIDES", it.tripCount.toString()),
                         Pair(
@@ -220,58 +250,46 @@ class AnalyticsFragment : Fragment() {
         })
     }
 
-    private fun doTopMonths(view: View) {
-        viewModel.monthlyTotals().observe(viewLifecycleOwner, {
-            view.findViewById<Table>(R.id.fragmentAnalytics_topMonthlyTrips).apply {
-                columns = listOf(
-                    TableColumn(id = "period", label = "MONTH"),
-                    TableColumn(id = "count", label = "RIDES"),
-                    TableColumn(id = "distance", label = "DISTANCE"),
-                    TableColumn(id = "duration", label = "DURATION"),
-                )
-                populate(it.map {
-                    listOf(
-                        it.period,
-                        it.tripCount.toString(),
-                        "%.1f %s".format(
-                            getUserDistance(context, it.totalDistance),
-                            getUserDistanceUnitShort(context)
-                        ),
-                        formatDuration(it.totalDuration),
-                    )
-                })
-            }
-        })
-    }
-
-    private fun doTopRides(view: View) {
-        longestTrips = view.findViewById(R.id.fragmentAnalytics_longestTrips)
-        viewModel.longestTrips(3)
-            .observe(viewLifecycleOwner, { trips -> longestTrips.populate(trips) })
-    }
-
     private fun doTopWeeks(view: View) {
-        viewModel.weeklyTotals().observe(viewLifecycleOwner, {
-            view.findViewById<Table>(R.id.fragmentAnalytics_topWeeklyTrips).apply {
+        viewModel.weeklyTotals().observe(viewLifecycleOwner, { totals ->
+            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_topWeeks).apply {
+                buildPeriodTotalsTable(this, totals, "Top weeks", "WEEK")
+            }
+        })
+    }
+
+    private fun doTopMonths(view: View) {
+        viewModel.monthlyTotals().observe(viewLifecycleOwner, { totals ->
+            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_topMonths).apply {
+                buildPeriodTotalsTable(this, totals, "Top months", "MONTH")
+            }
+        })
+    }
+
+    private fun doLongestRides(view: View, trips: Array<Trip>) {
+        view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_longestRides).apply {
+            heading.text = "Longest rides"
+            threeStat.visibility = View.GONE
+            table.apply {
                 columns = listOf(
-                    TableColumn(id = "period", label = "WEEK"),
-                    TableColumn(id = "count", label = "RIDES"),
+                    TableColumn(id = "date", label = "DATE"),
                     TableColumn(id = "distance", label = "DISTANCE"),
                     TableColumn(id = "duration", label = "DURATION"),
                 )
-                populate(it.map {
+                populate(trips.map {
                     listOf(
-                        it.period,
-                        it.tripCount.toString(),
+                        Instant.ofEpochMilli(it.timestamp)
+                            .atZone(ZoneId.systemDefault())
+                            .format(DateTimeFormatter.ISO_LOCAL_DATE),
                         "%.1f %s".format(
-                            getUserDistance(context, it.totalDistance),
+                            getUserDistance(context, it.distance!!),
                             getUserDistanceUnitShort(context)
                         ),
-                        formatDuration(it.totalDuration),
+                        formatDuration(it.duration!!),
                     )
                 })
             }
-        })
+        }
     }
 
     private fun doWeeklySummary(view: View) {
@@ -336,5 +354,113 @@ class AnalyticsFragment : Fragment() {
                         thisWeekSummaryTable.populate(summaryData.toTypedArray())
                     })
             }
+    }
+
+    private fun doPopularRides(view: View) {
+        val conversionFactor = getUserDistance(requireContext(), 1.0)
+        viewModel.popularDistances(conversionFactor, 3)
+            .observe(viewLifecycleOwner, { buckets ->
+                buckets.forEach { distance ->
+                    if (distance.count >= 3) viewModel.fastestDistance(
+                        distance.bucket,
+                        conversionFactor,
+                        -1
+                    )
+                        .observe(viewLifecycleOwner, { splits ->
+                            val headingText =
+                                "${distance.bucket} ${getUserDistanceUnitShort(view.context)} PR"
+                            insertPrCard(view, headingText.hashCode()) {
+                                heading.text = headingText
+                                threeStat
+                                    .apply {
+                                        populate(
+                                            arrayOf(
+                                                Pair("RIDES", splits.size.toString()),
+                                                Pair(
+                                                    getUserDistanceUnitShort(requireContext()).uppercase(),
+                                                    getUserDistance(
+                                                        requireContext(),
+                                                        splits.map { it.totalDistance }.sum()
+                                                    ).roundToInt()
+                                                        .toString()
+                                                ),
+                                                Pair(
+                                                    "HOURS",
+                                                    formatDurationHours(
+                                                        splits.map { it.totalDuration }.sum()
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    }
+                                table.apply {
+                                    columns = listOf(
+                                        TableColumn(id = "date", label = "DATE"),
+                                        TableColumn(id = "speed", label = "SPEED"),
+                                        TableColumn(id = "duration", label = "DURATION"),
+                                    )
+                                    populate(splits.slice(IntRange(0, 2)).map { split ->
+                                        listOf(
+                                            Instant.ofEpochMilli(split.timestamp)
+                                                .atZone(ZoneId.systemDefault())
+                                                .format(DateTimeFormatter.ISO_LOCAL_DATE),
+                                            "%.1f %s".format(
+                                                getUserSpeed(
+                                                    context,
+                                                    split.totalDistance / split.totalDuration
+                                                ),
+                                                getUserSpeedUnitShort(context)
+                                            ),
+                                            formatDuration(split.totalDuration),
+                                        )
+                                    })
+                                }
+                            }
+                        })
+                }
+            })
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_analytics, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        topLinearLayout = view.findViewById(R.id.fragmentAnalytics_topLinearLayout)
+        rollupView = view.findViewById(R.id.trips_rollup)
+        spotlightTripCard = view.findViewById(R.id.fragmentAnalytics_spotlightRide)
+        spotlightTripHeading = view.findViewById(R.id.fragmentAnalytics_spotlightRideHeading)
+
+        viewModel.tripTotals
+            .observe(viewLifecycleOwner, { totals -> rollupView.applyTotals(totals) })
+
+        viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
+            doSpotlightRide(trips.find { !it.inProgress })
+        })
+
+        doWeeklySummary(view)
+        doMonthlyTotals(view)
+        doAnnualTotals(view)
+
+        doTopWeeks(view)
+        doTopMonths(view)
+
+        doPopularRides(view)
+
+        viewModel.longestTrips(3)
+            .observe(viewLifecycleOwner, { trips -> doLongestRides(view, trips) })
+
+        viewModel.bikeTotals.observe(viewLifecycleOwner, { bikes ->
+            if (bikes != null && bikes.size > 1) {
+                doBikeTotals(bikes)
+            }
+        })
+
+
     }
 }

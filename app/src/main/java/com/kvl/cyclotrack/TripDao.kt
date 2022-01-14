@@ -38,7 +38,7 @@ data class TripStats(
 )
 
 data class BikeTotals(
-    val bikeId: Long,
+    val name: String,
     val distance: Double,
     val duration: Double,
     val count: Int,
@@ -60,6 +60,8 @@ data class TripAggregation(
     val totalDistance: Double,
     val totalDuration: Double,
     val tripCount: Int,
+    val firstStart: Long,
+    val lastStart: Long,
 )
 
 data class Biometrics(
@@ -117,7 +119,7 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE id > :tripId ORDER BY id DESC")
     suspend fun loadAfter(tripId: Long): Array<Trip>
 
-    @Query("SELECT * FROM trip WHERE timestamp >= :start and timestamp < :end ORDER BY timestamp ASC")
+    @Query("SELECT * FROM trip WHERE timestamp >= :start and timestamp < :end and distance > 1 AND duration > 60 ORDER BY timestamp ASC")
     fun subscribeDateRange(start: Long, end: Long): LiveData<Array<Trip>>
 
     @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 0 and inProgress = 0 ORDER BY id DESC")
@@ -129,7 +131,7 @@ interface TripDao {
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun subscribeRealTrips(): LiveData<Array<Trip>>
 
-    @Query("SELECT * from trip ORDER BY distance DESC LIMIT :limit")
+    @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY distance DESC LIMIT :limit")
     fun longestTrips(limit: Int): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
@@ -144,13 +146,16 @@ interface TripDao {
     @Query("SELECT id,userSex,userWeight,userHeight,userAge,userVo2max,userRestingHeartRate,userMaxHeartRate from trip where timestamp = (SELECT min(timestamp) from trip where userWeight is not null and id >= :tripId)")
     suspend fun getDefaultBiometrics(tripId: Long): Biometrics?
 
-    @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip where timestamp >= :start and timestamp < :end")
+    @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount, min(timestamp) as firstStart, max(timestamp) as lastStart from trip where timestamp >= :start and timestamp < :end and distance > 1 AND duration > 60")
     fun subscribeTotals(start: Long, end: Long): LiveData<TripAggregation>
 
-    @Query("select strftime('%Y-%m-%d',  datetime(round(timestamp/1000),'unixepoch','localtime','start of day','weekday 6', '-6 day') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip  group by period order by totalDistance desc limit :limit")
+    @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount, min(timestamp) as firstStart, max(timestamp) as lastStart from trip where distance > 1 AND duration > 60")
+    fun subscribeTotals(): LiveData<TripAggregation>
+
+    @Query("select strftime('%Y-%m-%d',  datetime(round(timestamp/1000),'unixepoch','localtime','start of day','weekday 6', '-6 day') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip WHERE distance > 1 AND duration > 60 group by period order by totalDistance desc limit :limit")
     fun subscribeWeeklyTotals(limit: Int): LiveData<Array<PeriodTotals>>
 
-    @Query("select strftime('%Y-%m',  datetime(round(timestamp/1000),'unixepoch','localtime') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip  group by period order by totalDistance desc limit :limit")
+    @Query("select strftime('%Y-%m',  datetime(round(timestamp/1000),'unixepoch','localtime') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip  WHERE distance > 1 AND duration > 60 group by period order by totalDistance desc limit :limit")
     fun subscribeMonthlyTotals(limit: Int): LiveData<Array<PeriodTotals>>
 
     @Delete(entity = Trip::class)
@@ -165,9 +170,12 @@ interface TripDao {
     @Query("select * from trip WHERE bikeId = :bikeId")
     fun getTripsForBike(bikeId: Long): Array<Trip>
 
-    @Query("select round(distance * :bucketFactor) as bucket, count(*) as count from trip group by bucket order by count desc")
-    fun getMostPopularDistances(bucketFactor: Double): LiveData<Array<DataBucket>>
+    @Query("select round(distance * :bucketFactor) as bucket, count(*) as count from trip group by bucket order by count desc limit :limit")
+    fun getMostPopularDistances(bucketFactor: Double, limit: Int): LiveData<Array<DataBucket>>
 
-    @Query("select total(distance) as distance, total(duration) as duration, count(*) as count, bikeId from trip group by bikeId")
+    @Query("select * from trip where round(distance * :bucketFactor) = :distance order by averageSpeed desc limit :limit")
+    fun getTripsOfDistance(distance: Int, bucketFactor: Double, limit: Int): LiveData<Array<Trip>>
+
+    @Query("select total(distance) as distance, total(duration) as duration, count(*) as count, ifnull(bike.name, 'Bike ' || bike.id) name from trip LEFT OUTER JOIN bike on bike.id = bikeId group by bikeId order by distance desc")
     fun subscribeBikeTotals(): LiveData<Array<BikeTotals>>
 }
