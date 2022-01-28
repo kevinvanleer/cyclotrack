@@ -26,7 +26,7 @@ android {
             keyAlias "androiddebugkey"
         }
     }
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.kvl.cyclotrack"
