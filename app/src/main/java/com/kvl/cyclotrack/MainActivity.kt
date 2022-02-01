@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<FloatingActionButton>(R.id.fab).apply {
             isEnabled = false
             visibility = View.INVISIBLE
-            viewModel.latestTrip.observe(this@MainActivity, { trip: Trip? ->
+            viewModel.latestTrip.observe(this@MainActivity) { trip: Trip? ->
                 startTripHandler = {
                     findNavController(R.id.nav_host_fragment).navigate(
                         TripSummariesFragmentDirections.actionStartTrip(
@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity() {
                 isEnabled = true
                 visibility = View.VISIBLE
                 setOnClickListener(handleFabClick())
-            })
+            }
         }
     }
 
