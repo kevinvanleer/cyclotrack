@@ -156,6 +156,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
         Log.d(logTag, "onCreate")
         title = ""
@@ -166,7 +167,6 @@ class MainActivity : AppCompatActivity() {
             else -> setContentView(R.layout.activity_main)
         }
         setSupportActionBar(findViewById(R.id.toolbar))
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         googleFitApiService = GoogleFitApiService(this)
 
         findViewById<BottomNavigationView>(R.id.main_activity_bottom_menu).setupWithNavController(
