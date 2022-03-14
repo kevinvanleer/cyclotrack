@@ -144,11 +144,9 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
 
     private fun onLinkedItemSelected(checked: Boolean, position: Int, device: ExternalSensor) {
         Log.d(logTag, "onLinkedItemSelected; position: ${position}")
-        when (checked) {
-            false -> {
-                Log.d(logTag, "Removing device from linked list")
-                viewModel.removeFromSelectedDevices(device)
-            }
+        if (!checked) {
+            Log.d(logTag, "Removing device from linked list")
+            viewModel.removeFromSelectedDevices(device)
         }
     }
 
@@ -332,7 +330,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
                 savedRecyclerView.visibility = View.GONE
                 noSavedDevicesMessage.visibility = View.VISIBLE
             }
-            false -> {
+            else -> {
                 savedRecyclerView.visibility = View.VISIBLE
                 noSavedDevicesMessage.visibility = View.GONE
             }
