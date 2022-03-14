@@ -1,25 +1,29 @@
 package com.kvl.cyclotrack
 
-import android.bluetooth.BluetoothAdapter
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
-import android.content.SharedPreferences
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 @HiltViewModel
-class DiscoverSensorViewModel @Inject constructor(private val sharedPreferences: SharedPreferences) :
+class DiscoverSensorViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context
+) :
     ViewModel() {
-    val TAG = "DiscoverSensorViewModel"
+    private val logTag = "DiscoverSensorViewModel"
     val bleDevices = MutableLiveData<Array<ExternalSensor>>()
     val selectedDevices = MutableLiveData<Set<ExternalSensor>>()
     private val bluetoothLeScanner: BluetoothLeScanner? =
-        BluetoothAdapter.getDefaultAdapter().bluetoothLeScanner
+        (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
 
     fun addToSelectedDevices(device: ExternalSensor) {
         val newSelection = selectedDevices.value?.toMutableSet() ?: ArrayList()
@@ -35,19 +39,25 @@ class DiscoverSensorViewModel @Inject constructor(private val sharedPreferences:
 
     private val scanDevicesCallback: ScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
-            when (result.device.type) {
-                BluetoothDevice.DEVICE_TYPE_LE, BluetoothDevice.DEVICE_TYPE_DUAL -> {
-                    Log.d(TAG,
-                        "Found device ${result.device.name}, ${result.device.type}: ${result.device}")
-                    ExternalSensor(result.device).let { sensor ->
-                        if (bleDevices.value?.contains(sensor) == false) {
-                            bleDevices.value?.toMutableList()?.let { list ->
-                                list.add(0, sensor)
-                                bleDevices.value = list.toTypedArray()
+            try {
+                when (result.device.type) {
+                    BluetoothDevice.DEVICE_TYPE_LE, BluetoothDevice.DEVICE_TYPE_DUAL -> {
+                        Log.d(
+                            logTag,
+                            "Found device ${result.device.name}, ${result.device.type}: ${result.device}"
+                        )
+                        ExternalSensor(result.device).let { sensor ->
+                            if (bleDevices.value?.contains(sensor) == false) {
+                                bleDevices.value?.toMutableList()?.let { list ->
+                                    list.add(0, sensor)
+                                    bleDevices.value = list.toTypedArray()
+                                }
                             }
                         }
                     }
                 }
+            } catch (e: SecurityException) {
+                Log.w(logTag, "Bluetooth permissions have not been granted", e)
             }
         }
     }
@@ -67,9 +77,17 @@ class DiscoverSensorViewModel @Inject constructor(private val sharedPreferences:
             bleDevices.value = arrayOf()
         }
 
-        if (BleService.isBluetoothEnabled()) bluetoothLeScanner?.startScan(scanDevicesCallback)
+        try {
+            if (BleService.isBluetoothEnabled(appContext)) bluetoothLeScanner?.startScan(
+                scanDevicesCallback
+            )
+        } catch (e: SecurityException) {
+            Log.w(logTag, "Bluetooth permissions have not been granted", e)
+            throw SecurityException("Bluetooth scan permission has not been granted")
+        }
     }
 
+    @SuppressLint("MissingPermission")
     fun stopScan() = bluetoothLeScanner?.stopScan(scanDevicesCallback)
     override fun onCleared() {
         stopScan()

@@ -77,10 +77,10 @@ data class Biometrics(
 
 @Dao
 interface TripDao {
-    @Insert()
+    @Insert
     fun save(trip: Trip): Long
 
-    @Update()
+    @Update
     fun update(vararg trips: Trip)
 
     @Update(entity = Trip::class)
@@ -111,7 +111,7 @@ interface TripDao {
     suspend fun load(tripId: Long): Trip
 
     @Query("SELECT * from trip ORDER BY id DESC")
-    fun susbscribeAll(): LiveData<Array<Trip>>
+    fun subscribeAll(): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip ORDER BY id DESC")
     suspend fun loadAll(): Array<Trip>

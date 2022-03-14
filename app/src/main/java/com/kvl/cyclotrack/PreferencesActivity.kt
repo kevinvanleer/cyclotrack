@@ -6,9 +6,11 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
+import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
 import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
 
 @AndroidEntryPoint
 class PreferencesActivity : AppCompatActivity() {
@@ -46,5 +48,23 @@ class PreferencesActivity : AppCompatActivity() {
                 "Google permission request failed ${resultCode}"
             )
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d(this.javaClass.simpleName, "onStart")
+        EventBus.getDefault().register(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        Log.d(this.javaClass.simpleName, "onStop")
+        EventBus.getDefault().unregister(this)
+    }
+    
+    @Subscribe
+    fun onBluetoothActionEvent(event: BluetoothActionEvent) {
+        Log.d(this.javaClass.simpleName, "Show enable bluetooth dialog")
+        startActivity(Intent(event.action))
     }
 }
