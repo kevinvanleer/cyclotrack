@@ -49,13 +49,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 
 @AndroidEntryPoint
 class TripDetailsFragment : Fragment(), View.OnTouchListener {
     val logTag = "TripDetailsFragment"
+    val xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
     private var startHeight: Int = 0
     private var startY: Float = 0.0f
@@ -76,13 +76,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var googleFitSyncStatus: GoogleFitSyncStatusEnum
 
     private val requestCreateExport =
-        registerForActivityResult(ActivityResultContracts.CreateDocument()) { uri ->
+        registerForActivityResult(ActivityResultContracts.CreateDocument(xlsxMime)) { uri ->
             if (uri != null) {
-                exportTripData(requireContext().contentResolver, uri)
+                exportTripData(requireContext().contentResolver, uri, xlsxMime)
             }
         }
 
-    private fun exportTripData(contentResolver: ContentResolver, uri: Uri) {
+    private fun exportTripData(contentResolver: ContentResolver, uri: Uri, mime: String) {
         fun getUriFilePart(): String? {
             val result = uri.path
             val cut = result!!.lastIndexOf('/')
@@ -139,12 +139,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             exportData)
                         exporter.removeObserver(this)
 
-                        //val exportMimeType = "application/zip"
-                        val exportMimeType =
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         val viewFileIntent = Intent().apply {
                             action = Intent.ACTION_VIEW
-                            setDataAndType(uri, exportMimeType)
+                            setDataAndType(uri, mime)
                             flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
                                     Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
                         }
@@ -156,7 +153,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         val chooserIntent = Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
                             putExtra(Intent.EXTRA_STREAM, uri)
-                            setDataAndType(uri, exportMimeType)
+                            setDataAndType(uri, mime)
                             flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
                         }, "title")
                         val sharePendingIntent = PendingIntent.getActivity(requireContext(),
