@@ -8,7 +8,6 @@ import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.util.DisplayMetrics
 import android.util.Log
 import android.util.TypedValue
 import android.view.*
@@ -1322,14 +1321,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     }
 
     private fun adjustMap(event: MotionEvent?): Boolean {
-        val displayMetrics = DisplayMetrics()
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-            activity?.display?.getRealMetrics(displayMetrics)
-        } else {
-            @Suppress("DEPRECATION")
-            activity?.windowManager?.defaultDisplay?.getMetrics(displayMetrics)
-        }
-
         val newHeight =
             (startHeight + (event?.rawY ?: startY) - startY).toInt()
 
