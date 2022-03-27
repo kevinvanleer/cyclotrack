@@ -14,8 +14,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.math.*
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 fun getDistance(
     curr: Measurements,
@@ -373,25 +375,29 @@ fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
 fun getUserSpeed(context: Context, speed: Double): Float =
     getUserSpeed(context, speed.toFloat())
 
-fun getUserSpeed(context: Context, speed: Float): Float {
-    val userConversionFactor =
-        when (getSystemOfMeasurement(context)) {
-            "1" -> METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
-            "2" -> METERS_TO_KM / SECONDS_TO_HOURS
-            else -> 1.0
-        }
-    return (speed * userConversionFactor).toFloat()
-}
+fun getUserSpeed(systemOfMeasurement: String?, speed: Double): Float =
+    getUserSpeed(systemOfMeasurement, speed.toFloat())
 
-fun getUserDistance(context: Context, meters: Double): Double {
-    val userConversionFactor =
-        when (getSystemOfMeasurement(context)) {
-            "1" -> METERS_TO_FEET * FEET_TO_MILES
-            "2" -> METERS_TO_KM
-            else -> 1.0
-        }
-    return meters * userConversionFactor
-}
+fun getUserSpeed(context: Context, speed: Float): Float =
+    getUserSpeed(getSystemOfMeasurement(context), speed)
+
+fun getUserSpeed(systemOfMeasurement: String?, speed: Float): Float =
+    (when (systemOfMeasurement) {
+        "1" -> METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS
+        "2" -> METERS_TO_KM / SECONDS_TO_HOURS
+        else -> 1.0
+    } * speed).toFloat()
+
+fun getUserDistance(context: Context, meters: Double): Double = getUserDistance(
+    getSystemOfMeasurement(context), meters
+)
+
+fun getUserDistance(systemOfMeasurement: String?, meters: Double): Double =
+    when (systemOfMeasurement) {
+        "1" -> METERS_TO_FEET * FEET_TO_MILES
+        "2" -> METERS_TO_KM
+        else -> 1.0
+    } * meters
 
 fun getUserLength(context: Context, meters: Double): Double {
     val userConversionFactor =
@@ -462,13 +468,16 @@ fun getUserAltitude(context: Context, meters: Double): Double {
     return meters * userConversionFactor
 }
 
-fun getUserDistanceUnitShort(context: Context): String {
-    return when (getSystemOfMeasurement(context)) {
+fun getUserDistanceUnitShort(context: Context): String = getUserDistanceUnitShort(
+    getSystemOfMeasurement(context)
+)
+
+fun getUserDistanceUnitShort(systemOfMeasurement: String?): String =
+    when (systemOfMeasurement) {
         "1" -> "mi"
         "2" -> "km"
         else -> "mi"
     }
-}
 
 fun getUserDistanceUnitLong(context: Context): String {
     return when (getSystemOfMeasurement(context)) {
@@ -478,13 +487,19 @@ fun getUserDistanceUnitLong(context: Context): String {
     }
 }
 
-fun getUserSpeedUnitShort(context: Context): String {
-    return when (getSystemOfMeasurement(context)) {
+fun getUserSpeedUnitShort(context: Context): String =
+    when (getSystemOfMeasurement(context)) {
         "1" -> "mph"
         "2" -> "km/h"
         else -> "mph"
     }
-}
+
+fun getUserSpeedUnitShort(systemOfMeasurement: String?): String =
+    when (systemOfMeasurement) {
+        "1" -> "mph"
+        "2" -> "km/h"
+        else -> "mph"
+    }
 
 fun getUserSpeedUnitLong(context: Context): String {
     return when (getSystemOfMeasurement(context)) {

@@ -13,10 +13,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.navGraphViewModels
 import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
-import com.kvl.cyclotrack.widgets.AnalyticsCard
-import com.kvl.cyclotrack.widgets.TableColumn
-import com.kvl.cyclotrack.widgets.ThreeStat
-import com.kvl.cyclotrack.widgets.WeeklySummaryTable
+import com.kvl.cyclotrack.widgets.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -53,6 +50,7 @@ class AnalyticsFragment : Fragment() {
     private lateinit var spotlightTripCard: TripSummaryCard
     private lateinit var spotlightTripHeading: TextView
     private lateinit var topLinearLayout: LinearLayout
+    private var systemOfMeasurement: String? = null
 
 
     private fun insertAnalyticsCard(
@@ -196,7 +194,7 @@ class AnalyticsFragment : Fragment() {
                 TemporalAdjusters.lastDayOfYear()
             ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
                 .toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner, {
+        ).observe(viewLifecycleOwner) {
             view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear).apply {
                 table.visibility = View.GONE
                 heading.text = "This year"
@@ -215,7 +213,7 @@ class AnalyticsFragment : Fragment() {
                     )
                 )
             }
-        })
+        }
     }
 
     private fun doMonthlyTotals(view: View) {
@@ -228,7 +226,7 @@ class AnalyticsFragment : Fragment() {
                 TemporalAdjusters.lastDayOfMonth()
             ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
                 .toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner, {
+        ).observe(viewLifecycleOwner) {
             view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
                 table.visibility = View.GONE
                 heading.text = "This month"
@@ -247,23 +245,23 @@ class AnalyticsFragment : Fragment() {
                     )
                 )
             }
-        })
+        }
     }
 
     private fun doTopWeeks(view: View) {
-        viewModel.weeklyTotals().observe(viewLifecycleOwner, { totals ->
+        viewModel.weeklyTotals().observe(viewLifecycleOwner) { totals ->
             view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_topWeeks).apply {
                 buildPeriodTotalsTable(this, totals, "Top weeks", "WEEK")
             }
-        })
+        }
     }
 
     private fun doTopMonths(view: View) {
-        viewModel.monthlyTotals().observe(viewLifecycleOwner, { totals ->
+        viewModel.monthlyTotals().observe(viewLifecycleOwner) { totals ->
             view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_topMonths).apply {
                 buildPeriodTotalsTable(this, totals, "Top months", "MONTH")
             }
-        })
+        }
     }
 
     private fun doLongestRides(view: View, trips: Array<Trip>) {
@@ -310,7 +308,7 @@ class AnalyticsFragment : Fragment() {
                     startDay.toEpochMilli(),
                     startDay.plus(7, ChronoUnit.DAYS).toEpochMilli(),
                 )
-                    .observe(viewLifecycleOwner, { trips ->
+                    .observe(viewLifecycleOwner) { trips ->
                         val summaryData = initializeWeeklySummaryData(startDay)
                         trips.forEach { trip ->
                             summaryData.find {
@@ -352,21 +350,21 @@ class AnalyticsFragment : Fragment() {
                                 )
                             }
                         thisWeekSummaryTable.populate(summaryData.toTypedArray())
-                    })
+                    }
             }
     }
 
     private fun doPopularRides(view: View) {
         val conversionFactor = getUserDistance(requireContext(), 1.0)
         viewModel.popularDistances(conversionFactor, 3)
-            .observe(viewLifecycleOwner, { buckets ->
+            .observe(viewLifecycleOwner) { buckets ->
                 buckets.forEach { distance ->
                     if (distance.count >= 3) viewModel.fastestDistance(
                         distance.bucket,
                         conversionFactor,
                         -1
                     )
-                        .observe(viewLifecycleOwner, { splits ->
+                        .observe(viewLifecycleOwner) { splits ->
                             val headingText =
                                 "${distance.bucket} ${getUserDistanceUnitShort(view.context)} PR"
                             insertPrCard(view, headingText.hashCode()) {
@@ -374,22 +372,9 @@ class AnalyticsFragment : Fragment() {
                                 threeStat
                                     .apply {
                                         populate(
-                                            arrayOf(
-                                                Pair("RIDES", splits.size.toString()),
-                                                Pair(
-                                                    getUserDistanceUnitShort(requireContext()).uppercase(),
-                                                    getUserDistance(
-                                                        requireContext(),
-                                                        splits.map { it.totalDistance }.sum()
-                                                    ).roundToInt()
-                                                        .toString()
-                                                ),
-                                                Pair(
-                                                    "HOURS",
-                                                    formatDurationHours(
-                                                        splits.map { it.totalDuration }.sum()
-                                                    )
-                                                )
+                                            getThreeStatFromSplits(
+                                                systemOfMeasurement,
+                                                splits
                                             )
                                         )
                                     }
@@ -399,26 +384,12 @@ class AnalyticsFragment : Fragment() {
                                         TableColumn(id = "speed", label = "SPEED"),
                                         TableColumn(id = "duration", label = "DURATION"),
                                     )
-                                    populate(splits.slice(IntRange(0, 2)).map { split ->
-                                        listOf(
-                                            Instant.ofEpochMilli(split.timestamp)
-                                                .atZone(ZoneId.systemDefault())
-                                                .format(DateTimeFormatter.ISO_LOCAL_DATE),
-                                            "%.1f %s".format(
-                                                getUserSpeed(
-                                                    context,
-                                                    split.totalDistance / split.totalDuration
-                                                ),
-                                                getUserSpeedUnitShort(context)
-                                            ),
-                                            formatDuration(split.totalDuration),
-                                        )
-                                    })
+                                    populate(getTableFromSplits(systemOfMeasurement, splits))
                                 }
                             }
-                        })
+                        }
                 }
-            })
+            }
     }
 
     override fun onCreateView(
@@ -435,13 +406,14 @@ class AnalyticsFragment : Fragment() {
         rollupView = view.findViewById(R.id.trips_rollup)
         spotlightTripCard = view.findViewById(R.id.fragmentAnalytics_spotlightRide)
         spotlightTripHeading = view.findViewById(R.id.fragmentAnalytics_spotlightRideHeading)
+        systemOfMeasurement = getSystemOfMeasurement(requireContext())
 
         viewModel.tripTotals
-            .observe(viewLifecycleOwner, { totals -> rollupView.applyTotals(totals) })
+            .observe(viewLifecycleOwner) { totals -> rollupView.applyTotals(totals) }
 
-        viewModel.realTrips.observe(viewLifecycleOwner, { trips ->
+        viewModel.realTrips.observe(viewLifecycleOwner) { trips ->
             doSpotlightRide(trips.find { !it.inProgress })
-        })
+        }
 
         doWeeklySummary(view)
         doMonthlyTotals(view)
@@ -453,13 +425,13 @@ class AnalyticsFragment : Fragment() {
         doPopularRides(view)
 
         viewModel.longestTrips(3)
-            .observe(viewLifecycleOwner, { trips -> doLongestRides(view, trips) })
+            .observe(viewLifecycleOwner) { trips -> doLongestRides(view, trips) }
 
-        viewModel.bikeTotals.observe(viewLifecycleOwner, { bikes ->
+        viewModel.bikeTotals.observe(viewLifecycleOwner) { bikes ->
             if (bikes != null && bikes.size > 1) {
                 doBikeTotals(bikes)
             }
-        })
+        }
 
 
     }
