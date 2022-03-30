@@ -309,7 +309,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         enableBluetoothButton =
             view.findViewById(R.id.button_discover_sensors_enable_bluetooth)
         enableBluetoothButton.setOnClickListener {
-            prepareBluetoothScan()
+            BleService.enableBluetooth(requireContext())
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             initializeBluetoothScan()
