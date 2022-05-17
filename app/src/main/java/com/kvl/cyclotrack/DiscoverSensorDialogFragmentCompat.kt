@@ -337,7 +337,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         }
     }
 
-    override fun onBindDialogView(view: View?) {
+    override fun onBindDialogView(view: View) {
         super.onBindDialogView(view)
 
         Log.d(logTag, "Binding view")

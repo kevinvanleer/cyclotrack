@@ -24,8 +24,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
-class AppPreferencesFragment : PreferenceFragmentCompat(),
-    PreferenceFragmentCompat.OnPreferenceDisplayDialogCallback {
+class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "PREFERENCES"
 
@@ -208,7 +207,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
         if (!BleService.isBluetoothSupported(requireContext())) {
             preferenceManager.findPreference<DiscoverSensorDialogPreference>("paired_blue_devices")?.isEnabled =
                 false
@@ -218,22 +217,24 @@ class AppPreferencesFragment : PreferenceFragmentCompat(),
     }
 
     override fun getCallbackFragment(): Fragment = this
-    override fun onPreferenceDisplayDialog(
-        caller: PreferenceFragmentCompat,
-        pref: Preference?,
-    ): Boolean {
-        if (pref != null && DiscoverSensorDialogPreference::class.isInstance(pref)) {
-            DiscoverSensorDialogFragmentCompat.getInstance(pref.key).let {
-                it.setTargetFragment(this, 0)
-                it.show(
-                    this.parentFragmentManager,
-                    "androidx.preference.PreferenceFragment.DIALOG"
-                )
-                return true
-            }
+    /*
+override fun onPreferenceDisplayDialog(
+    caller: PreferenceFragmentCompat,
+    pref: Preference?,
+): Boolean {
+    if (pref != null && DiscoverSensorDialogPreference::class.isInstance(pref)) {
+        DiscoverSensorDialogFragmentCompat.getInstance(pref.key).let {
+            it.setTargetFragment(this, 0)
+            it.show(
+                this.parentFragmentManager,
+                "androidx.preference.PreferenceFragment.DIALOG"
+            )
+            return true
         }
-        return false
     }
+    return false
+}
+*/
 
     override fun onResume() {
         super.onResume()

@@ -16,6 +16,7 @@
         <entry key="app/src/main/res/layout/content_main.xml" value="0.11005434782608696" />
         <entry key="app/src/main/res/layout/day_square.xml" value="4.0" />
         <entry key="app/src/main/res/layout/day_summary.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/fragment_all_data.xml" value="0.5702564102564103" />
         <entry key="app/src/main/res/layout/fragment_analytics.xml" value="0.39294306335204493" />
         <entry key="app/src/main/res/layout/fragment_bike_specs_preference.xml" value="0.1" />
         <entry key="app/src/main/res/layout/fragment_biometrics_preference.xml" value="0.37864583333333335" />

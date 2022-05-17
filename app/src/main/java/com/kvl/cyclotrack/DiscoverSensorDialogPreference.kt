@@ -5,7 +5,6 @@ import android.content.res.TypedArray
 import android.util.AttributeSet
 import android.util.Log
 import androidx.preference.DialogPreference
-import androidx.preference.PreferenceViewHolder
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 
@@ -18,10 +17,6 @@ class DiscoverSensorDialogPreference(context: Context, attrs: AttributeSet) :
     init {
         isPersistent = true
         dialogLayoutResource = R.layout.view_discovered_sensor_list
-    }
-
-    override fun onBindViewHolder(holder: PreferenceViewHolder?) {
-        super.onBindViewHolder(holder)
     }
 
     override fun onGetDefaultValue(a: TypedArray, index: Int): Any? {
