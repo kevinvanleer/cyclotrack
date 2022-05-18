@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     package="com.kvl.cyclotrack">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -54,11 +53,6 @@
         <activity
             android:name=".DashboardActivity"
             android:exported="true" />
-
-        <provider
-            android:name="androidx.work.impl.WorkManagerInitializer"
-            android:authorities="${applicationId}.workmanager-init"
-            tools:node="remove" />
 
         <receiver
             android:name=".DeleteExportBroadcastReceiver"
