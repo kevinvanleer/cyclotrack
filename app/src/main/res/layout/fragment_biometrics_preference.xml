@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <data>
+
         <import type="android.view.View" />
+
         <variable
             name="viewmodel"
             type="com.kvl.cyclotrack.BiometricsViewModel" />
@@ -17,55 +19,55 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="12dp"
+            android:paddingHorizontal="12dp"
             tools:context=".BiometricsPreferenceFragment">
 
             <com.kvl.cyclotrack.widgets.SwitchPreference
                 android:id="@+id/preference_biometrics_switch_use_google_fit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
                 android:visibility="@{viewmodel.googleFitEnabled ? View.VISIBLE : View.GONE}"
                 app:checked="@={viewmodel.useGoogleFitBiometrics}"
-                app:title="Use Google Fit Biometrics"
-                app:summary="Use Google Fit height, weight, and resting heart rate." />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:summary="Use Google Fit height, weight, and resting heart rate."
+                app:title="Use Google Fit Biometrics" />
 
             <com.kvl.cyclotrack.widgets.SwitchPreference
                 android:id="@+id/preference_biometrics_switch_sync_google_fit"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit"
-                app:layout_constraintStart_toStartOf="parent"
-                android:layout_marginTop="12dp"
                 android:layout_marginStart="10dp"
+                android:layout_marginTop="12dp"
                 android:visibility="@{viewmodel.useGoogleFitBiometrics ? View.VISIBLE : View.GONE}"
                 app:checked="@={viewmodel.shouldSyncGoogleFitBiometrics}"
-                app:title="Sync Google Fit Biometrics"
-                app:summary="Overwrite Cyclotrack stored biometrics with values from Google Fit." />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit"
+                app:summary="Overwrite Cyclotrack stored biometrics with values from Google Fit."
+                app:title="Sync Google Fit Biometrics" />
 
             <com.kvl.cyclotrack.widgets.SwitchPreference
                 android:id="@+id/preference_biometrics_switch_use_google_fit_resting_heart_rate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_sync_google_fit"
-                app:layout_constraintStart_toStartOf="parent"
-                android:layout_marginTop="8dp"
                 android:layout_marginStart="10dp"
+                android:layout_marginTop="8dp"
                 android:paddingBottom="24dp"
                 android:visibility="@{viewmodel.useGoogleFitBiometrics ? View.VISIBLE : View.GONE}"
                 app:checked="@={viewmodel.shouldUseGoogleFitRestingHeartRate}"
-                app:title="Use Google Fit resting heart rate"
-                app:summary="Enable this if you are tracking you heart rate in Google Fit." />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_sync_google_fit"
+                app:summary="Enable this if you are tracking you heart rate in Google Fit."
+                app:title="Use Google Fit resting heart rate" />
 
             <TextView
                 android:id="@+id/preference_biometrics_instruction_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit_resting_heart_rate"
-                app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="24dp"
-                android:text="@{viewmodel.instructionText}" />
+                android:text="@{viewmodel.instructionText}"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_switch_use_google_fit_resting_heart_rate" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/preference_biometrics_height_layout"
@@ -73,18 +75,18 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="10dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_instruction_text"
+                android:hint="@{viewmodel.heightHint}"
                 app:layout_constraintStart_toStartOf="parent"
-                android:hint="@{viewmodel.heightHint}">
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_instruction_text">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_biometrics_height"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:text="@={viewmodel.height}"
                     android:enabled="@{viewmodel.heightEditable}"
-                    android:inputType="numberDecimal" />
+                    android:inputType="numberDecimal"
+                    android:text="@={viewmodel.height}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -92,9 +94,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_height_layout"
+                android:hint="@{viewmodel.weightHint}"
                 app:layout_constraintStart_toStartOf="parent"
-                android:hint="@{viewmodel.weightHint}">
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_height_layout">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_biometrics_weight"
@@ -102,42 +104,42 @@
                     android:layout_height="wrap_content"
                     android:ems="10"
                     android:enabled="@{viewmodel.weightEditable}"
-                    android:text="@={viewmodel.weight}"
-                    android:inputType="numberDecimal" />
+                    android:inputType="numberDecimal"
+                    android:text="@={viewmodel.weight}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:id="@+id/preference_biometrics_hrm_calorie_instruction_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_weight_layout"
-                app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="30dp"
-                android:text="@string/preference_biometrics_hrm_calorie_instruction_text" />
+                android:text="@string/preference_biometrics_hrm_calorie_instruction_text"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_weight_layout" />
 
             <TextView
                 android:id="@+id/preference_biometrics_sex_heading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="20dp"
                 android:text="@string/preference_biometrics_sex_field_heading"
                 android:textColor="@color/secondaryColor"
                 android:textSize="12sp"
-                android:layout_marginTop="20dp"
-                android:layout_marginStart="4dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_hrm_calorie_instruction_text"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_hrm_calorie_instruction_text" />
 
             <RadioGroup
                 android:id="@+id/preference_biometrics_sex"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_sex_heading"
                 android:checkedButton="@={viewmodel.sex}"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_sex_heading">
 
                 <RadioButton
                     android:id="@+id/preference_biometrics_sex_male"
@@ -158,18 +160,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_sex"
+                android:hint="@string/preference_biometrics_label_dob"
                 app:layout_constraintStart_toStartOf="parent"
-                android:hint="@string/preference_biometrics_label_dob">
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_sex">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_biometrics_dob"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:text="@={viewmodel.dob}"
                     android:focusable="false"
-                    android:inputType="date" />
+                    android:inputType="date"
+                    android:text="@={viewmodel.dob}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -177,68 +179,69 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_dob_layout"
+                android:hint="@{viewmodel.vo2maxHint}"
                 app:layout_constraintStart_toStartOf="parent"
-                android:hint="@{viewmodel.vo2maxHint}">
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_dob_layout">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_biometrics_vo2max"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:text="@={viewmodel.vo2max}"
-                    android:inputType="numberDecimal" />
+                    android:inputType="numberDecimal"
+                    android:text="@={viewmodel.vo2max}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/preference_biometrics_restingHeartRate_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
                 android:layout_marginStart="10dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_vo2max_layout"
+                android:layout_marginTop="10dp"
+                android:hint="@string/preference_biometrics_label_restingHeartRate"
                 app:layout_constraintStart_toStartOf="parent"
-                android:hint="@string/preference_biometrics_label_restingHeartRate">
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_vo2max_layout">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_biometrics_restingHeartRate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:text="@={viewmodel.restingHeartRate}"
                     android:enabled="@{!viewmodel.vo2maxDefined &amp;&amp; viewmodel.restingHeartRateEditable}"
-                    android:inputType="number" />
+                    android:inputType="number"
+                    android:text="@={viewmodel.restingHeartRate}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/preference_biometrics_maxHeartRate_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
                 android:layout_marginStart="10dp"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_restingHeartRate_layout"
+                android:layout_marginTop="10dp"
+                android:hint="@{viewmodel.maxHrHint}"
+                android:paddingBottom="30dp"
                 app:layout_constraintStart_toStartOf="parent"
-                android:hint="@{viewmodel.maxHrHint}">
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_restingHeartRate_layout">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/preference_biometrics_maxHeartRate"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:ems="10"
-                    android:text="@={viewmodel.maxHeartRate}"
                     android:enabled="@{!viewmodel.vo2maxDefined}"
-                    android:inputType="number" />
+                    android:inputType="number"
+                    android:text="@={viewmodel.maxHeartRate}" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
                 android:id="@+id/preference_biometrics_hrm_net_calorie_instruction_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_maxHeartRate_layout"
-                app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginTop="30dp"
-                android:text="@string/preference_biometrics_hrm_net_calorie_instruction_text" />
+                android:text="@string/preference_biometrics_hrm_net_calorie_instruction_text"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_biometrics_maxHeartRate_layout" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
