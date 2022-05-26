@@ -163,14 +163,24 @@ class BikeSpecsPreferenceFragment : Fragment() {
                     }
                     R.id.action_settings_bike_delete -> {
                         lifecycleScope.launch(Dispatchers.IO) {
-                            if (!viewModel.bikeHasTrips()) {
-                                viewModel.deleteCurrentBike()
-                            } else {
-                                Snackbar.make(
-                                    this@BikeSpecsPreferenceFragment.requireView(),
-                                    getString(R.string.snackbar_message_cannot_delete_bike),
-                                    BaseTransientBottomBar.LENGTH_SHORT
-                                ).show()
+                            when {
+                                viewModel.bikeHasTrips() -> {
+                                    Snackbar.make(
+                                        this@BikeSpecsPreferenceFragment.requireView(),
+                                        getString(R.string.snackbar_message_cannot_delete_bike),
+                                        BaseTransientBottomBar.LENGTH_SHORT
+                                    ).show()
+                                }
+                                (viewModel.bikes.value?.size ?: 0) <= 1 -> {
+                                    Snackbar.make(
+                                        this@BikeSpecsPreferenceFragment.requireView(),
+                                        getString(R.string.snackbar_message_cannot_delete_last_bike),
+                                        BaseTransientBottomBar.LENGTH_SHORT
+                                    ).show()
+                                }
+                                else -> {
+                                    viewModel.deleteCurrentBike()
+                                }
                             }
                         }
                         true
