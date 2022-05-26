@@ -25,7 +25,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 @AndroidEntryPoint
-class BikeSpecsPreferenceFragment : Fragment(), MenuProvider {
+class BikeSpecsPreferenceFragment : Fragment() {
     val logTag = "BikeSpecsPref"
 
     companion object {
@@ -101,6 +101,8 @@ class BikeSpecsPreferenceFragment : Fragment(), MenuProvider {
         val bikeSelect =
             view.findViewById<AutoCompleteTextView>(R.id.preference_bike_specs_spinner_bike_select)
 
+        addMenuProvider()
+
         view.findViewById<AppCompatButton>(R.id.preference_bike_specs_button_link_ble_devices)
             .apply {
                 setOnClickListener { view ->
@@ -145,36 +147,40 @@ class BikeSpecsPreferenceFragment : Fragment(), MenuProvider {
             "Settings: Bike specs"
     }
 
-    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-        this.menu = menu
-        menuInflater.inflate(R.menu.menu_settings_bikes, menu)
-    }
-
-    override fun onMenuItemSelected(item: MenuItem): Boolean {
-        Log.d(logTag, "Options menu clicked")
-        return when (item.itemId) {
-            R.id.action_settings_bike_add -> {
-                viewModel.addBike()
-                true
+    private fun addMenuProvider() {
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                this@BikeSpecsPreferenceFragment.menu = menu
+                menuInflater.inflate(R.menu.menu_settings_bikes, menu)
             }
-            R.id.action_settings_bike_delete -> {
-                lifecycleScope.launch(Dispatchers.IO) {
-                    if (!viewModel.bikeHasTrips()) {
-                        viewModel.deleteCurrentBike()
-                    } else {
-                        Snackbar.make(
-                            this@BikeSpecsPreferenceFragment.requireView(),
-                            getString(R.string.snackbar_message_cannot_delete_bike),
-                            BaseTransientBottomBar.LENGTH_SHORT
-                        ).show()
+
+            override fun onMenuItemSelected(item: MenuItem): Boolean {
+                Log.d(logTag, "Options menu clicked")
+                return when (item.itemId) {
+                    R.id.action_settings_bike_add -> {
+                        viewModel.addBike()
+                        true
+                    }
+                    R.id.action_settings_bike_delete -> {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            if (!viewModel.bikeHasTrips()) {
+                                viewModel.deleteCurrentBike()
+                            } else {
+                                Snackbar.make(
+                                    this@BikeSpecsPreferenceFragment.requireView(),
+                                    getString(R.string.snackbar_message_cannot_delete_bike),
+                                    BaseTransientBottomBar.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
+                        true
+                    }
+                    else -> {
+                        Log.w(logTag, "unimplemented menu option")
+                        false
                     }
                 }
-                true
             }
-            else -> {
-                Log.w(logTag, "unimplemented menu option")
-                false
-            }
-        }
+        })
     }
 }
