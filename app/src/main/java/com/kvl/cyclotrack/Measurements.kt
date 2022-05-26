@@ -6,11 +6,15 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(foreignKeys = [ForeignKey(entity = Trip::class,
-    parentColumns = arrayOf("id"),
-    childColumns = arrayOf("tripId"),
-    onDelete = ForeignKey.CASCADE)],
-    indices = [Index(value = ["tripId"])])
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = Trip::class,
+        parentColumns = arrayOf("id"),
+        childColumns = arrayOf("tripId"),
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index(value = ["tripId"])]
+)
 @Keep
 data class Measurements(
     val tripId: Long,
@@ -36,7 +40,8 @@ data class Measurements(
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
 ) {
-    constructor(tripId: Long, location: LocationData) : this(tripId,
+    constructor(tripId: Long, location: LocationData) : this(
+        tripId,
         location.accuracy,
         location.altitude,
         location.bearing,
@@ -48,7 +53,8 @@ data class Measurements(
         location.bearingAccuracyDegrees ?: 0f,
         location.elapsedRealtimeUncertaintyNanos ?: 0.0,
         location.speedAccuracyMetersPerSecond ?: 0f,
-        location.verticalAccuracyMeters ?: 0f)
+        location.verticalAccuracyMeters ?: 0f
+    )
 
     constructor(
         tripId: Long,
@@ -60,7 +66,8 @@ data class Measurements(
         speedRevolutions: Int? = null,
         speedLastEvent: Int? = null,
         speedRpm: Float? = null,
-    ) : this(tripId,
+    ) : this(
+        tripId,
         location.accuracy,
         location.altitude,
         location.bearing,
@@ -79,7 +86,8 @@ data class Measurements(
         cadenceRpm,
         speedRevolutions,
         speedLastEvent,
-        speedRpm)
+        speedRpm
+    )
 
     constructor(
         tripId: Long,
@@ -87,7 +95,8 @@ data class Measurements(
         heartRate: Short? = null,
         cadence: CadenceData? = null,
         speed: SpeedData? = null,
-    ) : this(tripId,
+    ) : this(
+        tripId,
         location.accuracy,
         location.altitude,
         location.bearing,
@@ -106,7 +115,8 @@ data class Measurements(
         cadence?.rpm,
         speed?.revolutionCount,
         speed?.lastEvent,
-        speed?.rpm)
+        speed?.rpm
+    )
 
     fun hasAccuracy(): Boolean = accuracy != 0f
     fun hasSpeedAccuracy(): Boolean = speedAccuracyMetersPerSecond != 0f
@@ -122,7 +132,9 @@ data class CriticalMeasurements(
     val heartRate: Short? = null,
     val speedRevolutions: Int? = null,
     val speedLastEvent: Int? = null,
+    val speedRpm: Float? = null,
     val cadenceRevolutions: Int? = null,
     val cadenceLastEvent: Int? = null,
+    val cadenceRpm: Float? = null,
     val verticalAccuracyMeters: Float? = null,
 )

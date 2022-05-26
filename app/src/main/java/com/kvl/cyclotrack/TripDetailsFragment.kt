@@ -105,21 +105,27 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             }
         }
 
-        val inProgressBuilder = NotificationCompat.Builder(requireContext(),
-            getString(R.string.notification_export_trip_in_progress_id))
+        val inProgressBuilder = NotificationCompat.Builder(
+            requireContext(),
+            getString(R.string.notification_export_trip_in_progress_id)
+        )
             .setSmallIcon(R.drawable.ic_cyclotrack_notification)
             .setContentTitle("Export in progress...")
             .setProgress(1, 0, true)
-            .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("Data export \"${getFileName()}\" will finish soon."))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("Data export \"${getFileName()}\" will finish soon.")
+            )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         val inProgressId = getUriFilePart()?.toIntOrNull() ?: 0
         with(NotificationManagerCompat.from(requireContext())) {
             notify(inProgressId, inProgressBuilder.build())
         }
-        Toast.makeText(requireContext(),
+        Toast.makeText(
+            requireContext(),
             "You'll be notified when the export is complete.",
-            Toast.LENGTH_SHORT).show()
+            Toast.LENGTH_SHORT
+        ).show()
         val exporter = viewModel.exportData()
         exporter.observeForever(
             object : Observer<TripDetailsViewModel.ExportData> {
@@ -136,9 +142,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         )
                         Log.d(logTag, "${getFileName()}")
 
-                        exportRideToXlsx(contentResolver,
+                        exportRideToXlsx(
+                            contentResolver,
                             uri,
-                            exportData)
+                            exportData
+                        )
                         exporter.removeObserver(this)
 
                         val viewFileIntent = Intent().apply {
@@ -147,10 +155,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
                                     Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
                         }
-                        val viewFilePendingIntent = PendingIntent.getActivity(requireContext(),
+                        val viewFilePendingIntent = PendingIntent.getActivity(
+                            requireContext(),
                             uri.hashCode() * 100 + 1,
                             viewFileIntent,
-                            PendingIntent.FLAG_IMMUTABLE)
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
 
                         val chooserIntent = Intent.createChooser(Intent().apply {
                             action = Intent.ACTION_SEND
@@ -158,33 +168,45 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             setDataAndType(uri, mime)
                             flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
                         }, "title")
-                        val sharePendingIntent = PendingIntent.getActivity(requireContext(),
+                        val sharePendingIntent = PendingIntent.getActivity(
+                            requireContext(),
                             uri.hashCode() * 100 + 2,
                             chooserIntent,
-                            PendingIntent.FLAG_IMMUTABLE)
+                            PendingIntent.FLAG_IMMUTABLE
+                        )
 
-                        val deleteIntent = Intent(requireContext(),
-                            DeleteExportBroadcastReceiver::class.java).apply {
+                        val deleteIntent = Intent(
+                            requireContext(),
+                            DeleteExportBroadcastReceiver::class.java
+                        ).apply {
                             action = getString(R.string.intent_action_delete_exported_data)
                             putExtra("TRIP_ID", exportData.summary?.id)
                             data = uri
                         }
-                        val deletePendingIntent = PendingIntent.getBroadcast(requireContext(),
+                        val deletePendingIntent = PendingIntent.getBroadcast(
+                            requireContext(),
                             uri.hashCode() * 100 + 3,
                             deleteIntent,
-                            PendingIntent.FLAG_ONE_SHOT)
-                        val builder = NotificationCompat.Builder(requireContext(),
-                            getString(R.string.notification_export_trip_id))
+                            PendingIntent.FLAG_ONE_SHOT
+                        )
+                        val builder = NotificationCompat.Builder(
+                            requireContext(),
+                            getString(R.string.notification_export_trip_id)
+                        )
                             .setSmallIcon(R.drawable.ic_cyclotrack_notification)
                             .setContentTitle("Export complete!")
                             .setContentIntent(viewFilePendingIntent)
                             .setAutoCancel(true)
-                            .setStyle(NotificationCompat.BigTextStyle()
-                                .bigText("Data export \"${getFileName()}\" is ready in your downloads folder."))
+                            .setStyle(
+                                NotificationCompat.BigTextStyle()
+                                    .bigText("Data export \"${getFileName()}\" is ready in your downloads folder.")
+                            )
                             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                            .addAction(0,
+                            .addAction(
+                                0,
                                 "SHARE",
-                                sharePendingIntent)
+                                sharePendingIntent
+                            )
                             .addAction(
                                 0,
                                 "DELETE",
@@ -371,11 +393,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
-                setPositiveButton("DELETE"
+                setPositiveButton(
+                    "DELETE"
                 ) { _, _ ->
                     unsyncAndDeleteTrip()
                 }
-                setNegativeButton("CANCEL"
+                setNegativeButton(
+                    "CANCEL"
                 ) { _, _ ->
                     Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
                 }
@@ -390,14 +414,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
-                setPositiveButton("UNSYNC"
+                setPositiveButton(
+                    "UNSYNC"
                 ) { _, _ ->
                     WorkManager.getInstance(requireContext())
-                        .enqueue(OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
-                            .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
-                            .build())
+                        .enqueue(
+                            OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                                .build()
+                        )
                 }
-                setNegativeButton("CANCEL"
+                setNegativeButton(
+                    "CANCEL"
                 ) { _, _ ->
                     Log.d(logTag, "UNSYNC: CLICKED CANCEL")
                 }
@@ -412,11 +440,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
-                setPositiveButton("DELETE"
+                setPositiveButton(
+                    "DELETE"
                 ) { _, _ ->
                     deleteTrip()
                 }
-                setNegativeButton("CANCEL"
+                setNegativeButton(
+                    "CANCEL"
                 ) { _, _ ->
                     Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
                 }
@@ -763,7 +793,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     var lastMeasurements: CriticalMeasurements? = null
                     measurementsList.forEach { measurements ->
                         if (measurements.speedRevolutions != null) {
-                            lastMeasurements?.takeIf { it.speedRevolutions != null }
+                            lastMeasurements?.takeIf { it.speedRevolutions != null && it.speedRpm != 0f }
                                 ?.let { last ->
                                     if (measurements.speedLastEvent != last.speedLastEvent) {
                                         try {
@@ -939,7 +969,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     var lastMeasurements: CriticalMeasurements? = null
                     measurementsList.forEach { measurements ->
                         if (measurements.cadenceRevolutions != null) {
-                            lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+                            lastMeasurements?.takeIf { it.cadenceRevolutions != null && it.cadenceRpm != 0f }
                                 ?.let { last ->
                                     if (validateCadence(measurements, last)) {
                                         try {
@@ -1414,8 +1444,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             return false
         }
 
-        Log.v("TOUCH_SEQ_MOVE",
-            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight")
+        Log.v(
+            "TOUCH_SEQ_MOVE",
+            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight"
+        )
         val marginParams: ViewGroup.MarginLayoutParams =
             scrollView.layoutParams as ViewGroup.MarginLayoutParams
         marginParams.topMargin = newHeight
@@ -1453,8 +1485,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
 
         val delta = newHeight - currentHeight
-        Log.v("TOUCH_SEQ_END",
-            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight, currentHeight:$currentHeight, delta:$delta")
+        Log.v(
+            "TOUCH_SEQ_END",
+            "startHeight:$startHeight, rawY:${event?.rawY}, startY:$startY, newHeight:$newHeight, currentHeight:$currentHeight, delta:$delta"
+        )
 
         val marginAnimation = object : Animation() {
             override fun applyTransformation(interpolatedTime: Float, t: Transformation?) {

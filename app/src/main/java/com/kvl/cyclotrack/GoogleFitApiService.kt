@@ -23,8 +23,10 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     ): Float? {
         var height: Float? = null
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
-            ?.readData(DataReadRequest.Builder().read(DataType.TYPE_HEIGHT).setLimit(1)
-                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())?.await()
+            ?.readData(
+                DataReadRequest.Builder().read(DataType.TYPE_HEIGHT).setLimit(1)
+                    .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build()
+            )?.await()
             ?.dataSets?.forEach { dataset ->
                 dataset.dataPoints.forEach { dataPoint ->
                     when (dataPoint.dataType) {
@@ -41,8 +43,10 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     ): Float? {
         var weight: Float? = null
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
-            ?.readData(DataReadRequest.Builder().read(DataType.TYPE_WEIGHT).setLimit(1)
-                .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build())?.await()
+            ?.readData(
+                DataReadRequest.Builder().read(DataType.TYPE_WEIGHT).setLimit(1)
+                    .setTimeRange(1, timestamp, TimeUnit.MILLISECONDS).build()
+            )?.await()
             ?.dataSets?.forEach { dataset ->
                 dataset.dataPoints.forEach { dataPoint ->
                     when (dataPoint.dataType) {
@@ -67,9 +71,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
                             .setDataType(DataType.TYPE_HEART_RATE_BPM)
                             .setAppPackageName("com.google.android.gms")
                             .setStreamName("resting_heart_rate<-merge_heart_rate_bpm")
-                    .build())
-                .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
-                .setTimeRange(start, end, TimeUnit.SECONDS).build())?.await()
+                            .build()
+                    )
+                    .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
+                    .setTimeRange(start, end, TimeUnit.SECONDS).build()
+            )?.await()
             ?.buckets?.forEach { bucket ->
                 bucket.dataSets.forEach { dataset ->
                     dataset.dataPoints.forEach { dataPoint ->
@@ -130,18 +136,21 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         var lastMeasurements: CriticalMeasurements? = null
         measurements.forEach { current ->
             current.takeIf { it.cadenceRevolutions != null }?.let { curr ->
-                lastMeasurements?.takeIf { it.cadenceRevolutions != null }?.let { last ->
-                    val dataPoint = DataPoint.builder(dataSource)
-                    getRpm(rev = curr.cadenceRevolutions ?: 0,
-                        revLast = last.cadenceRevolutions ?: 0,
-                        time = curr.cadenceLastEvent ?: 0,
-                        timeLast = last.cadenceLastEvent ?: 0).takeIf { it.isFinite() }
-                        ?.let { cadence ->
-                            dataPoint.setField(Field.FIELD_RPM, cadence)
-                            dataPoint.setTimestamp(curr.time, TimeUnit.MILLISECONDS)
-                            cadenceData.add(dataPoint.build())
-                        }
-                }
+                lastMeasurements?.takeIf { it.cadenceRevolutions != null && it.cadenceRpm != 0f }
+                    ?.let { last ->
+                        val dataPoint = DataPoint.builder(dataSource)
+                        getRpm(
+                            rev = curr.cadenceRevolutions ?: 0,
+                            revLast = last.cadenceRevolutions ?: 0,
+                            time = curr.cadenceLastEvent ?: 0,
+                            timeLast = last.cadenceLastEvent ?: 0
+                        ).takeIf { it.isFinite() }
+                            ?.let { cadence ->
+                                dataPoint.setField(Field.FIELD_RPM, cadence)
+                                dataPoint.setTimestamp(curr.time, TimeUnit.MILLISECONDS)
+                                cadenceData.add(dataPoint.build())
+                            }
+                    }
                 lastMeasurements = curr
             }
         }
@@ -230,17 +239,20 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         var lastMeasurements: CriticalMeasurements? = null
         measurements.forEach { current ->
             current.takeIf { it.speedRevolutions != null }?.let { curr ->
-                lastMeasurements?.takeIf { it.speedRevolutions != null }?.let { last ->
-                    getRpm(rev = curr.speedRevolutions ?: 0,
-                        revLast = last.speedRevolutions ?: 0,
-                        curr.speedLastEvent ?: 0,
-                        last.speedLastEvent ?: 0).takeIf { it.isFinite() }?.let { speedRpm ->
-                        val dataPoint = DataPoint.builder(dataSource)
-                            .setField(Field.FIELD_SPEED, speedRpm / 60 * wheelCircumference)
-                            .setTimestamp(curr.time, TimeUnit.MILLISECONDS)
-                        speedData.add(dataPoint.build())
+                lastMeasurements?.takeIf { it.speedRevolutions != null && it.speedRpm != 0f }
+                    ?.let { last ->
+                        getRpm(
+                            rev = curr.speedRevolutions ?: 0,
+                            revLast = last.speedRevolutions ?: 0,
+                            curr.speedLastEvent ?: 0,
+                            last.speedLastEvent ?: 0
+                        ).takeIf { it.isFinite() }?.let { speedRpm ->
+                            val dataPoint = DataPoint.builder(dataSource)
+                                .setField(Field.FIELD_SPEED, speedRpm / 60 * wheelCircumference)
+                                .setTimestamp(curr.time, TimeUnit.MILLISECONDS)
+                            speedData.add(dataPoint.build())
+                        }
                     }
-                }
                 lastMeasurements = curr
             }
         }
@@ -250,8 +262,10 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
 
     private fun updateDataset(dataset: DataSet, startTime: Long, endTime: Long) {
         Log.d(logTag, "Update ${dataset.dataPoints.size} data points in ${dataset.dataType.name}")
-        Log.d(logTag,
-            "with time interval ${startTime}-${endTime}")
+        Log.d(
+            logTag,
+            "with time interval ${startTime}-${endTime}"
+        )
 
         if (dataset.dataPoints.isNotEmpty()) {
             val updateRequest = DataUpdateRequest.Builder()
@@ -261,8 +275,10 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
             getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
                 ?.updateData(updateRequest)
                 ?.addOnSuccessListener {
-                    Log.d(logTag,
-                        "Updated ${dataset.dataPoints.size} data points in ${dataset.dataType.name}")
+                    Log.d(
+                        logTag,
+                        "Updated ${dataset.dataPoints.size} data points in ${dataset.dataType.name}"
+                    )
                 }
                 ?.addOnFailureListener { e ->
                     Log.d(logTag, "Failed to insert data points in ${dataset.dataType.name}: $e")
@@ -273,18 +289,24 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
 
     private fun insertDataset(dataset: DataSet) {
         if (dataset.dataPoints.isNotEmpty()) {
-            Log.d(logTag,
-                "Insert ${dataset.dataPoints.size} data points in ${dataset.dataType.name}")
-            Log.d(logTag,
+            Log.d(
+                logTag,
+                "Insert ${dataset.dataPoints.size} data points in ${dataset.dataType.name}"
+            )
+            Log.d(
+                logTag,
                 "with time interval ${
                     dataset.dataPoints.first().getTimestamp(TimeUnit.MILLISECONDS)
-                }-${dataset.dataPoints.last().getTimestamp(TimeUnit.MILLISECONDS)}")
+                }-${dataset.dataPoints.last().getTimestamp(TimeUnit.MILLISECONDS)}"
+            )
 
             getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
                 ?.insertData(dataset)
                 ?.addOnSuccessListener {
-                    Log.d(logTag,
-                        "Inserted ${dataset.dataPoints.size} data points in ${dataset.dataType.name}")
+                    Log.d(
+                        logTag,
+                        "Inserted ${dataset.dataPoints.size} data points in ${dataset.dataType.name}"
+                    )
                 }
                 ?.addOnFailureListener { e ->
                     Log.d(logTag, "Failed to insert data points in ${dataset.dataType.name}: $e")
@@ -304,9 +326,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     private fun updateHeartRateDataset(measurements: Array<CriticalMeasurements>) {
-        updateDataset(createHeartRateDataset(measurements),
+        updateDataset(
+            createHeartRateDataset(measurements),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     fun insertCrankRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
@@ -314,9 +338,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     fun updateCrankRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
-        updateDataset(createCrankRevolutionsDataset(measurements),
+        updateDataset(
+            createCrankRevolutionsDataset(measurements),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     fun insertWheelRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
@@ -324,9 +350,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     fun updateWheelRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
-        updateDataset(createWheelRevolutionsDataset(measurements),
+        updateDataset(
+            createWheelRevolutionsDataset(measurements),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     private fun insertLocationDataset(measurements: Array<CriticalMeasurements>) {
@@ -334,9 +362,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     fun updateLocationDataset(measurements: Array<CriticalMeasurements>) {
-        updateDataset(createLocationDataset(measurements),
+        updateDataset(
+            createLocationDataset(measurements),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     private fun insertDistanceDeltaDataset(measurements: Array<CriticalMeasurements>) {
@@ -344,9 +374,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     private fun updateDistanceDeltaDataset(measurements: Array<CriticalMeasurements>) {
-        updateDataset(createDistanceDeltaDataset(measurements),
+        updateDataset(
+            createDistanceDeltaDataset(measurements),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     private fun insertCadenceDataset(measurements: Array<CriticalMeasurements>) {
@@ -354,9 +386,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     private fun updateCadenceDataset(measurements: Array<CriticalMeasurements>) {
-        updateDataset(createCadenceDataset(measurements),
+        updateDataset(
+            createCadenceDataset(measurements),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     private fun insertSpeedDataset(
@@ -370,9 +404,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         measurements: Array<CriticalMeasurements>,
         wheelCircumference: Float,
     ) {
-        updateDataset(createSpeedDataset(measurements, wheelCircumference),
+        updateDataset(
+            createSpeedDataset(measurements, wheelCircumference),
             measurements.first().time,
-            measurements.last().time)
+            measurements.last().time
+        )
     }
 
     fun insertDatasets(measurements: Array<CriticalMeasurements>, wheelCircumference: Float) {
@@ -468,10 +504,12 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     ) {
         getStartTime(timeStates)?.let { start ->
             getEndTime(timeStates)?.let { end ->
-                updateSession(trip,
+                updateSession(
+                    trip,
                     start,
                     end,
-                    (accumulateActiveTime(timeStates) * 1000.0).toLong())
+                    (accumulateActiveTime(timeStates) * 1000.0).toLong()
+                )
             }
         }
     }
@@ -565,26 +603,32 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
 
     fun deleteTrip(tripId: Long, startTime: Long, endTime: Long) {
         val request = DataDeleteRequest.Builder()
-            .setTimeInterval(startTime,
+            .setTimeInterval(
+                startTime,
                 endTime,
-                TimeUnit.MILLISECONDS)
+                TimeUnit.MILLISECONDS
+            )
             .deleteAllData()
             .deleteAllSessions().build()
         getGoogleAccount(context)?.let { Fitness.getHistoryClient(context, it) }
             ?.deleteData(request)
             ?.addOnSuccessListener { Log.d(logTag, "Removing trip ${tripId} from Google Fit") }
             ?.addOnFailureListener {
-                Log.e(logTag,
-                    "Failed to remove trip ${tripId} from Google Fit", it)
+                Log.e(
+                    logTag,
+                    "Failed to remove trip ${tripId} from Google Fit", it
+                )
             }
     }
 
     fun deleteTrip(trip: Trip, timeStates: Array<TimeState>) {
         timeStates.takeIf { it.isNotEmpty() }?.let {
             deleteTrip(trip.id!!, getStartTime(it)!!, getEndTime(it)!!)
-        } ?: deleteTrip(trip.id!!,
+        } ?: deleteTrip(
+            trip.id!!,
             trip.timestamp,
-            (trip.timestamp + (trip.duration?.times(1000) ?: 0L).toLong()))
+            (trip.timestamp + (trip.duration?.times(1000) ?: 0L).toLong())
+        )
     }
 
     fun deleteAllData() {
@@ -599,8 +643,10 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
             ?.deleteData(request)
             ?.addOnSuccessListener { Log.d(logTag, "Removing all data from Google Fit") }
             ?.addOnFailureListener {
-                Log.e(logTag,
-                    "Failed to remove all data from Google Fit", it)
+                Log.e(
+                    logTag,
+                    "Failed to remove all data from Google Fit", it
+                )
             }
     }
 
