@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.view.View
 import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts
@@ -166,7 +165,7 @@ class MainActivity : AppCompatActivity() {
             }
             else -> setContentView(R.layout.activity_main)
         }
-        setSupportActionBar(findViewById(R.id.toolbar))
+        setSupportActionBar(findViewById(R.id.toolbar_main))
         googleFitApiService = GoogleFitApiService(this)
 
         findViewById<BottomNavigationView>(R.id.main_activity_bottom_menu).setupWithNavController(
@@ -209,11 +208,5 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener(handleFabClick())
             }
         }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        //menuInflater.inflate(R.menu.menu_main, menu)
-        return true
     }
 }

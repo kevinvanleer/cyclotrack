@@ -16,6 +16,9 @@
         <action
             android:id="@+id/action_advanced_preferences"
             app:destination="@id/AdvancedPreferencesFragment" />
+        <action
+            android:id="@+id/action_show_linked_sensors"
+            app:destination="@id/LinkedSensorFragment" />
     </fragment>
     <fragment
         android:id="@+id/AdvancedPreferencesFragment"
@@ -23,8 +26,38 @@
         android:label="Advanced Preferences"
         tools:layout="@layout/fragment_advanced_preferences" />
     <fragment
+        android:id="@+id/LinkedSensorFragment"
+        android:name="com.kvl.cyclotrack.LinkedSensorsFragment"
+        android:label="Linked Sensors"
+        tools:layout="@layout/fragment_linked_sensors">
+        <action
+            android:id="@+id/action_link_bike_sensors"
+            app:destination="@id/SensorDiscoveryFragment" />
+        <action
+            android:id="@+id/action_link_body_sensors"
+            app:destination="@id/SensorDiscoveryFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/SensorDiscoveryFragment"
+        android:name="com.kvl.cyclotrack.DiscoverSensorFragment"
+        android:label="Sensor Discovery"
+        tools:layout="@layout/fragment_sensor_discovery">
+        <argument
+            android:name="bikeId"
+            android:defaultValue="0L"
+            app:argType="long" />
+        <argument
+            android:name="bikeName"
+            android:defaultValue="Body"
+            app:argType="string" />
+    </fragment>
+    <fragment
         android:id="@+id/BikeSpecsPreferenceFragment"
         android:name="com.kvl.cyclotrack.BikeSpecsPreferenceFragment"
         android:label="Bike Specs"
-        tools:layout="@layout/fragment_bike_specs_preference" />
+        tools:layout="@layout/fragment_bike_specs_preference">
+        <action
+            android:id="@+id/action_link_sensors_to_bike"
+            app:destination="@id/SensorDiscoveryFragment" />
+    </fragment>
 </navigation>

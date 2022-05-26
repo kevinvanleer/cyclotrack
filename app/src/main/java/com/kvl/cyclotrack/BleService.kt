@@ -6,16 +6,16 @@ import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.util.Log
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.coroutineScope
 import com.kvl.cyclotrack.events.BluetoothActionEvent
+import com.kvl.cyclotrack.events.ConnectedBikeEvent
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
-import java.util.*
 import javax.inject.Inject
-import javax.inject.Singleton
 
 data class HrmData(val batteryLevel: Byte?, val bpm: Short?)
 
@@ -35,11 +35,13 @@ data class CadenceData(
     val timestamp: Long? = null,
 )
 
-@Singleton
+@AndroidEntryPoint
 class BleService @Inject constructor(
     private val context: Application,
-    private val sharedPreferences: SharedPreferences,
-) {
+    private val externalSensorRepository: ExternalSensorRepository,
+    private val bikeRepository: BikeRepository,
+) : LifecycleService() {
+    private var connectedBike: Bike? = null
     private val bluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val addresses = object {
@@ -57,64 +59,6 @@ class BleService @Inject constructor(
 
     private lateinit var bluetoothLeScanner: BluetoothLeScanner
 
-    private val updateNotificationDescriptorId = "2902"
-    private val cadenceSpeedGattServiceId = "1816"
-    val cscMeasurementCharacteristicId = "2a5b"
-    val cscFeatureCharacteristicId = "2a5c"
-    val batteryGattServiceId = "180f"
-    val batterLevelCharacteristicId = "2a19"
-    val heartRateServiceId = "180d"
-    val hrmCharacteristicId = "2a37"
-    val fitnessMachineServiceId = "1826"
-    val fitnessMachineFeatureCharacteristicId = "2acc"
-    val indoorBikeDataCharacteristicId = "2ad2"
-
-    private val characteristicUpdateNotificationDescriptorUuid =
-        getGattUuid(updateNotificationDescriptorId)
-    val batteryServiceUuid = getGattUuid(batteryGattServiceId)
-    val batteryLevelCharUuid = getGattUuid(batterLevelCharacteristicId)
-
-    val heartRateServiceUuid = getGattUuid(heartRateServiceId)
-    val hrmCharacteristicUuid = getGattUuid(hrmCharacteristicId)
-
-    val cadenceSpeedServiceUuid = getGattUuid(cadenceSpeedGattServiceId)
-    val cscMeasurementCharacteristicUuid = getGattUuid(cscMeasurementCharacteristicId)
-
-    private fun BluetoothGatt.printGattTable() {
-        if (services.isEmpty()) {
-            Log.v(
-                logTag,
-                "No service and characteristic available, call discoverServices() first?"
-            )
-            return
-        }
-        var characteristicsTable = ""
-        services.forEach { service ->
-            val characteristicsTableRow = service.characteristics.joinToString(
-                separator = "\n|--",
-                prefix = "|--"
-            ) { "${it.uuid} ${it.descriptors?.getOrNull(0)?.uuid}" }
-            characteristicsTable += "\nService ${service.uuid}\nCharacteristics:\n$characteristicsTableRow"
-        }
-        Log.v(logTag, characteristicsTable)
-    }
-
-    private fun BluetoothGatt.hasCharacteristic(serviceUuid: UUID, charUuid: UUID): Boolean {
-        val thisService = services.find { it.uuid == serviceUuid }
-        return null != thisService?.characteristics?.find { it.uuid == charUuid }
-    }
-
-    private fun readBatteryLevel(gatt: BluetoothGatt) {
-        val batteryLevelChar = gatt
-            .getService(batteryServiceUuid)?.getCharacteristic(batteryLevelCharUuid)
-        Log.v(logTag, "read battery level characteristic ${batteryLevelChar?.uuid}")
-        try {
-            batteryLevelChar?.let { gatt.readCharacteristic(it) }
-        } catch (e: SecurityException) {
-            Log.w(logTag, "Bluetooth permissions have not been granted", e)
-        }
-    }
-
     private fun getFitnessMachineFeatures(gatt: BluetoothGatt) {
         val featureChar = gatt
             .getService(getGattUuid(fitnessMachineServiceId))
@@ -122,25 +66,6 @@ class BleService @Inject constructor(
         Log.v(logTag, "read supported fitness machine features: ${featureChar?.uuid}")
         try {
             featureChar?.let { gatt.readCharacteristic(it) }
-        } catch (e: SecurityException) {
-            Log.w(logTag, "Bluetooth permissions have not been granted", e)
-        }
-    }
-
-    private fun enableNotifications(
-        gatt: BluetoothGatt,
-        characteristic: BluetoothGattCharacteristic,
-        enable: Boolean = true,
-    ) {
-        val descriptor =
-            characteristic.getDescriptor(characteristicUpdateNotificationDescriptorUuid)
-        descriptor?.value =
-            if (enable) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else byteArrayOf(
-                0x00,
-                0x00
-            )
-        try {
-            gatt.writeDescriptor(descriptor)
         } catch (e: SecurityException) {
             Log.w(logTag, "Bluetooth permissions have not been granted", e)
         }
@@ -268,7 +193,7 @@ class BleService @Inject constructor(
                         logTag,
                         "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}"
                     )
-                    result.device.connectGatt(context, true, genericGattCallback)
+                    gatts.add(result.device.connectGatt(context, true, genericGattCallback))
                     bluetoothLeScanner.stopScan(this)
                     scanCallbacks.remove(this)
                 }
@@ -330,8 +255,10 @@ class BleService @Inject constructor(
                             EventBus.getDefault().post(it)
                         }
                     }
-                    else -> Log.d(logTag,
-                        "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel")
+                    else -> Log.d(
+                        logTag,
+                        "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel"
+                    )
                 }
             }
             cscMeasurementCharacteristicUuid -> {
@@ -365,8 +292,11 @@ class BleService @Inject constructor(
                             )
                             Log.d(
                                 logTag,
-                                "Speed sensor: ${revolutionCount} :: ${lastEvent} :: ${rpm}"
+                                "Speed sensor: $revolutionCount :: $lastEvent :: $rpm"
                             )
+                            if (connectedBike == null && rpm > 0) {
+                                connectBike(gatt)
+                            }
                             SpeedData(
                                 speedSensor.batteryLevel,
                                 revolutionCount,
@@ -388,7 +318,7 @@ class BleService @Inject constructor(
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3)
                         Log.d(
                             logTag,
-                            "Cadence sensor changed: ${revolutionCount} :: ${lastEvent}"
+                            "Cadence sensor changed: $revolutionCount :: $lastEvent"
                         )
                         if (revolutionCount != cadenceSensor.revolutionCount ||
                             SystemUtils.currentTimeMillis() - (cadenceSensor.timestamp
@@ -402,8 +332,11 @@ class BleService @Inject constructor(
                             )
                             Log.d(
                                 logTag,
-                                "Cadence sensor update: ${revolutionCount} :: ${lastEvent} :: ${rpm}"
+                                "Cadence sensor update: $revolutionCount :: $lastEvent :: $rpm"
                             )
+                            if (connectedBike == null && rpm > 0) {
+                                connectBike(gatt)
+                            }
                             CadenceData(
                                 cadenceSensor.batteryLevel,
                                 revolutionCount,
@@ -477,6 +410,18 @@ class BleService @Inject constructor(
         }
     }
 
+    private fun connectBike(gatt: BluetoothGatt) {
+        lifecycle.coroutineScope.launch {
+            externalSensorRepository.get(gatt.device.address)?.bikeId?.let { bikeId ->
+                bikeRepository.get(bikeId)?.let { bike ->
+                    connectedBike = bike
+                    EventBus.getDefault()
+                        .post(ConnectedBikeEvent(bike = bike))
+                }
+            }
+        }
+    }
+
     companion object {
         private const val logTag = "BleServiceCompanion"
         fun isBluetoothSupported(context: Context): Boolean {
@@ -484,7 +429,13 @@ class BleService @Inject constructor(
         }
 
         fun isBluetoothEnabled(context: Context): Boolean {
-            return (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.isEnabled
+            Log.d(logTag, "isBluetoothEnabled")
+            return (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.isEnabled.also {
+                Log.d(
+                    logTag,
+                    "bluetoothEnabled=${it}"
+                )
+            }
         }
 
         fun enableBluetooth(context: Context) {
@@ -501,56 +452,42 @@ class BleService @Inject constructor(
     }
 
     fun initialize() {
+        Log.d(logTag, "initializing bluetooth service")
         if (!isBluetoothSupported(context)) {
             Log.d(logTag, "BLE not supported on this device")
             return
         }
 
+        enableBluetooth(context)
         bluetoothLeScanner = bluetoothManager.adapter.bluetoothLeScanner
 
-        val myMacs =
-            sharedPreferences.getStringSet(
-                context.resources.getString(R.string.preferences_paired_ble_devices_key),
-                HashSet()
-            )?.map {
+        lifecycle.coroutineScope.launch {
+            externalSensorRepository.all().let { myMacs ->
                 try {
-                    Gson().fromJson(it, ExternalSensor::class.java)
-                } catch (e: JsonSyntaxException) {
-                    Log.e(logTag, "Could not parse sensor from JSON", e)
-                    ExternalSensor("REMOVE_INVALID_SENSOR")
-                }
-            }?.filter { it.address != "REMOVE_INVALID_SENSOR" }?.toTypedArray()
+                    myMacs.forEach {
+                        val device = bluetoothManager.adapter.getRemoteDevice(it.address)
 
-        if (myMacs.isNullOrEmpty()) {
-            Log.d(logTag, "No BLE devices have been selected by the user")
-            return
-        }
-
-        enableBluetooth(context)
-
-        try {
-            myMacs.forEach {
-                val device = bluetoothManager.adapter.getRemoteDevice(it.address)
-
-                if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
-                    Log.d(
-                        logTag,
-                        "Scanning for uncached device: ${device.address}"
-                    )
-                    val callback = scanForDevice(device.address)
-                    scanCallbacks.add(callback)
-                    bluetoothLeScanner.startScan(callback)
-                } else {
-                    Log.d(
-                        logTag,
-                        "Connecting to ${device.name}, ${device.type}: ${device.address}"
-                    )
-                    //TODO: Store BLE service for each device and use corresponding callback
-                    gatts.add(device.connectGatt(context, true, genericGattCallback))
+                        if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+                            Log.d(
+                                logTag,
+                                "Scanning for uncached device: ${device.address}"
+                            )
+                            val callback = scanForDevice(device.address)
+                            scanCallbacks.add(callback)
+                            bluetoothLeScanner.startScan(callback)
+                        } else {
+                            Log.d(
+                                logTag,
+                                "Connecting to ${device.name}, ${device.type}: ${device.address}"
+                            )
+                            //TODO: Store BLE service for each device and use corresponding callback
+                            gatts.add(device.connectGatt(context, true, genericGattCallback))
+                        }
+                    }
+                } catch (e: SecurityException) {
+                    Log.w(logTag, "BLE permissions have not been granted", e)
                 }
             }
-        } catch (e: SecurityException) {
-            Log.w(logTag, "BLE permissions have not been granted", e)
         }
     }
 

@@ -25,6 +25,7 @@ class PreferencesActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
     }
 
+    @Suppress("DEPRECATION")
     @SuppressWarnings("deprecation")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         //Required for Google Sign-in
@@ -61,7 +62,7 @@ class PreferencesActivity : AppCompatActivity() {
         Log.d(this.javaClass.simpleName, "onStop")
         EventBus.getDefault().unregister(this)
     }
-    
+
     @Subscribe
     fun onBluetoothActionEvent(event: BluetoothActionEvent) {
         Log.d(this.javaClass.simpleName, "Show enable bluetooth dialog")

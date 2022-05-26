@@ -6,6 +6,14 @@
         <entry key="../../../../layout/custom_preview.xml" value="0.5675925925925925" />
         <entry key="app/src/main/res/drawable/baseline_delete_sweep_24.xml" value="0.3203125" />
         <entry key="app/src/main/res/drawable/bottom_menu_item.xml" value="0.25833333333333336" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_2_bar_24.xml" value="0.1605" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_3_bar_24.xml" value="0.1605" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_4_bar_24.xml" value="0.1605" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_5_bar_24.xml" value="0.1605" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_6_bar_24.xml" value="0.1605" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_full_24.xml" value="0.1" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_unknown_18.xml" value="0.1795" />
+        <entry key="app/src/main/res/drawable/ic_battery_alert_18dp.xml" value="0.1795" />
         <entry key="app/src/main/res/drawable/rounded_corner.xml" value="0.31197916666666664" />
         <entry key="app/src/main/res/layout/activity_dashboard.xml" value="0.1984375" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
@@ -39,7 +47,9 @@
         <entry key="app/src/main/res/layout/view_day_summary.xml" value="0.29583333333333334" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_item.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_list.xml" value="0.253125" />
+        <entry key="app/src/main/res/layout/view_empty_sensor_group_placeholder.xml" value="0.37916666666666665" />
         <entry key="app/src/main/res/layout/view_rollup_view.xml" value="0.14351851851851852" />
+        <entry key="app/src/main/res/layout/view_sensor_info.xml" value="0.18020833333333333" />
         <entry key="app/src/main/res/layout/view_spinner_options.xml" value="0.3415384615384615" />
         <entry key="app/src/main/res/layout/view_stat_view.xml" value="0.346875" />
         <entry key="app/src/main/res/layout/view_table_card.xml" value="0.22407407407407406" />
@@ -63,9 +73,6 @@
     <list size="1">
       <item index="0" class="java.lang.String" itemvalue="org.greenrobot.eventbus.Subscribe" />
     </list>
-  </component>
-  <component name="ProjectPlainTextFileTypeManager">
-    <file url="file://$PROJECT_DIR$/app/src/main/java/com/kvl/cyclotrack/LocationServicePermissions.kt" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="15" project-jdk-type="JavaSDK" />
   <component name="SuppressKotlinCodeStyleNotification">

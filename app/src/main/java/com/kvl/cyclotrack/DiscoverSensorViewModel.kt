@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
@@ -10,31 +9,45 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class DiscoverSensorViewModel @Inject constructor(
+    private val bleSensors: ExternalSensorRepository,
+    bikeRepository: BikeRepository,
     @ApplicationContext private val appContext: Context
-) :
-    ViewModel() {
+) : ViewModel() {
+    var bikeId: Long? = null
+    var bikeName: String = "Body"
+    val bikes = bikeRepository.observeAll()
+
     private val logTag = "DiscoverSensorViewModel"
-    val bleDevices = MutableLiveData<Array<ExternalSensor>>()
-    val selectedDevices = MutableLiveData<Set<ExternalSensor>>()
+    val bleDevices = MutableLiveData<Array<ExternalSensor>>(arrayOf())
+
+    fun linkedSensors(bikeId: Long? = null) = when (bikeId) {
+        null -> bleSensors.bodySensors()
+        else -> bleSensors.bikeSensors(bikeId)
+    }
+
+    val sensors = bleSensors.observeAll()
+
     private val bluetoothLeScanner: BluetoothLeScanner? =
         (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
 
-    fun addToSelectedDevices(device: ExternalSensor) {
-        val newSelection = selectedDevices.value?.toMutableSet() ?: ArrayList()
-        newSelection.add(device)
-        selectedDevices.value = newSelection.toSet()
+    fun linkDevice(device: ExternalSensor) {
+        viewModelScope.launch {
+            bleSensors.addSensor(device.copy(bikeId = bikeId))
+        }
     }
 
-    fun removeFromSelectedDevices(device: ExternalSensor) {
-        val newSelection = selectedDevices.value?.toMutableSet()
-        newSelection?.remove(device)
-        selectedDevices.value = newSelection?.toSet()
+    fun unlinkDevice(device: ExternalSensor) {
+        viewModelScope.launch {
+            bleSensors.removeSensor(device)
+        }
     }
 
     private val scanDevicesCallback: ScanCallback = object : ScanCallback() {
@@ -47,10 +60,14 @@ class DiscoverSensorViewModel @Inject constructor(
                             "Found device ${result.device.name}, ${result.device.type}: ${result.device}"
                         )
                         ExternalSensor(result.device).let { sensor ->
-                            if (bleDevices.value?.contains(sensor) == false) {
-                                bleDevices.value?.toMutableList()?.let { list ->
-                                    list.add(0, sensor)
-                                    bleDevices.value = list.toTypedArray()
+                            viewModelScope.launch {
+                                if (bleDevices.value?.any { it.address == sensor.address } != true &&
+                                    !bleSensors.all().any { it.address == sensor.address }
+                                ) {
+                                    bleDevices.value?.toMutableList()?.let { list ->
+                                        list.add(0, sensor)
+                                        bleDevices.value = list.toTypedArray()
+                                    }
                                 }
                             }
                         }
@@ -73,8 +90,6 @@ class DiscoverSensorViewModel @Inject constructor(
             testDevices.add(ExternalSensor("77:07:70:00:00:06", "Thing 6"))
             testDevices.add(ExternalSensor("77:07:70:00:00:07", "Thing 7"))
             bleDevices.value = testDevices.toTypedArray()
-        } else {
-            bleDevices.value = arrayOf()
         }
 
         try {
@@ -87,13 +102,15 @@ class DiscoverSensorViewModel @Inject constructor(
         }
     }
 
-    @SuppressLint("MissingPermission")
-    fun stopScan() = bluetoothLeScanner?.stopScan(scanDevicesCallback)
-    override fun onCleared() {
-        stopScan()
+    fun stopScan() = try {
+        bluetoothLeScanner?.stopScan(scanDevicesCallback)
+    } catch (e: SecurityException) {
+        Log.w(logTag, "Bluetooth permissions have not been granted", e)
+        throw SecurityException("Bluetooth scan permission has not been granted")
     }
 
-    fun initializeSelectedDevices(linkedDevices: HashSet<ExternalSensor>) {
-        selectedDevices.value = linkedDevices.toSet()
+    override fun onCleared() {
+        Log.d(logTag, "view model cleared")
+        stopScan()
     }
 }

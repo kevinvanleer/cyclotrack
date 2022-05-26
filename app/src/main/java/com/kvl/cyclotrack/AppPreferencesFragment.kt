@@ -11,7 +11,6 @@ import android.widget.CheckBox
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
-import androidx.fragment.app.Fragment
 import androidx.navigation.findNavController
 import androidx.preference.*
 import androidx.work.OneTimeWorkRequestBuilder
@@ -36,6 +35,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 view?.findNavController()?.let {
                     Log.d(logTag, it.toString())
                     it.navigate(R.id.action_edit_bike_specs)
+                    true
+                } == true
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_show_linked_sensors)
                     true
                 } == true
             }
@@ -140,17 +149,19 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                                         .build().apply {
                                             WorkManager.getInstance(context)
                                                 .getWorkInfoByIdLiveData(id)
-                                                .observe(viewLifecycleOwner, { workInfo ->
+                                                .observe(viewLifecycleOwner) { workInfo ->
                                                     if (workInfo.state == WorkInfo.State.SUCCEEDED) {
                                                         Log.i(logTag, "Sign out from Google Fit")
-                                                        GoogleSignIn.getClient(context,
-                                                            GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                                        GoogleSignIn.getClient(
+                                                            context,
+                                                            GoogleSignInOptions.DEFAULT_SIGN_IN
+                                                        )
                                                             .signOut()
                                                             .addOnSuccessListener {
                                                                 configureGoogleFitPreference(context)
                                                             }
                                                     }
-                                                })
+                                                }
                                         })
                             } else {
                                 Log.i(logTag, "Sign out from Google Fit")
@@ -209,32 +220,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         savedInstanceState: Bundle?,
     ): View {
         if (!BleService.isBluetoothSupported(requireContext())) {
-            preferenceManager.findPreference<DiscoverSensorDialogPreference>("paired_blue_devices")?.isEnabled =
+            preferenceManager.findPreference<Preference>("paired_blue_devices")?.isEnabled =
                 false
         }
 
         return super.onCreateView(inflater, container, savedInstanceState)
     }
-
-    override fun getCallbackFragment(): Fragment = this
-    /*
-override fun onPreferenceDisplayDialog(
-    caller: PreferenceFragmentCompat,
-    pref: Preference?,
-): Boolean {
-    if (pref != null && DiscoverSensorDialogPreference::class.isInstance(pref)) {
-        DiscoverSensorDialogFragmentCompat.getInstance(pref.key).let {
-            it.setTargetFragment(this, 0)
-            it.show(
-                this.parentFragmentManager,
-                "androidx.preference.PreferenceFragment.DIALOG"
-            )
-            return true
-        }
-    }
-    return false
-}
-*/
 
     override fun onResume() {
         super.onResume()

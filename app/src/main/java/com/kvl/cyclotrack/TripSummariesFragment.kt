@@ -5,7 +5,9 @@ import android.os.Parcelable
 import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -44,7 +46,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setHasOptionsMenu(true)
+        addMenuProvider()
         val viewManager = LinearLayoutManager(activity)
         val listState: Parcelable? = savedInstanceState?.getParcelable("MY_KEY")
         if (listState != null) viewManager.onRestoreInstanceState(listState)
@@ -52,23 +54,27 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         activity?.title = ""
         tripListView = view.findViewById(R.id.trip_summary_card_list)
 
-        viewModel.allTrips.observe(viewLifecycleOwner, { trips ->
-            Log.d("TRIP_SUMMARIES",
-                "There were ${trips.size} trips returned from the database")
+        viewModel.allTrips.observe(viewLifecycleOwner) { trips ->
+            Log.d(
+                logTag,
+                "There were ${trips.size} trips returned from the database"
+            )
             val viewAdapter =
-                TripSummariesAdapter(trips,
+                TripSummariesAdapter(
+                    trips,
                     viewModel,
                     viewLifecycleOwner,
                     requireContext(),
                     enableMultiSelectControls,
-                    savedInstanceState)
+                    savedInstanceState
+                )
             tripListView.apply {
                 setHasFixedSize(true)
                 layoutManager = viewManager
                 adapter = viewAdapter
             }
 
-        })
+        }
         noBackgroundLocationDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
@@ -84,34 +90,41 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        this.menu = menu
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.menu_rides, menu)
-        Log.d("TRIP_SUMMARIES", "Options menu created")
-    }
+    private fun addMenuProvider() {
+        Log.d(logTag, "addMenuProvider")
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                this@TripSummariesFragment.menu = menu
+                inflater.inflate(R.menu.menu_rides, menu)
+                Log.d(logTag, "Options menu created")
+            }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d("TRIP_SUMMARIES", "Options menu clicked")
-        return when (item.itemId) {
-            R.id.action_stitch -> {
-                stitchSelectedTrips()
-                true
+            override fun onMenuItemSelected(item: MenuItem): Boolean {
+                Log.d(logTag, "Options menu clicked")
+                return when (item.itemId) {
+                    R.id.action_stitch -> {
+                        stitchSelectedTrips()
+                        true
+                    }
+                    R.id.action_delete -> {
+                        deleteSelectedTrips()
+                        true
+                    }
+                    R.id.action_cleanup -> {
+                        cleanupTrips()
+                        true
+                    }
+                    R.id.action_clear_multiselect -> {
+                        (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
+                        true
+                    }
+                    else -> {
+                        Log.w(logTag, "unimplemented menu item selected")
+                        false
+                    }
+                }
             }
-            R.id.action_delete -> {
-                deleteSelectedTrips()
-                true
-            }
-            R.id.action_cleanup -> {
-                cleanupTrips()
-                true
-            }
-            R.id.action_clear_multiselect -> {
-                (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     private fun stitchSelectedTrips() {

@@ -10,7 +10,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -18,36 +20,35 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
-import androidx.preference.PreferenceDialogFragmentCompat
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
+class DiscoverSensorFragment : Fragment() {
     private lateinit var liveDevices: MediatorLiveData<Pair<Array<ExternalSensor>, Array<ExternalSensor>>>
-    val logTag = "BLE_DEVICE_PREF"
+    val logTag = "SensorDiscoveryFragment"
     private lateinit var discoveredRecyclerView: RecyclerView
     private lateinit var savedRecyclerView: RecyclerView
     private lateinit var noSavedDevicesMessage: TextView
     private lateinit var discoverSensorsIndicator: ProgressBar
     private lateinit var discoverSensorMessage: TextView
     private lateinit var enableBluetoothButton: Button
-    private fun discoveredSensorPref() = preference as DiscoverSensorDialogPreference
-    private lateinit var theView: View
-
-    private val viewModel: DiscoverSensorViewModel by viewModels()
 
     companion object {
-        fun getInstance(key: String) = DiscoverSensorDialogFragmentCompat().apply {
-            arguments = Bundle(1).apply { putString(ARG_KEY, key) }
-        }
+        fun newInstance() = EditTripFragment()
     }
+
+    private val args: DiscoverSensorFragmentArgs by navArgs()
+    private val viewModel: DiscoverSensorViewModel by viewModels()
 
     private val requestLocationPermissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -70,6 +71,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
     }
 
     private fun initializeLocationService() {
+        Log.d(logTag, "initializeLocationServices")
         when {
             shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {
                 requireContext().let {
@@ -119,25 +121,25 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         viewModel.stopScan()
     }
 
-    override fun getView() = theView
-
     private fun onDiscoveredItemSelected(checked: Boolean, position: Int, device: ExternalSensor) {
         Log.d(logTag, "onDiscoveredItemSelected; position: ${position}")
         when (checked) {
             true -> {
-                Log.d(logTag, "Adding device")
-                viewModel.addToSelectedDevices(device)
-                if (viewModel.selectedDevices.value?.let { it.size > 3 } == true) {
+                if (viewModel.linkedSensors(viewModel.bikeId).value?.let { it.size >= 3 } == true) {
                     Log.d(logTag, "User tried to add a fourth device")
-                    Toast.makeText(context,
+                    Toast.makeText(
+                        context,
                         "Too many linked devices. Please remove a linked device to link this one.",
-                        Toast.LENGTH_SHORT).show()
-                    viewModel.removeFromSelectedDevices(device)
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    Log.d(logTag, "Adding device")
+                    viewModel.linkDevice(device)
                 }
             }
             false -> {
                 Log.d(logTag, "Removing device from discovered list")
-                viewModel.removeFromSelectedDevices(device)
+                viewModel.unlinkDevice(device)
             }
         }
     }
@@ -146,7 +148,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         Log.d(logTag, "onLinkedItemSelected; position: ${position}")
         if (!checked) {
             Log.d(logTag, "Removing device from linked list")
-            viewModel.removeFromSelectedDevices(device)
+            viewModel.unlinkDevice(device)
         }
     }
 
@@ -156,12 +158,13 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
             val discoveredDevices = pair.first
             val selectedDevices = pair.second
 
+
             discoveredRecyclerView.let { it ->
                 it.apply {
                     layoutManager = LinearLayoutManager(activity)
                     adapter =
                         DiscoveredBleDeviceAdapter(discoveredDevices.filter { discovered ->
-                            !selectedDevices.contains(discovered)
+                            !selectedDevices.any { it.address == discovered.address }
                         }
                             .toTypedArray(),
                             selectedDevices,
@@ -193,26 +196,31 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
                         update()
                     }
                 }
-                addSource(viewModel.selectedDevices) {
+                addSource(viewModel.linkedSensors(viewModel.bikeId)) {
                     if (it != null) {
-                        lastSelected = it.toTypedArray()
+                        lastSelected = it
                         update()
                     }
                 }
             }
         liveDevices.observeForever(deviceListObserver)
-        viewModel.initializeSelectedDevices(discoveredSensorPref().linkedDevices)
     }
 
     private fun disableBluetoothScan() {
-        viewModel.stopScan()
-        discoverSensorsIndicator.visibility = View.GONE
-        discoverSensorMessage.visibility = View.GONE
-        discoveredRecyclerView.visibility = View.GONE
-        enableBluetoothButton.visibility = View.VISIBLE
+        try {
+            viewModel.stopScan()
+        } catch (e: SecurityException) {
+            Log.w(logTag, "Cannot stop BLE scan without permission", e)
+        } finally {
+            discoverSensorsIndicator.visibility = View.GONE
+            discoverSensorMessage.visibility = View.GONE
+            discoveredRecyclerView.visibility = View.GONE
+            enableBluetoothButton.visibility = View.VISIBLE
+        }
     }
 
     private fun enableBluetoothScan() {
+        Log.d(logTag, "enableBluetoothScan")
         try {
             viewModel.startScan()
             discoverSensorsIndicator.visibility = View.VISIBLE
@@ -232,11 +240,13 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
                 BluetoothAdapter.ACTION_STATE_CHANGED -> {
-                    when (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR)) {
+                    when (intent.getIntExtra(
+                        BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR
+                    )) {
                         BluetoothAdapter.STATE_ON -> {
                             Log.d(logTag, "Detected Bluetooth ON")
-                            enableBluetoothScan()
+                            initializeBluetoothScan()
                         }
                         BluetoothAdapter.STATE_OFF -> {
                             Log.d(logTag, "Detected Bluetooth OFF")
@@ -249,7 +259,7 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
-    private fun initializeBluetoothScan() {
+    private fun initializeBluetoothScanS() =
         when (PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.checkSelfPermission(
                 requireContext(),
@@ -257,22 +267,38 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
             ) -> startBluetoothScan()
             else -> {
                 Log.w(logTag, "No bluetooth scan permission. Requesting!")
+                disableBluetoothScan()
                 requestBluetoothPermissions.launch(arrayOf(Manifest.permission.BLUETOOTH_SCAN))
             }
         }
-    }
+
+    private fun initializeBluetoothScanOld() =
+        when (PackageManager.PERMISSION_GRANTED) {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) -> startBluetoothScan()
+            else -> {
+                Log.w(logTag, "No bluetooth scan permission. Requesting!")
+                disableBluetoothScan()
+                initializeLocationService()
+            }
+        }
+
+    private fun initializeBluetoothScan() =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            initializeBluetoothScanS()
+        } else {
+            initializeBluetoothScanOld()
+        }
 
     private fun startBluetoothScan() {
+        Log.d(logTag, "startBluetoothScan")
         if (BleService.isBluetoothEnabled(requireContext())) {
             enableBluetoothScan()
         } else {
             disableBluetoothScan()
         }
-        requireContext().registerReceiver(
-            receiveBluetoothStateChanges,
-            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        )
-        observeDeviceChanges()
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -282,80 +308,68 @@ class DiscoverSensorDialogFragmentCompat : PreferenceDialogFragmentCompat() {
         permissions.entries.forEach { entry ->
             if (entry.key == Manifest.permission.BLUETOOTH_SCAN) {
                 Log.d(logTag, "Bluetooth permissions granted")
-                //initializeBluetoothScan()
                 startBluetoothScan()
             }
         }
     }
 
-    private fun prepareBluetoothScan() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            initializeBluetoothScan()
-        } else {
-            when (PackageManager.PERMISSION_GRANTED) {
-                ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) -> startBluetoothScan()
-                else -> initializeLocationService()
-            }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        if (args.bikeId > 0) {
+            viewModel.bikeId = args.bikeId
+            viewModel.bikeName = args.bikeName
         }
+        Log.d(logTag, "bikeId=${viewModel.bikeId}")
+        return inflater.inflate(R.layout.fragment_sensor_discovery, container, false)
     }
 
-    private fun manageBluetooth(view: View) {
+    override fun onViewCreated(view: View, savedInstanceBundle: Bundle?) {
+        super.onViewCreated(view, savedInstanceBundle)
+
+        Log.d(logTag, "Binding view")
+        view.findViewById<TextView>(R.id.textview_bike_name).apply {
+            text = viewModel.bikeName
+        }
+        view.findViewById<TextView>(R.id.textview_sensor_linking_instructions).apply {
+            text = when (viewModel.bikeName.lowercase()) {
+                "body" ->
+                    getString(R.string.body_sensor_linking_instructions)
+                else ->
+                    getString(R.string.bike_sensor_linking_instructions)
+
+            }
+        }
+        discoveredRecyclerView = view.findViewById(R.id.discovered_sensor_recycler_view)!!
+        savedRecyclerView = view.findViewById(R.id.saved_sensor_recycler_view)!!
+        noSavedDevicesMessage = view.findViewById(R.id.saved_sensor_empty_recycler_message)
         discoverSensorsIndicator =
             view.findViewById(R.id.discover_sensors_scanning_indicator)
         discoverSensorMessage = view.findViewById(R.id.scanning_message)
         enableBluetoothButton =
             view.findViewById(R.id.button_discover_sensors_enable_bluetooth)
         enableBluetoothButton.setOnClickListener {
-            BleService.enableBluetooth(requireContext())
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            initializeBluetoothScan()
-        } else {
-            when (PackageManager.PERMISSION_GRANTED) {
-                ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) -> startBluetoothScan()
-                else -> disableBluetoothScan()
+            when (BleService.isBluetoothEnabled(requireContext())) {
+                true -> initializeBluetoothScan()
+                else -> BleService.enableBluetooth(requireContext())
             }
         }
-    }
-
-    private fun showHideSavedDevices() {
-        when (viewModel.selectedDevices.value?.isNullOrEmpty()) {
-            true -> {
-                savedRecyclerView.visibility = View.GONE
-                noSavedDevicesMessage.visibility = View.VISIBLE
-            }
-            else -> {
-                savedRecyclerView.visibility = View.VISIBLE
-                noSavedDevicesMessage.visibility = View.GONE
-            }
+        requireContext().registerReceiver(
+            receiveBluetoothStateChanges,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
+        when (BleService.isBluetoothEnabled(requireContext())) {
+            true -> initializeBluetoothScan()
+            else -> disableBluetoothScan()
         }
+        observeDeviceChanges()
     }
 
-    override fun onBindDialogView(view: View) {
-        super.onBindDialogView(view)
-
-        Log.d(logTag, "Binding view")
-        discoveredRecyclerView = view?.findViewById(R.id.discovered_sensor_recycler_view)!!
-        savedRecyclerView = view.findViewById(R.id.saved_sensor_recycler_view)!!
-        noSavedDevicesMessage = view.findViewById(R.id.saved_sensor_empty_recycler_message)
-
-        manageBluetooth(view)
-    }
-
-    override fun onDialogClosed(positiveResult: Boolean) {
-        Log.d(logTag, "Closing discover/save device dialog")
-        if (positiveResult) {
-            Log.d(logTag, "save preference ${viewModel.selectedDevices.value}")
-            viewModel.selectedDevices.value?.toSet()?.let { discoveredSensorPref().persist(it) }
-                ?: discoveredSensorPref().clear()
-        } else {
-            discoveredSensorPref().reset()
-        }
+    override fun onResume() {
+        super.onResume()
+        requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title =
+            "Settings: Link sensors"
     }
 }

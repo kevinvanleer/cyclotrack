@@ -2,11 +2,14 @@ package com.kvl.cyclotrack
 
 import android.content.ContentValues
 import android.content.Context
+import android.util.Log
 import androidx.room.OnConflictStrategy
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -201,6 +204,43 @@ val MIGRATION_18_19 = object : Migration(18, 19) {
     }
 }
 
+val MIGRATION_19_20 = object : Migration(19, 20) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE IF NOT EXISTS `ExternalSensor` (`name` TEXT, `address` TEXT NOT NULL, `features` INTEGER, `bikeId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`bikeId`) REFERENCES Bike(`id`) ON DELETE SET DEFAULT)")
+        val bikeId = database.query("SELECT id FROM Bike WHERE isDefault = 1").let {
+            it.isBeforeFirst && it.moveToNext()
+            when (it.count) {
+                1 -> it.getLong(0)
+                else -> 1
+            }
+        }
+        CyclotrackApp.instance.let { context ->
+            getPreferences(context).getStringSet(
+                context.resources.getString(R.string.preferences_paired_ble_devices_key),
+                HashSet()
+            )?.forEach {
+                try {
+                    Gson().fromJson(it, ExternalSensor::class.java).let {
+                        database.insert(
+                            "ExternalSensor",
+                            OnConflictStrategy.ABORT,
+                            ContentValues().apply {
+                                put("address", it.address)
+                                put("name", it.name)
+                                put("bikeId", bikeId)
+                            })
+                    }
+                } catch (e: JsonSyntaxException) {
+                    Log.e("Migration 19->20", "Could not parse sensor from JSON", e)
+                    ExternalSensor("REMOVE_INVALID_SENSOR")
+                }
+            }
+        }
+
+        database.execSQL("CREATE INDEX index_ExternalSensor_bikeId on ExternalSensor(`bikeId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -228,6 +268,7 @@ object TripsDatabaseModule {
                 MIGRATION_16_17,
                 MIGRATION_17_18,
                 MIGRATION_18_19,
+                MIGRATION_19_20,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -275,5 +316,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideBikeDao(db: TripsDatabase): BikeDao {
         return db.bikeDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideExternalSensorDao(db: TripsDatabase): ExternalSensorDao {
+        return db.externalSensorsDao()
     }
 }

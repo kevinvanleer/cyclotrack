@@ -15,9 +15,7 @@
     <SeekBarPreference
         app:key="@string/preferences_dashboard_brightness_key"
         app:defaultValue="50" />
-    <com.kvl.cyclotrack.DiscoverSensorDialogPreference
-        android:dialogLayout="@layout/view_discovered_sensor_list"
-        android:dialogTitle="Discover and link sensors"
+    <Preference
         android:key="@string/preferences_paired_ble_devices_key"
         android:title="Link BLE sensors"
         android:summary="Collect heart rate, cadence, and speed sensor data during your rides" />

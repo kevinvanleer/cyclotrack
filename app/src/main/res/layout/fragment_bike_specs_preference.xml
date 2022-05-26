@@ -133,6 +133,14 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_preference_bike_specs_purchase_date_layout" />
 
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/preference_bike_specs_button_link_ble_devices"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/preference_bike_specs_switch_isDefaultBike"
+                android:text="Link BLE sensors" />
+
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 

@@ -5,8 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [Trip::class, Measurements::class, TimeState::class, Split::class, OnboardSensors::class, Bike::class],
-    version = 19
+    entities = [Trip::class, Measurements::class, TimeState::class, Split::class, OnboardSensors::class, Bike::class, ExternalSensor::class],
+    version = 20
 )
 @TypeConverters(TimeStateEnumConverter::class,
     UserSexEnumConverter::class,
@@ -18,4 +18,5 @@ abstract class TripsDatabase : RoomDatabase() {
     abstract fun splitDao(): SplitDao
     abstract fun onboardSensorsDao(): OnboardSensorsDao
     abstract fun bikeDao(): BikeDao
+    abstract fun externalSensorsDao(): ExternalSensorDao
 }

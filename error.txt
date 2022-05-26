@@ -1,0 +1,19 @@
+TableInfo{
+name='ExternalSensor', columns={
+name=Column{
+name='name', type='TEXT', affinity='2', notNull=false, primaryKeyPosition=0, defaultValue='null'}, bikeId=Column{
+name='bikeId', type='INTEGER', affinity='3', notNull=false, primaryKeyPosition=0, defaultValue='null'}, features=Column{
+name='features', type='INTEGER', affinity='3', notNull=false, primaryKeyPosition=0, defaultValue='null'}, address=Column{
+name='address', type='TEXT', affinity='2', notNull=true, primaryKeyPosition=0, defaultValue='null'}, id=Column{
+name='id', type='INTEGER', affinity='3', notNull=false, primaryKeyPosition=1, defaultValue='null'}}, foreignKeys=[ForeignKey{
+referenceTable='Bike', onDelete='SET DEFAULT', onUpdate='NO ACTION', columnNames=[bikeId], referenceColumnNames=[id]}], indices=[Index{
+name='index_ExternalSensor_bikeId', unique=false, columns=[bikeId]}]}
+TableInfo{
+name='ExternalSensor', columns={
+features=Column{
+name='name', type='TEXT', affinity='2', notNull=false, primaryKeyPosition=0, defaultValue='null'}, bikeId=Column{
+name='bikeId', type='INTEGER', affinity='3', notNull=false, primaryKeyPosition=0, defaultValue='null'}, id=Column{
+name='features', type='INTEGER', affinity='3', notNull=false, primaryKeyPosition=0, defaultValue='null'}, address=Column{
+name='address', type='TEXT', affinity='2', notNull=true, primaryKeyPosition=0, defaultValue='null'}, name=Column{
+name='id', type='INTEGER', affinity='3', notNull=false, primaryKeyPosition=1, defaultValue='null'}}, foreignKeys=[], indices=[Index{
+name='index_ExternalSensor_bikeId', unique=false, columns=[bikeId]}]}

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
+
+    <ImageView
+        android:id="@+id/sensorInfo_imageView_sensorTypeIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="@id/sensorInfo_textView_macAddress"
+        app:layout_constraintEnd_toStartOf="@id/sensorInfo_textView_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/sensorInfo_textView_name"
+        app:srcCompat="@drawable/ic_baseline_directions_bike_24" />
+
+    <TextView
+        android:id="@+id/sensorInfo_textView_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Sensor name"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@id/sensorInfo_textView_macAddress"
+        app:layout_constraintStart_toEndOf="@id/sensorInfo_imageView_sensorTypeIcon"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/sensorInfo_textView_macAddress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00:00:00:00:00"
+        app:layout_constraintBottom_toBottomOf="@id/sensorInfo_imageView_sensorTypeIcon"
+        app:layout_constraintEnd_toStartOf="@id/sensorInfo_textView_batteryLevel"
+        app:layout_constraintStart_toStartOf="@id/sensorInfo_textView_name"
+        app:layout_constraintTop_toBottomOf="@id/sensorInfo_textView_name" />
+
+    <TextView
+        android:id="@+id/sensorInfo_textView_batteryLevel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="N/A"
+        app:layout_constraintBaseline_toBaselineOf="@id/sensorInfo_textView_macAddress"
+        app:layout_constraintStart_toEndOf="@id/sensorInfo_textView_macAddress" />
+
+    <ImageView
+        android:id="@+id/sensorInfo_imageView_batteryLevelIcon"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        app:layout_constraintBottom_toBottomOf="@id/sensorInfo_textView_batteryLevel"
+        app:layout_constraintStart_toEndOf="@id/sensorInfo_textView_batteryLevel"
+        app:layout_constraintTop_toTopOf="@id/sensorInfo_textView_batteryLevel"
+        app:srcCompat="@drawable/ic_baseline_battery_unknown_18" />
+
+</merge>

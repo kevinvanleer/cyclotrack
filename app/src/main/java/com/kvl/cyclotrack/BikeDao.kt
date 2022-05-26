@@ -14,7 +14,7 @@ interface BikeDao {
     suspend fun update(vararg bikes: Bike)
 
     @Query("SELECT * FROM Bike WHERE id = :bikeId")
-    suspend fun get(bikeId: Long): Bike
+    suspend fun get(bikeId: Long): Bike?
 
     @Query("SELECT * FROM Bike WHERE isDefault = 1")
     suspend fun getDefaultBike(): Bike

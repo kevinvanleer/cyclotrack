@@ -135,7 +135,7 @@ interface TripDao {
     fun longestTrips(limit: Int): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
-    suspend fun getNewestTrip(): Trip
+    suspend fun getNewestTrip(): Trip?
 
     @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
     fun observeNewestTrip(): LiveData<Trip>

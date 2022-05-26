@@ -13,7 +13,6 @@ import com.kvl.cyclotrack.data.DerivedTripState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock
-import java.util.*
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -665,11 +664,6 @@ fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
         if (it == 0f) 0f else it / getDifferenceRollover(time,
             timeLast) * 1024 * 60
     }
-}
-
-fun getGattUuid(uuid: String): UUID {
-    val gattUuidSuffix = "0000-1000-8000-00805f9b34fb"
-    return UUID.fromString("$uuid-$gattUuidSuffix")
 }
 
 fun degreesToCardinal(degrees: Float): String {

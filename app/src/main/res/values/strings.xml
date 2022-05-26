@@ -25,6 +25,8 @@
     <string name="saved_devices_label">Linked devices</string>
     <string name="discovered_devices_label">Discovered devices</string>
     <string name="sensor_linking_instructions">Link up to three devices, each of a unique supported type: cadence, speed, and heart rate.</string>
+    <string name="bike_sensor_linking_instructions">Link up to three devices. It is recommended that you only link sensors that are attached to this bike, such as cadence and speed.</string>
+    <string name="body_sensor_linking_instructions">Link up to three devices. It is recommended that you only link sensors attached to your body, like heart rate monitors.</string>
     <string name="preferences_biometrics_key">biometrics</string>
     <string name="preference_key_biometrics_user_sex">preference_key_biometrics_user_sex</string>
     <string name="preference_key_biometrics_user_weight">preference_key_biometrics_user_weight</string>
@@ -109,4 +111,6 @@
     <string name="switch_preference_useAutoCircumference_title">Speed sensor GPS calibration</string>
     <string name="preference_bike_specs_isDefaultBike_description">This bike will be used for new rides.</string>
     <string name="heading_placeholder">Heading placeholder</string>
+    <string name="empty_sensor_group_placeholder">Tap to link sensors</string>
+    <string name="linked_sensors_heading">Link Bluetooth Low Energy sensors attached to your body and bikes to record, heart rate, cadence, speed, and power. Bike sensors will be used to detect the bike you are riding.</string>
 </resources>

@@ -105,7 +105,7 @@ class StitchWorker @AssistedInject constructor(
             googleFitApiService.updateDatasets(
                 measurements,
                 getEffectiveCircumference(destinationTrip, measurements)
-                    ?: userCircumferenceToMeters(bikeRepository.get(destinationTrip.bikeId).wheelCircumference)
+                    ?: userCircumferenceToMeters(bikeRepository.get(destinationTrip.bikeId)?.wheelCircumference)
                     ?: 0f
             )
             googleFitApiService.updateSession(destinationTrip, destinationTimeStates)

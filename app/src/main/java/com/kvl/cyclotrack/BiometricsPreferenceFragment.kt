@@ -7,7 +7,9 @@ import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.DatePicker
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
@@ -21,7 +23,7 @@ import java.util.*
 
 @AndroidEntryPoint
 class BiometricsPreferenceFragment : Fragment() {
-    val logTag = "BiometricsPreferences"
+    private val logTag = "BiometricsPreferences"
 
     companion object {
         fun newInstance() = BiometricsPreferenceFragment()
@@ -87,7 +89,6 @@ class BiometricsPreferenceFragment : Fragment() {
 
         activity?.title = ""
 
-        setHasOptionsMenu(true)
         return binding.root
     }
 
@@ -108,24 +109,32 @@ class BiometricsPreferenceFragment : Fragment() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        inflater.inflate(R.menu.menu_profile, menu)
-        Log.d(logTag, "Options menu created")
-    }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        Log.d(logTag, "onViewCreated")
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, inflater: MenuInflater) {
+                inflater.inflate(R.menu.menu_profile, menu)
+                Log.d(logTag, "Options menu created")
+            }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d("TRIP_SUMMARIES", "Options menu clicked")
-        return when (item.itemId) {
-            R.id.action_settings -> {
-                Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
-                findNavController().let {
-                    Log.d("TRIP_SUMMARIES", it.toString())
-                    it.navigate(R.id.action_go_to_settings)
-                    true
+            override fun onMenuItemSelected(item: MenuItem): Boolean {
+                Log.d("TRIP_SUMMARIES", "Options menu clicked")
+                return when (item.itemId) {
+                    R.id.action_settings -> {
+                        Log.d("TRIP_SUMMARIES", "Options menu clicked settings")
+                        findNavController().let {
+                            Log.d("TRIP_SUMMARIES", it.toString())
+                            it.navigate(R.id.action_go_to_settings)
+                            true
+                        }
+                    }
+                    else -> {
+                        Log.w(logTag, "unimplemented menu item selected")
+                        false
+                    }
                 }
             }
-            else -> super.onOptionsItemSelected(item)
-        }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 }

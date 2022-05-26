@@ -6,8 +6,11 @@ import android.os.Bundle
 import android.os.Looper
 import android.text.format.DateUtils
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
 import android.view.View.*
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
@@ -94,8 +97,6 @@ class TripInProgressFragment :
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-        setHasOptionsMenu(true)
-
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         activity?.window?.apply {
@@ -112,37 +113,12 @@ class TripInProgressFragment :
         return inflater.inflate(R.layout.fragment_trip_in_progress, container, false)
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        if (FeatureFlags.devBuild) {
-            menu.add(0, R.id.menu_item_show_details, 0, "Debug")
-        }
-        super.onCreateOptionsMenu(menu, inflater)
-    }
-
-    private var navigateToDebugView = navigateToDebugViewBuilder(-1L)
-    private fun navigateToDebugViewBuilder(tripId: Long): () -> Unit = {
-        findNavController().navigate(R.id.action_to_debug_view,
-            Bundle().apply {
-                Log.d(logTag, "Start dashboard with trip ${tripId}")
-                putLong("tripId", tripId)
-            })
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_item_show_details -> navigateToDebugView()
-            else -> super.onOptionsItemSelected(item)
-        }
-        return true
-    }
-
     private fun hidePause() {
         pauseButton.translationY = pauseButton.height.toFloat()
     }
 
     private fun hideResume() {
         resumeButton.translationX = resumeButton.width.toFloat()
-        //resumeButton.translationX = 10000f
     }
 
     private fun hideStop() {
@@ -237,7 +213,7 @@ class TripInProgressFragment :
     }
 
     private fun handleTimeStateChanges(tripId: Long) =
-        viewModel.currentTimeState(tripId).observe(viewLifecycleOwner, { currentState ->
+        viewModel.currentTimeState(tripId).observe(viewLifecycleOwner) { currentState ->
             currentState?.let {
                 Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
                 pauseButton.setOnClickListener(pauseTripListener(tripId))
@@ -255,10 +231,9 @@ class TripInProgressFragment :
                     pauseButton.text = getString(R.string.start_label)
                 }
             }
-        })
+        }
 
     private fun initializeAfterTripCreated(tripId: Long) {
-        navigateToDebugView = navigateToDebugViewBuilder(tripId)
         handleTimeStateChanges(tripId)
     }
 
@@ -374,7 +349,7 @@ class TripInProgressFragment :
     }
 
     private fun initializeLocationServiceStateChangeHandler() {
-        viewModel.gpsEnabled.observe(viewLifecycleOwner, { status ->
+        viewModel.gpsEnabled.observe(viewLifecycleOwner) { status ->
             if (!status && gpsEnabled) {
                 trackingImage.visibility = View.INVISIBLE
                 debugTextView.text = getString(R.string.gps_disabled_message)
@@ -406,19 +381,19 @@ class TripInProgressFragment :
                 Log.d(logTag, "Location service status unchanged")
             }
             gpsEnabled = status
-        })
+        }
     }
 
     private fun initializeMeasurementUpdateObservers() {
-        viewModel.location.observe(viewLifecycleOwner, { location ->
+        viewModel.location.observe(viewLifecycleOwner) { location ->
             if (viewModel.speedSensor.value?.rpm == null || circumference == null)
                 topRightView.value =
                     getGpsSpeed(location, topRightView.value.toString().toDoubleOrNull())
             bottomView.text = degreesToCardinal(location.bearing)
             debugTextView.text = getDebugString(location)
-        })
+        }
 
-        viewModel.currentProgress.observe(viewLifecycleOwner, {
+        viewModel.currentProgress.observe(viewLifecycleOwner) {
             Log.d(logTag, "Location observer detected change")
 
             topView.value =
@@ -433,13 +408,13 @@ class TripInProgressFragment :
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
             trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
-        })
+        }
 
-        viewModel.currentTime.observe(viewLifecycleOwner, {
+        viewModel.currentTime.observe(viewLifecycleOwner) {
             bottomLeftView.value = DateUtils.formatElapsedTime((it).toLong())
-        })
+        }
 
-        viewModel.lastSplit.observe(viewLifecycleOwner, { split ->
+        viewModel.lastSplit.observe(viewLifecycleOwner) { split ->
             Log.d(logTag, "Observed last split change")
             middleRightView.value =
                 String.format(
@@ -449,9 +424,9 @@ class TripInProgressFragment :
                         (split.distance / split.duration.coerceAtLeast(0.0001))
                     )
                 )
-        })
+        }
 
-        viewModel.hrmSensor.observe(viewLifecycleOwner, { hrm ->
+        viewModel.hrmSensor.observe(viewLifecycleOwner) { hrm ->
             Log.d(logTag, "hrm battery: ${hrm.batteryLevel}")
             Log.d(logTag, "hrm bpm: ${hrm.bpm}")
             if (hrm.bpm != null) {
@@ -460,9 +435,9 @@ class TripInProgressFragment :
             }
             if (hrm.batteryLevel != null && hrm.batteryLevel < lowBatteryThreshold) topLeftView.extraInfo =
                 "${hrm.batteryLevel}%"
-        })
+        }
 
-        viewModel.cadenceSensor.observe(viewLifecycleOwner, { cadence ->
+        viewModel.cadenceSensor.observe(viewLifecycleOwner) { cadence ->
             Log.d(logTag, "cadence battery: ${cadence.batteryLevel}")
             Log.d(logTag, "cadence: ${cadence.rpm}")
             if (cadence.rpm != null) {
@@ -474,9 +449,9 @@ class TripInProgressFragment :
             }
             if (cadence.batteryLevel != null && cadence.batteryLevel < lowBatteryThreshold) bottomRightView.extraInfo =
                 "${cadence.batteryLevel}%"
-        })
+        }
 
-        viewModel.speedSensor.observe(viewLifecycleOwner, { speed ->
+        viewModel.speedSensor.observe(viewLifecycleOwner) { speed ->
             Log.d(logTag, "speed battery: ${speed.batteryLevel}")
             Log.d(logTag, "speed rpm: ${speed.rpm}")
             if (speed.rpm != null && circumference != null) {
@@ -495,7 +470,7 @@ class TripInProgressFragment :
             }
             if (speed.batteryLevel != null && speed.batteryLevel < lowBatteryThreshold) topRightView.extraInfo =
                 "${speed.batteryLevel}%"
-        })
+        }
     }
 
     private fun initializeViews(view: View) {

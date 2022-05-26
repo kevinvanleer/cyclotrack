@@ -18,6 +18,7 @@ import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
 import com.kvl.cyclotrack.data.DerivedTripState
+import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
@@ -36,7 +37,7 @@ class TripInProgressService @Inject constructor() :
     private val speedThreshold = 0.5f
 
     private var running = false
-    lateinit var bike: Bike
+    var bike: Bike? = null
 
     @Inject
     lateinit var tripsRepository: TripsRepository
@@ -72,7 +73,7 @@ class TripInProgressService @Inject constructor() :
     lateinit var googleFitApiService: GoogleFitApiService
 
     private val userCircumference: Float?
-        get() = userCircumferenceToMeters(bike.wheelCircumference)
+        get() = userCircumferenceToMeters(bike?.wheelCircumference)
 
     private var autoCircumference: Float? = null
 
@@ -97,6 +98,33 @@ class TripInProgressService @Inject constructor() :
     @Subscribe
     fun onSpeedData(event: SpeedData) {
         speed = event
+    }
+
+    @Subscribe
+    fun onBikeConnect(event: ConnectedBikeEvent) {
+        updateBike(event.bike)
+    }
+
+    private fun updateBike(newBike: Bike) {
+        if (newBike != bike) {
+            bike = newBike
+        }
+        newBike.id?.let { bikeId ->
+            lifecycle.coroutineScope.launch {
+                tripsRepository.getNewest()?.let { trip ->
+                    if (trip.inProgress && trip.id != null && trip.bikeId != bikeId) {
+                        tripsRepository.updateBikeId(trip.id, bikeId)
+                        tripsRepository.updateWheelCircumference(
+                            TripWheelCircumference(
+                                id = trip.id,
+                                userWheelCircumference = userCircumferenceToMeters(newBike.wheelCircumference),
+                                autoWheelCircumference = autoCircumference
+                            )
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
@@ -392,9 +420,11 @@ class TripInProgressService @Inject constructor() :
         clearState()
 
         lifecycleScope.launch(Dispatchers.IO) {
-            bike = bikesRepository.getDefaultBike()
+            if (bike == null) {
+                bike = bikesRepository.getDefaultBike()
+            }
             tripId =
-                tripsRepository.createNewTrip(bike.id ?: 1).also { id ->
+                tripsRepository.createNewTrip(bike?.id ?: 1).also { id ->
                     timeStateRepository.appendTimeState(TimeState(id, TimeStateEnum.START))
                     EventBus.getDefault().post(StartTripEvent(id))
                     Log.d(logTag, "created new trip with id ${id}")

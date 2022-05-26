@@ -43,7 +43,7 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                     googleFitApiService.insertDatasets(
                         measurements,
                         getEffectiveCircumference(trip, measurements)
-                            ?: userCircumferenceToMeters(bikeRepository.get(trip.bikeId).wheelCircumference)
+                            ?: userCircumferenceToMeters(bikeRepository.get(trip.bikeId)?.wheelCircumference)
                             ?: 0f
                     )
                     timeStates.takeIf { it.isNotEmpty() }

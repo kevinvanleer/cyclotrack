@@ -46,7 +46,7 @@ class SwitchPreference : ConstraintLayout {
             switchView.isChecked = newValue
         }
 
-    companion object {
+    object SwitchPreferenceBindingAdapters {
         @BindingAdapter("enabled")
         @JvmStatic
         fun setEnabled(view: SwitchPreference, newValue: Boolean) {
@@ -66,6 +66,9 @@ class SwitchPreference : ConstraintLayout {
             view.checked = newValue
         }
 
+    }
+
+    companion object {
         @BindingAdapter(value = ["onCheckedChanged", "checkedAttrChanged"], requireAll = false)
         @JvmStatic
         fun setListeners(

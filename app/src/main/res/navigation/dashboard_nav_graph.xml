@@ -23,9 +23,6 @@
             android:name="tripId"
             app:argType="long" />
         <action
-            android:id="@+id/action_to_debug_view"
-            app:destination="@id/AllDataFragment" />
-        <action
             android:id="@+id/action_finish_trip"
             app:destination="@id/TripDetailsActivity">
             <argument
@@ -36,16 +33,5 @@
             android:id="@+id/action_back_to_summaries"
             app:destination="@id/MainActivity"
             app:launchSingleTop="true" />
-    </fragment>
-    <fragment
-        android:id="@+id/AllDataFragment"
-        android:name="com.kvl.cyclotrack.AllDataFragment"
-        android:label="Debug"
-        tools:layout="@layout/fragment_all_data">
-        <action
-            android:id="@+id/action_back_to_dashboard"
-            app:destination="@id/TripInProgressFragment"
-            app:popUpTo="@id/TripInProgressFragment"
-            app:popUpToInclusive="true" />
     </fragment>
 </navigation>

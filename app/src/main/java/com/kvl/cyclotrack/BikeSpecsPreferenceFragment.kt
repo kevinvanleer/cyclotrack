@@ -6,10 +6,13 @@ import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.kvl.cyclotrack.databinding.FragmentBikeSpecsPreferenceBinding
@@ -22,8 +25,9 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 @AndroidEntryPoint
-class BikeSpecsPreferenceFragment : Fragment() {
+class BikeSpecsPreferenceFragment : Fragment(), MenuProvider {
     val logTag = "BikeSpecsPref"
+
     companion object {
         fun newInstance() = BikeSpecsPreferenceFragment()
     }
@@ -70,35 +74,6 @@ class BikeSpecsPreferenceFragment : Fragment() {
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        Log.d(logTag, "Options menu clicked")
-        return when (item.itemId) {
-            R.id.action_settings_bike_add -> {
-                viewModel.addBike()
-                true
-            }
-            R.id.action_settings_bike_delete -> {
-                lifecycleScope.launch(Dispatchers.IO) {
-                    if (!viewModel.bikeHasTrips()) {
-                        viewModel.deleteCurrentBike()
-                    } else {
-                        Snackbar.make(
-                            this@BikeSpecsPreferenceFragment.requireView(),
-                            getString(R.string.snackbar_message_cannot_delete_bike),
-                            BaseTransientBottomBar.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        this.menu = menu
-        inflater.inflate(R.menu.menu_settings_bikes, menu)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -125,7 +100,22 @@ class BikeSpecsPreferenceFragment : Fragment() {
         circumferencePref.isSingleLine = true
         val bikeSelect =
             view.findViewById<AutoCompleteTextView>(R.id.preference_bike_specs_spinner_bike_select)
-        setHasOptionsMenu(true)
+
+        view.findViewById<AppCompatButton>(R.id.preference_bike_specs_button_link_ble_devices)
+            .apply {
+                setOnClickListener { view ->
+                    view.findNavController()
+                        .navigate(
+                            BikeSpecsPreferenceFragmentDirections.actionLinkSensorsToBike(
+                                viewModel.currentBikeId!!,
+                                when {
+                                    viewModel.name.isNullOrEmpty() -> "Bike ${viewModel.currentBikeId}"
+                                    else -> viewModel.name!!
+                                }
+                            )
+                        )
+                }
+            }
 
         viewModel.bikes.observe(viewLifecycleOwner) { bikes ->
             ArrayAdapter(
@@ -153,5 +143,38 @@ class BikeSpecsPreferenceFragment : Fragment() {
         super.onResume()
         requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title =
             "Settings: Bike specs"
+    }
+
+    override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+        this.menu = menu
+        menuInflater.inflate(R.menu.menu_settings_bikes, menu)
+    }
+
+    override fun onMenuItemSelected(item: MenuItem): Boolean {
+        Log.d(logTag, "Options menu clicked")
+        return when (item.itemId) {
+            R.id.action_settings_bike_add -> {
+                viewModel.addBike()
+                true
+            }
+            R.id.action_settings_bike_delete -> {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    if (!viewModel.bikeHasTrips()) {
+                        viewModel.deleteCurrentBike()
+                    } else {
+                        Snackbar.make(
+                            this@BikeSpecsPreferenceFragment.requireView(),
+                            getString(R.string.snackbar_message_cannot_delete_bike),
+                            BaseTransientBottomBar.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                true
+            }
+            else -> {
+                Log.w(logTag, "unimplemented menu option")
+                false
+            }
+        }
     }
 }

@@ -40,7 +40,7 @@ class TripDetailsViewModel @Inject constructor(
     private lateinit var exportMeasurements: LiveData<Array<Measurements>>
 
     suspend fun getBikeWheelCircumference(bikeId: Long) =
-        userCircumferenceToMeters(bikeRepository.get(bikeId).wheelCircumference) ?: 0f
+        userCircumferenceToMeters(bikeRepository.get(bikeId)?.wheelCircumference) ?: 0f
 
     fun updateSplits() = viewModelScope.launch {
         val splits = splitRepository.getTripSplits(tripId)
