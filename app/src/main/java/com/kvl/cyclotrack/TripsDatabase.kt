@@ -6,11 +6,13 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [Trip::class, Measurements::class, TimeState::class, Split::class, OnboardSensors::class, Bike::class, ExternalSensor::class],
-    version = 20
+    version = 21
 )
-@TypeConverters(TimeStateEnumConverter::class,
+@TypeConverters(
+    TimeStateEnumConverter::class,
     UserSexEnumConverter::class,
-    GoogleFitSyncStatusConverter::class)
+    GoogleFitSyncStatusConverter::class
+)
 abstract class TripsDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun measurementsDao(): MeasurementsDao

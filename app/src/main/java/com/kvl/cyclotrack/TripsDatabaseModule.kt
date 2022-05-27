@@ -17,6 +17,10 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+fun resetFailedGoogleFitSyncs(database: SupportSQLiteDatabase) {
+    database.execSQL("UPDATE Trip SET googleFitSyncStatus = 0 WHERE googleFitSyncStatus = 2")
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("CREATE TABLE `TimeState` (`tripId` INTEGER NOT NULL, `state` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
@@ -137,8 +141,9 @@ val MIGRATION_15_16 = object : Migration(15, 16) {
 
 val MIGRATION_16_17 = object : Migration(16, 17) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("UPDATE Trip SET googleFitSyncStatus = 4 WHERE googleFitSyncStatus = 1")
+        resetFailedGoogleFitSyncs(database)
     }
+
 }
 
 val MIGRATION_17_18 = object : Migration(17, 18) {
@@ -241,6 +246,12 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
     }
 }
 
+val MIGRATION_20_21 = object : Migration(20, 21) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        resetFailedGoogleFitSyncs(database)
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -269,6 +280,7 @@ object TripsDatabaseModule {
                 MIGRATION_17_18,
                 MIGRATION_18_19,
                 MIGRATION_19_20,
+                MIGRATION_20_21,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
