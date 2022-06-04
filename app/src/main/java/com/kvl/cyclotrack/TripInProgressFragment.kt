@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Looper
 import android.text.format.DateUtils
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -16,6 +17,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.doOnPreDraw
+import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -55,10 +57,13 @@ class TripInProgressFragment :
     private lateinit var middleLeftView: MeasurementView
     private lateinit var topLeftView: MeasurementView
     private lateinit var topRightView: MeasurementView
-    private lateinit var bottomView: TextView
+    private lateinit var footerView: TextView
+    private lateinit var footerRightView: TextView
     private lateinit var trackingImage: ImageView
     private lateinit var debugTextView: TextView
     private lateinit var timeOfDayTextView: TextView
+    private lateinit var temperatureTextView: TextView
+    private lateinit var windDirectionArrow: ImageView
 
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
@@ -70,8 +75,11 @@ class TripInProgressFragment :
     private var autoCircumferenceVariance: Double? = null
 
     val circumference: Float?
-        get() = when (sharedPreferences.getBoolean(requireContext().applicationContext.getString(
-            R.string.preference_key_useAutoCircumference), true)) {
+        get() = when (sharedPreferences.getBoolean(
+            requireContext().applicationContext.getString(
+                R.string.preference_key_useAutoCircumference
+            ), true
+        )) {
             true -> autoCircumference ?: userCircumference
             else -> userCircumference ?: autoCircumference
         }
@@ -165,8 +173,10 @@ class TripInProgressFragment :
                 try {
                     // Show the dialog by calling startResolutionForResult(),
                     // and check the result in onActivityResult().
-                    exception.startResolutionForResult(requireActivity(),
-                        1000)
+                    exception.startResolutionForResult(
+                        requireActivity(),
+                        1000
+                    )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     // Ignore the error.
                 }
@@ -176,23 +186,29 @@ class TripInProgressFragment :
 
     private fun startTrip() {
         Log.d(logTag, "${host}")
-        requireContext().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
+        requireContext().startService(Intent(
+            requireContext(),
+            TripInProgressService::class.java
+        ).apply {
             this.action = getString(R.string.action_start_trip_service)
         })
     }
 
     private fun pauseTrip(tripId: Long) {
-        requireActivity().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
+        requireActivity().startService(Intent(
+            requireContext(),
+            TripInProgressService::class.java
+        ).apply {
             this.action = getString(R.string.action_pause_trip_service)
             this.putExtra("tripId", tripId)
         })
     }
 
     private fun resumeTrip(tripId: Long) {
-        requireActivity().startService(Intent(requireContext(),
-            TripInProgressService::class.java).apply {
+        requireActivity().startService(Intent(
+            requireContext(),
+            TripInProgressService::class.java
+        ).apply {
             this.action = getString(R.string.action_resume_trip_service)
             this.putExtra("tripId", tripId)
         })
@@ -340,6 +356,7 @@ class TripInProgressFragment :
         view.setOnTouchListener(this)
         initializeLocationServiceStateChangeHandler()
         initializeMeasurementUpdateObservers()
+        initializeWeatherObservers()
     }
 
     private fun initializeClockTick() {
@@ -389,7 +406,7 @@ class TripInProgressFragment :
             if (viewModel.speedSensor.value?.rpm == null || circumference == null)
                 topRightView.value =
                     getGpsSpeed(location, topRightView.value.toString().toDoubleOrNull())
-            bottomView.text = degreesToCardinal(location.bearing)
+            footerView.text = degreesToCardinal(location.bearing)
             debugTextView.text = getDebugString(location)
         }
 
@@ -473,6 +490,68 @@ class TripInProgressFragment :
         }
     }
 
+    private fun initializeWeatherObservers() {
+        val windIcon = requireView().findViewById<ImageView>(R.id.image_wind_icon)
+        viewModel.latestWeather.observe(viewLifecycleOwner) { weather ->
+            temperatureTextView.visibility = VISIBLE
+            footerRightView.visibility = VISIBLE
+            windDirectionArrow.visibility = VISIBLE
+            windIcon.visibility = VISIBLE
+
+            //TODO: This will not update dynamically, maybe start a timer
+            when ((weather?.timestamp ?: 0) < (System.currentTimeMillis() / 1000 - 60 * 15)) {
+                true -> {
+                    temperatureTextView.alpha = 0.3f
+                    footerRightView.alpha = 0.3f
+                    windDirectionArrow.alpha = 0.3f
+                    windIcon.alpha = 0.3f
+                }
+                else -> {
+                    temperatureTextView.alpha = 1f
+                    footerRightView.alpha = 1f
+                    windDirectionArrow.alpha = 1f
+                    windIcon.alpha = 1f
+                }
+            }
+
+            temperatureTextView.text = "${
+                getUserTemperature(
+                    requireContext(),
+                    weather.temperature
+                )
+            } ${getUserTemperatureUnit(requireContext())}"
+            footerRightView.text =
+                "%.1f %s".format(
+                    getUserSpeed(requireContext(), weather?.windSpeed ?: 0.0),
+                    getUserSpeedUnitShort(requireContext())
+                )
+            when (weather?.windSpeed) {
+                null, 0.0 -> {
+                    windDirectionArrow.setPadding(
+                        TypedValue.applyDimension(
+                            TypedValue.COMPLEX_UNIT_DIP,
+                            6f, resources.displayMetrics
+                        ).toInt()
+                    )
+                    windDirectionArrow.setImageResource(R.drawable.ic_circle)
+                }
+                else -> {
+                    windDirectionArrow.setPadding(0)
+                    windDirectionArrow.setImageResource(R.drawable.ic_long_arrow_up)
+                }
+            }
+        }
+        zipLiveData(viewModel.location, viewModel.latestWeather).observe(viewLifecycleOwner) {
+            val location = it.first
+            val weather = it.second
+
+            windDirectionArrow.rotation = bearingToIconRotation(
+                bearingToWindAngle(location.bearing, weather.windDirection)
+            ).toFloat()
+
+        }
+    }
+
     private fun initializeViews(view: View) {
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
@@ -484,10 +563,13 @@ class TripInProgressFragment :
         middleLeftView = view.findViewById(R.id.measurement_middleLeft)
         topLeftView = view.findViewById(R.id.measurement_topLeft)
         topRightView = view.findViewById(R.id.measurement_topRight)
-        bottomView = view.findViewById(R.id.measurement_bottom)
+        footerView = view.findViewById(R.id.measurement_footer)
+        footerRightView = view.findViewById(R.id.measurement_footer_right)
         trackingImage = view.findViewById(R.id.image_tracking)
         debugTextView = view.findViewById(R.id.textview_debug)
         timeOfDayTextView = view.findViewById(R.id.dashboard_textview_timeOfDay)
+        temperatureTextView = view.findViewById(R.id.dashboard_textview_temperature)
+        windDirectionArrow = view.findViewById(R.id.image_arrow_wind_direction)
 
 
         //TODO: Cleanup below
@@ -519,11 +601,14 @@ class TripInProgressFragment :
     private fun getDebugString(
         location: Location,
     ): String {
-        var debugString = "%.2f".format(location.accuracy)
-        autoCircumference?.let { c -> debugString += " | C%.3f".format(c) }
-        autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
-        debugString += " | %d°".format(location.bearing.toInt())
-        viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
+        var debugString = ""
+        //debugString += "%.2f".format(location.accuracy)
+        //autoCircumference?.let { c -> debugString += " | C%.3f".format(c) }
+        //autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
+        //debugString += " | %d°".format(location.bearing.toInt())
+        //viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
+        viewModel.currentProgress.value?.slope?.takeIf { it.isFinite() }
+            ?.let { s -> debugString += "S%.1f".format(s * 100f) }
         return debugString
     }
 
@@ -593,10 +678,10 @@ class TripInProgressFragment :
                     Intent(
                         requireContext(),
                         TripInProgressService::class.java
-                ).apply {
-                    this.action = getString(R.string.action_start_trip_service)
-                    this.putExtra("tripId", tripId)
-                })
+                    ).apply {
+                        this.action = getString(R.string.action_start_trip_service)
+                        this.putExtra("tripId", tripId)
+                    })
             }
         }
     }

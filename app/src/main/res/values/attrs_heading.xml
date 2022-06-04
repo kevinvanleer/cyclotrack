@@ -1,5 +1,6 @@
 <resources>
     <declare-styleable name="Heading">
         <attr name="headingLabel" format="string" />
+        <attr name="iconSrc" format="reference" />
     </declare-styleable>
 </resources>

@@ -17,13 +17,20 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
+import com.squareup.moshi.JsonDataException
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okio.IOException
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
@@ -35,6 +42,9 @@ class TripInProgressService @Inject constructor() :
     private val logTag = "TripInProgressService"
     private val accuracyThreshold = 7.5f
     private val speedThreshold = 0.5f
+    private var nextWeatherUpdate = 0L
+    private val weatherUpdatePeriod = 5 * 60000
+
 
     private var running = false
     var bike: Bike? = null
@@ -56,6 +66,9 @@ class TripInProgressService @Inject constructor() :
 
     @Inject
     lateinit var splitRepository: SplitRepository
+
+    @Inject
+    lateinit var weatherRepository: WeatherRepository
 
     @Inject
     lateinit var gpsService: GpsService
@@ -127,6 +140,65 @@ class TripInProgressService @Inject constructor() :
         }
     }
 
+    private fun getWeather(location: LocationData, tripId: Long) {
+        val currentTime = SystemUtils.currentTimeMillis()
+        if (currentTime > nextWeatherUpdate) {
+            when (nextWeatherUpdate) {
+                0L -> nextWeatherUpdate =
+                    currentTime + weatherUpdatePeriod
+                else -> while (nextWeatherUpdate < currentTime) {
+                    nextWeatherUpdate += weatherUpdatePeriod
+                }
+            }
+            val lat = location.latitude
+            val lng = location.longitude
+
+            val jsonAdapter = Moshi.Builder().add(KotlinJsonAdapterFactory()).build().let { moshi ->
+                moshi.adapter(WeatherResponse::class.java)
+            }
+            val devAppId = getString(R.string.openweather_api_key)
+            val weatherUrl =
+                "https://api.openweathermap.org/data/2.5/onecall?lat=$lat&lon=$lng&exclude=minutely,hourly,daily&appid=$devAppId"
+            OkHttpClient().let { client ->
+                Request.Builder()
+                    .url(weatherUrl)
+                    .build()
+                    .let { request ->
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            try {
+                                client.newCall(request).execute().let { response ->
+                                    if (response.isSuccessful) {
+                                        try {
+                                            val weatherResponse = response.body?.source()
+                                                ?.let { jsonAdapter.nullSafe().fromJson(it) }
+                                            weatherResponse?.current?.let {
+                                                weatherRepository.recordWeather(
+                                                    it,
+                                                    tripId
+                                                )
+                                            }
+                                        } catch (e: JsonDataException) {
+                                            Log.w(logTag, "Failed to parse response", e)
+                                            FirebaseCrashlytics.getInstance().recordException(e)
+                                        }
+                                    } else {
+                                        nextWeatherUpdate = 0
+                                        Log.i(
+                                            logTag,
+                                            "Unexpected openweathermap response: $response"
+                                        )
+                                    }
+                                }
+                            } catch (e: IOException) {
+                                Log.i(logTag, "Weather request failed", e)
+                                nextWeatherUpdate = 0
+                            }
+                        }
+                    }
+            }
+        }
+    }
+
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
         Log.d(logTag, "onChanged gps observer")
         val newMeasurement = Measurements(
@@ -136,6 +208,7 @@ class TripInProgressService @Inject constructor() :
             cadence,
             speed,
         )
+        getWeather(LocationData(newLocation), tripId)
         lifecycleScope.launch {
             timeStateRepository.getTimeStates(tripId).let { timeStates ->
                 when (timeStates.lastOrNull()?.let { currentTimeState ->
@@ -164,7 +237,7 @@ class TripInProgressService @Inject constructor() :
         newMeasurements: Measurements,
         derivedTripState: ArrayList<DerivedTripState>,
     ): DerivedTripState {
-       
+
         var revCount = 0
         var distance = 0.0
         derivedTripState.find { it.speedRevolutions != null }?.let {
@@ -214,18 +287,23 @@ class TripInProgressService @Inject constructor() :
 
             val sampleSize = 100
             val varianceThreshold = 1e-6
-            derivedTripState.add(updateDerivedTripState(tripId = tripId,
-                totalDistance = totalDistance,
-                distanceDelta = distanceDelta.toDouble(),
-                totalDuration = duration,
-                durationDelta = durationDelta,
-                newMeasurements = new,
-                derivedTripState = derivedTripState))
+            derivedTripState.add(
+                updateDerivedTripState(
+                    tripId = tripId,
+                    totalDistance = totalDistance,
+                    distanceDelta = distanceDelta.toDouble(),
+                    totalDuration = duration,
+                    durationDelta = durationDelta,
+                    newMeasurements = new,
+                    derivedTripState = derivedTripState
+                )
+            )
 
             if (autoCircumference == null) calculateWheelCircumference(
                 derivedTripState.toTypedArray(),
                 sampleSize,
-                varianceThreshold)?.let { circumference ->
+                varianceThreshold
+            )?.let { circumference ->
                 autoCircumference = circumference
                 autoCircumference?.let { newCircumference ->
                     updateAutoCircumference(tripId, newCircumference)
@@ -244,32 +322,41 @@ class TripInProgressService @Inject constructor() :
                 }
 
             tripsRepository.updateTripStats(
-                TripStats(id = tripId,
+                TripStats(
+                    id = tripId,
                     distance = totalDistance,
                     duration = duration,
-                    averageSpeed = (totalDistance / duration).toFloat()))
+                    averageSpeed = (totalDistance / duration).toFloat()
+                )
+            )
 
-            if (crossedSplitThreshold(sharedPreferences,
+            if (crossedSplitThreshold(
+                    sharedPreferences,
                     totalDistance,
-                    trip.distance ?: Double.MAX_VALUE)
+                    trip.distance ?: Double.MAX_VALUE
+                )
             ) {
                 splitRepository.getTripSplits(tripId).lastOrNull()?.let { lastSplit ->
-                    splitRepository.addSplit(Split(
+                    splitRepository.addSplit(
+                        Split(
+                            timestamp = SystemUtils.currentTimeMillis(),
+                            duration = duration - lastSplit.totalDuration,
+                            distance = totalDistance - lastSplit.totalDistance,
+                            totalDuration = duration,
+                            totalDistance = totalDistance,
+                            tripId = tripId
+                        )
+                    )
+                } ?: splitRepository.addSplit(
+                    Split(
                         timestamp = SystemUtils.currentTimeMillis(),
-                        duration = duration - lastSplit.totalDuration,
-                        distance = totalDistance - lastSplit.totalDistance,
+                        duration = duration,
+                        distance = totalDistance,
                         totalDuration = duration,
                         totalDistance = totalDistance,
                         tripId = tripId
-                    ))
-                } ?: splitRepository.addSplit(Split(
-                    timestamp = SystemUtils.currentTimeMillis(),
-                    duration = duration,
-                    distance = totalDistance,
-                    totalDuration = duration,
-                    totalDistance = totalDistance,
-                    tripId = tripId
-                ))
+                    )
+                )
             }
 
             val newSlope = calculateSlope(derivedTripState.takeLast(20))
@@ -277,8 +364,10 @@ class TripInProgressService @Inject constructor() :
             TripProgress(
                 measurements = new,
                 speed = newSpeed,
-                maxSpeed = max(if (newSpeed.isFinite()) newSpeed else 0f,
-                    tripProgress?.maxSpeed ?: 0f),
+                maxSpeed = max(
+                    if (newSpeed.isFinite()) newSpeed else 0f,
+                    tripProgress?.maxSpeed ?: 0f
+                ),
                 distance = totalDistance,
                 slope = newSlope,
                 duration = duration,
@@ -287,10 +376,13 @@ class TripInProgressService @Inject constructor() :
                 tracking = true
             )
         } else {
-            (tripProgress?.copy(duration = duration,
+            (tripProgress?.copy(
+                duration = duration,
                 accuracy = new.accuracy,
-                tracking = false)
-                ?: TripProgress(duration = duration,
+                tracking = false
+            )
+                ?: TripProgress(
+                    duration = duration,
                     speed = 0f,
                     maxSpeed = 0f,
                     distance = 0.0,
@@ -298,7 +390,8 @@ class TripInProgressService @Inject constructor() :
                     measurements = null,
                     accuracy = new.accuracy,
                     bearing = new.bearing,
-                    tracking = false))
+                    tracking = false
+                ))
         }.let {
             EventBus.getDefault().post(TripProgressEvent(it))
             tripProgress = it
@@ -309,9 +402,13 @@ class TripInProgressService @Inject constructor() :
         sharedPreferences.edit {
             this.putFloat("auto_circumference", circumference)
         }
-        tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
-            userWheelCircumference = userCircumference,
-            autoWheelCircumference = circumference))
+        tripsRepository.updateWheelCircumference(
+            TripWheelCircumference(
+                id = tripId,
+                userWheelCircumference = userCircumference,
+                autoWheelCircumference = circumference
+            )
+        )
         EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
     }
 
@@ -331,14 +428,17 @@ class TripInProgressService @Inject constructor() :
                     speed = newSpeed,
                     measurements = null,
                     accuracy = new.accuracy,
-                    tracking = accurateEnough)
+                    tracking = accurateEnough
+                )
             }
             else ->
                 tripProgress?.copy(
                     accuracy = new.accuracy,
                     measurements = null,
-                    tracking = accurateEnough)
-        } ?: TripProgress(duration = 0.0,
+                    tracking = accurateEnough
+                )
+        } ?: TripProgress(
+            duration = 0.0,
             speed = newSpeed,
             maxSpeed = 0f,
             distance = 0.0,
@@ -346,7 +446,8 @@ class TripInProgressService @Inject constructor() :
             measurements = null,
             accuracy = new.accuracy,
             bearing = new.bearing,
-            tracking = accurateEnough).let {
+            tracking = accurateEnough
+        ).let {
             EventBus.getDefault().post(TripProgressEvent(it))
             tripProgress = it
         }
@@ -364,8 +465,10 @@ class TripInProgressService @Inject constructor() :
 
     private fun createNotificationChannel(channelId: String, channelName: String): String {
         //TODO: MAKE THIS YOUR OWN -- COPIED FROM POST
-        val channel = NotificationChannel(channelId,
-            channelName, NotificationManager.IMPORTANCE_HIGH)
+        val channel = NotificationChannel(
+            channelId,
+            channelName, NotificationManager.IMPORTANCE_HIGH
+        )
         channel.lightColor = Color.BLUE
         channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -437,11 +540,16 @@ class TripInProgressService @Inject constructor() :
         startForegroundCompat(tripId)
 
         lifecycleScope.launch(Dispatchers.IO) {
-            tripsRepository.updateWheelCircumference(TripWheelCircumference(id = tripId,
-                userWheelCircumference = userCircumference,
-                autoWheelCircumference = autoCircumference))
+            tripsRepository.updateWheelCircumference(
+                TripWheelCircumference(
+                    id = tripId,
+                    userWheelCircumference = userCircumference,
+                    autoWheelCircumference = autoCircumference
+                )
+            )
             tripsRepository.updateBiometrics(
-                getCombinedBiometrics(tripId))
+                getCombinedBiometrics(tripId)
+            )
         }
     }
 
@@ -502,8 +610,12 @@ class TripInProgressService @Inject constructor() :
     private fun pause(tripId: Long) {
         Log.d(logTag, "Called pause()")
         lifecycle.coroutineScope.launch {
-            timeStateRepository.appendTimeState(TimeState(tripId = tripId,
-                state = TimeStateEnum.PAUSE))
+            timeStateRepository.appendTimeState(
+                TimeState(
+                    tripId = tripId,
+                    state = TimeStateEnum.PAUSE
+                )
+            )
         }
     }
 

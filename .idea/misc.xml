@@ -4,8 +4,12 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="../../../../layout/custom_preview.xml" value="0.5675925925925925" />
+        <entry key="app/src/main/res/drawable/baseline_cancel_18.xml" value="0.13" />
         <entry key="app/src/main/res/drawable/baseline_delete_sweep_24.xml" value="0.3203125" />
         <entry key="app/src/main/res/drawable/bottom_menu_item.xml" value="0.25833333333333336" />
+        <entry key="app/src/main/res/drawable/ic_baseline_360_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_accessibility_new_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_arrow_right_alt_24.xml" value="0.13" />
         <entry key="app/src/main/res/drawable/ic_baseline_battery_2_bar_24.xml" value="0.1605" />
         <entry key="app/src/main/res/drawable/ic_baseline_battery_3_bar_24.xml" value="0.1605" />
         <entry key="app/src/main/res/drawable/ic_baseline_battery_4_bar_24.xml" value="0.1605" />
@@ -13,7 +17,31 @@
         <entry key="app/src/main/res/drawable/ic_baseline_battery_6_bar_24.xml" value="0.1605" />
         <entry key="app/src/main/res/drawable/ic_baseline_battery_full_24.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/ic_baseline_battery_unknown_18.xml" value="0.1795" />
-        <entry key="app/src/main/res/drawable/ic_battery_alert_18dp.xml" value="0.1795" />
+        <entry key="app/src/main/res/drawable/ic_baseline_battery_unknown_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_directions_bike_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_fire_24.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_baseline_monitor_heart_18.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_monitor_heart_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_thermostat_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_baseline_timer_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_battery_alert_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_circle.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_edit_black_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_flame.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_heartbeat.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_location_arrow.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_long_arrow_up.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_mountains.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_ruler.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_stopwatch.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_sync_alt.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_tachometer_fast_regular.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_tachometer_fast_solid.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_thermometer_half.xml" value="0.3105" />
+        <entry key="app/src/main/res/drawable/ic_wind_light.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_wind_solid.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_wind_solid_24.xml" value="0.13" />
+        <entry key="app/src/main/res/drawable/ic_windsock_solid.xml" value="0.13" />
         <entry key="app/src/main/res/drawable/rounded_corner.xml" value="0.31197916666666664" />
         <entry key="app/src/main/res/layout/activity_dashboard.xml" value="0.1984375" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
@@ -30,8 +58,8 @@
         <entry key="app/src/main/res/layout/fragment_biometrics_preference.xml" value="0.37864583333333335" />
         <entry key="app/src/main/res/layout/fragment_edit_trip.xml" value="0.33" />
         <entry key="app/src/main/res/layout/fragment_top_rides.xml" value="0.3541666666666667" />
-        <entry key="app/src/main/res/layout/fragment_trip_details.xml" value="0.37037037037037035" />
-        <entry key="app/src/main/res/layout/fragment_trip_in_progress.xml" value="0.36574074074074076" />
+        <entry key="app/src/main/res/layout/fragment_trip_details.xml" value="0.28562615669339914" />
+        <entry key="app/src/main/res/layout/fragment_trip_in_progress.xml" value="0.1" />
         <entry key="app/src/main/res/layout/fragment_weekly_summary.xml" value="0.1" />
         <entry key="app/src/main/res/layout/sample_day_square.xml" value="0.45740740740740743" />
         <entry key="app/src/main/res/layout/sample_week_summary_table.xml" value="0.4824074074074074" />
@@ -48,6 +76,7 @@
         <entry key="app/src/main/res/layout/view_discovered_sensor_item.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_discovered_sensor_list.xml" value="0.253125" />
         <entry key="app/src/main/res/layout/view_empty_sensor_group_placeholder.xml" value="0.37916666666666665" />
+        <entry key="app/src/main/res/layout/view_heading.xml" value="0.5702564102564103" />
         <entry key="app/src/main/res/layout/view_rollup_view.xml" value="0.14351851851851852" />
         <entry key="app/src/main/res/layout/view_sensor_info.xml" value="0.18020833333333333" />
         <entry key="app/src/main/res/layout/view_spinner_options.xml" value="0.3415384615384615" />

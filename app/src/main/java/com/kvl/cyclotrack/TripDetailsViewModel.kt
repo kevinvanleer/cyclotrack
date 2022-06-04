@@ -19,8 +19,9 @@ class TripDetailsViewModel @Inject constructor(
     private val onboardSensorsRepository: OnboardSensorsRepository,
     private val sharedPreferences: SharedPreferences,
     private val googleFitApiService: GoogleFitApiService,
+    private val weatherRepository: WeatherRepository,
 ) : ViewModel() {
-    val logTag = "TRIP_DETAILS_VIEW_MODEL"
+    val logTag = "TripDetailsViewModel"
     var tripId: Long = 0
         set(value) {
             tripOverview = tripsRepository.observe(value)
@@ -29,6 +30,7 @@ class TripDetailsViewModel @Inject constructor(
             measurements = measurementsRepository.observeCritical(value)
             exportMeasurements = measurementsRepository.observe(value)
             onboardSensors = onboardSensorsRepository.observeDecimated(value)
+            tripWeather = weatherRepository.observeTripWeather(value)
             field = value
         }
 
@@ -37,6 +39,7 @@ class TripDetailsViewModel @Inject constructor(
     lateinit var splits: LiveData<Array<Split>> private set
     lateinit var measurements: LiveData<Array<CriticalMeasurements>> private set
     lateinit var onboardSensors: LiveData<Array<OnboardSensors>> private set
+    lateinit var tripWeather: LiveData<Array<Weather>> private set
     private lateinit var exportMeasurements: LiveData<Array<Measurements>>
 
     suspend fun getBikeWheelCircumference(bikeId: Long) =
@@ -64,12 +67,14 @@ class TripDetailsViewModel @Inject constructor(
         viewModelScope.launch { tripsRepository.removeTrip(tripId) }
 
     suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics =
-        getCombinedBiometrics(tripId,
+        getCombinedBiometrics(
+            tripId,
             timestamp,
             context,
             viewModelScope,
             tripsRepository,
-            googleFitApiService)
+            googleFitApiService
+        )
 
     data class ExportData(
         var summary: Trip? = null,
@@ -77,6 +82,7 @@ class TripDetailsViewModel @Inject constructor(
         var timeStates: Array<TimeState>? = null,
         var splits: Array<Split>? = null,
         var onboardSensors: Array<OnboardSensors>? = null,
+        var weather: Array<Weather>? = null,
     )
 
     fun exportData() = MediatorLiveData<ExportData>().apply {
@@ -101,6 +107,10 @@ class TripDetailsViewModel @Inject constructor(
             Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export onboardSensors")
             value = value?.copy(onboardSensors = it)
         }
+        addSource(tripWeather) {
+            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export weather")
+            value = value?.copy(weather = it)
+        }
     }
 
     fun addSplits() {
@@ -115,8 +125,10 @@ class TripDetailsViewModel @Inject constructor(
                     val tripSplits =
                         calculateSplits(tripId, measurements, timeStates, sharedPreferences)
                     viewModelScope.launch {
-                        Log.d("TRIP_DETAILS_VIEW_MODEL",
-                            "Inserting post-trip computed splits in database")
+                        Log.d(
+                            "TRIP_DETAILS_VIEW_MODEL",
+                            "Inserting post-trip computed splits in database"
+                        )
                         splitRepository.addSplits(tripSplits.toTypedArray())
                     }
                     combined.removeObserver(this)

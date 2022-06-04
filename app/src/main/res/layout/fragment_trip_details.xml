@@ -11,29 +11,29 @@
         android:id="@+id/trip_details_map_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/trip_details_min_map_guide"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/trip_details_min_map_guide"
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="0dp" />
 
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/trip_details_default_map_guide"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/trip_details_default_map_guide"
         android:orientation="horizontal"
         app:layout_constraintGuide_begin="300dp" />
 
     <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/trip_details_max_map_guide"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/trip_details_max_map_guide"
         android:orientation="horizontal"
         app:layout_constraintGuide_end="64dp" />
 
@@ -41,184 +41,234 @@
         android:id="@+id/trip_details_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:background="@color/backgroundColor"
         android:layout_marginTop="300dp"
-        app:layout_constraintTop_toTopOf="@id/trip_details_min_map_guide"
+        android:background="@color/backgroundColor"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toTopOf="@id/trip_details_min_map_guide">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            app:layout_constraintTop_toTopOf="parent">
 
             <TextView
                 android:id="@+id/trip_details_title_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintBottom_toTopOf="@id/trip_details_title_date"
                 android:layout_marginTop="10dp"
-                android:textSize="24sp" />
+                android:textSize="24sp"
+                app:layout_constraintBottom_toTopOf="@id/trip_details_title_date"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/trip_details_title_date"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
                 app:layout_constraintBottom_toTopOf="@id/trip_details_notes"
-                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_title_name" />
+
+            <ImageView
+                android:id="@+id/trip_details_temperature_icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_margin="6dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/trip_details_title_date"
+                app:layout_constraintEnd_toStartOf="@id/trip_details_temperature_value"
+                app:layout_constraintTop_toTopOf="@id/trip_details_title_date"
+                app:srcCompat="@drawable/ic_thermometer_half" />
+
+            <TextView
+                android:id="@+id/trip_details_temperature_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="6dp"
+                android:layout_marginEnd="16dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/trip_details_temperature_icon"
+                app:layout_constraintEnd_toStartOf="@id/trip_details_wind_icon"
+                app:layout_constraintTop_toTopOf="@id/trip_details_temperature_icon" />
+
+            <ImageView
+                android:id="@+id/trip_details_wind_icon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_margin="6dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/trip_details_temperature_icon"
+                app:layout_constraintEnd_toStartOf="@id/trip_details_wind_value"
+                app:layout_constraintTop_toTopOf="@id/trip_details_temperature_icon"
+                app:srcCompat="@drawable/ic_wind_solid" />
+
+            <TextView
+                android:id="@+id/trip_details_wind_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="6dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/trip_details_wind_icon"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/trip_details_wind_icon" />
 
             <TextView
                 android:id="@+id/trip_details_notes"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
+                android:layout_marginTop="15dp"
                 app:layout_constraintBottom_toTopOf="@id/trip_details_distance"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_title_date" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_distance"
-                app:headingLabel="Distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Distance"
+                app:iconSrc="@drawable/ic_ruler"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_notes" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_time"
-                app:headingLabel="Duration"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Duration"
+                app:iconSrc="@drawable/ic_stopwatch"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_distance" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_calories"
-                app:headingLabel="Calories (net)"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
                 android:visibility="gone"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Calories (net)"
+                app:iconSrc="@drawable/ic_flame"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_time" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_heart_rate"
-                app:headingLabel="Heart rate"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
                 android:visibility="gone"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Heart rate"
+                app:iconSrc="@drawable/ic_heartbeat"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_calories" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_heart_rate_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_cadence"
-                app:headingLabel="Cadence"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Cadence"
+                app:iconSrc="@drawable/ic_sync_alt"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_cadence_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_cadence" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_speed"
-                app:headingLabel="Speed"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Speed"
+                app:iconSrc="@drawable/ic_tachometer_fast_solid"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_cadence_chart" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_speed_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_speed" />
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_splits"
-                app:headingLabel="Splits"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Splits"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_speed_chart" />
 
             <GridLayout
+                android:id="@+id/trip_details_splits_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_splits"
+                android:layout_marginBottom="5dp"
                 android:columnCount="3"
                 android:useDefaultMargins="true"
-                android:layout_marginBottom="5dp"
-                android:id="@+id/trip_details_splits_grid">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_splits">
 
                 <TextView android:text="Distance" />
 
                 <TextView
-                    android:text="Speed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_columnWeight="1" />
+                    android:layout_columnWeight="1"
+                    android:text="Speed" />
 
                 <TextView android:text="Trip time" />
             </GridLayout>
 
-            <com.kvl.cyclotrack.HeadingView
+            <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_elevation"
-                app:headingLabel="Elevation"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
-                app:layout_constraintStart_toStartOf="parent"
+                app:headingLabel="Elevation"
+                app:iconSrc="@drawable/ic_mountains"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_splits_grid" />
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/trip_details_elevation_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_elevation" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

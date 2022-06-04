@@ -23,10 +23,12 @@ class TripInProgressViewModel @Inject constructor(
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
+    private val weatherRepository: WeatherRepository
 ) : ViewModel() {
     private val logTag = "TripInProgressViewModel"
 
     var bikeWheelCircumference: Float? = null
+
     init {
         EventBus.getDefault().register(this)
         viewModelScope.launch(Dispatchers.IO) {
@@ -63,6 +65,8 @@ class TripInProgressViewModel @Inject constructor(
     val cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
     val speedSensor = MutableLiveData(SpeedData(null, null, null, null))
 
+    val latestWeather = weatherRepository.observeLatest()
+
     @Subscribe
     fun onHrmData(hrm: HrmData) {
         hrmSensor.postValue(hrm)
@@ -96,8 +100,10 @@ class TripInProgressViewModel @Inject constructor(
                 startTime = intervals.last().last / 1e3
             }
         }
-        Log.v(logTag,
-            "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}")
+        Log.v(
+            logTag,
+            "accumulatedDuration = ${accumulatedDuration}; startTime = ${startTime}"
+        )
     }
 
     private val accumulateDurationObserver: Observer<Array<TimeState>> =

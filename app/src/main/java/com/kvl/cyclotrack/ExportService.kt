@@ -71,28 +71,46 @@ fun exportRideToCsv(
         ZipOutputStream(BufferedOutputStream(FileOutputStream(it.fileDescriptor))).use { stream ->
             Log.d("EXPORT_SERVICE", "Zipping...")
 
-            stream.putNextEntry(ZipEntry("${
-                String.format("%06d",
-                    exportData.summary!!.id)
-            }_measurements.csv"))
+            stream.putNextEntry(
+                ZipEntry(
+                    "${
+                        String.format(
+                            "%06d",
+                            exportData.summary!!.id
+                        )
+                    }_measurements.csv"
+                )
+            )
             getDataCsv(exportData.measurements!!).forEach { row ->
                 stream.write("$row\n".toByteArray())
             }
             stream.closeEntry()
 
-            stream.putNextEntry(ZipEntry("${
-                String.format("%06d",
-                    exportData.summary!!.id)
-            }_onboardSensors.csv"))
+            stream.putNextEntry(
+                ZipEntry(
+                    "${
+                        String.format(
+                            "%06d",
+                            exportData.summary!!.id
+                        )
+                    }_onboardSensors.csv"
+                )
+            )
             getDataCsv(exportData.onboardSensors!!).forEach { row ->
                 stream.write("$row\n".toByteArray())
             }
             stream.closeEntry()
 
-            stream.putNextEntry(ZipEntry("${
-                String.format("%06d",
-                    exportData.summary!!.id)
-            }_timeStates.csv"))
+            stream.putNextEntry(
+                ZipEntry(
+                    "${
+                        String.format(
+                            "%06d",
+                            exportData.summary!!.id
+                        )
+                    }_timeStates.csv"
+                )
+            )
             getDataCsv(exportData.timeStates!!).forEach { row ->
                 stream.write("$row\n".toByteArray())
             }
@@ -159,6 +177,9 @@ fun exportRideToFastExcel(
             addDataToSheet(workbook.newWorksheet("splits"), exportData.splits!!)
             if (exportData.onboardSensors?.isNotEmpty() == true) {
                 addDataToSheet(workbook.newWorksheet("onboardSensors"), exportData.onboardSensors!!)
+            }
+            if (exportData.weather?.isNotEmpty() == true) {
+                addDataToSheet(workbook.newWorksheet("weather"), exportData.weather!!)
             }
             workbook.setCompressionLevel(9)
             workbook.finish()

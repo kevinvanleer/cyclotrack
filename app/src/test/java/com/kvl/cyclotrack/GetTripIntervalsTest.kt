@@ -3,6 +3,15 @@ package com.kvl.cyclotrack
 import org.junit.Assert
 import org.junit.Test
 
+val zeroedCriticalMeasurements =
+    CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 0, 0, 0, 0, 0f, 0, 0, 0f)
+val standardTestMeasurements = arrayListOf(
+    zeroedCriticalMeasurements.copy(time = 123),
+    zeroedCriticalMeasurements.copy(time = 234),
+    zeroedCriticalMeasurements.copy(time = 345),
+    zeroedCriticalMeasurements.copy(time = 456),
+)
+
 class GetTripIntervalsTest {
     @Test
     fun getTripIntervals_noData() {
@@ -16,11 +25,7 @@ class GetTripIntervalsTest {
     @Test
     fun getTripIntervals_noTimeStates() {
         val testTimeStates = ArrayList<TimeState>()
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
         Assert.assertArrayEquals(arrayOf(LongRange(123, 456)), intervals)
@@ -32,11 +37,7 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 2345))
         testTimeStates.add(TimeState(0, TimeStateEnum.STOP, 3456))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
         Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345)), intervals)
@@ -47,11 +48,7 @@ class GetTripIntervalsTest {
         val testTimeStates = ArrayList<TimeState>()
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 2345))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
         Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345)), intervals)
@@ -62,11 +59,7 @@ class GetTripIntervalsTest {
         val testTimeStates = ArrayList<TimeState>()
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
         testTimeStates.add(TimeState(0, TimeStateEnum.STOP, 2345))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
         Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345)), intervals)
@@ -77,10 +70,10 @@ class GetTripIntervalsTest {
         val testTimeStates = ArrayList<TimeState>()
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
         val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 4567, 0, 0, 0, 0))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 123))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 234))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 345))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 4567))
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
         Assert.assertArrayEquals(arrayOf(LongRange(1234, 4567)), intervals)
@@ -91,11 +84,7 @@ class GetTripIntervalsTest {
     fun getTripIntervals_oneInterval_open_unresolved() {
         val testTimeStates = ArrayList<TimeState>()
         testTimeStates.add(TimeState(0, TimeStateEnum.START, 1234))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
         Assert.assertArrayEquals(arrayOf(LongRange(123, 456)), intervals)
@@ -113,17 +102,17 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 8901))
         testTimeStates.add(TimeState(0, TimeStateEnum.STOP, 9012))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789),
-            LongRange(7890, 8901)), intervals)
+        Assert.assertArrayEquals(
+            arrayOf(
+                LongRange(1234, 2345),
+                LongRange(3456, 4567),
+                LongRange(5678, 6789),
+                LongRange(7890, 8901)
+            ), intervals
+        )
     }
 
     @Test
@@ -139,17 +128,17 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 8901))
         testTimeStates.add(TimeState(0, TimeStateEnum.STOP, 9012))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789),
-            LongRange(7890, 8901)), intervals)
+        Assert.assertArrayEquals(
+            arrayOf(
+                LongRange(1234, 2345),
+                LongRange(3456, 4567),
+                LongRange(5678, 6789),
+                LongRange(7890, 8901)
+            ), intervals
+        )
     }
 
     @Test
@@ -163,17 +152,17 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 6789))
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 8901))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789),
-            LongRange(7890, 8901)), intervals)
+        Assert.assertArrayEquals(
+            arrayOf(
+                LongRange(1234, 2345),
+                LongRange(3456, 4567),
+                LongRange(5678, 6789),
+                LongRange(7890, 8901)
+            ), intervals
+        )
     }
 
     @Test
@@ -187,17 +176,17 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 6789))
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         testTimeStates.add(TimeState(0, TimeStateEnum.STOP, 9012))
-        val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 456, 0, 0, 0, 0))
+        val testMeasurements = standardTestMeasurements
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789),
-            LongRange(7890, 9012)), intervals)
+        Assert.assertArrayEquals(
+            arrayOf(
+                LongRange(1234, 2345),
+                LongRange(3456, 4567),
+                LongRange(5678, 6789),
+                LongRange(7890, 9012)
+            ), intervals
+        )
     }
 
     @Test
@@ -211,16 +200,20 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 6789))
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 8901, 0, 0, 0, 0))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 123))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 234))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 345))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 8901))
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789),
-            LongRange(7890, 8901)), intervals)
+        Assert.assertArrayEquals(
+            arrayOf(
+                LongRange(1234, 2345),
+                LongRange(3456, 4567),
+                LongRange(5678, 6789),
+                LongRange(7890, 8901)
+            ), intervals
+        )
     }
 
     @Test
@@ -234,14 +227,18 @@ class GetTripIntervalsTest {
         testTimeStates.add(TimeState(0, TimeStateEnum.PAUSE, 6789))
         testTimeStates.add(TimeState(0, TimeStateEnum.RESUME, 7890))
         val testMeasurements = ArrayList<CriticalMeasurements>()
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 123, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 234, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 345, 0, 0, 0, 0))
-        testMeasurements.add(CriticalMeasurements(0f, 0.0, 0.0, 0.0, 0f, 4567, 0, 0, 0, 0))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 123))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 234))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 345))
+        testMeasurements.add(zeroedCriticalMeasurements.copy(time = 4567))
         val intervals =
             getTripIntervals(testTimeStates.toTypedArray(), testMeasurements.toTypedArray())
-        Assert.assertArrayEquals(arrayOf(LongRange(1234, 2345),
-            LongRange(3456, 4567),
-            LongRange(5678, 6789)), intervals)
+        Assert.assertArrayEquals(
+            arrayOf(
+                LongRange(1234, 2345),
+                LongRange(3456, 4567),
+                LongRange(5678, 6789)
+            ), intervals
+        )
     }
 }

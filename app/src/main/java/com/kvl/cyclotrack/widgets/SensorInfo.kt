@@ -44,13 +44,13 @@ class SensorInfo : ConstraintLayout {
         sensor.features.let { ft ->
             when {
                 ((ft?.and(ExternalSensorFeatures().HRM)) == ExternalSensorFeatures().HRM)
-                -> R.drawable.ic_baseline_monitor_heart_18
+                -> R.drawable.ic_heartbeat
                 ((ft?.and(ExternalSensorFeatures().SPEED)) == ExternalSensorFeatures().SPEED)
-                -> R.drawable.ic_baseline_speed_18
+                -> R.drawable.ic_tachometer_fast_solid
                 ((ft?.and(ExternalSensorFeatures().CADENCE)) == ExternalSensorFeatures().CADENCE)
-                -> R.drawable.ic_baseline_360_24
+                -> R.drawable.ic_sync_alt
                 ((ft?.and(ExternalSensorFeatures().POWER)) == ExternalSensorFeatures().POWER)
-                -> R.drawable.ic_baseline_power_18
+                -> R.drawable.ic_baseline_power_24
                 else -> R.drawable.ic_baseline_question_mark_24
             }.let {
                 sensorTypeIcon.setImageResource(it)
@@ -64,8 +64,8 @@ class SensorInfo : ConstraintLayout {
                 (level >= 50) -> R.drawable.ic_baseline_battery_4_bar_24
                 (level >= 25) -> R.drawable.ic_baseline_battery_3_bar_24
                 (level >= 15) -> R.drawable.ic_baseline_battery_2_bar_24
-                (level >= 0) -> R.drawable.ic_battery_alert_18dp
-                else -> R.drawable.ic_baseline_battery_unknown_18
+                (level >= 0) -> R.drawable.ic_battery_alert_24
+                else -> R.drawable.ic_baseline_battery_unknown_24
             }.let {
                 batteryLevelIcon.setImageResource(it)
             }

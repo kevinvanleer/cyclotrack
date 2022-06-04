@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:measurement_view="http://schemas.android.com/apk/res-auto"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:measurement_view="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -17,76 +17,76 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        measurement_view:textSize="60sp"
-        measurement_view:autoShrinkText="false" />
+        measurement_view:autoShrinkText="false"
+        measurement_view:textSize="60sp" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/measurement_topLeft"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
-        measurement_view:autoShrinkText="true"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         app:layout_constraintBottom_toTopOf="@id/measurement_middleLeft"
         app:layout_constraintEnd_toStartOf="@id/measurement_topRight"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/measurement_top" />
+        app:layout_constraintTop_toBottomOf="@id/measurement_top"
+        measurement_view:autoShrinkText="true" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/measurement_topRight"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
-        measurement_view:autoShrinkText="true"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         app:layout_constraintBottom_toBottomOf="@id/measurement_topLeft"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/measurement_topLeft" />
+        app:layout_constraintStart_toEndOf="@id/measurement_topLeft"
+        measurement_view:autoShrinkText="true" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/measurement_middleLeft"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
-        measurement_view:autoShrinkText="true"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toTopOf="@id/measurement_bottomRight"
         app:layout_constraintEnd_toStartOf="@id/measurement_middleRight"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/measurement_topLeft" />
+        app:layout_constraintTop_toBottomOf="@id/measurement_topLeft"
+        measurement_view:autoShrinkText="true" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/measurement_middleRight"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
-        measurement_view:autoShrinkText="true"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:text="@string/zero"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/measurement_middleLeft"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/measurement_middleLeft" />
+        app:layout_constraintStart_toEndOf="@id/measurement_middleLeft"
+        measurement_view:autoShrinkText="true" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/measurement_bottomLeft"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
-        measurement_view:autoShrinkText="true"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:textAppearance="@style/DashboardFontAppearance"
-        app:layout_constraintBottom_toTopOf="@id/measurement_bottom"
+        app:layout_constraintBottom_toTopOf="@id/measurement_footer"
         app:layout_constraintEnd_toStartOf="@+id/measurement_bottomRight"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/measurement_middleRight" />
+        app:layout_constraintTop_toBottomOf="@id/measurement_middleRight"
+        measurement_view:autoShrinkText="true" />
 
     <com.kvl.cyclotrack.MeasurementView
         android:id="@+id/measurement_bottomRight"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:layout_height="wrap_content"
-        measurement_view:autoShrinkText="true"
+        android:layout_marginHorizontal="@dimen/tip_measurement_padding"
         android:textAppearance="@style/DashboardFontAppearance"
         app:layout_constraintBottom_toBottomOf="@id/measurement_bottomLeft"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/measurement_bottomLeft" />
+        app:layout_constraintStart_toEndOf="@+id/measurement_bottomLeft"
+        measurement_view:autoShrinkText="true" />
 
     <ImageView
         android:id="@+id/image_tracking"
@@ -99,12 +99,11 @@
 
     <TextView
         android:id="@+id/textview_debug"
-        android:layout_height="wrap_content"
         android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:fontFamily="@font/orbitron_medium"
         android:text="@string/zero"
-        android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:textColor="#FFFFFF"
         app:layout_constraintBottom_toBottomOf="@id/image_tracking"
         app:layout_constraintEnd_toEndOf="parent"
@@ -115,27 +114,29 @@
         android:id="@+id/dashboard_textview_timeOfDay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:fontFamily="@font/orbitron_medium"
-        android:textAppearance="@style/DashboardFontAppearance"
-        android:textColor="#FFFFFF"
-        android:textSize="24sp"
         android:layout_marginTop="6dp"
         android:layout_marginEnd="12dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <TextView
-        android:id="@+id/measurement_bottom"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:fontFamily="@font/orbitron_medium"
         android:textAppearance="@style/DashboardFontAppearance"
         android:textColor="#FFFFFF"
         android:textSize="24sp"
-        android:layout_marginBottom="6dp"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/dashboard_textview_temperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="12dp"
+        android:fontFamily="@font/orbitron_medium"
+        android:textAppearance="@style/DashboardFontAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_textview_timeOfDay"
+        app:layout_constraintTop_toTopOf="parent" />
+
 
     <ImageView
         android:id="@+id/compass_image"
@@ -145,19 +146,72 @@
         android:layout_marginBottom="1dp"
         android:contentDescription="@string/bearing_icon_description"
         android:src="@drawable/baseline_explore_24"
-        app:layout_constraintEnd_toStartOf="@id/measurement_bottom"
-        app:layout_constraintBottom_toBottomOf="@id/measurement_bottom" />
+        app:layout_constraintBottom_toBottomOf="@id/measurement_footer"
+        app:layout_constraintEnd_toStartOf="@id/measurement_footer" />
+
+    <TextView
+        android:id="@+id/measurement_footer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:fontFamily="@font/orbitron_medium"
+        android:textAppearance="@style/DashboardFontAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_arrow_wind_direction"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginHorizontal="6dp"
+        android:contentDescription="@string/wind_direction_icon_description"
+        android:padding="6dp"
+        android:src="@drawable/ic_circle"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/measurement_footer_right"
+        app:layout_constraintEnd_toStartOf="@id/measurement_footer_right"
+        app:layout_constraintTop_toTopOf="@id/measurement_footer_right" />
+
+    <TextView
+        android:id="@+id/measurement_footer_right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:fontFamily="@font/orbitron_medium"
+        android:textAppearance="@style/DashboardFontAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/measurement_footer" />
+
+    <ImageView
+        android:id="@+id/image_wind_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="3dp"
+        android:contentDescription="@string/wind_icon_description"
+        android:padding="3dp"
+        android:src="@drawable/ic_wind_solid"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/measurement_footer_right"
+        app:layout_constraintStart_toEndOf="@id/measurement_footer_right"
+        app:layout_constraintTop_toTopOf="@id/measurement_footer_right" />
 
     <Button
         android:id="@+id/pause_button"
         android:layout_width="match_parent"
         android:layout_height="0.9in"
+        android:ellipsize="none"
         android:fontFamily="@font/orbitron_medium"
+        android:maxLines="1"
         android:text="@string/pause_label"
         android:textColor="#FFFFFF"
         android:textSize="0.2in"
-        android:maxLines="1"
-        android:ellipsize="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
@@ -165,13 +219,13 @@
         android:id="@+id/stop_button"
         android:layout_width="0dp"
         android:layout_height="0.9in"
+        android:layout_marginEnd="5dp"
+        android:ellipsize="none"
         android:fontFamily="@font/orbitron_medium"
+        android:maxLines="1"
         android:text="@string/stop_label"
         android:textColor="#FFFFFF"
         android:textSize="0.2in"
-        android:maxLines="1"
-        android:ellipsize="none"
-        android:layout_marginEnd="5dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/resume_button"
         app:layout_constraintStart_toStartOf="parent" />
@@ -180,14 +234,14 @@
         android:id="@+id/resume_button"
         android:layout_width="0dp"
         android:layout_height="0.9in"
+        android:layout_marginStart="5dp"
+        android:ellipsize="none"
         android:fontFamily="@font/orbitron_medium"
+        android:maxLines="1"
         android:text="@string/resume_label"
         android:textAppearance="@style/DashboardFontAppearance"
         android:textColor="#FFFFFF"
         android:textSize="0.2in"
-        android:maxLines="1"
-        android:ellipsize="none"
-        android:layout_marginStart="5dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/stop_button" />

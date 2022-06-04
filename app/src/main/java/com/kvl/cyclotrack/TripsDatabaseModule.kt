@@ -252,6 +252,13 @@ val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
+val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE `Weather` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sunrise` INTEGER NOT NULL, `sunset` INTEGER NOT NULL, `temperature` REAL NOT NULL, `feelsLike` REAL NOT NULL, `pressure` INTEGER NOT NULL, `humidity` INTEGER NOT NULL, dewPoint REAL NOT NULL, `uvIndex` REAL NOT NULL, `clouds` INTEGER NOT NULL, `visibility` INTEGER NOT NULL, `windSpeed` REAL NOT NULL, windDirection INTEGER NOT NULL, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("CREATE INDEX index_Weather_tripId on Weather(`tripId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -281,6 +288,7 @@ object TripsDatabaseModule {
                 MIGRATION_18_19,
                 MIGRATION_19_20,
                 MIGRATION_20_21,
+                MIGRATION_21_22,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -334,5 +342,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideExternalSensorDao(db: TripsDatabase): ExternalSensorDao {
         return db.externalSensorsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWeatherDao(db: TripsDatabase): WeatherDao {
+        return db.weatherDao()
     }
 }

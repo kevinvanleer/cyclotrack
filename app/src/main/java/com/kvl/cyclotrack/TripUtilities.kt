@@ -23,11 +23,13 @@ fun getDistance(
     prev: Measurements,
 ): Float {
     val distanceArray = floatArrayOf(0f)
-    Location.distanceBetween(curr.latitude,
+    Location.distanceBetween(
+        curr.latitude,
         curr.longitude,
         prev.latitude,
         prev.longitude,
-        distanceArray)
+        distanceArray
+    )
     return distanceArray[0]
 }
 
@@ -36,11 +38,13 @@ fun getDistance(
     prev: CriticalMeasurements,
 ): Float {
     val distanceArray = floatArrayOf(0f)
-    Location.distanceBetween(curr.latitude,
+    Location.distanceBetween(
+        curr.latitude,
         curr.longitude,
         prev.latitude,
         prev.longitude,
-        distanceArray)
+        distanceArray
+    )
     return distanceArray[0]
 }
 
@@ -152,8 +156,14 @@ fun accumulateActiveTime(timeStates: Array<TimeState>) =
     accumulateTripTime(getTripIntervals(timeStates))
 
 fun accumulateTime(intervals: Array<LongRange>): Double {
-    return if (intervals.size <= 1) 0.0 else accumulateTripTime(intervals.sliceArray(IntRange(0,
-        intervals.size - 2))) + accumulateTripPauses(intervals)
+    return if (intervals.size <= 1) 0.0 else accumulateTripTime(
+        intervals.sliceArray(
+            IntRange(
+                0,
+                intervals.size - 2
+            )
+        )
+    ) + accumulateTripPauses(intervals)
 }
 
 fun getInspiringMessage(duration: Long): String {
@@ -228,8 +238,12 @@ fun getTripIntervals(
         }
     }
     return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
-        arrayOf(LongRange(firstMeasurement.time,
-            lastMeasurement.time))
+        arrayOf(
+            LongRange(
+                firstMeasurement.time,
+                lastMeasurement.time
+            )
+        )
     } else intervals.toTypedArray()
 }
 
@@ -264,8 +278,10 @@ fun getEffectiveCircumference(trip: Trip, measurements: Array<CriticalMeasuremen
             .map { filtered -> filtered.speedRevolutions!! }
             .let { mapped ->
                 if (mapped.isNotEmpty()) {
-                    distance.div(mapped.last()
-                        .minus(mapped.first().toDouble()))
+                    distance.div(
+                        mapped.last()
+                            .minus(mapped.first().toDouble())
+                    )
                         .toFloat()
                 } else null
             }
@@ -367,6 +383,21 @@ const val FEET_TO_MILES = 1.0 / 5280
 const val SECONDS_TO_HOURS = 1.0 / 3600
 const val INCHES_TO_FEET = 1 / 12.0
 const val FEET_TO_INCHES = 12.0
+const val KELVIN_TO_CELSIUS = 273.15
+
+fun kelvinToCelsius(kelvin: Double) = kelvin - KELVIN_TO_CELSIUS
+fun kelvinToFahrenheit(kelvin: Double) = kelvinToCelsius(kelvin) * 9.0 / 5.0 + 32.0
+
+fun getUserTemperature(context: Context, temperature: Double): Int = getUserTemperature(
+    getSystemOfMeasurement(context), temperature
+)
+
+fun getUserTemperature(systemOfMeasurement: String?, temperature: Double): Int =
+    when (systemOfMeasurement) {
+        "1" -> kelvinToFahrenheit(temperature)
+        "2" -> kelvinToCelsius(temperature)
+        else -> 1.0
+    }.roundToInt()
 
 fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
     getUserSpeed(context, meters / seconds)
@@ -467,6 +498,17 @@ fun getUserAltitude(context: Context, meters: Double): Double {
     return meters * userConversionFactor
 }
 
+fun getUserTemperatureUnit(context: Context) = getUserTemperatureUnit(
+    getSystemOfMeasurement(context)
+)
+
+fun getUserTemperatureUnit(systemOfMeasurement: String?): String =
+    when (systemOfMeasurement) {
+        "1" -> "°F"
+        "2" -> "°C"
+        else -> "K"
+    }
+
 fun getUserDistanceUnitShort(context: Context): String = getUserDistanceUnitShort(
     getSystemOfMeasurement(context)
 )
@@ -553,9 +595,11 @@ fun crossedSplitThreshold(
 }
 
 fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Double): Boolean {
-    return crossedSplitThreshold(getPreferences(context),
+    return crossedSplitThreshold(
+        getPreferences(context),
         newDistance,
-        oldDistance)
+        oldDistance
+    )
 }
 
 fun calculateSplits(
@@ -586,42 +630,57 @@ fun calculateSplits(
 
             totalDistance += getDistance(curr, prev)
             totalActiveTime =
-                ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(intervals.sliceArray(
-                    IntRange(0, legIdx - 1)))
+                ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(
+                    intervals.sliceArray(
+                        IntRange(0, legIdx - 1)
+                    )
+                )
             timestamp = curr.time
 
-            if (crossedSplitThreshold(sharedPreferences,
+            if (crossedSplitThreshold(
+                    sharedPreferences,
                     totalDistance,
-                    lastSplit.totalDistance)
+                    lastSplit.totalDistance
+                )
             ) {
-                tripSplits.add(makeSplit(tripId,
-                    totalDistance,
-                    totalActiveTime,
-                    lastSplit,
-                    timestamp))
+                tripSplits.add(
+                    makeSplit(
+                        tripId,
+                        totalDistance,
+                        totalActiveTime,
+                        lastSplit,
+                        timestamp
+                    )
+                )
             }
             prev = curr
         }
     }
     val lastSplit = getLastSplit(tripSplits)
     if (timestamp != lastSplit.timestamp) {
-        tripSplits.add(makeSplit(tripId,
-            totalDistance,
-            totalActiveTime,
-            lastSplit,
-            timestamp))
+        tripSplits.add(
+            makeSplit(
+                tripId,
+                totalDistance,
+                totalActiveTime,
+                lastSplit,
+                timestamp
+            )
+        )
     }
     return tripSplits
 }
 
 fun getLastSplit(tripSplits: ArrayList<Split>) =
-    if (tripSplits.isEmpty()) Split(0,
+    if (tripSplits.isEmpty()) Split(
+        0,
         0.0,
         0.0,
         0.0,
         0.0,
         0,
-        0) else tripSplits.last()
+        0
+    ) else tripSplits.last()
 
 fun makeSplit(
     tripId: Long,
@@ -630,12 +689,14 @@ fun makeSplit(
     lastSplit: Split,
     timestamp: Long,
 ): Split {
-    return Split(timestamp = timestamp,
+    return Split(
+        timestamp = timestamp,
         duration = totalActiveTime - lastSplit.totalDuration,
         distance = totalDistance - lastSplit.totalDistance,
         totalDuration = totalActiveTime,
         totalDistance = totalDistance,
-        tripId = tripId)
+        tripId = tripId
+    )
 }
 
 fun getDifferenceRollover(new: Int, old: Int, rollover: Int = 65536) =
@@ -652,8 +713,10 @@ fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int, delta: Long): Float
     val rollCount = (delta / 64000).toInt()
     val adjustedTime = time + 65536 * rollCount
     return getDifferenceRollover(rev, revLast).toFloat().let {
-        if (it == 0f) 0f else it / getDifferenceRollover(adjustedTime,
-            timeLast) * 1024 * 60
+        if (it == 0f) 0f else it / getDifferenceRollover(
+            adjustedTime,
+            timeLast
+        ) * 1024 * 60
     }
 }
 
@@ -661,10 +724,24 @@ fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
     //NOTE: Does not handle 32-bit rollover, as the CSC spec states 32-bit values
     //do not rollover.
     return getDifferenceRollover(rev, revLast).toFloat().let {
-        if (it == 0f) 0f else it / getDifferenceRollover(time,
-            timeLast) * 1024 * 60
+        if (it == 0f) 0f else it / getDifferenceRollover(
+            time,
+            timeLast
+        ) * 1024 * 60
     }
 }
+
+fun bearingToWindAngle(bearing: Float, windDirection: Int): Int = (when {
+    bearing > windDirection -> bearing - windDirection
+    bearing < windDirection -> windDirection - bearing
+    else -> 0
+}.toInt() + 180) % 360
+
+fun bearingToIconRotation(bearing: Int, offset: Int = 0): Int = when (bearing) {
+    0 -> 0 + offset
+    else -> (bearing + offset) % 360
+}
+
 
 fun degreesToCardinal(degrees: Float): String {
     //val directions = arrayOf("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")

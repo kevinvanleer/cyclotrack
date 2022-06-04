@@ -114,4 +114,7 @@
     <string name="empty_sensor_group_placeholder">Tap to link sensors</string>
     <string name="linked_sensors_heading">Link Bluetooth Low Energy sensors attached to your body and bikes to record, heart rate, cadence, speed, and power. Bike sensors will be used to detect the bike you are riding.</string>
     <string name="snackbar_message_cannot_delete_last_bike">Cannot delete bike. There must be at least one bike.</string>
+    <string name="wind_direction_icon_description">Wind direction</string>
+    <string name="heading_icon_description">Icon that represents this heading</string>
+    <string name="wind_icon_description">Wind icon</string>
 </resources>

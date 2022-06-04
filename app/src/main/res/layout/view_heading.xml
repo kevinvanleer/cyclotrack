@@ -5,16 +5,29 @@
     android:layout_height="wrap_content"
     tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout">
 
+    <ImageView
+        android:id="@+id/heading_icon"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_margin="6dp"
+        android:contentDescription="@string/heading_icon_description"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/heading_label"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/heading_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="heading label"
         android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/heading_icon"
         app:layout_constraintEnd_toStartOf="@id/heading_value"
         app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/heading_icon"
+        app:layout_constraintTop_toTopOf="@id/heading_icon" />
 
     <TextView
         android:id="@+id/heading_value"
@@ -22,8 +35,8 @@
         android:layout_height="wrap_content"
         android:text="heading value"
         android:textAlignment="textEnd"
+        app:layout_constraintBaseline_toBaselineOf="@id/heading_label"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/heading_label"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/heading_label" />
 
 </merge>
