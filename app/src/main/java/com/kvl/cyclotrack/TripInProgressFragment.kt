@@ -493,51 +493,53 @@ class TripInProgressFragment :
     private fun initializeWeatherObservers() {
         val windIcon = requireView().findViewById<ImageView>(R.id.image_wind_icon)
         viewModel.latestWeather.observe(viewLifecycleOwner) { weather ->
-            temperatureTextView.visibility = VISIBLE
-            footerRightView.visibility = VISIBLE
-            windDirectionArrow.visibility = VISIBLE
-            windIcon.visibility = VISIBLE
+            if (weather != null) {
+                temperatureTextView.visibility = VISIBLE
+                footerRightView.visibility = VISIBLE
+                windDirectionArrow.visibility = VISIBLE
+                windIcon.visibility = VISIBLE
 
-            //TODO: This will not update dynamically, maybe start a timer
-            when ((weather?.timestamp ?: 0) < (System.currentTimeMillis() / 1000 - 60 * 15)) {
-                true -> {
-                    temperatureTextView.alpha = 0.3f
-                    footerRightView.alpha = 0.3f
-                    windDirectionArrow.alpha = 0.3f
-                    windIcon.alpha = 0.3f
+                //TODO: This will not update dynamically, maybe start a timer
+                when (weather.timestamp < (System.currentTimeMillis() / 1000 - 60 * 15)) {
+                    true -> {
+                        temperatureTextView.alpha = 0.3f
+                        footerRightView.alpha = 0.3f
+                        windDirectionArrow.alpha = 0.3f
+                        windIcon.alpha = 0.3f
+                    }
+                    else -> {
+                        temperatureTextView.alpha = 1f
+                        footerRightView.alpha = 1f
+                        windDirectionArrow.alpha = 1f
+                        windIcon.alpha = 1f
+                    }
                 }
-                else -> {
-                    temperatureTextView.alpha = 1f
-                    footerRightView.alpha = 1f
-                    windDirectionArrow.alpha = 1f
-                    windIcon.alpha = 1f
-                }
-            }
 
-            temperatureTextView.text = "${
-                getUserTemperature(
-                    requireContext(),
-                    weather.temperature
-                )
-            } ${getUserTemperatureUnit(requireContext())}"
-            footerRightView.text =
-                "%.1f %s".format(
-                    getUserSpeed(requireContext(), weather?.windSpeed ?: 0.0),
-                    getUserSpeedUnitShort(requireContext())
-                )
-            when (weather?.windSpeed) {
-                null, 0.0 -> {
-                    windDirectionArrow.setPadding(
-                        TypedValue.applyDimension(
-                            TypedValue.COMPLEX_UNIT_DIP,
-                            6f, resources.displayMetrics
-                        ).toInt()
+                temperatureTextView.text = "${
+                    getUserTemperature(
+                        requireContext(),
+                        weather.temperature
                     )
-                    windDirectionArrow.setImageResource(R.drawable.ic_circle)
-                }
-                else -> {
-                    windDirectionArrow.setPadding(0)
-                    windDirectionArrow.setImageResource(R.drawable.ic_long_arrow_up)
+                } ${getUserTemperatureUnit(requireContext())}"
+                footerRightView.text =
+                    "%.1f %s".format(
+                        getUserSpeed(requireContext(), weather.windSpeed),
+                        getUserSpeedUnitShort(requireContext())
+                    )
+                when (weather.windSpeed) {
+                    null, 0.0 -> {
+                        windDirectionArrow.setPadding(
+                            TypedValue.applyDimension(
+                                TypedValue.COMPLEX_UNIT_DIP,
+                                6f, resources.displayMetrics
+                            ).toInt()
+                        )
+                        windDirectionArrow.setImageResource(R.drawable.ic_circle)
+                    }
+                    else -> {
+                        windDirectionArrow.setPadding(0)
+                        windDirectionArrow.setImageResource(R.drawable.ic_long_arrow_up)
+                    }
                 }
             }
         }
@@ -548,7 +550,6 @@ class TripInProgressFragment :
             windDirectionArrow.rotation = bearingToIconRotation(
                 bearingToWindAngle(location.bearing, weather.windDirection)
             ).toFloat()
-
         }
     }
 
