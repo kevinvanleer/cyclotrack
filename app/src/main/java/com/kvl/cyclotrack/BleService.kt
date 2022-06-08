@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.app.Application
 import android.bluetooth.*
-import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
@@ -56,8 +55,6 @@ class BleService @Inject constructor(
     private var hrmSensor = HrmData(null, null)
     private var cadenceSensor = CadenceData(null, null, null, null)
     private var speedSensor = SpeedData(null, null, null, null)
-
-    private lateinit var bluetoothLeScanner: BluetoothLeScanner
 
     private fun getFitnessMachineFeatures(gatt: BluetoothGatt) {
         val featureChar = gatt
@@ -194,7 +191,7 @@ class BleService @Inject constructor(
                         "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}"
                     )
                     gatts.add(result.device.connectGatt(context, true, genericGattCallback))
-                    bluetoothLeScanner.stopScan(this)
+                    bluetoothManager.adapter?.bluetoothLeScanner?.stopScan(this)
                     scanCallbacks.remove(this)
                 }
             } catch (e: SecurityException) {
@@ -430,23 +427,25 @@ class BleService @Inject constructor(
 
         fun isBluetoothEnabled(context: Context): Boolean {
             Log.d(logTag, "isBluetoothEnabled")
-            return (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.isEnabled.also {
+            return (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter?.isEnabled.also {
                 Log.d(
                     logTag,
                     "bluetoothEnabled=${it}"
                 )
+            } ?: false.also {
+                Log.d(logTag, "Bluetooth not supported")
             }
         }
 
         fun enableBluetooth(context: Context) {
             (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).let { bluetoothManager ->
-                bluetoothManager.adapter.let { bluetoothAdapter ->
-                    if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+                bluetoothManager.adapter?.let { bluetoothAdapter ->
+                    if (!bluetoothAdapter.isEnabled) {
                         Log.d(logTag, "Requesting to enable Bluetooth")
                         EventBus.getDefault()
                             .post(BluetoothActionEvent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
                     }
-                }
+                } ?: Log.d(logTag, "Cannot enable bluetooth, not supported")
             }
         }
     }
@@ -459,35 +458,49 @@ class BleService @Inject constructor(
         }
 
         enableBluetooth(context)
-        bluetoothLeScanner = bluetoothManager.adapter.bluetoothLeScanner
 
         lifecycle.coroutineScope.launch {
-            externalSensorRepository.all().let { myMacs ->
-                try {
-                    myMacs.forEach {
-                        val device = bluetoothManager.adapter.getRemoteDevice(it.address)
-
-                        if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
-                            Log.d(
-                                logTag,
-                                "Scanning for uncached device: ${device.address}"
-                            )
-                            val callback = scanForDevice(device.address)
-                            scanCallbacks.add(callback)
-                            bluetoothLeScanner.startScan(callback)
-                        } else {
-                            Log.d(
-                                logTag,
-                                "Connecting to ${device.name}, ${device.type}: ${device.address}"
-                            )
-                            //TODO: Store BLE service for each device and use corresponding callback
-                            gatts.add(device.connectGatt(context, true, genericGattCallback))
+            externalSensorRepository.all().takeIf { it.isNotEmpty() }?.let { myMacs ->
+                bluetoothManager.adapter?.let { bluetoothAdapter ->
+                    myMacs.forEach { sensor ->
+                        try {
+                            connectToSensor(bluetoothAdapter, sensor)
+                        } catch (e: IllegalArgumentException) {
+                            Log.e(logTag, "Invalid sensor address", e)
+                            externalSensorRepository.removeSensor(sensor)
                         }
                     }
-                } catch (e: SecurityException) {
-                    Log.w(logTag, "BLE permissions have not been granted", e)
-                }
+                } ?: Log.d(logTag, "Cannot connect to sensors. Bluetooth not supported")
             }
+        }
+    }
+
+    private fun connectToSensor(
+        bluetoothAdapter: BluetoothAdapter,
+        sensor: ExternalSensor
+    ) {
+        try {
+            val device = bluetoothAdapter.getRemoteDevice(sensor.address)
+            if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+                Log.d(
+                    logTag,
+                    "Scanning for uncached device: ${device.address}"
+                )
+                bluetoothAdapter.bluetoothLeScanner?.let { bluetoothLeScanner ->
+                    val callback = scanForDevice(device.address)
+                    scanCallbacks.add(callback)
+                    bluetoothLeScanner.startScan(callback)
+                } ?: Log.w(logTag, "BLE scanner not available")
+            } else {
+                Log.i(
+                    logTag,
+                    "Connecting to ${device.name}, ${device.type}: ${device.address}"
+                )
+                //TODO: Store BLE service for each device and use corresponding callback
+                gatts.add(device.connectGatt(context, true, genericGattCallback))
+            }
+        } catch (e: SecurityException) {
+            Log.w(logTag, "BLE permissions have not been granted", e)
         }
     }
 
@@ -496,23 +509,21 @@ class BleService @Inject constructor(
             Log.d(logTag, "Stop all scans")
             scanCallbacks.forEach {
                 Log.d(logTag, "Stopping device scan")
-                bluetoothLeScanner.stopScan(it)
+                bluetoothManager.adapter?.bluetoothLeScanner?.stopScan(it)
             }
             scanCallbacks.clear()
 
-            (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).let { bluetoothManager ->
-                gatts.filter {
-                    bluetoothManager.getConnectionState(
-                        it.device,
-                        BluetoothProfile.GATT
-                    ) != BluetoothProfile.STATE_CONNECTED
-                }
-                    .forEach { gatt ->
-                        Log.d(logTag, "Closing GATT for ${gatt.device.address}")
-                        gatt.close()
-                        gatts.remove(gatt)
-                    }
+            gatts.filter {
+                bluetoothManager.getConnectionState(
+                    it.device,
+                    BluetoothProfile.GATT
+                ) != BluetoothProfile.STATE_CONNECTED
             }
+                .forEach { gatt ->
+                    Log.d(logTag, "Closing GATT for ${gatt.device.address}")
+                    gatt.close()
+                    gatts.remove(gatt)
+                }
         } catch (e: SecurityException) {
             Log.w(logTag, "Bluetooth permissions have not been granted", e)
         }

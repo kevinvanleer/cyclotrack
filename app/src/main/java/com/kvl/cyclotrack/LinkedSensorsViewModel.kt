@@ -14,13 +14,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LinkedSensorsViewModel @Inject constructor(
     private val bleSensors: ExternalSensorRepository,
-    private val bikeRepository: BikeRepository,
+    bikeRepository: BikeRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
     private val logTag = "LinkedSensorsViewModel"
@@ -31,10 +32,11 @@ class LinkedSensorsViewModel @Inject constructor(
     private val bluetoothManager =
         appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
 
-    val sensors = bleSensors.observeAll()
-
-    private val bluetoothLeScanner: BluetoothLeScanner =
+    private val bluetoothLeScanner: BluetoothLeScanner? =
         (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
+
+    val sensors = bleSensors.observeAll()
+    val bikes = bikeRepository.observeAll()
 
     private fun closeGatt(gatt: BluetoothGatt) {
         try {
@@ -117,7 +119,7 @@ class LinkedSensorsViewModel @Inject constructor(
                         "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}"
                     )
                     connectGatt(result.device)
-                    bluetoothLeScanner.stopScan(this)
+                    bluetoothLeScanner?.stopScan(this)
                     scanCallbacks.remove(this)
                 }
             } catch (e: SecurityException) {
@@ -144,27 +146,33 @@ class LinkedSensorsViewModel @Inject constructor(
     }
 
     private fun connectSensors(linkedSensors: Array<ExternalSensor>) {
-        linkedSensors.forEach {
-            val device = bluetoothManager.adapter.getRemoteDevice(it.address)
-
-            try {
-                if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
-                    Log.d(
-                        logTag,
-                        "Scanning for uncached device: ${device.address}"
-                    )
-                    val callback = scanForDevice(device.address)
-                    scanCallbacks.add(callback)
-                    bluetoothLeScanner.startScan(callback)
-                } else {
-                    Log.d(
-                        logTag,
-                        "Connecting to ${device.name}, ${device.type}: ${device.address}"
-                    )
-                    connectGatt(device)
+        bluetoothManager.adapter?.let { bluetoothAdapter ->
+            linkedSensors.forEach {
+                try {
+                    val device = bluetoothAdapter.getRemoteDevice(it.address)
+                    if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
+                        Log.d(
+                            logTag,
+                            "Scanning for uncached device: ${device.address}"
+                        )
+                        val callback = scanForDevice(device.address)
+                        scanCallbacks.add(callback)
+                        bluetoothLeScanner?.startScan(callback)
+                    } else {
+                        Log.d(
+                            logTag,
+                            "Connecting to ${device.name}, ${device.type}: ${device.address}"
+                        )
+                        connectGatt(device)
+                    }
+                } catch (e: SecurityException) {
+                    Log.w(logTag, "BLE permissions have not been granted", e)
+                } catch (e: IllegalArgumentException) {
+                    Log.e(logTag, "Invalid bluetooth address", e)
+                    viewModelScope.launch(Dispatchers.IO) {
+                        bleSensors.removeSensor(it)
+                    }
                 }
-            } catch (e: SecurityException) {
-                Log.w(logTag, "BLE permissions have not been granted", e)
             }
         }
     }
@@ -180,7 +188,7 @@ class LinkedSensorsViewModel @Inject constructor(
             Log.d(logTag, "Stop all scans")
             scanCallbacks.forEach {
                 Log.d(logTag, "Stopping device scan")
-                bluetoothLeScanner.stopScan(it)
+                bluetoothLeScanner?.stopScan(it)
             }
             scanCallbacks.clear()
 
@@ -218,6 +226,4 @@ class LinkedSensorsViewModel @Inject constructor(
         Log.d(logTag, "view model cleared")
         disconnect()
     }
-
-    val bikes = bikeRepository.observeAll()
 }
