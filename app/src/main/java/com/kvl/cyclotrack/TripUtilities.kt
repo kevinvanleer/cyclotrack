@@ -731,17 +731,11 @@ fun getRpm(rev: Int, revLast: Int, time: Int, timeLast: Int): Float {
     }
 }
 
-fun bearingToWindAngle(bearing: Float, windDirection: Int): Int = (when {
-    bearing > windDirection -> bearing - windDirection
-    bearing < windDirection -> windDirection - bearing
-    else -> 0
-}.toInt() + 180) % 360
+fun bearingToWindAngle(bearing: Float, windDirection: Int): Int =
+    ((windDirection - bearing).toInt() + 540) % 360
 
-fun bearingToIconRotation(bearing: Int, offset: Int = 0): Int = when (bearing) {
-    0 -> 0 + offset
-    else -> (bearing + offset) % 360
-}
-
+fun bearingToIconRotation(bearing: Int, offset: Int = 0): Int =
+    (bearing + offset) % 360
 
 fun degreesToCardinal(degrees: Float): String {
     //val directions = arrayOf("N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW")

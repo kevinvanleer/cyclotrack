@@ -54,6 +54,14 @@ class UnitConversionTest {
     @Test
     fun windArrowTest() {
         Assert.assertEquals(
+            178,
+            bearingToIconRotation(bearingToWindAngle(1f, 359), 0)
+        )
+        Assert.assertEquals(
+            182,
+            bearingToIconRotation(bearingToWindAngle(359f, 1), 0)
+        )
+        Assert.assertEquals(
             90,
             bearingToIconRotation(bearingToWindAngle(0f, 0), 270)
         )
@@ -68,6 +76,26 @@ class UnitConversionTest {
         Assert.assertEquals(
             60,
             bearingToIconRotation(bearingToWindAngle(0f, 330), 270)
+        )
+        Assert.assertEquals(
+            80,
+            bearingToIconRotation(bearingToWindAngle(0f, 260), 0)
+        )
+        Assert.assertEquals(
+            35,
+            bearingToIconRotation(bearingToWindAngle(45f, 260), 0)
+        )
+        Assert.assertEquals(
+            190,
+            bearingToIconRotation(bearingToWindAngle(250f, 260), 0)
+        )
+        Assert.assertEquals(
+            120,
+            bearingToIconRotation(bearingToWindAngle(320f, 260), 0)
+        )
+        Assert.assertEquals(
+            320,
+            bearingToIconRotation(bearingToWindAngle(120f, 260), 0)
         )
     }
 }
