@@ -44,9 +44,6 @@ import kotlin.math.pow
 class TripInProgressFragment :
     Fragment(), OnTouchListener {
     val logTag = "TripInProgressFragment"
-    /*private val viewModel: TripInProgressViewModel by navGraphViewModels(R.id.dashboard_nav_graph) {
-        defaultViewModelProviderFactory
-    }*/
 
     private val viewModel: TripInProgressViewModel by viewModels()
     private val args: TripInProgressFragmentArgs by navArgs()
@@ -188,7 +185,7 @@ class TripInProgressFragment :
     }
 
     private fun startTrip() {
-        Log.d(logTag, "${host}")
+        Log.d(logTag, "$host")
         requireContext().startService(Intent(
             requireContext(),
             TripInProgressService::class.java
@@ -238,16 +235,20 @@ class TripInProgressFragment :
                 pauseButton.setOnClickListener(pauseTripListener(tripId))
                 resumeButton.setOnClickListener(resumeTripListener(tripId))
                 stopButton.setOnClickListener(stopTripListener(tripId))
-                if (currentState.state == TimeStateEnum.START || currentState.state == TimeStateEnum.RESUME) {
-                    view?.doOnPreDraw { hideResumeStop() }
-                    view?.doOnPreDraw { hidePause() }
-                    pauseButton.text = getString(R.string.pause_label)
-                } else if (currentState.state == TimeStateEnum.PAUSE) {
-                    view?.doOnPreDraw { hidePause() }
-                    slideInResumeStop()
-                } else {
-                    pauseButton.setOnClickListener(startTripListener)
-                    pauseButton.text = getString(R.string.start_label)
+                when (currentState.state) {
+                    TimeStateEnum.START, TimeStateEnum.RESUME -> {
+                        view?.doOnPreDraw { hideResumeStop() }
+                        view?.doOnPreDraw { hidePause() }
+                        pauseButton.text = getString(R.string.pause_label)
+                    }
+                    TimeStateEnum.PAUSE -> {
+                        view?.doOnPreDraw { hidePause() }
+                        slideInResumeStop()
+                    }
+                    else -> {
+                        pauseButton.setOnClickListener(startTripListener)
+                        pauseButton.text = getString(R.string.start_label)
+                    }
                 }
             }
         }
@@ -336,7 +337,7 @@ class TripInProgressFragment :
         }
     }
 
-    private fun hasHeartRate() = viewModel.hrmSensor.value?.bpm ?: 0 > 0
+    private fun hasHeartRate() = (viewModel.hrmSensor.value?.bpm ?: 0) > 0
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -371,7 +372,7 @@ class TripInProgressFragment :
     private fun initializeLocationServiceStateChangeHandler() {
         viewModel.gpsEnabled.observe(viewLifecycleOwner) { status ->
             if (!status && gpsEnabled) {
-                trackingImage.visibility = View.INVISIBLE
+                trackingImage.visibility = INVISIBLE
                 debugTextView.text = getString(R.string.gps_disabled_message)
                 Log.d(logTag, "Location service access disabled")
                 activity?.let {
@@ -427,7 +428,7 @@ class TripInProgressFragment :
             if (!hasHeartRate()) topLeftView.value =
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
-            trackingImage.visibility = if (it.tracking) View.VISIBLE else View.INVISIBLE
+            trackingImage.visibility = if (it.tracking) VISIBLE else INVISIBLE
         }
 
         viewModel.currentTime.observe(viewLifecycleOwner) {
@@ -530,7 +531,7 @@ class TripInProgressFragment :
                         getUserSpeedUnitShort(requireContext())
                     )
                 when (weather.windSpeed) {
-                    null, 0.0 -> {
+                    0.0 -> {
                         windDirectionArrow.setPadding(
                             TypedValue.applyDimension(
                                 TypedValue.COMPLEX_UNIT_DIP,
@@ -580,8 +581,8 @@ class TripInProgressFragment :
         //This is a lot of implementation specific initialization
 
         if (FeatureFlags.productionBuild) {
-            trackingImage.visibility = View.GONE
-            debugTextView.visibility = View.GONE
+            trackingImage.visibility = GONE
+            debugTextView.visibility = GONE
         }
 
         middleRightView.label =
