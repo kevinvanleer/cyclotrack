@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.coroutineScope
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import dagger.hilt.android.AndroidEntryPoint
@@ -467,6 +468,7 @@ class BleService @Inject constructor(
                             connectToSensor(bluetoothAdapter, sensor)
                         } catch (e: IllegalArgumentException) {
                             Log.e(logTag, "Invalid sensor address", e)
+                            FirebaseCrashlytics.getInstance().recordException(e)
                             externalSensorRepository.removeSensor(sensor)
                         }
                     }

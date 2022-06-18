@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -169,6 +170,7 @@ class LinkedSensorsViewModel @Inject constructor(
                     Log.w(logTag, "BLE permissions have not been granted", e)
                 } catch (e: IllegalArgumentException) {
                     Log.e(logTag, "Invalid bluetooth address", e)
+                    FirebaseCrashlytics.getInstance().recordException(e)
                     viewModelScope.launch(Dispatchers.IO) {
                         bleSensors.removeSensor(it)
                     }
