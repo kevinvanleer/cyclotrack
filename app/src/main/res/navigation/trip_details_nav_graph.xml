@@ -40,5 +40,4 @@
             android:name="tripNotes"
             app:argType="string" />
     </fragment>
-
 </navigation>

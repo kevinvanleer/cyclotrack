@@ -5,26 +5,20 @@
     android:id="@+id/cyclotrack_nav_graph"
     app:startDestination="@id/AnalyticsFragment">
 
-    <include app:graph="@navigation/trip_details_nav_graph" />
-
     <activity
         android:id="@+id/PreferencesActivity"
         android:name="com.kvl.cyclotrack.PreferencesActivity"
-        android:label="DashboardActivity"
+        android:label="Preferences Activity"
         android:layout="@layout/activity_preferences" />
     <activity
         android:id="@+id/DashboardActivity"
         android:name="com.kvl.cyclotrack.DashboardActivity"
-        android:label="DashboardActivity"
-        android:layout="@layout/activity_dashboard">
-        <argument
-            android:name="tripId"
-            app:argType="long" />
-    </activity>
+        android:label="Dashboard Activity"
+        android:layout="@layout/activity_dashboard" />
     <activity
         android:id="@+id/TripDetailsActivity"
         android:name="com.kvl.cyclotrack.TripDetailsActivity"
-        android:label="TripDetailsActivity"
+        android:label="Trip Details Activity"
         tools:layout="@layout/activity_trip_details" />
     <fragment
         android:id="@+id/AnalyticsFragment"
