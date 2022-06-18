@@ -1095,8 +1095,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d(logTag, "Options menu created")
                 viewModel.tripOverview.observe(viewLifecycleOwner) {
                     googleFitSyncStatus = it.googleFitSyncStatus
-                    configureSyncOptions(menu)
                 }
+            }
+
+            override fun onPrepareMenu(menu: Menu) {
+                super.onPrepareMenu(menu)
+                configureSyncOptions(menu)
             }
 
             override fun onMenuItemSelected(item: MenuItem): Boolean {
