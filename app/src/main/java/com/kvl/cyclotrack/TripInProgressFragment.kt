@@ -27,6 +27,7 @@ import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.Priority
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
 import com.kvl.cyclotrack.events.StartTripEvent
@@ -160,7 +161,7 @@ class TripInProgressFragment :
         val locationRequest = LocationRequest.create().apply {
             interval = 1000
             fastestInterval = 100
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            priority = Priority.PRIORITY_HIGH_ACCURACY
         }
         val builder =
             locationRequest.let { LocationSettingsRequest.Builder().addLocationRequest(it) }
