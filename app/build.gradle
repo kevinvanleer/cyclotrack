@@ -33,7 +33,7 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 48
+        versionCode 49
         versionName "Weather"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
