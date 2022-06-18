@@ -34,7 +34,7 @@ class BikeSpecsPreferenceFragment : Fragment() {
 
     private val viewModel: BikeSpecsPreferenceViewModel by viewModels()
     private lateinit var binding: FragmentBikeSpecsPreferenceBinding
-    private lateinit var menu: Menu
+    private lateinit var menuProvider: MenuProvider
 
     private fun initializePurchaseDate() {
         binding.preferencePreferenceBikeSpecsPurchaseDate.setOnClickListener {
@@ -101,8 +101,6 @@ class BikeSpecsPreferenceFragment : Fragment() {
         val bikeSelect =
             view.findViewById<AutoCompleteTextView>(R.id.preference_bike_specs_spinner_bike_select)
 
-        addMenuProvider()
-
         view.findViewById<AppCompatButton>(R.id.preference_bike_specs_button_link_ble_devices)
             .apply {
                 setOnClickListener { view ->
@@ -145,12 +143,18 @@ class BikeSpecsPreferenceFragment : Fragment() {
         super.onResume()
         requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title =
             "Settings: Bike specs"
+        addMenuProvider()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        requireActivity().removeMenuProvider(menuProvider)
     }
 
     private fun addMenuProvider() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                this@BikeSpecsPreferenceFragment.menu = menu
+                this@BikeSpecsPreferenceFragment.menuProvider = this
                 menuInflater.inflate(R.menu.menu_settings_bikes, menu)
             }
 
