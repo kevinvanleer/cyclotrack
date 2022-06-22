@@ -322,7 +322,7 @@ suspend fun plotPath(
         }
 
         measurements.forEach {
-            while (it.time > nextTimeState()?.timestamp ?: Long.MAX_VALUE) {
+            while (it.time > (nextTimeState()?.timestamp ?: Long.MAX_VALUE)) {
                 ++timeStateIdx
                 if (isTripInProgress(currTimeState()?.state)) {
                     paths.add(PolylineOptions())

@@ -1135,11 +1135,30 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                         true
                     }
-                    R.id.details_menu_action_export -> {
+                    R.id.details_menu_action_export_xlsx -> {
                         WorkManager.getInstance(requireContext())
                             .enqueue(
                                 OneTimeWorkRequestBuilder<ExportTripWorker>()
-                                    .setInputData(workDataOf("tripId" to viewModel.tripId))
+                                    .setInputData(
+                                        workDataOf(
+                                            "tripId" to viewModel.tripId,
+                                            "fileType" to "xlsx"
+                                        )
+                                    )
+                                    .build()
+                            )
+                        true
+                    }
+                    R.id.details_menu_action_export_fit -> {
+                        WorkManager.getInstance(requireContext())
+                            .enqueue(
+                                OneTimeWorkRequestBuilder<ExportTripWorker>()
+                                    .setInputData(
+                                        workDataOf(
+                                            "tripId" to viewModel.tripId,
+                                            "fileType" to "fit"
+                                        )
+                                    )
                                     .build()
                             )
                         true

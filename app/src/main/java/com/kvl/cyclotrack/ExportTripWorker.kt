@@ -16,6 +16,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject
@@ -27,6 +28,7 @@ class ExportTripWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, params) {
     val logTag = "ExportTripWorker"
     private val xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    private val binaryMime = "application/octet-stream"
 
     @Inject
     lateinit var tripsRepository: TripsRepository
@@ -50,9 +52,14 @@ class ExportTripWorker @AssistedInject constructor(
         contentResolver: ContentResolver,
         tripId: Long,
         uri: Uri,
-        mime: String
+        fileType: String,
     ) {
         Log.d(logTag, "exportTripData")
+        val mime = when (fileType) {
+            "xlsx" -> xlsxMime
+            else -> binaryMime
+        }
+
         fun getUriFilePart(): String? {
             val result = uri.path
             val cut = result!!.lastIndexOf('/')
@@ -118,85 +125,113 @@ class ExportTripWorker @AssistedInject constructor(
                 "Exporting trip $tripId..."
             )
 
-            exportRideToXlsx(
-                contentResolver,
-                uri,
-                exportData
-            )
+            try {
+                when (fileType) {
+                    "xlsx" -> exportRideToXlsx(
+                        contentResolver,
+                        uri,
+                        exportData
+                    )
+                    else -> exportRideToFit(appContext, contentResolver, uri, exportData)
+                }
 
-            val viewFileIntent = Intent().apply {
-                action = Intent.ACTION_VIEW
-                setDataAndType(uri, mime)
-                flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
-            }
-            val viewFilePendingIntent = PendingIntent.getActivity(
-                appContext,
-                uri.hashCode() * 100 + 1,
-                viewFileIntent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
+                val viewFileIntent = Intent().apply {
+                    action = Intent.ACTION_VIEW
+                    setDataAndType(uri, mime)
+                    flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                }
+                val viewFilePendingIntent = PendingIntent.getActivity(
+                    appContext,
+                    uri.hashCode() * 100 + 1,
+                    viewFileIntent,
+                    PendingIntent.FLAG_IMMUTABLE
+                )
 
-            val chooserIntent = Intent.createChooser(Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_STREAM, uri)
-                setDataAndType(uri, mime)
-                flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
-            }, "title")
-            val sharePendingIntent = PendingIntent.getActivity(
-                appContext,
-                uri.hashCode() * 100 + 2,
-                chooserIntent,
-                PendingIntent.FLAG_IMMUTABLE
-            )
+                val chooserIntent = Intent.createChooser(Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    setDataAndType(uri, mime)
+                    flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK
+                }, "title")
+                val sharePendingIntent = PendingIntent.getActivity(
+                    appContext,
+                    uri.hashCode() * 100 + 2,
+                    chooserIntent,
+                    PendingIntent.FLAG_IMMUTABLE
+                )
 
-            val deleteIntent = Intent(
-                appContext,
-                DeleteExportBroadcastReceiver::class.java
-            ).apply {
-                action = appContext.getString(R.string.intent_action_delete_exported_data)
-                putExtra("TRIP_ID", exportData.summary?.id)
-                data = uri
-            }
-            val deletePendingIntent = PendingIntent.getBroadcast(
-                appContext,
-                uri.hashCode() * 100 + 3,
-                deleteIntent,
-                PendingIntent.FLAG_ONE_SHOT
-            )
-            val builder = NotificationCompat.Builder(
-                appContext,
-                appContext.getString(R.string.notification_export_trip_id)
-            )
-                .setSmallIcon(R.drawable.ic_cyclotrack_notification)
-                .setContentTitle("Export complete!")
-                .setContentIntent(viewFilePendingIntent)
-                .setAutoCancel(true)
-                .setStyle(
-                    NotificationCompat.BigTextStyle()
-                        .bigText("Data export \"${getFileName()}\" is ready in your downloads folder.")
+                val deleteIntent = Intent(
+                    appContext,
+                    DeleteExportBroadcastReceiver::class.java
+                ).apply {
+                    action = appContext.getString(R.string.intent_action_delete_exported_data)
+                    putExtra("TRIP_ID", exportData.summary?.id)
+                    data = uri
+                }
+                val deletePendingIntent = PendingIntent.getBroadcast(
+                    appContext,
+                    uri.hashCode() * 100 + 3,
+                    deleteIntent,
+                    PendingIntent.FLAG_ONE_SHOT
                 )
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .addAction(
-                    0,
-                    "SHARE",
-                    sharePendingIntent
+                val builder = NotificationCompat.Builder(
+                    appContext,
+                    appContext.getString(R.string.notification_export_trip_id)
                 )
-                .addAction(
-                    0,
-                    "DELETE",
-                    deletePendingIntent
+                    .setSmallIcon(R.drawable.ic_cyclotrack_notification)
+                    .setContentTitle("Export complete!")
+                    .setContentIntent(viewFilePendingIntent)
+                    .setAutoCancel(true)
+                    .setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .bigText("Data export \"${getFileName()}\" is ready in your downloads folder.")
+                    )
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .addAction(
+                        0,
+                        "SHARE",
+                        sharePendingIntent
+                    )
+                    .addAction(
+                        0,
+                        "DELETE",
+                        deletePendingIntent
+                    )
+                with(NotificationManagerCompat.from(appContext)) {
+                    Log.d(logTag, "notify export complete")
+                    cancel(inProgressId)
+                    notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
+                }
+            } catch (e: RuntimeException) {
+                Log.e(logTag, "Export failed", e)
+                FirebaseCrashlytics.getInstance().recordException(e)
+
+                val builder = NotificationCompat.Builder(
+                    appContext,
+                    appContext.getString(R.string.notification_export_trip_id)
                 )
-            with(NotificationManagerCompat.from(appContext)) {
-                Log.d(logTag, "notify export complete")
-                cancel(inProgressId)
-                notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
+                    .setSmallIcon(R.drawable.ic_cyclotrack_notification)
+                    .setContentTitle("Export failed!")
+                    .setAutoCancel(true)
+                    .setStyle(
+                        NotificationCompat.BigTextStyle()
+                            .bigText("There was an error processing data export \"${getFileName()}\".")
+                    )
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                with(NotificationManagerCompat.from(appContext)) {
+                    Log.d(logTag, "notify export complete")
+                    cancel(inProgressId)
+                    notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
+                }
+                throw e
             }
         }
     }
 
     override suspend fun doWork(): Result {
         Log.d(logTag, "starting ExportTripWorker")
+        val fileType = inputData.getString("fileType") ?: "csv"
         inputData.getLong("tripId", -1).takeIf { it >= 0 }?.let { tripId ->
             val prefix = when (FeatureFlags.devBuild) {
                 true -> "cyclotrack-dev"
@@ -205,7 +240,7 @@ class ExportTripWorker @AssistedInject constructor(
             val trip = tripsRepository.get(tripId)
             val fileName = "${prefix}_${
                 String.format("%06d", trip.id)
-            }_${trip.name?.replace(" ", "-") ?: "unknown"}.xlsx"
+            }_${trip.name?.trim()?.replace(" ", "-") ?: "unknown"}.$fileType"
 
             val downloadsFolder =
                 when (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -240,7 +275,11 @@ class ExportTripWorker @AssistedInject constructor(
             }
 
             appContext.contentResolver.insert(downloadsFolder, exportDetails)?.let { uri ->
-                exportTripData(appContext.contentResolver, tripId, uri, xlsxMime)
+                try {
+                    exportTripData(appContext.contentResolver, tripId, uri, fileType)
+                } catch (e: RuntimeException) {
+                    return Result.failure()
+                }
             } ?: return Result.failure()
         }
         return Result.success()

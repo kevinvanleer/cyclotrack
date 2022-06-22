@@ -12,8 +12,12 @@
         android:title="@string/details_menu_title_delete"
         app:showAsAction="never" />
     <item
-        android:id="@+id/details_menu_action_export"
-        android:title="@string/details_menu_title_export"
+        android:id="@+id/details_menu_action_export_xlsx"
+        android:title="@string/details_menu_title_export_xlsx"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/details_menu_action_export_fit"
+        android:title="@string/details_menu_title_export_fit"
         app:showAsAction="never" />
     <item
         android:id="@+id/details_menu_action_sync"

@@ -13,7 +13,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberProperties
 
 fun getMeasurementsHeaderRow(): String {
-    var row: String = ""
+    var row = ""
     for (prop in Measurements::class.declaredMemberProperties) {
         row += "${prop.name},"
     }
@@ -26,7 +26,7 @@ fun getRideMeasurementsCsv(measurements: Array<Measurements>): Array<String> {
     rows.add(getMeasurementsHeaderRow())
 
     measurements.forEach { measurement ->
-        var row: String = ""
+        var row = ""
         for (prop in Measurements::class.declaredMemberProperties) {
             row += "${prop.call(measurement).toString()},"
         }
@@ -42,7 +42,7 @@ inline fun <reified T : Any> getDataCsv(measurements: Array<T>): Array<String> {
     val reflection: KClass<T> = T::class
 
     measurements.forEach { measurement ->
-        var row: String = ""
+        var row = ""
         for (prop in reflection.declaredMemberProperties) {
             row += "${prop.call(measurement).toString()},"
         }
@@ -52,7 +52,7 @@ inline fun <reified T : Any> getDataCsv(measurements: Array<T>): Array<String> {
 }
 
 inline fun <reified T : Any> getDataHeaderRow(): String {
-    var row: String = ""
+    var row = ""
     val reflection: KClass<T> = T::class
     for (prop in reflection.declaredMemberProperties) {
         row += "${prop.name},"

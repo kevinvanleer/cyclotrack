@@ -57,7 +57,8 @@
     <string name="preferences_system_of_measurement_key">display_units</string>
     <string name="preferences_privacy_policy_key">privacy_policy</string>
     <string name="preference_key_wheel_circumference">wheel_circumference</string>
-    <string name="details_menu_title_export">Export</string>
+    <string name="details_menu_title_export_csv">Export CSV</string>
+    <string name="details_menu_title_export_xlsx">Export XLSX</string>
     <string name="notification_export_trip_in_progress_id">notification_export_trip_in_progress_id</string>
     <string name="notification_export_trip_in_progress_name">Export ride data in progress</string>
     <string name="notification_export_trip_id">notification_export_trip_complete_id</string>
@@ -117,4 +118,5 @@
     <string name="wind_direction_icon_description">Wind direction</string>
     <string name="heading_icon_description">Icon that represents this heading</string>
     <string name="wind_icon_description">Wind icon</string>
+    <string name="details_menu_title_export_fit">Export FIT</string>
 </resources>
