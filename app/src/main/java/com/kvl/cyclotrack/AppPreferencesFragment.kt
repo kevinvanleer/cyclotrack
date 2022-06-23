@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -11,8 +10,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
@@ -24,12 +21,12 @@ import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
+import com.kvl.cyclotrack.events.StravaAuthorizationRequest
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
 class AppPreferencesFragment : PreferenceFragmentCompat() {
-    private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "PREFERENCES"
 
@@ -70,7 +67,9 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
+                //activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
+                EventBus.getDefault()
+                    .post(StravaAuthorizationRequest(Intent(Intent.ACTION_VIEW, intentUri)))
                 true
             }
         }
@@ -262,14 +261,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 false
         }
 
-        activityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                Log.d(logTag, "received activity result")
-                if (result.resultCode == Activity.RESULT_OK) {
-                    Log.d(logTag, "user authorized access to strava")
-                    Log.d(logTag, result.data.toString())
-                }
-            }
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 

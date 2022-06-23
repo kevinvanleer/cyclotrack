@@ -4,16 +4,28 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
+import com.kvl.cyclotrack.events.StravaAuthorizationRequest
 import dagger.hilt.android.AndroidEntryPoint
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 @AndroidEntryPoint
 class PreferencesActivity : AppCompatActivity() {
+    private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
+    private val logTag = "PreferencesActivity"
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onRequestStravaAuthorization(event: StravaAuthorizationRequest) {
+        activityResultLauncher.launch(event.intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("PreferencesActivity", "onCreate")
@@ -23,6 +35,15 @@ class PreferencesActivity : AppCompatActivity() {
             intent.extras
         )
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
+
+        activityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                Log.d(logTag, "received activity result")
+                if (result.resultCode == Activity.RESULT_OK) {
+                    Log.d(logTag, "user authorized access to strava")
+                    Log.d(logTag, result.data.toString())
+                }
+            }
     }
 
     @Suppress("DEPRECATION")
