@@ -78,7 +78,10 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
+                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
+                    flags =
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                })
                 true
             }
         }
