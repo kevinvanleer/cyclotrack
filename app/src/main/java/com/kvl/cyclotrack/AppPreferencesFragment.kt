@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
@@ -28,6 +29,7 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
 class AppPreferencesFragment : PreferenceFragmentCompat() {
+    private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "PREFERENCES"
 
@@ -68,12 +70,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                    if (result.resultCode == Activity.RESULT_OK) {
-                        Log.d(logTag, "user authorized access to strava")
-                        Log.d(logTag, result.data.toString())
-                    }
-                }.launch(Intent(Intent.ACTION_VIEW, intentUri))
+                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 true
             }
         }
@@ -265,6 +262,13 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 false
         }
 
+        activityResultLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    Log.d(logTag, "user authorized access to strava")
+                    Log.d(logTag, result.data.toString())
+                }
+            }
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
