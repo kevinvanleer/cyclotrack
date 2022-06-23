@@ -78,9 +78,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                })
+                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
+                activity.finish()
                 true
             }
         }
