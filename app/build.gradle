@@ -82,6 +82,8 @@ android {
         }
         resValue "string", "maps_api_key", (secureProps.getProperty("MAPS_API_KEY") ?: "")
         resValue "string", "openweather_api_key", (openMapsVariantApiKey)
+        resValue "string", "strava_client_id", (secureProps.getProperty("STRAVA_CLIENT_ID") ?: "")
+        resValue "string", "strava_client_secret", (secureProps.getProperty("STRAVA_CLIENT_SECRET") ?: "")
     }
 
     buildFeatures {
