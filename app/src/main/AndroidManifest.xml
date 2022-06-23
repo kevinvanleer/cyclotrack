@@ -48,7 +48,16 @@
 
         <activity
             android:name=".PreferencesActivity"
-            android:exported="true" />
+            android:exported="true">
+            <intent-filter>
+                <data
+                    android:host="kevinvanleer.com"
+                    android:path="/cyclotrack"
+                    android:scheme="https" />
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".TripDetailsActivity"
             android:exported="true" />
@@ -83,10 +92,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <data android:scheme="cyclotrack" />
-                <action android:name="android.intent.action.VIEW" />
             </intent-filter>
         </activity>
 
