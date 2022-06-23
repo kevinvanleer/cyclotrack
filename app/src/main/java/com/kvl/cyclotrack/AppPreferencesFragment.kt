@@ -79,6 +79,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .build()
 
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_GRANT_READ_URI_PERMISSION
                 })
                 true
             }
