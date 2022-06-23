@@ -79,7 +79,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .build()
 
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
-                activity.finish()
+                requireActivity().finish()
                 true
             }
         }
