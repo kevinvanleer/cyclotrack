@@ -69,7 +69,14 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
 
                 //activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 EventBus.getDefault()
-                    .post(StravaAuthorizationRequest(Intent(Intent.ACTION_VIEW, intentUri)))
+                    .post(
+                        StravaAuthorizationRequest(
+                            Intent(
+                                "com.kvl.cyclotrack.authorize_strava",
+                                intentUri
+                            )
+                        )
+                    )
                 true
             }
         }

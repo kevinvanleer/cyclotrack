@@ -53,7 +53,7 @@
                 <data
                     android:host="kevinvanleer.com"
                     android:scheme="cyclotrack" />
-                <action android:name="android.intent.action.VIEW" />
+                <action android:name="com.kvl.cyclotrack.authorize_strava" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
