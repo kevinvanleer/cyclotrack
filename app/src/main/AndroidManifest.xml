@@ -76,7 +76,8 @@
 
         <activity
             android:name=".PreferencesActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <data android:scheme="cyclotrack" />
                 <action android:name="android.intent.action.VIEW" />
