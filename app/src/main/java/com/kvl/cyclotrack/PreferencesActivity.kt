@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -18,7 +17,6 @@ import org.greenrobot.eventbus.ThreadMode
 
 @AndroidEntryPoint
 class PreferencesActivity : AppCompatActivity() {
-    private lateinit var activityResultLauncher: ActivityResultLauncher<Intent>
     private val logTag = "PreferencesActivity"
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -26,6 +24,15 @@ class PreferencesActivity : AppCompatActivity() {
         activityResultLauncher.launch(event.intent)
     }
 
+    private val activityResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            Log.d(logTag, "received activity result")
+            if (result.resultCode == Activity.RESULT_OK) {
+                Log.d(logTag, "user authorized access to strava")
+                Log.d(logTag, result.data.toString())
+            }
+        }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("PreferencesActivity", "onCreate")
@@ -36,14 +43,6 @@ class PreferencesActivity : AppCompatActivity() {
         )
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
 
-        activityResultLauncher =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                Log.d(logTag, "received activity result")
-                if (result.resultCode == Activity.RESULT_OK) {
-                    Log.d(logTag, "user authorized access to strava")
-                    Log.d(logTag, result.data.toString())
-                }
-            }
     }
 
     @Suppress("DEPRECATION")
