@@ -78,10 +78,7 @@
             android:name=".PreferencesActivity"
             android:exported="true">
             <intent-filter>
-                <data
-                    android:host="kevinvanleer.com"
-                    android:pathPrefix="/cyclotrack"
-                    android:scheme="cyclotrack" />
+                <data android:scheme="cyclotrack" />
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
