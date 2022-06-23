@@ -57,7 +57,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
                     .buildUpon()
                     .appendQueryParameter("client_id", getString(R.string.strava_client_id))
-                    .appendQueryParameter("redirect_uri", "https://www.kevinvanleer.com/cyclotrack")
+                    .appendQueryParameter("redirect_uri", "cyclotrack://auth")
                     .appendQueryParameter("response_type", "code")
                     .appendQueryParameter("approval_prompt", "auto")
                     .appendQueryParameter("scope", "activity:write,read")
