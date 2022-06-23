@@ -50,9 +50,7 @@
             android:name=".PreferencesActivity"
             android:exported="true">
             <intent-filter>
-                <data
-                    android:host="kevinvanleer.com"
-                    android:scheme="cyclotrack" />
+                <data android:scheme="cyclotrack" />
                 <action android:name="com.kvl.cyclotrack.authorize_strava" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>

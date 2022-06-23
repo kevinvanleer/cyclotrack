@@ -67,7 +67,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                //activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 EventBus.getDefault()
                     .post(
                         StravaAuthorizationRequest(
