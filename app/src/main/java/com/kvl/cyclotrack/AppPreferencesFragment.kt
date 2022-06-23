@@ -69,7 +69,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("client_id", getString(R.string.strava_client_id))
                     .appendQueryParameter(
                         "redirect_uri",
-                        "cyclotrack://kevinvanleer.com"
+                        "cyclotrack://kevinvanleer.com/cyclotrack"
                     )
                     .appendQueryParameter("response_type", "code")
                     .appendQueryParameter("approval_prompt", "auto")
