@@ -51,7 +51,7 @@
             android:exported="true">
             <intent-filter>
                 <data android:scheme="cyclotrack" />
-                <action android:name="com.kvl.cyclotrack.authorize_strava" />
+                <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>

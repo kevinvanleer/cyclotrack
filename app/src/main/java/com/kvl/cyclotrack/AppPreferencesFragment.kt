@@ -71,7 +71,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .post(
                         StravaAuthorizationRequest(
                             Intent(
-                                "com.kvl.cyclotrack.authorize_strava",
+                                Intent.ACTION_VIEW,
                                 intentUri
                             )
                         )
