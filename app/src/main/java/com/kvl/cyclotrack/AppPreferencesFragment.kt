@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -10,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
@@ -66,8 +68,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                val intent = Intent(Intent.ACTION_VIEW, intentUri)
-                startActivity(intent)
+                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    if (result.resultCode == Activity.RESULT_OK) {
+                        Log.d(logTag, "user authorized access to strava")
+                        Log.d(logTag, result.data.toString())
+                    }
+                }.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 true
             }
         }
