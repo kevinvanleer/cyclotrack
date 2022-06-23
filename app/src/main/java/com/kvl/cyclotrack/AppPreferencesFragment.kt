@@ -80,7 +80,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
 
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
                     flags =
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                 })
                 true
             }
