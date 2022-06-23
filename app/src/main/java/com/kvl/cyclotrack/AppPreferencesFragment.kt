@@ -2,6 +2,8 @@ package com.kvl.cyclotrack
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -47,6 +49,23 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     it.navigate(R.id.action_show_linked_sensors)
                     true
                 } == true
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
+                    .buildUpon()
+                    .appendQueryParameter("client_id", "1234321")
+                    .appendQueryParameter("redirect_uri", "https://www.kevinvanleer.com/cyclotrack")
+                    .appendQueryParameter("response_type", "code")
+                    .appendQueryParameter("approval_prompt", "auto")
+                    .appendQueryParameter("scope", "activity:write,read")
+                    .build()
+
+                val intent = Intent(Intent.ACTION_VIEW, intentUri)
+                startActivity(intent)
+                true
             }
         }
 
@@ -105,12 +124,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 dialogView.findViewById<SwitchCompat>(R.id.useGoogleFitBiometricsDialog_switch_useGoogleFit)
             useGoogleFitSwitch.isChecked =
                 PreferenceManager.getDefaultSharedPreferences(context)
-                    .getBoolean(requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-                        true)
+                    .getBoolean(
+                        requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                        true
+                    )
             setPositiveButton("OK") { _, _ ->
                 PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
-                    putBoolean(requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-                        useGoogleFitSwitch.isChecked)
+                    putBoolean(
+                        requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                        useGoogleFitSwitch.isChecked
+                    )
                     commit()
                 }
             }
@@ -138,9 +161,11 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 onPreferenceClickListener = Preference.OnPreferenceClickListener {
                     AlertDialog.Builder(context).apply {
                         val removeAllCheckboxView =
-                            View.inflate(context,
+                            View.inflate(
+                                context,
                                 R.layout.remove_all_google_fit_dialog_option,
-                                null)
+                                null
+                            )
                         setPositiveButton("DISCONNECT") { _, _ ->
                             if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
                                 Log.i(logTag, "Remove all data from Google Fit")
@@ -151,22 +176,29 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                                                 .getWorkInfoByIdLiveData(id)
                                                 .observe(viewLifecycleOwner) { workInfo ->
                                                     if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                                                        Log.i(logTag, "Sign out from Google Fit")
+                                                        Log.i(
+                                                            logTag,
+                                                            "Sign out from Google Fit"
+                                                        )
                                                         GoogleSignIn.getClient(
                                                             context,
                                                             GoogleSignInOptions.DEFAULT_SIGN_IN
                                                         )
                                                             .signOut()
                                                             .addOnSuccessListener {
-                                                                configureGoogleFitPreference(context)
+                                                                configureGoogleFitPreference(
+                                                                    context
+                                                                )
                                                             }
                                                     }
                                                 }
                                         })
                             } else {
                                 Log.i(logTag, "Sign out from Google Fit")
-                                GoogleSignIn.getClient(context,
-                                    GoogleSignInOptions.DEFAULT_SIGN_IN).signOut()
+                                GoogleSignIn.getClient(
+                                    context,
+                                    GoogleSignInOptions.DEFAULT_SIGN_IN
+                                ).signOut()
                                     .addOnSuccessListener {
                                         configureGoogleFitPreference(context)
                                     }

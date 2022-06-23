@@ -28,6 +28,11 @@
         app:title="@string/preferences_sync_with_google_fit_title"
         app:summary="@string/preferences_sync_with_google_fit_summary"
         app:isPreferenceVisible="false" />
+    <Preference
+        app:key="@string/preferences_key_strava"
+        app:title="@string/preferences_sync_with_strava_title"
+        app:summary="@string/preferences_sync_with_strava_summary"
+        app:isPreferenceVisible="true" />
     <SwitchPreference
         app:key="@string/preferences_key_enable_analytics"
         app:title="Data collection"
