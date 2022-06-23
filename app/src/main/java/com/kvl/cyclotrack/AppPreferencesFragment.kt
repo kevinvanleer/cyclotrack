@@ -33,6 +33,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d(logTag, "received activity result")
+            Log.d(logTag, "${result.resultCode}")
             if (result.resultCode == Activity.RESULT_OK) {
                 Log.d(logTag, "user authorized access to strava")
                 Log.d(logTag, result.data.toString())
