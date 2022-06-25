@@ -79,7 +79,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .build()
 
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
-                    flags = (Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
                 })
                 //requireActivity().finish()
                 true
