@@ -80,7 +80,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
 
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
                     flags = flags or Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
                 })
                 //requireActivity().finish()
                 true
