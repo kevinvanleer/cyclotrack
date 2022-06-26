@@ -30,6 +30,7 @@ import org.greenrobot.eventbus.ThreadMode
 class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "AppPreferencesFragment"
+    Log.d(logTag, "register for strava-auth result")
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d(logTag, "received activity result")
