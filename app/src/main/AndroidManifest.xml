@@ -80,7 +80,7 @@
             <intent-filter>
                 <data
                     android:host="kevinvanleer.com"
-                    android:pathPrefix="/cyclotrack?.*"
+                    android:pathPrefix="/cyclotrack.*"
                     android:scheme="cyclotrack" />
                 <action android:name="android.intent.action.VIEW" />
 
