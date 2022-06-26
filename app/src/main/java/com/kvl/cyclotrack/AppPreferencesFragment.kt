@@ -33,6 +33,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
 
     init {
         Log.d(logTag, "register for strava-auth result")
+        Log.d(logTag, "$this")
     }
 
     private val activityResultLauncher =
