@@ -80,11 +80,9 @@
             <intent-filter>
                 <data
                     android:host="kevinvanleer.com"
-                    android:pathPrefix="/cyclotrack.*"
+                    android:pathPattern="/strava-auth.*"
                     android:scheme="cyclotrack" />
                 <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
