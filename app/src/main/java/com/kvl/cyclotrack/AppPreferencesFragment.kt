@@ -38,6 +38,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d(logTag, "received activity result")
+            Log.d(logTag, "$this")
             Log.d(logTag, "$result")
             if (result.resultCode == Activity.RESULT_OK) {
                 Log.d(logTag, "user authorized access to strava")
@@ -82,6 +83,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
+                this.fragment.toString()
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 //requireActivity().finish()
                 true
