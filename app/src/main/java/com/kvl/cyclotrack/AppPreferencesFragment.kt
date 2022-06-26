@@ -164,6 +164,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     }
 
     override fun onStop() {
+        Log.d(logTag, "stopping pref frag")
         super.onStop()
         EventBus.getDefault().unregister(this)
     }
