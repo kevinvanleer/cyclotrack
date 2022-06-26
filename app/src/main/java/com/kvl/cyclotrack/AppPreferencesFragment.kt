@@ -39,8 +39,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d(logTag, "received activity result")
             Log.d(logTag, "${result}")
-            Log.d(logTag, "${result.resultCode}")
-            Log.d(logTag, "${result.data}")
             if (result.resultCode == Activity.RESULT_OK) {
                 Log.d(logTag, "user authorized access to strava")
                 Log.d(logTag, result.data.toString())
