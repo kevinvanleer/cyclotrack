@@ -22,6 +22,7 @@ class PreferencesActivity : AppCompatActivity() {
             R.navigation.preferences_nav_graph,
             intent.extras
         )
+        Log.d("PreferencesActivity", "$intent")
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
     }
 
