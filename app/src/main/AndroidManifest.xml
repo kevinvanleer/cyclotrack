@@ -76,8 +76,7 @@
 
         <activity
             android:name=".PreferencesActivity"
-            android:exported="true"
-            android:launchMode="singleInstance">
+            android:exported="true">
             <intent-filter>
                 <data
                     android:host="kevinvanleer.com"
