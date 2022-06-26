@@ -71,17 +71,14 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("client_id", getString(R.string.strava_client_id))
                     .appendQueryParameter(
                         "redirect_uri",
-                        "cyclotrack://kevinvanleer.com/cyclotrack"
+                        "http://kevinvanleer.com/cyclotrack"
                     )
                     .appendQueryParameter("response_type", "code")
                     .appendQueryParameter("approval_prompt", "auto")
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri).apply {
-                    flags = flags or
-                            Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_ACTIVITY_FORWARD_RESULT
-                })
+                activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 //requireActivity().finish()
                 true
             }

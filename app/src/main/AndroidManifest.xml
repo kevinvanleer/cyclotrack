@@ -78,9 +78,11 @@
             android:name=".PreferencesActivity"
             android:exported="true">
             <intent-filter>
-                <data android:scheme="cyclotrack" />
+                <data
+                    android:host="kevinvanleer.com"
+                    android:scheme="http" />
                 <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
         </activity>
         <activity
