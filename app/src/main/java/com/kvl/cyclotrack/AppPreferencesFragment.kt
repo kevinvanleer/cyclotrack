@@ -167,6 +167,11 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         EventBus.getDefault().register(this)
     }
 
+    override fun onDetach() {
+        super.onDetach()
+        Log.d(logTag, "detaching pref frag")
+    }
+
     override fun onStop() {
         Log.d(logTag, "stopping pref frag")
         super.onStop()
