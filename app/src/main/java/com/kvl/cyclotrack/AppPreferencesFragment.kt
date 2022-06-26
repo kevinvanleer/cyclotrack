@@ -86,9 +86,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     .appendQueryParameter("scope", "activity:write,read")
                     .build()
 
-                this.fragment.toString()
+                Log.d(logTag, "$this")
                 activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
-                //requireActivity().finish()
                 true
             }
         }
