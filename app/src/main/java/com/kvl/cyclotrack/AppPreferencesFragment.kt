@@ -291,5 +291,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     override fun onResume() {
         super.onResume()
         requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
+        Log.d(logTag, "$this")
+        Log.d(logTag, "${this.id}")
     }
 }
