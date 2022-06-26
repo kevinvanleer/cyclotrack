@@ -34,14 +34,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     init {
         Log.d(logTag, "register for strava-auth result")
         Log.d(logTag, "$this")
-        Log.d(logTag, "${this.id}")
     }
 
     private val activityResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.d(logTag, "received activity result")
             Log.d(logTag, "$this")
-            Log.d(logTag, "${this.id}")
             Log.d(logTag, "$result")
             if (result.resultCode == Activity.RESULT_OK) {
                 Log.d(logTag, "user authorized access to strava")
@@ -291,6 +289,5 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         super.onResume()
         requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
         Log.d(logTag, "$this")
-        Log.d(logTag, "${this.id}")
     }
 }
