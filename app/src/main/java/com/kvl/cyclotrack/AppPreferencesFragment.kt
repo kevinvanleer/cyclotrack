@@ -87,7 +87,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 Log.d(logTag, "${this.fragment}")
                 //activityResultLauncher.launch(Intent(Intent.ACTION_VIEW, intentUri))
                 startActivity(Intent(Intent.ACTION_VIEW, intentUri))
-                requireActivity().finish()
+                //requireActivity().finish()
                 true
             }
         }
