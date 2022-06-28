@@ -8,5 +8,5 @@ data class StravaTokenExchangeResponse(
     val expires_in: Int,
     val refresh_token: String,
     val access_token: String,
-    val athlete: String
+    val athlete: StravaAthlete
 )
