@@ -1,17 +1,14 @@
 package com.kvl.cyclotrack
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
@@ -30,22 +27,6 @@ import org.greenrobot.eventbus.ThreadMode
 class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "AppPreferencesFragment"
-
-    init {
-        Log.d(logTag, "register for strava-auth result")
-        Log.d(logTag, "$this")
-    }
-
-    private val activityResultLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            Log.d(logTag, "received activity result")
-            Log.d(logTag, "$this")
-            Log.d(logTag, "$result")
-            if (result.resultCode == Activity.RESULT_OK) {
-                Log.d(logTag, "user authorized access to strava")
-                Log.d(logTag, result.data.toString())
-            }
-        }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
