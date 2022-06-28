@@ -79,14 +79,12 @@
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.intent.action.VIEW" />
                 <data
                     android:host="kevinvanleer.com"
                     android:pathPattern="/strava-auth.*"
                     android:scheme="cyclotrack" />
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
         </activity>
         <activity
