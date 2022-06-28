@@ -30,8 +30,8 @@ class StravaTokenExchangeWorker @AssistedInject constructor(
                 .url("https://www.strava.com/oauth/token")
                 .post(
                     FormBody.Builder()
-                        .add("client_id", R.string.strava_client_id)
-                        .add("client_secret", R.string.strava_client_secret)
+                        .add("client_id", appContext.getString(R.string.strava_client_id))
+                        .add("client_secret", appContext.getString(R.string.strava_client_secret))
                         .add("code", authCode)
                         .add("grant_type", "authorization_code")
                         .build()
