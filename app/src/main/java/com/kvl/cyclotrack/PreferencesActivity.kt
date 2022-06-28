@@ -7,6 +7,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,6 +33,11 @@ class PreferencesActivity : AppCompatActivity() {
             Log.d(logTag, "${intent.data!!.getQueryParameter("code")}")
             if (it.getQueryParameter("scope")?.contains("activity:write") == true) {
                 //start worker with code
+                WorkManager.getInstance(applicationContext).enqueue(
+                    OneTimeWorkRequestBuilder<StravaTokenExchangeWorker>()
+                        .setInputData(workDataOf("authCode" to it.getQueryParameter("code")))
+                        .build()
+                )
             } else {
                 AlertDialog.Builder(applicationContext).apply {
                     setTitle("Cannot upload to Strava")
