@@ -31,6 +31,7 @@ class PreferencesActivity : AppCompatActivity() {
     @SuppressWarnings("deprecation")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         //Required for Google Sign-in
+        Log.d(logTag, "onActivityResult")
         Log.d(logTag, "$data")
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(this.javaClass.simpleName, "onActivityResult: ${resultCode}")
