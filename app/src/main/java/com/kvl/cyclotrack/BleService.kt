@@ -4,11 +4,16 @@ import android.app.Application
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.util.Log
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.coroutineScope
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
@@ -69,6 +74,35 @@ class BleService @Inject constructor(
         }
     }
 
+    private val receiveBluetoothStateChanges = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                    when (intent.getIntExtra(
+                        BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR
+                    )) {
+                        BluetoothAdapter.STATE_ON -> {
+                            Log.d(logTag, "Detected Bluetooth ON")
+                            initialize()
+                        }
+                        BluetoothAdapter.STATE_OFF -> {
+                            Log.d(logTag, "Detected Bluetooth OFF")
+                            disconnect()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    init {
+        context.registerReceiver(
+            receiveBluetoothStateChanges,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
+    }
+
     // Various callback methods defined by the BLE API.
     private val genericGattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(
@@ -90,6 +124,9 @@ class BleService @Inject constructor(
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(logTag, "Disconnected ${gatt.device.address} from GATT server.")
+                    if (gatts.any { it.device.address == gatt.device.address }) {
+                        gatt.connect()
+                    }
                 }
             }
         }
@@ -202,7 +239,7 @@ class BleService @Inject constructor(
     }
 
     private fun broadcastUpdate(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
-        Log.d(logTag, "broadcast update for ${characteristic.uuid}")
+        Log.d(logTag, "broadcast update for ${characteristic.uuid} on ${gatt.device.address}")
 
         when (characteristic.uuid) {
             hrmCharacteristicUuid -> {
@@ -465,7 +502,7 @@ class BleService @Inject constructor(
                 bluetoothManager.adapter?.let { bluetoothAdapter ->
                     myMacs.forEach { sensor ->
                         try {
-                            connectToSensor(bluetoothAdapter, sensor)
+                            connectToSensor(bluetoothAdapter, sensor.address)
                         } catch (e: IllegalArgumentException) {
                             Log.e(logTag, "Invalid sensor address", e)
                             FirebaseCrashlytics.getInstance().recordException(e)
@@ -479,10 +516,10 @@ class BleService @Inject constructor(
 
     private fun connectToSensor(
         bluetoothAdapter: BluetoothAdapter,
-        sensor: ExternalSensor
+        sensorAddress: String
     ) {
         try {
-            val device = bluetoothAdapter.getRemoteDevice(sensor.address)
+            val device = bluetoothAdapter.getRemoteDevice(sensorAddress)
             if (device.type == BluetoothDevice.DEVICE_TYPE_UNKNOWN) {
                 Log.d(
                     logTag,
@@ -514,18 +551,6 @@ class BleService @Inject constructor(
                 bluetoothManager.adapter?.bluetoothLeScanner?.stopScan(it)
             }
             scanCallbacks.clear()
-
-            gatts.filter {
-                bluetoothManager.getConnectionState(
-                    it.device,
-                    BluetoothProfile.GATT
-                ) != BluetoothProfile.STATE_CONNECTED
-            }
-                .forEach { gatt ->
-                    Log.d(logTag, "Closing GATT for ${gatt.device.address}")
-                    gatt.close()
-                    gatts.remove(gatt)
-                }
         } catch (e: SecurityException) {
             Log.w(logTag, "Bluetooth permissions have not been granted", e)
         }
@@ -537,6 +562,7 @@ class BleService @Inject constructor(
         gatts.forEach { gatt ->
             Log.d(logTag, "Disconnecting ${gatt.device.address}")
             try {
+                gatts.remove(gatt)
                 gatt.close()
             } catch (e: SecurityException) {
                 Log.w(logTag, "Bluetooth permissions have not been granted.", e)
@@ -551,5 +577,24 @@ class BleService @Inject constructor(
         hrmSensor = HrmData(null, null)
         cadenceSensor = CadenceData(null, null, null, null)
         speedSensor = SpeedData(null, null, null, null)
+    }
+
+    private fun shouldConnect(gatt: BluetoothGatt) =
+        when (bluetoothManager.getConnectionState(
+            gatt.device,
+            BluetoothProfile.GATT
+        )) {
+            BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_CONNECTED -> false
+            else -> true
+        }
+
+    fun restore() {
+        Log.d(logTag, "called restore")
+        gatts.filter { shouldConnect(it) }.forEach { gatt ->
+            bluetoothManager.adapter?.let { bluetoothAdapter ->
+                FirebaseAnalytics.getInstance(context).logEvent("RestoreSensor") {}
+                connectToSensor(bluetoothAdapter, gatt.device.address)
+            }
+        }
     }
 }

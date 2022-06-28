@@ -153,9 +153,8 @@ class TripInProgressService @Inject constructor() :
             val lat = location.latitude
             val lng = location.longitude
 
-            val jsonAdapter = Moshi.Builder().add(KotlinJsonAdapterFactory()).build().let { moshi ->
-                moshi.adapter(WeatherResponse::class.java)
-            }
+            val jsonAdapter = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+                .adapter(WeatherResponse::class.java)
             val devAppId = getString(R.string.openweather_api_key)
             val weatherUrl =
                 "https://api.openweathermap.org/data/2.5/onecall?lat=$lat&lon=$lng&exclude=minutely,hourly,daily&appid=$devAppId"
@@ -530,7 +529,7 @@ class TripInProgressService @Inject constructor() :
                 tripsRepository.createNewTrip(bike?.id ?: 1).also { id ->
                     timeStateRepository.appendTimeState(TimeState(id, TimeStateEnum.START))
                     EventBus.getDefault().post(StartTripEvent(id))
-                    Log.d(logTag, "created new trip with id ${id}")
+                    Log.d(logTag, "created new trip with id $id")
                 }
         }.join()
 
@@ -564,6 +563,8 @@ class TripInProgressService @Inject constructor() :
             timeStateRepository.appendTimeState(TimeState(tripId, TimeStateEnum.RESUME))
             Log.d(logTag, "restart trip with id ${tripId}")
         }*/
+
+        bleService.restore()
 
         Log.d(logTag, "Restart trip service for ID ${tripId}; this=$this")
 
@@ -621,6 +622,7 @@ class TripInProgressService @Inject constructor() :
 
     private fun resume(tripId: Long) {
         Log.d(logTag, "Called resume()")
+        bleService.restore()
         lifecycle.coroutineScope.launch {
             timeStateRepository.appendTimeState(
                 TimeState(
@@ -639,7 +641,7 @@ class TripInProgressService @Inject constructor() :
     }
 
     private suspend fun end(tripId: Long) {
-        Log.d(logTag, "Called end() with ${tripId}")
+        Log.d(logTag, "Called end() with $tripId")
         var job: Job? = null
         tripId.takeIf { it >= 0 }?.let { id ->
             job = lifecycle.coroutineScope.launch {
@@ -695,7 +697,7 @@ class TripInProgressService @Inject constructor() :
                     end(it.getLongExtra("tripId", -1))
                 }
                 getString(R.string.action_shutdown_trip_service) -> shutdown()
-                else -> Log.d(logTag, "Received intent ${intent}")
+                else -> Log.d(logTag, "Received intent $intent")
             }
         }
         return super.onStartCommand(intent, flags, startId)
