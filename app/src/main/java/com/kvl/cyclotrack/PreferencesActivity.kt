@@ -21,7 +21,7 @@ class PreferencesActivity : AppCompatActivity() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onRequestStravaAuthorization(event: StravaAuthorizationRequest) {
-        activityResultLauncher.launch(event.intent)
+        startActivityForResult(event.intent, 2)
     }
 
     private val activityResultLauncher =
@@ -32,7 +32,7 @@ class PreferencesActivity : AppCompatActivity() {
                 Log.d(logTag, result.data.toString())
             }
         }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("PreferencesActivity", "onCreate")
@@ -51,6 +51,7 @@ class PreferencesActivity : AppCompatActivity() {
         //Required for Google Sign-in
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(this.javaClass.simpleName, "onActivityResult: ${resultCode}")
+        Log.d(this.javaClass.simpleName, "$data")
         when (resultCode) {
             Activity.RESULT_OK -> {
                 Log.i(this.javaClass.simpleName, "Permission request granted.")
