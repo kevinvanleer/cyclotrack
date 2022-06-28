@@ -24,6 +24,11 @@ class PreferencesActivity : AppCompatActivity() {
             intent.extras
         )
         Log.d(logTag, "$intent")
+        if (intent.data != null) {
+            Log.d(logTag, "${intent.data!!.query}")
+            Log.d(logTag, "${intent.data!!.getQueryParameter("code")}")
+
+        }
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
     }
 
