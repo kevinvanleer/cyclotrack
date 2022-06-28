@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -24,11 +25,19 @@ class PreferencesActivity : AppCompatActivity() {
             intent.extras
         )
         Log.d(logTag, "$intent")
-        if (intent.data != null) {
+        intent.data?.let {
             Log.d(logTag, "${intent.data!!.query}")
             Log.d(logTag, "${intent.data!!.getQueryParameter("code")}")
-
+            if (it.getQueryParameter("scope")?.contains("activity:write") == true) {
+                //start worker with code
+            } else {
+                AlertDialog.Builder(applicationContext).apply {
+                    setTitle("Cannot upload to Strava")
+                    setMessage("Please select \"Sync with Strava\" again and check the box next to \"Upload activities from Cyclotrack to Strava.\"")
+                }.create().show()
+            }
         }
+
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
     }
 
