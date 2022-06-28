@@ -14,15 +14,16 @@ import org.greenrobot.eventbus.Subscribe
 
 @AndroidEntryPoint
 class PreferencesActivity : AppCompatActivity() {
+    val logTag = "PreferencesActivity"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("PreferencesActivity", "onCreate")
+        Log.d(logTag, "onCreate")
         setContentView(R.layout.activity_preferences)
         findNavController(R.id.nav_host_fragment_preferences).setGraph(
             R.navigation.preferences_nav_graph,
             intent.extras
         )
-        Log.d("PreferencesActivity", "$intent")
+        Log.d(logTag, "$intent")
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
     }
 
@@ -30,6 +31,7 @@ class PreferencesActivity : AppCompatActivity() {
     @SuppressWarnings("deprecation")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         //Required for Google Sign-in
+        Log.d(logTag, "$data")
         super.onActivityResult(requestCode, resultCode, data)
         Log.d(this.javaClass.simpleName, "onActivityResult: ${resultCode}")
         when (resultCode) {
