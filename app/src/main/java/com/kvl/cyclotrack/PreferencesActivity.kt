@@ -14,7 +14,7 @@ import org.greenrobot.eventbus.Subscribe
 
 @AndroidEntryPoint
 class PreferencesActivity : AppCompatActivity() {
-    val logTag = "PreferencesActivity"
+    val logTag: String = this.javaClass.simpleName
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(logTag, "onCreate")
