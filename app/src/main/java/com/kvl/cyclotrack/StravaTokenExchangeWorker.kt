@@ -48,7 +48,19 @@ class StravaTokenExchangeWorker @AssistedInject constructor(
                                     Log.d(logTag, "${tokenResponse?.expires_at}")
                                     Log.d(logTag, "${tokenResponse?.expires_in}")
                                     Log.d(logTag, "${tokenResponse?.refresh_token}")
+                                    Log.d(logTag, "${tokenResponse?.access_token}")
                                     Log.d(logTag, "${tokenResponse?.athlete}")
+                                    getPreferences(appContext).edit().apply {
+                                        putLong(
+                                            "strava_access_expires_at",
+                                            tokenResponse!!.expires_at
+                                        )
+                                        putString(
+                                            "strava_refresh_token",
+                                            tokenResponse.refresh_token
+                                        )
+                                        putString("strava_access_token", tokenResponse.access_token)
+                                    }.commit()
                                 } catch (e: Exception) {
                                     Log.e(logTag, "ERROR", e)
                                 }
