@@ -158,6 +158,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 menu.findItem(R.id.details_menu_action_unsync).isVisible = false
             }
         }
+        //NOTE: TEMPORARY OVERRIDE FOR STRAVA TESTING
+        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+        menu.findItem(R.id.details_menu_action_sync).isVisible = true
     }
 
     private fun showMustBeLoggedInDialog() {
@@ -1234,9 +1237,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         true
                     }
                     R.id.details_menu_action_sync -> {
-                        WorkManager.getInstance(requireContext())
+                        /*WorkManager.getInstance(requireContext())
                             .enqueue(
                                 OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                                    .setInputData(workDataOf("tripId" to viewModel.tripId)).build()
+                            )*/
+                        WorkManager.getInstance(requireContext())
+                            .enqueue(
+                                OneTimeWorkRequestBuilder<StravaCreateActivityWorker>()
                                     .setInputData(workDataOf("tripId" to viewModel.tripId)).build()
                             )
                         true

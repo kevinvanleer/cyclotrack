@@ -122,4 +122,7 @@
     <string name="heading_icon_description">Icon that represents this heading</string>
     <string name="wind_icon_description">Wind icon</string>
     <string name="details_menu_title_export_fit">Export FIT</string>
+    <string name="preference_key_strava_refresh_token">strava_refresh_token</string>
+    <string name="preference_key_strava_access_expires_at">strava_access_expires_at</string>
+    <string name="preference_key_strava_access_token">strava_access_token</string>
 </resources>

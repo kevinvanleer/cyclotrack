@@ -132,7 +132,7 @@ class ExportTripWorker @AssistedInject constructor(
                         uri,
                         exportData
                     )
-                    else -> exportRideToFit(appContext, contentResolver, uri, exportData)
+                    else -> exportRideToFit(appContext, uri, exportData)
                 }
 
                 val viewFileIntent = Intent().apply {
