@@ -88,7 +88,7 @@ fun makeFitMessages(
             subSport = SubSport.ROAD
             firstLapIndex = 0
             numLaps = exportData.splits!!.size
-            exportData.weather?.map { it.temperature }?.average()?.let {
+            exportData.weather?.map { it.temperature }?.takeIf { it.isNotEmpty() }?.average()?.let {
                 avgTemperature = kelvinToCelsius(it).roundToInt()
                     .toByte()
             }
