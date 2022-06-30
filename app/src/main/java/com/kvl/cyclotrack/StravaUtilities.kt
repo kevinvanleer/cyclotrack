@@ -15,7 +15,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
     OkHttpClient().let { client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
-            .addHeader("Authorization", "Bearer: $accessToken")
+            .addHeader("Authorization", "Bearer $accessToken")
             .post(
                 FormBody.Builder().apply {
                     add("file", privateAppFile.readBytes().toString())
