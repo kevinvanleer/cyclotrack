@@ -12,6 +12,7 @@ import java.io.File
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
+    Log.d(logTag, privateAppFile.readText())
     OkHttpClient().let { client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
