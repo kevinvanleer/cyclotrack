@@ -30,6 +30,11 @@ data class TripGoogleFitSync(
     val googleFitSyncStatus: GoogleFitSyncStatusEnum,
 )
 
+data class TripStravaSync(
+    val id: Long,
+    val googleFitSyncStatus: GoogleFitSyncStatusEnum,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
@@ -97,6 +102,9 @@ interface TripDao {
 
     @Update(entity = Trip::class)
     suspend fun updateBiometrics(biometrics: Biometrics)
+
+    @Update(entity = Trip::class)
+    suspend fun updateStravaSyncStatus(googleFitSyncStatus: TripStravaSync)
 
     @Update(entity = Trip::class)
     suspend fun updateGoogleFitSyncStatus(googleFitSyncStatus: TripGoogleFitSync)

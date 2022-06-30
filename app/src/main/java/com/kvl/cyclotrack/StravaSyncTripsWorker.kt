@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import dagger.assisted.Assisted
@@ -18,6 +19,7 @@ class StravaSyncTripsWorker @AssistedInject constructor(
     lateinit var tripsRepository: TripsRepository
 
     override suspend fun doWork(): Result {
+        Log.d(logTag, "Syncing with Strava")
         tripsRepository.getStravaUnsynced().forEach { trip ->
             WorkManager.getInstance(appContext)
                 .enqueue(
