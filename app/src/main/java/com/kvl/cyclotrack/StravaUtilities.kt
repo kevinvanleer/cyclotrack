@@ -18,7 +18,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
             .addHeader("Authorization", "Bearer $accessToken")
             .post(
                 FormBody.Builder().apply {
-                    add("file", privateAppFile.readBytes().toString())
+                    add("file", privateAppFile.path)
                     summary.notes?.let { name ->
                         add("name", name)
                     }
