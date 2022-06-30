@@ -34,8 +34,11 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
             .build().let { request ->
                 client.newCall(request).execute().let { response ->
                     if (response.isSuccessful) {
+                        Log.d(logTag, "SUCCESS")
                         Log.d(logTag, response.body.toString())
                     } else {
+                        Log.d(logTag, "ABJECT FAILURE")
+                        Log.d(logTag, response.code.toString())
                         Log.d(logTag, response.message)
                     }
                 }
