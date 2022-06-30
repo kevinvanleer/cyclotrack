@@ -6,8 +6,11 @@ import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.FormBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
@@ -18,18 +21,22 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
             .url("https://www.strava.com/api/v3/uploads")
             .addHeader("Authorization", "Bearer $accessToken")
             .post(
-                FormBody.Builder().apply {
-                    add("file", privateAppFile.readText())
+                MultipartBody.Builder().apply {
+                    addFormDataPart(
+                        "file", privateAppFile.name, privateAppFile.asRequestBody(
+                            "application/octet-stream".toMediaTypeOrNull()
+                        )
+                    )
                     summary.notes?.let { name ->
-                        add("name", name)
+                        addFormDataPart("name", name)
                     }
                     summary.notes?.let { notes ->
-                        add("description", notes)
+                        addFormDataPart("description", notes)
                     }
-                    add("trainer", "false")
-                    add("commute", "false")
-                    add("data_type", "fit")
-                    add("external_id", "${summary.id}")
+                    addFormDataPart("trainer", "false")
+                    addFormDataPart("commute", "false")
+                    addFormDataPart("data_type", "fit")
+                    addFormDataPart("external_id", "${summary.id}")
                 }.build()
             )
             .build().let { request ->
