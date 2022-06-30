@@ -10,7 +10,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 
-fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip) {
+fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
     OkHttpClient().let { client ->
         Request.Builder()
@@ -36,10 +36,12 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                     if (response.isSuccessful) {
                         Log.d(logTag, "SUCCESS")
                         Log.d(logTag, response.body.toString())
+                        return 0
                     } else {
                         Log.d(logTag, "ABJECT FAILURE")
                         Log.d(logTag, response.code.toString())
                         Log.d(logTag, response.message)
+                        return -1
                     }
                 }
             }

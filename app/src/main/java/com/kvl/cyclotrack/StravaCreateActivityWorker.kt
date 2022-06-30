@@ -83,7 +83,9 @@ class StravaCreateActivityWorker @AssistedInject constructor(
                     appContext.getString(R.string.preference_key_strava_access_token),
                     null
                 )?.let { accessToken ->
-                    sendActivityToStrava(accessToken, privateAppFile, exportData.summary!!)
+                    val stravaId =
+                        sendActivityToStrava(accessToken, privateAppFile, exportData.summary!!)
+                    if (stravaId < 0) return Result.failure()
                 } ?: Log.d(logTag, "Not authorized to sync with Strava -- no access token")
             }
         }
