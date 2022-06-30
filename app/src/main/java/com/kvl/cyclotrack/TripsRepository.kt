@@ -91,4 +91,12 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     fun observeWeeklyTotals(limit: Int) = tripDao.subscribeWeeklyTotals(limit)
     fun getTripsForBike(bikeId: Long) = tripDao.getTripsForBike(bikeId)
     fun observeBikeTotals() = tripDao.subscribeBikeTotals()
+    suspend fun setStravaSyncStatus(tripId: Long, stravaSyncStatus: GoogleFitSyncStatusEnum) {
+        tripDao.updateStravaSyncStatus(
+            TripStravaSync(
+                id = tripId,
+                googleFitSyncStatus = stravaSyncStatus
+            )
+        )
+    }
 }

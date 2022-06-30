@@ -24,7 +24,17 @@ class StravaSyncTripsWorker @AssistedInject constructor(
             WorkManager.getInstance(appContext)
                 .enqueue(
                     OneTimeWorkRequestBuilder<StravaCreateActivityWorker>()
-                        .setInputData(workDataOf("tripId" to trip.id)).build()
+                        .setInputData(workDataOf("tripId" to trip.id)).build().apply {
+                            WorkManager.getInstance(appContext)
+                                .getWorkInfoById(id).await().let {
+                                    when (it.state) {
+                                        WorkInfo.State.SUCCEEDED -> tripsRepository.setStravaSyncStatus(
+                                            trip.id!!,
+                                            GoogleFitSyncStatusEnum.SYNCED
+                                        )
+                                    }
+                                }
+                        }
                 )
         }
         return Result.success()
