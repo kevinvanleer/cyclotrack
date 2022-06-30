@@ -17,15 +17,19 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
             .url("https://www.strava.com/api/v3/uploads")
             .addHeader("Authorization", "Bearer: $accessToken")
             .post(
-                FormBody.Builder()
-                    .add("file", privateAppFile.readBytes().toString())
-                    .add("name", summary.name!!)
-                    .add("description", summary.notes!!)
-                    .add("trainer", "false")
-                    .add("commute", "false")
-                    .add("data_type", "fit")
-                    .add("external_id", "${summary.id}")
-                    .build()
+                FormBody.Builder().apply {
+                    add("file", privateAppFile.readBytes().toString())
+                    summary.notes?.let { name ->
+                        add("name", name)
+                    }
+                    summary.notes?.let { notes ->
+                        add("description", notes)
+                    }
+                    add("trainer", "false")
+                    add("commute", "false")
+                    add("data_type", "fit")
+                    add("external_id", "${summary.id}")
+                }.build()
             )
             .build().let { request ->
                 client.newCall(request).execute().let { response ->
