@@ -27,11 +27,13 @@ class StravaSyncTripsWorker @AssistedInject constructor(
                         .setInputData(workDataOf("tripId" to trip.id)).build().apply {
                             WorkManager.getInstance(appContext)
                                 .getWorkInfoById(id).await().let {
-                                    when (it.state) {
-                                        WorkInfo.State.SUCCEEDED -> tripsRepository.setStravaSyncStatus(
-                                            trip.id!!,
-                                            GoogleFitSyncStatusEnum.SYNCED
-                                        )
+                                    it?.let {
+                                        when (it.state) {
+                                            WorkInfo.State.SUCCEEDED -> tripsRepository.setStravaSyncStatus(
+                                                trip.id!!,
+                                                GoogleFitSyncStatusEnum.SYNCED
+                                            )
+                                        }
                                     }
                                 }
                         }
