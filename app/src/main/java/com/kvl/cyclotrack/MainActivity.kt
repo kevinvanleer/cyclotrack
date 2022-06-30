@@ -159,12 +159,15 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
+        Log.d(logTag, "MainActivity onResume")
         if (hasFitnessPermissions(this)) WorkManager.getInstance(this)
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
         if (shouldSyncGoogleFitBiometrics(this) &&
             hasFitnessPermissions(this)
         ) WorkManager.getInstance(this)
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
+        WorkManager.getInstance(this)
+            .enqueue(OneTimeWorkRequestBuilder<StravaSyncTripsWorker>().build())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
