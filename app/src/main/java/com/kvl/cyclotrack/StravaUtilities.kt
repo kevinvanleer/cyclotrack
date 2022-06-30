@@ -2,6 +2,8 @@ package com.kvl.cyclotrack
 
 import android.content.Context
 import android.util.Log
+import com.garmin.fit.DateTime
+import com.garmin.fit.Mesg
 import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -11,11 +13,12 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
+import okio.IOException
 import java.io.File
+import java.util.*
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
-    Log.d(logTag, privateAppFile.readText())
     OkHttpClient().let { client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
@@ -40,17 +43,21 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                 }.build()
             )
             .build().let { request ->
-                client.newCall(request).execute().let { response ->
-                    if (response.isSuccessful) {
-                        Log.d(logTag, "SUCCESS")
-                        Log.d(logTag, response.body.toString())
-                        return 0
-                    } else {
-                        Log.d(logTag, "ABJECT FAILURE")
-                        Log.d(logTag, response.code.toString())
-                        Log.d(logTag, response.message)
-                        return -1
+                try {
+                    client.newCall(request).execute().let { response ->
+                        if (response.isSuccessful) {
+                            Log.d(logTag, "SUCCESS")
+                            //TODO Get strava activity ID
+                            return 0
+                        } else {
+                            Log.d(logTag, "ABJECT FAILURE")
+                            Log.d(logTag, response.code.toString())
+                            return -1
+                        }
                     }
+                } catch (e: IOException) {
+                    Log.i(logTag, "Strava upload failed", e)
+                    return -1
                 }
             }
     }
@@ -128,5 +135,48 @@ fun updateStravaAuthToken(
                 }
             }
     }
+}
+
+
+fun syncTripWithStrava(
+    appContext: Context,
+    tripId: Long,
+    exportData: TripDetailsViewModel.ExportData
+): Int {
+    val logTag = "syncTripWithStrava"
+    val messages: MutableList<Mesg> = makeFitMessages(cyclotrackFitAppId, exportData)
+
+    val privateAppFile = File(
+        appContext.filesDir,
+        "cyclotrack-trip-$tripId-tmp-${messages.hashCode()}.fit"
+    )
+
+    writeFitFile(
+        DateTime(Date(exportData.summary!!.timestamp)),
+        privateAppFile,
+        messages
+    )
+    getPreferences(appContext).getLong(
+        appContext.getString(R.string.preference_key_strava_access_expires_at),
+        0
+    ).let { expiresAt ->
+        if ((SystemUtils.currentTimeMillis() / 1000 + 1800) > expiresAt) {
+            getPreferences(appContext).getString(
+                appContext.getString(R.string.preference_key_strava_refresh_token),
+                null
+            )?.let { refreshToken ->
+                updateStravaAuthToken(appContext, refreshToken = refreshToken)
+            } ?: Log.d(logTag, "Not authorized to sync with Strava -- no refresh token")
+        }
+    }
+    getPreferences(appContext).getString(
+        appContext.getString(R.string.preference_key_strava_access_token),
+        null
+    )?.let { accessToken ->
+        return sendActivityToStrava(accessToken, privateAppFile, exportData.summary!!).also {
+            privateAppFile.delete()
+        }
+    } ?: Log.d(logTag, "Not authorized to sync with Strava -- no access token")
+    return -1
 }
 

@@ -78,7 +78,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         noBackgroundLocationDialog = activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
-                setPositiveButton("OK"
+                setPositiveButton(
+                    "OK"
                 ) { _, _ ->
                     Log.d("ALERT DIALOG", "CLICKED")
                 }
@@ -133,16 +134,20 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             builder.apply {
                 val selectedTrips =
                     (tripListView.adapter as TripSummariesAdapter).selectedTrips.toTypedArray()
-                setPositiveButton("MERGE"
+                setPositiveButton(
+                    "MERGE"
                 ) { _, _ ->
                     Log.d("TRIP_STITCH_DIALOG", "CLICKED STITCH")
                     WorkManager.getInstance(requireContext())
-                        .enqueue(OneTimeWorkRequestBuilder<StitchWorker>()
-                            .setInputData(workDataOf("tripIds" to selectedTrips))
-                            .build())
+                        .enqueue(
+                            OneTimeWorkRequestBuilder<StitchWorker>()
+                                .setInputData(workDataOf("tripIds" to selectedTrips))
+                                .build()
+                        )
                     (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
                 }
-                setNegativeButton("CANCEL"
+                setNegativeButton(
+                    "CANCEL"
                 ) { _, _ ->
                     Log.d("TRIP_STITCH_DIALOG", "CLICKED CANCEL")
                 }
@@ -161,21 +166,28 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                 val selectedTrips =
                     (tripListView.adapter as TripSummariesAdapter).selectedTrips.toTypedArray()
 
-                setPositiveButton("DELETE"
+                setPositiveButton(
+                    "DELETE"
                 ) { _, _ ->
                     Log.d(logTag, "CLICKED DELETE")
                     WorkManager.getInstance(requireContext())
-                        .beginWith(listOf(
-                            OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                        .beginWith(
+                            listOf(
+                                OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                                    .setInputData(workDataOf("tripIds" to selectedTrips))
+                                    .build()
+                            )
+                        )
+                        .then(
+                            OneTimeWorkRequestBuilder<RemoveTripWorker>()
                                 .setInputData(workDataOf("tripIds" to selectedTrips))
-                                .build()))
-                        .then(OneTimeWorkRequestBuilder<RemoveTripWorker>()
-                            .setInputData(workDataOf("tripIds" to selectedTrips))
-                            .build())
+                                .build()
+                        )
                         .enqueue()
                     (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
                 }
-                setNegativeButton("CANCEL"
+                setNegativeButton(
+                    "CANCEL"
                 ) { _, _ ->
                     Log.d("TRIP_DELETE_DIALOG", "CLICKED CANCEL")
                 }
@@ -191,12 +203,14 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         activity?.let {
             val builder = AlertDialog.Builder(it)
             builder.apply {
-                setPositiveButton("CLEANUP"
+                setPositiveButton(
+                    "CLEANUP"
                 ) { _, _ ->
                     Log.d("TRIP_CLEANUP_DIALOG", "CLICKED CLEANUP")
                     viewModel.cleanupTrips()
                 }
-                setNegativeButton("CANCEL"
+                setNegativeButton(
+                    "CANCEL"
                 ) { _, _ ->
                     Log.d("TRIP_CLEANUP_DIALOG", "CLICKED CANCEL")
                 }
@@ -210,8 +224,10 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        viewModel.tripListState.putParcelable("MY_KEY",
-            tripListView.layoutManager?.onSaveInstanceState())
+        viewModel.tripListState.putParcelable(
+            "MY_KEY",
+            tripListView.layoutManager?.onSaveInstanceState()
+        )
     }
 
     override fun onResume() {
@@ -223,12 +239,5 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                 )
             )
         }
-
-        if (hasFitnessPermissions(requireContext())) WorkManager.getInstance(requireContext())
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
-        if (shouldSyncGoogleFitBiometrics(requireContext()) &&
-            hasFitnessPermissions(requireContext())
-        ) WorkManager.getInstance(requireContext())
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
     }
 }

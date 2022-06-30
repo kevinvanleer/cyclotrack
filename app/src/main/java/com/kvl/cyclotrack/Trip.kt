@@ -97,4 +97,5 @@ data class Trip(
     val userRestingHeartRate: Int? = null,
     val userMaxHeartRate: Int? = null,
     val googleFitSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
+    val stravaSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
 )

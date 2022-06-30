@@ -122,6 +122,9 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE timestamp >= :start and timestamp < :end and distance > 1 AND duration > 60 ORDER BY timestamp ASC")
     fun subscribeDateRange(start: Long, end: Long): LiveData<Array<Trip>>
 
+    @Query("SELECT * FROM trip WHERE stravaSyncStatus == 0 and inProgress = 0 ORDER BY id DESC")
+    suspend fun loadStravaUnsyncedTrips(): Array<Trip>
+
     @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 0 and inProgress = 0 ORDER BY id DESC")
     suspend fun loadGoogleFitUnsyncedTrips(): Array<Trip>
 

@@ -16,6 +16,8 @@ import androidx.core.content.edit
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -152,6 +154,17 @@ class MainActivity : AppCompatActivity() {
                 setMessage("Cyclotrack would like to use Google Analytics to collect data about how you use the app to help improve it. Your participation is appreciated. Would you like to enable Google Analytics? You may change this option at any time from the settings menu. See the Cyclotrack privacy policy, also available in the Settings menu, for more details.")
                 setView(optInCheckbox.rootView)
             }.create().show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (hasFitnessPermissions(this)) WorkManager.getInstance(this)
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        if (shouldSyncGoogleFitBiometrics(this) &&
+            hasFitnessPermissions(this)
+        ) WorkManager.getInstance(this)
+            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

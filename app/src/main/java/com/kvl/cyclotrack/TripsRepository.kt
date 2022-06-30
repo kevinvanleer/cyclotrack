@@ -79,6 +79,8 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     suspend fun getGoogleFitUnsynced() = tripDao.loadGoogleFitUnsyncedTrips()
     suspend fun getGoogleFitDirty() = tripDao.loadGoogleFitDirtyTrips()
 
+    suspend fun getStravaUnsynced() = tripDao.loadStravaUnsyncedTrips()
+
     fun longestTrips(limit: Int = 10) = tripDao.longestTrips(limit)
     fun mostPopularDistances(conversionFactor: Double, timestamp: Long = 0, limit: Int = 3) =
         tripDao.getMostPopularDistances(conversionFactor, timestamp, limit)

@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 
 @Database(
     entities = [Trip::class, Measurements::class, TimeState::class, Split::class, OnboardSensors::class, Bike::class, ExternalSensor::class, Weather::class],
-    version = 22
+    version = 23
 )
 @TypeConverters(
     TimeStateEnumConverter::class,
