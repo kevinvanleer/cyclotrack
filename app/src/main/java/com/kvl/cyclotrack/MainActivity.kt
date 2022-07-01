@@ -167,11 +167,17 @@ class MainActivity : AppCompatActivity() {
             hasFitnessPermissions(this)
         ) WorkManager.getInstance(this)
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
-        WorkManager.getInstance(this).beginUniqueWork(
-            "StravaSyncTripsWorker",
-            ExistingWorkPolicy.REPLACE,
-            OneTimeWorkRequestBuilder<StravaSyncTripsWorker>().build()
-        ).enqueue()
+        if (getPreferences(this).getString(
+                getString(R.string.preference_key_strava_refresh_token),
+                ""
+            )?.isNotBlank() == true
+        ) {
+            WorkManager.getInstance(this).beginUniqueWork(
+                "StravaSyncTripsWorker",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<StravaSyncTripsWorker>().build()
+            ).enqueue()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
