@@ -13,13 +13,12 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
-import okio.IOException
 import java.io.File
 import java.util.*
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
-    OkHttpClient().let { client ->
+    return OkHttpClient().let { client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
             .addHeader("Authorization", "Bearer $accessToken")
@@ -43,21 +42,15 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                 }.build()
             )
             .build().let { request ->
-                try {
-                    client.newCall(request).execute().let { response ->
-                        if (response.isSuccessful) {
-                            Log.d(logTag, "SUCCESS")
-                            //TODO Get strava activity ID
-                            return 0
-                        } else {
-                            Log.d(logTag, "ABJECT FAILURE")
-                            Log.d(logTag, response.code.toString())
-                            return -1
-                        }
+                client.newCall(request).execute().let { response ->
+                    if (response.isSuccessful) {
+                        Log.d(logTag, "SUCCESS")
+                        //TODO Get strava activity ID
+                    } else {
+                        Log.d(logTag, "ABJECT FAILURE")
+                        Log.d(logTag, response.code.toString())
                     }
-                } catch (e: IOException) {
-                    Log.i(logTag, "Strava upload failed", e)
-                    return -1
+                    return@let response.code
                 }
             }
     }

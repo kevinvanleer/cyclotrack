@@ -55,6 +55,7 @@ class StravaSyncTripsWorker @AssistedInject constructor(
                         }
                 )*/
             trip.id?.let { tripId ->
+                Log.d(logTag, "Syncing trip $tripId with Strava")
                 val exportData = TripDetailsViewModel.ExportData(
                     summary = tripsRepository.get(tripId),
                     measurements = measurementsRepository.get(tripId),
@@ -70,9 +71,10 @@ class StravaSyncTripsWorker @AssistedInject constructor(
                     exportData.onboardSensors != null &&
                     exportData.weather != null
                 ) {
-                    when (syncTripWithStrava(appContext, tripId, exportData) < 0) {
-                        true -> GoogleFitSyncStatusEnum.FAILED
-                        else -> GoogleFitSyncStatusEnum.SYNCED
+                    when (syncTripWithStrava(appContext, tripId, exportData)) {
+                        in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
+                        429, in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
+                        else -> GoogleFitSyncStatusEnum.FAILED
                     }.let { status ->
                         tripsRepository.setStravaSyncStatus(
                             tripId,

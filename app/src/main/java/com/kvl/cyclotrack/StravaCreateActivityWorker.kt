@@ -50,8 +50,15 @@ class StravaCreateActivityWorker @AssistedInject constructor(
                 exportData.onboardSensors != null &&
                 exportData.weather != null
             ) {
-                if (syncTripWithStrava(appContext, tripId, exportData) < 0) {
-                    return Result.failure()
+                when (syncTripWithStrava(appContext, tripId, exportData)) {
+                    in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
+                    429, in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
+                    else -> GoogleFitSyncStatusEnum.FAILED
+                }.let { status ->
+                    tripsRepository.setStravaSyncStatus(
+                        tripId,
+                        status
+                    )
                 }
             }
         }
