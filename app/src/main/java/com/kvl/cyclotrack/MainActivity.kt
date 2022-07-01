@@ -16,6 +16,7 @@ import androidx.core.content.edit
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -166,8 +167,11 @@ class MainActivity : AppCompatActivity() {
             hasFitnessPermissions(this)
         ) WorkManager.getInstance(this)
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
-        WorkManager.getInstance(this)
-            .enqueue(OneTimeWorkRequestBuilder<StravaSyncTripsWorker>().build())
+        WorkManager.getInstance(this).beginUniqueWork(
+            "StravaSyncTripsWorker",
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<StravaSyncTripsWorker>().build()
+        ).enqueue()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
