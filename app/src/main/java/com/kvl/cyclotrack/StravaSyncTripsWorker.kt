@@ -37,23 +37,6 @@ class StravaSyncTripsWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         Log.d(logTag, "Syncing with Strava")
         tripsRepository.getStravaUnsynced().forEach { trip ->
-            /*WorkManager.getInstance(appContext)
-                .enqueue(
-                    OneTimeWorkRequestBuilder<StravaCreateActivityWorker>()
-                        .setInputData(workDataOf("tripId" to trip.id)).build().apply {
-                            WorkManager.getInstance(appContext)
-                                .getWorkInfoById(id).await().let {
-                                    it?.let {
-                                        when (it.state) {
-                                            WorkInfo.State.SUCCEEDED -> tripsRepository.setStravaSyncStatus(
-                                                trip.id!!,
-                                                GoogleFitSyncStatusEnum.SYNCED
-                                            )
-                                        }
-                                    }
-                                }
-                        }
-                )*/
             trip.id?.let { tripId ->
                 Log.d(logTag, "Syncing trip $tripId with Strava")
                 val exportData = TripDetailsViewModel.ExportData(
