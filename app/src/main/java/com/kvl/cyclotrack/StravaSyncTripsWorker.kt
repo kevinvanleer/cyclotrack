@@ -35,7 +35,6 @@ class StravaSyncTripsWorker @AssistedInject constructor(
     lateinit var weatherRepository: WeatherRepository
 
     override suspend fun doWork(): Result {
-        return Result.success()
         Log.d(logTag, "Syncing with Strava")
         tripsRepository.getStravaUnsynced().forEach { trip ->
             /*WorkManager.getInstance(appContext)
