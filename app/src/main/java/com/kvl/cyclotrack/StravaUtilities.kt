@@ -30,7 +30,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                             "application/octet-stream".toMediaTypeOrNull()
                         )
                     )
-                    summary.notes?.let { name ->
+                    summary.name?.let { name ->
                         addFormDataPart("name", name)
                     }
                     summary.notes?.let { notes ->
