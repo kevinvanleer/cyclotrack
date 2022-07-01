@@ -95,7 +95,7 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
         tripDao.updateStravaSyncStatus(
             TripStravaSync(
                 id = tripId,
-                googleFitSyncStatus = stravaSyncStatus
+                stravaSyncStatus = stravaSyncStatus
             )
         )
     }
