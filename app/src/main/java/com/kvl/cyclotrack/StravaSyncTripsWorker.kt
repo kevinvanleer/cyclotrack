@@ -3,7 +3,8 @@ package com.kvl.cyclotrack
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
-import androidx.work.*
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject
@@ -18,10 +19,25 @@ class StravaSyncTripsWorker @AssistedInject constructor(
     @Inject
     lateinit var tripsRepository: TripsRepository
 
+    @Inject
+    lateinit var measurementsRepository: MeasurementsRepository
+
+    @Inject
+    lateinit var timeStateRepository: TimeStateRepository
+
+    @Inject
+    lateinit var splitRepository: SplitRepository
+
+    @Inject
+    lateinit var onboardSensorsRepository: OnboardSensorsRepository
+
+    @Inject
+    lateinit var weatherRepository: WeatherRepository
+
     override suspend fun doWork(): Result {
         Log.d(logTag, "Syncing with Strava")
         tripsRepository.getStravaUnsynced().forEach { trip ->
-            WorkManager.getInstance(appContext)
+            /*WorkManager.getInstance(appContext)
                 .enqueue(
                     OneTimeWorkRequestBuilder<StravaCreateActivityWorker>()
                         .setInputData(workDataOf("tripId" to trip.id)).build().apply {
@@ -37,7 +53,34 @@ class StravaSyncTripsWorker @AssistedInject constructor(
                                     }
                                 }
                         }
+                )*/
+            trip.id?.let { tripId ->
+                val exportData = TripDetailsViewModel.ExportData(
+                    summary = tripsRepository.get(tripId),
+                    measurements = measurementsRepository.get(tripId),
+                    timeStates = timeStateRepository.getTimeStates(tripId),
+                    splits = splitRepository.getTripSplits(tripId),
+                    onboardSensors = onboardSensorsRepository.get(tripId),
+                    weather = weatherRepository.getTripWeather(tripId)
                 )
+                if (exportData.summary != null &&
+                    exportData.measurements != null &&
+                    exportData.timeStates != null &&
+                    exportData.splits != null &&
+                    exportData.onboardSensors != null &&
+                    exportData.weather != null
+                ) {
+                    when (syncTripWithStrava(appContext, tripId, exportData) < 0) {
+                        true -> GoogleFitSyncStatusEnum.FAILED
+                        else -> GoogleFitSyncStatusEnum.SYNCED
+                    }.let { status ->
+                        tripsRepository.setStravaSyncStatus(
+                            tripId,
+                            status
+                        )
+                    }
+                }
+            }
         }
         return Result.success()
     }
