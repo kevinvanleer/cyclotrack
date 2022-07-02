@@ -73,6 +73,8 @@
     <string name="preferences_key_strava">preferences_key_strava</string>
     <string name="preferences_sync_with_strava_title">Sync with Strava</string>
     <string name="preferences_sync_with_strava_summary">Sign in to Strava to sync your workouts</string>
+    <string name="preferences_disconnect_from_strava_title">Disconnect from Strava</string>
+    <string name="preferences_disconnect_from_strava_summary">Sign out from Strava to stop syncing activities</string>
     <string name="preferences_key_google_fit">preferences_key_google_fit</string>
     <string name="preferences_sync_with_google_fit_title">Sync with Google Fit</string>
     <string name="preferences_sync_with_google_fit_summary">Sign in to Google Fit to sync your workouts</string>

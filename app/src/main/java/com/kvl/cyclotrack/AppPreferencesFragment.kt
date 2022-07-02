@@ -53,23 +53,14 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
-            onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
-                    .buildUpon()
-                    .appendQueryParameter("client_id", getString(R.string.strava_client_id))
-                    .appendQueryParameter(
-                        "redirect_uri",
-                        "cyclotrack://kevinvanleer.com/strava-auth"
-                    )
-                    .appendQueryParameter("response_type", "code")
-                    .appendQueryParameter("approval_prompt", "auto")
-                    .appendQueryParameter("scope", "activity:write,read")
-                    .build()
-
-                Log.d(logTag, "${this.fragment}")
-                startActivity(Intent(Intent.ACTION_VIEW, intentUri))
-                requireActivity().finish()
-                true
+            if (getPreferences(context).getString(
+                    requireContext().getString(R.string.preference_key_strava_refresh_token),
+                    null
+                ).isNullOrBlank()
+            ) {
+                configureDisconnectStrava()
+            } else {
+                configureConnectStrava()
             }
         }
 
@@ -108,6 +99,34 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 summary =
                     "v${BuildConfig.VERSION_CODE}: ${BuildConfig.VERSION_NAME} (${BuildConfig.GIT_HASH})"
             }
+        }
+    }
+
+    private fun Preference.configureDisconnectStrava() {
+        title = context.getString(R.string.preferences_disconnect_from_strava_title)
+        summary = context.getString(R.string.preferences_disconnect_from_strava_summary)
+    }
+
+    private fun Preference.configureConnectStrava() {
+        title = context.getString(R.string.preferences_sync_with_strava_title)
+        summary = context.getString(R.string.preferences_sync_with_strava_summary)
+        onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
+                .buildUpon()
+                .appendQueryParameter("client_id", getString(R.string.strava_client_id))
+                .appendQueryParameter(
+                    "redirect_uri",
+                    "cyclotrack://kevinvanleer.com/strava-auth"
+                )
+                .appendQueryParameter("response_type", "code")
+                .appendQueryParameter("approval_prompt", "auto")
+                .appendQueryParameter("scope", "activity:write,read")
+                .build()
+
+            Log.d(logTag, "${this.fragment}")
+            startActivity(Intent(Intent.ACTION_VIEW, intentUri))
+            requireActivity().finish()
+            true
         }
     }
 
@@ -163,80 +182,89 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         EventBus.getDefault().unregister(this)
     }
 
+    private fun Preference.configureConnectGoogleFit(context: Context) {
+        this.title = getString(R.string.preferences_sync_with_google_fit_title)
+        this.summary = getString(R.string.preferences_sync_with_google_fit_summary)
+        onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            AlertDialog.Builder(context).apply {
+                setPositiveButton("SYNC") { _, _ ->
+                    configureGoogleFit(requireActivity())
+                }
+                setTitle(getString(R.string.preferences_sync_with_google_fit_title))
+                setMessage(getString(R.string.google_fit_sync_dialog_description))
+            }.create().show()
+            true
+        }
+    }
+
+    private fun Preference.configureDisconnectGoogleFit(context: Context) {
+        this.title = getString(R.string.preferences_disconnect_google_fit_title)
+        this.summary = getString(R.string.preferences_disconnect_google_fit_summary)
+        onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            AlertDialog.Builder(context).apply {
+                val removeAllCheckboxView =
+                    View.inflate(
+                        context,
+                        R.layout.remove_all_google_fit_dialog_option,
+                        null
+                    )
+                setPositiveButton("DISCONNECT") { _, _ ->
+                    if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
+                        Log.i(logTag, "Remove all data from Google Fit")
+                        WorkManager.getInstance(context)
+                            .enqueue(OneTimeWorkRequestBuilder<RemoveAllGoogleFitDataWorker>()
+                                .build().apply {
+                                    WorkManager.getInstance(context)
+                                        .getWorkInfoByIdLiveData(id)
+                                        .observe(viewLifecycleOwner) { workInfo ->
+                                            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
+                                                Log.i(
+                                                    logTag,
+                                                    "Sign out from Google Fit"
+                                                )
+                                                GoogleSignIn.getClient(
+                                                    context,
+                                                    GoogleSignInOptions.DEFAULT_SIGN_IN
+                                                )
+                                                    .signOut()
+                                                    .addOnSuccessListener {
+                                                        configureGoogleFitPreference(
+                                                            context
+                                                        )
+                                                    }
+                                            }
+                                        }
+                                })
+                    } else {
+                        Log.i(logTag, "Sign out from Google Fit")
+                        GoogleSignIn.getClient(
+                            context,
+                            GoogleSignInOptions.DEFAULT_SIGN_IN
+                        ).signOut()
+                            .addOnSuccessListener {
+                                configureGoogleFitPreference(context)
+                            }
+                    }
+                }
+                setView(removeAllCheckboxView)
+                setTitle(getString(R.string.preferences_disconnect_google_fit_title))
+                setMessage(getString(R.string.google_fit_logout_dialog_message))
+            }.create().show()
+            true
+        }
+    }
+
     private fun configureGoogleFitPreference(context: Context) {
         findPreference<Preference>(getString(R.string.preferences_key_google_fit))?.apply {
             if (hasFitnessPermissions(context)) {
-                this.title = getString(R.string.preferences_disconnect_google_fit_title)
-                this.summary = getString(R.string.preferences_disconnect_google_fit_summary)
-                onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    AlertDialog.Builder(context).apply {
-                        val removeAllCheckboxView =
-                            View.inflate(
-                                context,
-                                R.layout.remove_all_google_fit_dialog_option,
-                                null
-                            )
-                        setPositiveButton("DISCONNECT") { _, _ ->
-                            if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
-                                Log.i(logTag, "Remove all data from Google Fit")
-                                WorkManager.getInstance(context)
-                                    .enqueue(OneTimeWorkRequestBuilder<RemoveAllGoogleFitDataWorker>()
-                                        .build().apply {
-                                            WorkManager.getInstance(context)
-                                                .getWorkInfoByIdLiveData(id)
-                                                .observe(viewLifecycleOwner) { workInfo ->
-                                                    if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                                                        Log.i(
-                                                            logTag,
-                                                            "Sign out from Google Fit"
-                                                        )
-                                                        GoogleSignIn.getClient(
-                                                            context,
-                                                            GoogleSignInOptions.DEFAULT_SIGN_IN
-                                                        )
-                                                            .signOut()
-                                                            .addOnSuccessListener {
-                                                                configureGoogleFitPreference(
-                                                                    context
-                                                                )
-                                                            }
-                                                    }
-                                                }
-                                        })
-                            } else {
-                                Log.i(logTag, "Sign out from Google Fit")
-                                GoogleSignIn.getClient(
-                                    context,
-                                    GoogleSignInOptions.DEFAULT_SIGN_IN
-                                ).signOut()
-                                    .addOnSuccessListener {
-                                        configureGoogleFitPreference(context)
-                                    }
-                            }
-                        }
-                        setView(removeAllCheckboxView)
-                        setTitle(getString(R.string.preferences_disconnect_google_fit_title))
-                        setMessage(getString(R.string.google_fit_logout_dialog_message))
-                    }.create().show()
-                    true
-                }
+                configureDisconnectGoogleFit(context)
             } else {
-                this.title = getString(R.string.preferences_sync_with_google_fit_title)
-                this.summary = getString(R.string.preferences_sync_with_google_fit_summary)
-                onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                    AlertDialog.Builder(context).apply {
-                        setPositiveButton("SYNC") { _, _ ->
-                            configureGoogleFit(requireActivity())
-                        }
-                        setTitle(getString(R.string.preferences_sync_with_google_fit_title))
-                        setMessage(getString(R.string.google_fit_sync_dialog_description))
-                    }.create().show()
-                    true
-                }
+                configureConnectGoogleFit(context)
             }
             isVisible = true
         }
     }
+
 
     private fun configureClearPreferences() {
         findPreference<Preference>(getString(R.string.preferences_clear_preferences_key))?.apply {
