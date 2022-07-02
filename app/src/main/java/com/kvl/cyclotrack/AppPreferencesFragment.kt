@@ -21,6 +21,12 @@ import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.FormBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -53,14 +59,15 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
-            if (getPreferences(context).getString(
-                    requireContext().getString(R.string.preference_key_strava_refresh_token),
-                    null
-                ).isNullOrBlank()
-            ) {
-                configureDisconnectStrava()
-            } else {
-                configureConnectStrava()
+            getPreferences(context).getString(
+                requireContext().getString(R.string.preference_key_strava_refresh_token),
+                null
+            ).let { refreshToken ->
+                if (refreshToken.isNullOrBlank()) {
+                    configureConnectStrava(context, this)
+                } else {
+                    configureDisconnectStrava(context, this, refreshToken)
+                }
             }
         }
 
@@ -102,31 +109,67 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         }
     }
 
-    private fun Preference.configureDisconnectStrava() {
-        title = context.getString(R.string.preferences_disconnect_from_strava_title)
-        summary = context.getString(R.string.preferences_disconnect_from_strava_summary)
+    private fun configureDisconnectStrava(
+        context: Context,
+        preference: Preference,
+        refreshToken: String
+    ) {
+        preference.apply {
+            title = context.getString(R.string.preferences_disconnect_from_strava_title)
+            summary = context.getString(R.string.preferences_disconnect_from_strava_summary)
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                CoroutineScope(Dispatchers.IO).launch {
+                    updateStravaAuthToken(
+                        context = context,
+                        refreshToken = refreshToken
+                    )?.let { accessToken ->
+                        OkHttpClient().let { client ->
+                            Request.Builder()
+                                .url("https://www.strava.com/api/v3/deauthorize")
+                                //.addHeader("Authorization", "Bearer $accessToken")
+                                .post(FormBody.Builder().apply { add("access_token", accessToken) }
+                                    .build()).build().let { request ->
+                                    client.newCall(request).execute().let { response ->
+                                        if (response.isSuccessful) {
+                                            Log.d(logTag, "STRAVA LOGOUT SUCCESS")
+                                            //TODO Get strava activity ID
+                                        } else {
+                                            Log.d(logTag, "STRAVA LOGOUT ABJECT FAILURE")
+                                            Log.d(logTag, response.code.toString())
+                                            Log.d(logTag, response.body.toString())
+                                        }
+                                    }
+                                }
+                        }
+                    }
+                }
+                true
+            }
+        }
     }
 
-    private fun Preference.configureConnectStrava() {
-        title = context.getString(R.string.preferences_sync_with_strava_title)
-        summary = context.getString(R.string.preferences_sync_with_strava_summary)
-        onPreferenceClickListener = Preference.OnPreferenceClickListener {
-            val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
-                .buildUpon()
-                .appendQueryParameter("client_id", getString(R.string.strava_client_id))
-                .appendQueryParameter(
-                    "redirect_uri",
-                    "cyclotrack://kevinvanleer.com/strava-auth"
-                )
-                .appendQueryParameter("response_type", "code")
-                .appendQueryParameter("approval_prompt", "auto")
-                .appendQueryParameter("scope", "activity:write,read")
-                .build()
+    private fun configureConnectStrava(context: Context, preference: Preference) {
+        preference.apply {
+            title = context.getString(R.string.preferences_sync_with_strava_title)
+            summary = context.getString(R.string.preferences_sync_with_strava_summary)
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
+                    .buildUpon()
+                    .appendQueryParameter("client_id", getString(R.string.strava_client_id))
+                    .appendQueryParameter(
+                        "redirect_uri",
+                        "cyclotrack://kevinvanleer.com/strava-auth"
+                    )
+                    .appendQueryParameter("response_type", "code")
+                    .appendQueryParameter("approval_prompt", "auto")
+                    .appendQueryParameter("scope", "activity:write,read")
+                    .build()
 
-            Log.d(logTag, "${this.fragment}")
-            startActivity(Intent(Intent.ACTION_VIEW, intentUri))
-            requireActivity().finish()
-            true
+                Log.d(logTag, "${this.fragment}")
+                startActivity(Intent(Intent.ACTION_VIEW, intentUri))
+                requireActivity().finish()
+                true
+            }
         }
     }
 

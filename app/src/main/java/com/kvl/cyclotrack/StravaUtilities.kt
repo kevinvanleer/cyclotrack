@@ -14,11 +14,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
+import java.io.IOException
 import java.util.*
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
-    return OkHttpClient().let { client ->
+    return OkHttpClient().let OkClient@{ client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
             .addHeader("Authorization", "Bearer $accessToken")
@@ -42,7 +43,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                 }.build()
             )
             .build().let { request ->
-                client.newCall(request).execute().let { response ->
+                client.newCall(request).execute().let response@{ response ->
                     if (response.isSuccessful) {
                         Log.d(logTag, "SUCCESS")
                         //TODO Get strava activity ID
@@ -50,7 +51,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                         Log.d(logTag, "ABJECT FAILURE")
                         Log.d(logTag, response.code.toString())
                     }
-                    return@let response.code
+                    return@response response.code
                 }
             }
     }
@@ -60,7 +61,7 @@ fun updateStravaAuthToken(
     context: Context,
     authCode: String? = null,
     refreshToken: String? = null
-) {
+): String? {
     val logTag = "updateStravaAuthToken"
     if (authCode == null && refreshToken == null) {
         throw RuntimeException("Strava token exchange must have an authorization code or refresh token")
@@ -76,7 +77,7 @@ fun updateStravaAuthToken(
     val token = authCode ?: refreshToken!!
     val jsonAdapter = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
         .adapter(StravaTokenExchangeResponse::class.java)
-    OkHttpClient().let { client ->
+    return OkHttpClient().let { client ->
         Request.Builder()
             .url("https://www.strava.com/oauth/token")
             .post(
@@ -92,39 +93,35 @@ fun updateStravaAuthToken(
             )
             .build()
             .let { request ->
-                try {
-                    client.newCall(request).execute().let { response ->
-                        if (response.isSuccessful) {
-                            try {
-                                val tokenResponse = response.body?.source()?.let {
-                                    jsonAdapter.nullSafe().fromJson(it)
-                                }
-                                Log.d(logTag, "$tokenResponse")
-                                Log.d(logTag, "${tokenResponse?.expires_in}")
-                                Log.d(logTag, "${tokenResponse?.refresh_token}")
-                                Log.d(logTag, "${tokenResponse?.access_token}")
-                                Log.d(logTag, "${tokenResponse?.athlete}")
-                                getPreferences(context).edit().apply {
-                                    putLong(
-                                        context.getString(R.string.preference_key_strava_access_expires_at),
-                                        tokenResponse!!.expires_at
-                                    )
-                                    putString(
-                                        context.getString(R.string.preference_key_strava_refresh_token),
-                                        tokenResponse.refresh_token
-                                    )
-                                    putString(
-                                        context.getString(R.string.preference_key_strava_access_token),
-                                        tokenResponse.access_token
-                                    )
-                                }.commit()
-                            } catch (e: Exception) {
-                                Log.e(logTag, "ERROR", e)
+                client.newCall(request).execute().let response@{ response ->
+                    when {
+                        response.isSuccessful -> {
+                            val tokenResponse = response.body?.source()?.let {
+                                jsonAdapter.nullSafe().fromJson(it)
                             }
+                            Log.d(logTag, "$tokenResponse")
+                            Log.d(logTag, "${tokenResponse?.expires_in}")
+                            Log.d(logTag, "${tokenResponse?.refresh_token}")
+                            Log.d(logTag, "${tokenResponse?.access_token}")
+                            Log.d(logTag, "${tokenResponse?.athlete}")
+                            getPreferences(context).edit().apply {
+                                putLong(
+                                    context.getString(R.string.preference_key_strava_access_expires_at),
+                                    tokenResponse!!.expires_at
+                                )
+                                putString(
+                                    context.getString(R.string.preference_key_strava_refresh_token),
+                                    tokenResponse.refresh_token
+                                )
+                                putString(
+                                    context.getString(R.string.preference_key_strava_access_token),
+                                    tokenResponse.access_token
+                                )
+                            }.commit()
+                            return@response tokenResponse?.access_token
                         }
+                        else -> throw IOException("Token update failed with response code ${response.code}")
                     }
-                } catch (e: Exception) {
-                    Log.e(logTag, "ERROR", e)
                 }
             }
     }
