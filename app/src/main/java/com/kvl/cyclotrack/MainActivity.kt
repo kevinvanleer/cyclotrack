@@ -169,8 +169,8 @@ class MainActivity : AppCompatActivity() {
             .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
         if (getPreferences(this).getString(
                 getString(R.string.preference_key_strava_refresh_token),
-                ""
-            )?.isNotBlank() == true
+                null
+            ).isNullOrBlank().not()
         ) {
             WorkManager.getInstance(this).beginUniqueWork(
                 "StravaSyncTripsWorker",
