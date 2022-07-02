@@ -161,12 +161,22 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
 
         Log.d(logTag, "MainActivity onResume")
-        if (hasFitnessPermissions(this)) WorkManager.getInstance(this)
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build())
+        if (hasFitnessPermissions(this)) {
+            WorkManager.getInstance(this).beginUniqueWork(
+                "GoogleFitSyncTripsWorker",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build()
+            ).enqueue()
+        }
         if (shouldSyncGoogleFitBiometrics(this) &&
             hasFitnessPermissions(this)
-        ) WorkManager.getInstance(this)
-            .enqueue(OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build())
+        ) {
+            WorkManager.getInstance(this).beginUniqueWork(
+                "GoogleFitSyncBiometricsWorker",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build()
+            ).enqueue()
+        }
         if (getPreferences(this).getString(
                 getString(R.string.preference_key_strava_refresh_token),
                 null
