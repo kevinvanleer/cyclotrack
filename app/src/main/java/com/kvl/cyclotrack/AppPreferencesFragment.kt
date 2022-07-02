@@ -125,19 +125,19 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     )?.let { accessToken ->
                         OkHttpClient().let { client ->
                             Request.Builder()
-                                .url("https://www.strava.com/api/v3/deauthorize")
+                                .url("https://www.strava.com/oauth/deauthorize")
                                 //.addHeader("Authorization", "Bearer $accessToken")
                                 .post(FormBody.Builder().apply { add("access_token", accessToken) }
                                     .build()).build().let { request ->
                                     client.newCall(request).execute().let { response ->
                                         if (response.isSuccessful) {
                                             Log.d(logTag, "STRAVA LOGOUT SUCCESS")
-                                            //TODO Get strava activity ID
                                             getPreferences(context).edit().apply {
                                                 remove(context.getString(R.string.preference_key_strava_refresh_token))
                                                 remove(context.getString(R.string.preference_key_strava_access_token))
                                                 remove(context.getString(R.string.preference_key_strava_access_expires_at))
                                             }
+                                            configureConnectStrava(context, preference)
                                         } else {
                                             Log.d(logTag, "STRAVA LOGOUT ABJECT FAILURE")
                                             Log.d(logTag, response.code.toString())
