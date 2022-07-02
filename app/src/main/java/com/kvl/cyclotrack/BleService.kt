@@ -562,7 +562,6 @@ class BleService @Inject constructor(
         gatts.forEach { gatt ->
             Log.d(logTag, "Disconnecting ${gatt.device.address}")
             try {
-                gatts.remove(gatt)
                 gatt.close()
             } catch (e: SecurityException) {
                 Log.w(logTag, "Bluetooth permissions have not been granted.", e)
