@@ -50,7 +50,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                     } else {
                         Log.d(logTag, "ABJECT FAILURE")
                         Log.d(logTag, response.code.toString())
-                        Log.d(logTag, response.body.toString())
+                        Log.d(logTag, response.body?.string() ?: "No body")
                     }
                     return@response response.code
                 }

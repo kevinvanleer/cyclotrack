@@ -136,12 +136,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                                                 remove(context.getString(R.string.preference_key_strava_refresh_token))
                                                 remove(context.getString(R.string.preference_key_strava_access_token))
                                                 remove(context.getString(R.string.preference_key_strava_access_expires_at))
-                                            }
-                                            configureConnectStrava(context, preference)
+                                            }.commit()
+                                            //configureConnectStrava(context, preference)
                                         } else {
                                             Log.d(logTag, "STRAVA LOGOUT ABJECT FAILURE")
                                             Log.d(logTag, response.code.toString())
-                                            Log.d(logTag, response.body.toString())
+                                            Log.d(logTag, response.body?.string() ?: "No body")
                                         }
                                     }
                                 }
