@@ -35,26 +35,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "AppPreferencesFragment"
 
-    @Suppress("DEPRECATION")
-    @SuppressWarnings("deprecation")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        //Required for Google Sign-in
-        Log.d(logTag, "onActivityResult")
-        Log.d(logTag, "$data")
-        super.onActivityResult(requestCode, resultCode, data)
-        Log.d(this.javaClass.simpleName, "onActivityResult: ${resultCode}")
-
-        findPreference<Preference>(getString(R.string.preference_key_bike_specs))?.apply {
-            onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                view?.findNavController()?.let {
-                    Log.d(logTag, it.toString())
-                    it.navigate(R.id.action_edit_bike_specs)
-                    true
-                } == true
-            }
-        }
-    }
-
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
@@ -367,5 +347,18 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         super.onResume()
         requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
         Log.d(logTag, "$this")
+
+        findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
+            getPreferences(context).getString(
+                requireContext().getString(R.string.preference_key_strava_refresh_token),
+                null
+            ).let { refreshToken ->
+                if (refreshToken.isNullOrBlank()) {
+                    configureConnectStrava(context, this)
+                } else {
+                    configureDisconnectStrava(context, this, refreshToken)
+                }
+            }
+        }
     }
 }
