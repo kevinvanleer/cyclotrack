@@ -126,7 +126,6 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                         OkHttpClient().let { client ->
                             Request.Builder()
                                 .url("https://www.strava.com/oauth/deauthorize")
-                                //.addHeader("Authorization", "Bearer $accessToken")
                                 .post(FormBody.Builder().apply { add("access_token", accessToken) }
                                     .build()).build().let { request ->
                                     client.newCall(request).execute().let { response ->
