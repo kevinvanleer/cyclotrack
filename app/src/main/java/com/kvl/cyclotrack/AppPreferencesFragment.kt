@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.Toast
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
@@ -21,16 +22,15 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.FormBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import java.io.IOException
 
 class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
@@ -50,39 +50,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                         context = context,
                         refreshToken = refreshToken
                     )?.let { accessToken ->
-                        OkHttpClient().let { client ->
-                            Request.Builder()
-                                .url("https://www.strava.com/oauth/deauthorize")
-                                .post(FormBody.Builder().apply { add("access_token", accessToken) }
-                                    .build()).build().let { request ->
-                                    client.newCall(request).execute().let { response ->
-                                        if (response.isSuccessful) {
-                                            Log.d(logTag, "STRAVA LOGOUT SUCCESS")
-                                            getPreferences(context).edit().apply {
-                                                remove(context.getString(R.string.preference_key_strava_refresh_token))
-                                                remove(context.getString(R.string.preference_key_strava_access_token))
-                                                remove(context.getString(R.string.preference_key_strava_access_expires_at))
-                                            }.commit()
-                                        } else {
-                                            Log.d(logTag, "STRAVA LOGOUT ABJECT FAILURE")
-                                            Log.d(logTag, response.code.toString())
-                                            Log.d(logTag, response.body?.string() ?: "No body")
-                                            if (response.code === 401) {
-                                                getPreferences(context).edit().apply {
-                                                    remove(context.getString(R.string.preference_key_strava_refresh_token))
-                                                    remove(context.getString(R.string.preference_key_strava_access_token))
-                                                    remove(context.getString(R.string.preference_key_strava_access_expires_at))
-                                                }.commit()
-                                            }
-                                        }
-                                    }
-                                }
+                        try {
+                            deauthorizeStrava(accessToken, context)
+                        } catch (e: IOException) {
+                            FirebaseCrashlytics.getInstance().recordException(e)
+                            Toast.makeText(
+                                context,
+                                "Failed to disconnect from Strava. Please try again.",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
-                    }
-                }.invokeOnCompletion {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        //configureConnectStrava(context, preference)
-                        Log.d(logTag, "Disconnect complete, hooo, chiii")
                     }
                 }
                 true
@@ -237,7 +214,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     }
 
     var prefListener =
-        SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
                 requireContext().getString(R.string.preference_key_strava_refresh_token) -> configureStravaConnectPref()
             }
@@ -246,31 +223,23 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     override fun onStart() {
         super.onStart()
         EventBus.getDefault().register(this)
-        Log.d(logTag, "starting pref frag")
     }
 
     override fun onResume() {
         super.onResume()
         requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
-        Log.d(logTag, "starting pref frag")
         Log.d(logTag, "$this")
         getPreferences(requireContext()).registerOnSharedPreferenceChangeListener(prefListener)
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        Log.d(logTag, "detaching pref frag")
-    }
-
-    override fun onStop() {
-        Log.d(logTag, "stopping pref frag")
-        super.onStop()
-        EventBus.getDefault().unregister(this)
     }
 
     override fun onPause() {
         super.onPause()
         getPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(prefListener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        EventBus.getDefault().unregister(this)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
