@@ -154,7 +154,9 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                         }
                     }
                 }.invokeOnCompletion {
-                    configureConnectStrava(context, preference)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        configureConnectStrava(context, preference)
+                    }
                 }
                 true
             }
