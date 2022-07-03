@@ -35,9 +35,14 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "AppPreferencesFragment"
 
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.app_preferences, rootKey)
-
+    @Suppress("DEPRECATION")
+    @SuppressWarnings("deprecation")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        //Required for Google Sign-in
+        Log.d(logTag, "onActivityResult")
+        Log.d(logTag, "$data")
+        super.onActivityResult(requestCode, resultCode, data)
+        Log.d(this.javaClass.simpleName, "onActivityResult: ${resultCode}")
 
         findPreference<Preference>(getString(R.string.preference_key_bike_specs))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
@@ -48,6 +53,10 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                 } == true
             }
         }
+    }
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
         findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
