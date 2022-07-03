@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -34,70 +35,6 @@ import org.greenrobot.eventbus.ThreadMode
 class AppPreferencesFragment : PreferenceFragmentCompat() {
     private lateinit var userGoogleFitBiometricsDialog: AlertDialog
     private val logTag = "AppPreferencesFragment"
-
-    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.app_preferences, rootKey)
-
-        findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
-            onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                view?.findNavController()?.let {
-                    Log.d(logTag, it.toString())
-                    it.navigate(R.id.action_show_linked_sensors)
-                    true
-                } == true
-            }
-        }
-
-        findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
-            getPreferences(context).getString(
-                requireContext().getString(R.string.preference_key_strava_refresh_token),
-                null
-            ).let { refreshToken ->
-                if (refreshToken.isNullOrBlank()) {
-                    configureConnectStrava(context, this)
-                } else {
-                    configureDisconnectStrava(context, this, refreshToken)
-                }
-            }
-        }
-
-        findPreference<Preference>(getString(R.string.preference_key_advanced_preferences))?.apply {
-            onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                view?.findNavController()?.let {
-                    Log.d(logTag, it.toString())
-                    it.navigate(R.id.action_advanced_preferences)
-                    true
-                } == true
-            }
-        }
-
-        val brightnessToggle =
-            findPreference<SwitchPreference>(getString(R.string.preferences_dashboard_brightness_toggle_key))
-        findPreference<SeekBarPreference>(getString(R.string.preferences_dashboard_brightness_key))?.apply {
-            setOnPreferenceChangeListener { _, _ ->
-                brightnessToggle?.isChecked = true
-                true
-            }
-        }
-
-        if (!BleService.isBluetoothSupported(requireContext())) {
-            findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
-                isVisible = false
-            }
-        }
-
-        if (FeatureFlags.devBuild) {
-            configureClearPreferences()
-        }
-
-        if (FeatureFlags.betaBuild) {
-            findPreference<Preference>(getString(R.string.preferences_display_app_version))?.apply {
-                isVisible = true
-                summary =
-                    "v${BuildConfig.VERSION_CODE}: ${BuildConfig.VERSION_NAME} (${BuildConfig.GIT_HASH})"
-            }
-        }
-    }
 
     private fun configureDisconnectStrava(
         context: Context,
@@ -144,7 +81,8 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     }
                 }.invokeOnCompletion {
                     CoroutineScope(Dispatchers.Main).launch {
-                        configureConnectStrava(context, preference)
+                        //configureConnectStrava(context, preference)
+                        Log.d(logTag, "Disconnect complete, hooo, chiii")
                     }
                 }
                 true
@@ -177,56 +115,36 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onGoogleFitAccessGranted(@Suppress("UNUSED_PARAMETER") event: GoogleFitAccessGranted) {
-        userGoogleFitBiometricsDialog.show()
-        configureGoogleFitPreference(requireContext())
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        configureGoogleFitPreference(requireContext())
-
-        userGoogleFitBiometricsDialog = AlertDialog.Builder(context).apply {
-            val dialogView =
-                View.inflate(context, R.layout.use_google_fit_biometrics_dialog, null)
-            val useGoogleFitSwitch =
-                dialogView.findViewById<SwitchCompat>(R.id.useGoogleFitBiometricsDialog_switch_useGoogleFit)
-            useGoogleFitSwitch.isChecked =
-                PreferenceManager.getDefaultSharedPreferences(context)
-                    .getBoolean(
-                        requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-                        true
-                    )
-            setPositiveButton("OK") { _, _ ->
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
-                    putBoolean(
-                        requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-                        useGoogleFitSwitch.isChecked
-                    )
-                    commit()
+    private fun configureStravaConnectPref() {
+        findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
+            getPreferences(context).getString(
+                requireContext().getString(R.string.preference_key_strava_refresh_token),
+                null
+            ).let { refreshToken ->
+                if (refreshToken.isNullOrBlank()) {
+                    configureConnectStrava(context, this)
+                } else {
+                    configureDisconnectStrava(context, this, refreshToken)
                 }
             }
-            setTitle(getString(R.string.useGoogleFitBiometricsDialog_title))
-            setMessage(getString(R.string.useGoogleFitBiometricsDialog_message))
-            setView(dialogView)
-        }.create()
+        }
     }
 
-    override fun onStart() {
-        super.onStart()
-        EventBus.getDefault().register(this)
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        Log.d(logTag, "detaching pref frag")
-    }
-
-    override fun onStop() {
-        Log.d(logTag, "stopping pref frag")
-        super.onStop()
-        EventBus.getDefault().unregister(this)
+    private fun configureClearPreferences() {
+        findPreference<Preference>(getString(R.string.preferences_clear_preferences_key))?.apply {
+            isVisible = true
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                AlertDialog.Builder(context).apply {
+                    setPositiveButton("CLEAR") { _, _ ->
+                        PreferenceManager.getDefaultSharedPreferences(context).edit().clear()
+                            .commit()
+                    }
+                    setTitle("Clear Preferences?")
+                    setMessage("You are about to clear all shared preferences. This cannot be undone.")
+                }.create().show()
+                true
+            }
+        }
     }
 
     private fun Preference.configureConnectGoogleFit(context: Context) {
@@ -312,20 +230,109 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         }
     }
 
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onGoogleFitAccessGranted(@Suppress("UNUSED_PARAMETER") event: GoogleFitAccessGranted) {
+        userGoogleFitBiometricsDialog.show()
+        configureGoogleFitPreference(requireContext())
+    }
 
-    private fun configureClearPreferences() {
-        findPreference<Preference>(getString(R.string.preferences_clear_preferences_key))?.apply {
-            isVisible = true
+    var prefListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+            when (key) {
+                requireContext().getString(R.string.preference_key_strava_refresh_token) -> configureStravaConnectPref()
+            }
+        }
+
+    override fun onStart() {
+        super.onStart()
+        EventBus.getDefault().register(this)
+        Log.d(logTag, "starting pref frag")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
+        Log.d(logTag, "starting pref frag")
+        Log.d(logTag, "$this")
+        getPreferences(requireContext()).registerOnSharedPreferenceChangeListener(prefListener)
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        Log.d(logTag, "detaching pref frag")
+    }
+
+    override fun onStop() {
+        Log.d(logTag, "stopping pref frag")
+        super.onStop()
+        EventBus.getDefault().unregister(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        getPreferences(requireContext()).unregisterOnSharedPreferenceChangeListener(prefListener)
+    }
+
+    override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
+        setPreferencesFromResource(R.xml.app_preferences, rootKey)
+
+        findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                AlertDialog.Builder(context).apply {
-                    setPositiveButton("CLEAR") { _, _ ->
-                        PreferenceManager.getDefaultSharedPreferences(context).edit().clear()
-                            .commit()
-                    }
-                    setTitle("Clear Preferences?")
-                    setMessage("You are about to clear all shared preferences. This cannot be undone.")
-                }.create().show()
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_show_linked_sensors)
+                    true
+                } == true
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
+            getPreferences(context).getString(
+                requireContext().getString(R.string.preference_key_strava_refresh_token),
+                null
+            ).let { refreshToken ->
+                if (refreshToken.isNullOrBlank()) {
+                    configureConnectStrava(context, this)
+                } else {
+                    configureDisconnectStrava(context, this, refreshToken)
+                }
+            }
+        }
+
+        findPreference<Preference>(getString(R.string.preference_key_advanced_preferences))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_advanced_preferences)
+                    true
+                } == true
+            }
+        }
+
+        val brightnessToggle =
+            findPreference<SwitchPreference>(getString(R.string.preferences_dashboard_brightness_toggle_key))
+        findPreference<SeekBarPreference>(getString(R.string.preferences_dashboard_brightness_key))?.apply {
+            setOnPreferenceChangeListener { _, _ ->
+                brightnessToggle?.isChecked = true
                 true
+            }
+        }
+
+        if (!BleService.isBluetoothSupported(requireContext())) {
+            findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
+                isVisible = false
+            }
+        }
+
+        if (FeatureFlags.devBuild) {
+            configureClearPreferences()
+        }
+
+        if (FeatureFlags.betaBuild) {
+            findPreference<Preference>(getString(R.string.preferences_display_app_version))?.apply {
+                isVisible = true
+                summary =
+                    "v${BuildConfig.VERSION_CODE}: ${BuildConfig.VERSION_NAME} (${BuildConfig.GIT_HASH})"
             }
         }
     }
@@ -343,22 +350,33 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
-    override fun onResume() {
-        super.onResume()
-        requireActivity().findViewById<Toolbar>(R.id.preferences_toolbar).title = "Settings"
-        Log.d(logTag, "$this")
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        configureGoogleFitPreference(requireContext())
 
-        findPreference<Preference>(getString(R.string.preferences_key_strava))?.apply {
-            getPreferences(context).getString(
-                requireContext().getString(R.string.preference_key_strava_refresh_token),
-                null
-            ).let { refreshToken ->
-                if (refreshToken.isNullOrBlank()) {
-                    configureConnectStrava(context, this)
-                } else {
-                    configureDisconnectStrava(context, this, refreshToken)
+        userGoogleFitBiometricsDialog = AlertDialog.Builder(context).apply {
+            val dialogView =
+                View.inflate(context, R.layout.use_google_fit_biometrics_dialog, null)
+            val useGoogleFitSwitch =
+                dialogView.findViewById<SwitchCompat>(R.id.useGoogleFitBiometricsDialog_switch_useGoogleFit)
+            useGoogleFitSwitch.isChecked =
+                PreferenceManager.getDefaultSharedPreferences(context)
+                    .getBoolean(
+                        requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                        true
+                    )
+            setPositiveButton("OK") { _, _ ->
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
+                    putBoolean(
+                        requireContext().getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                        useGoogleFitSwitch.isChecked
+                    )
+                    commit()
                 }
             }
-        }
+            setTitle(getString(R.string.useGoogleFitBiometricsDialog_title))
+            setMessage(getString(R.string.useGoogleFitBiometricsDialog_message))
+            setView(dialogView)
+        }.create()
     }
 }
