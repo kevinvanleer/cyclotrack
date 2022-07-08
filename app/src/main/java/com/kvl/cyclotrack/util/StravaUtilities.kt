@@ -168,7 +168,7 @@ fun syncTripWithStrava(
     exportData: TripDetailsViewModel.ExportData
 ): Int {
     val logTag = "syncTripWithStrava"
-    var validAccessToken: String? = null
+    var validAccessToken: String?
 
     try {
         validAccessToken = refreshStravaAccessToken(appContext)

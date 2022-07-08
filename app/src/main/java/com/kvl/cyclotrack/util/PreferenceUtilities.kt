@@ -11,8 +11,10 @@ import com.kvl.cyclotrack.userCircumferenceToMeters
 
 fun getBrightnessPreference(context: Context): Float {
     return if (getPreferences(context)
-            .getBoolean(context.getString(R.string.preferences_dashboard_brightness_toggle_key),
-                true)
+            .getBoolean(
+                context.getString(R.string.preferences_dashboard_brightness_toggle_key),
+                true
+            )
     ) {
         getPreferences(context)
             .getInt(context.getString(R.string.preferences_dashboard_brightness_key), 50) / 100f

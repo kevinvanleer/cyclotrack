@@ -39,7 +39,7 @@ class EditTripFragment : Fragment() {
                 findNavController().backQueue.map { it.destination.label }
             }"
         )
-       
+
         val tripName: EditText = view.findViewById(R.id.edit_trip_name)
         val tripNotes: EditText = view.findViewById(R.id.edit_trip_notes)
         val tripWheelCirc: EditText = view.findViewById(R.id.edit_trip_wheel_circumference)
