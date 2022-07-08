@@ -1,4 +1,4 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import java.time.Clock
 import java.time.Instant

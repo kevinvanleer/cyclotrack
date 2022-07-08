@@ -16,6 +16,7 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.PolylineOptions
+import com.kvl.cyclotrack.util.SystemUtils
 import java.text.SimpleDateFormat
 import java.util.*
 

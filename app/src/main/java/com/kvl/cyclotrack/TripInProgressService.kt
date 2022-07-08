@@ -23,6 +23,7 @@ import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
+import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.shouldCollectOnboardSensors
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi

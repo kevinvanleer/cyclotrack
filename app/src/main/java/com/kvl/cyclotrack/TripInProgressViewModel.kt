@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.lifecycle.*
 import androidx.lifecycle.Observer
 import com.kvl.cyclotrack.events.TripProgressEvent
+import com.kvl.cyclotrack.util.SystemUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

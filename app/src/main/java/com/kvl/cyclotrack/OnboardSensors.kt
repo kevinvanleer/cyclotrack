@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.kvl.cyclotrack.util.SystemUtils
 
 @Entity(foreignKeys = [ForeignKey(entity = Trip::class,
     parentColumns = arrayOf("id"),
