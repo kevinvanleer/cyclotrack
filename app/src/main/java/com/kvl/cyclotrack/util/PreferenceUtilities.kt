@@ -1,9 +1,13 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
+import com.kvl.cyclotrack.FeatureFlags
+import com.kvl.cyclotrack.POUNDS_TO_KG
+import com.kvl.cyclotrack.R
+import com.kvl.cyclotrack.userCircumferenceToMeters
 
 fun getBrightnessPreference(context: Context): Float {
     return if (getPreferences(context)
@@ -67,7 +71,7 @@ fun metersToUserCircumference(context: Context, meters: Float): String {
 
 fun metersToUserCircumference(meters: Float, prefs: SharedPreferences): String {
     val storedCircumference = prefs.getString("wheel_circumference", "2037")
-    return metersToUserCircumference(meters, storedCircumference)
+    return com.kvl.cyclotrack.metersToUserCircumference(meters, storedCircumference)
 }
 
 fun getSystemOfMeasurement(context: Context): String? =
@@ -100,3 +104,8 @@ fun shouldCollectOnboardSensors(context: Context) = getPreferences(context).getB
 fun useVo2maxCalorieEstimate(context: Context) = getPreferences(context).getBoolean(
     context.getString(R.string.preferences_key_advanced_use_vo2max_calorie_estimate), false
 )
+
+fun isStravaSynced(context: Context) = getPreferences(context).getString(
+    context.getString(R.string.preference_key_strava_refresh_token),
+    null
+).isNullOrBlank().not()

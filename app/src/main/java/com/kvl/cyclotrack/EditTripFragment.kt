@@ -51,7 +51,12 @@ class EditTripFragment : Fragment() {
         tripNotes.setText(args.tripNotes)
         tripDate.text = args.tripDate
         viewModel.tripInfo.userWheelCircumference?.let {
-            tripWheelCirc.setText(metersToUserCircumference(requireContext(), it))
+            tripWheelCirc.setText(
+                com.kvl.cyclotrack.util.metersToUserCircumference(
+                    requireContext(),
+                    it
+                )
+            )
         }
 
         viewModel.observeBikes().observe(viewLifecycleOwner) { bikes ->

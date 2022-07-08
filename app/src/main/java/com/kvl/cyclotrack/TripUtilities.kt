@@ -10,6 +10,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.kvl.cyclotrack.data.DerivedTripState
+import com.kvl.cyclotrack.util.getPreferences
+import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock

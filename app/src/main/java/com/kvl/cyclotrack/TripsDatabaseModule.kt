@@ -10,6 +10,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import com.kvl.cyclotrack.util.getBikeMassOrNull
+import com.kvl.cyclotrack.util.getPreferences
+import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -4,6 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
+import com.kvl.cyclotrack.util.useGoogleFitBiometrics
+import com.kvl.cyclotrack.util.useGoogleFitRestingHeartRate
+import com.kvl.cyclotrack.util.useVo2maxCalorieEstimate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
