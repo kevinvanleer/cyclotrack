@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kvl.cyclotrack.util.syncTripWithStrava
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject

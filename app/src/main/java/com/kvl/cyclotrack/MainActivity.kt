@@ -23,6 +23,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint

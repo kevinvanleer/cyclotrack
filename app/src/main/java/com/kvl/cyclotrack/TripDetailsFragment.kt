@@ -37,6 +37,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.*
+import com.kvl.cyclotrack.util.configureGoogleFit
+import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
+import com.kvl.cyclotrack.util.getDatasets
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.widgets.HeadingView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -984,7 +988,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             requireView().findViewById(R.id.trip_details_calories)
         val avgHr = getAverageHeartRate(measurements)
         try {
-            getCaloriesBurned(
+            com.kvl.cyclotrack.util.getCaloriesBurned(
                 requireContext(),
                 biometrics,
                 overview,

@@ -1,13 +1,12 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import android.content.Context
 import android.util.Log
 import com.garmin.fit.DateTime
 import com.garmin.fit.Mesg
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.kvl.cyclotrack.*
 import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
-import com.kvl.cyclotrack.util.SystemUtils
-import com.kvl.cyclotrack.util.getPreferences
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.FormBody

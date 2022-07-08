@@ -32,7 +32,7 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
                     getInspiringMessage(SystemUtils.currentTimeMillis() - lastStart)
             }
         }
-       
+
         totalDistanceView.text = distanceText
         totalDurationView.text = durationText
         inspiringMessageView.text = inspiringMessage

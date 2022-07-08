@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject

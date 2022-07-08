@@ -7,6 +7,8 @@ import androidx.core.content.edit
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kvl.cyclotrack.util.convertSystemToUserHeight
+import com.kvl.cyclotrack.util.convertSystemToUserMass
 import com.kvl.cyclotrack.util.useGoogleFitBiometrics
 import com.kvl.cyclotrack.util.useGoogleFitRestingHeartRate
 import dagger.assisted.Assisted

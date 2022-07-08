@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.kvl.cyclotrack.databinding.FragmentBiometricsPreferenceBinding
+import com.kvl.cyclotrack.util.dateFormatPattenDob
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.ParseException
@@ -51,8 +52,10 @@ class BiometricsPreferenceFragment : Fragment() {
             val dob = viewModel.dob?.let {
                 try {
                     viewModel.dob?.let {
-                        SimpleDateFormat(dateFormatPattenDob,
-                            Locale.US).parse(it)
+                        SimpleDateFormat(
+                            dateFormatPattenDob,
+                            Locale.US
+                        ).parse(it)
                     }
                 } catch (e: ParseException) {
                     Log.e(tag, "Could not parse preference data", e)

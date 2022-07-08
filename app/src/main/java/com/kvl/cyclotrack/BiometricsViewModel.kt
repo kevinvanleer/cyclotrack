@@ -7,6 +7,7 @@ import androidx.core.text.isDigitsOnly
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import com.google.android.gms.common.api.ApiException
+import com.kvl.cyclotrack.util.*
 import kotlin.math.roundToInt
 import kotlin.reflect.KProperty
 
@@ -90,11 +91,17 @@ class BiometricsViewModel constructor(
         get() =
             try {
                 when (gfWeight != null && useGoogleFitBiometrics) {
-                    true -> "%.1f".format(convertSystemToUserMass(gfWeight!!,
-                        CyclotrackApp.instance))
+                    true -> "%.1f".format(
+                        convertSystemToUserMass(
+                            gfWeight!!,
+                            CyclotrackApp.instance
+                        )
+                    )
                     else
-                    -> sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
-                        "")
+                    -> sharedPreferences.getString(
+                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
+                        ""
+                    )
                 }
             } catch (e: ClassCastException) {
                 ""
@@ -114,10 +121,16 @@ class BiometricsViewModel constructor(
         get() =
             try {
                 when (gfHeight != null && useGoogleFitBiometrics) {
-                    true -> "%.1f".format(convertSystemToUserHeight(gfHeight!!,
-                        CyclotrackApp.instance))
-                    else -> sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
-                        "")
+                    true -> "%.1f".format(
+                        convertSystemToUserHeight(
+                            gfHeight!!,
+                            CyclotrackApp.instance
+                        )
+                    )
+                    else -> sharedPreferences.getString(
+                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
+                        ""
+                    )
                 }
             } catch (e: ClassCastException) {
                 ""

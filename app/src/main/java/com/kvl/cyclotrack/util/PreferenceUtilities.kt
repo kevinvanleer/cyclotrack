@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.kvl.cyclotrack.FeatureFlags
-import com.kvl.cyclotrack.POUNDS_TO_KG
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.userCircumferenceToMeters
 
@@ -47,12 +46,6 @@ fun getBikeMassOrNull(context: Context): Float? {
     )
 }
 
-fun getPairedBleSensors(context: Context): Set<String>? =
-    PreferenceManager.getDefaultSharedPreferences(context).getStringSet(
-        context.resources.getString(R.string.preferences_paired_ble_devices_key),
-        HashSet()
-    )
-
 fun getUserCircumferenceOrNull(context: Context): Float? =
     userCircumferenceToMeters(
         getPreferences(context).getString(
@@ -63,7 +56,7 @@ fun getUserCircumferenceOrNull(context: Context): Float? =
 
 fun getBikeMassOrNull(prefs: SharedPreferences, key: String): String? {
     val stored = prefs.getString(key, "")
-    Log.d("PreferenceUtilities", "Bike mass preference: ${stored}")
+    Log.d("PreferenceUtilities", "Bike mass preference: $stored")
     return stored
 }
 

@@ -67,7 +67,7 @@ class TripDetailsViewModel @Inject constructor(
         viewModelScope.launch { tripsRepository.removeTrip(tripId) }
 
     suspend fun getCombinedBiometrics(timestamp: Long, context: Context): Biometrics =
-        getCombinedBiometrics(
+        com.kvl.cyclotrack.util.getCombinedBiometrics(
             tripId,
             timestamp,
             context,

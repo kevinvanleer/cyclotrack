@@ -29,11 +29,15 @@ class TimeStateEnumConverter {
     }
 }
 
-@Entity(foreignKeys = [ForeignKey(entity = Trip::class,
-    parentColumns = arrayOf("id"),
-    childColumns = arrayOf("tripId"),
-    onDelete = ForeignKey.CASCADE)],
-    indices = [Index(value = ["tripId"])])
+@Entity(
+    foreignKeys = [ForeignKey(
+        entity = Trip::class,
+        parentColumns = arrayOf("id"),
+        childColumns = arrayOf("tripId"),
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index(value = ["tripId"])]
+)
 @Keep
 data class TimeState(
     val tripId: Long,

@@ -10,6 +10,9 @@ import com.google.android.gms.fitness.request.*
 import com.google.android.gms.fitness.result.SessionReadResponse
 import com.google.android.gms.tasks.Task
 import com.kvl.cyclotrack.util.SystemUtils
+import com.kvl.cyclotrack.util.fitnessOptions
+import com.kvl.cyclotrack.util.getGoogleAccount
+import com.kvl.cyclotrack.util.getSessionId
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import java.util.concurrent.TimeUnit

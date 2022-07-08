@@ -1,4 +1,4 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import android.app.Activity
 import android.content.Context
@@ -11,7 +11,7 @@ import com.google.android.gms.fitness.data.DataPoint
 import com.google.android.gms.fitness.data.DataType
 import com.google.android.gms.fitness.data.Field
 import com.google.android.gms.fitness.request.DataReadRequest
-import com.kvl.cyclotrack.util.SystemUtils
+import com.kvl.cyclotrack.FeatureFlags
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -47,125 +47,179 @@ fun getGoogleAccount(context: Context): GoogleSignInAccount? =
 
 private fun printDataPoint(dataPoint: DataPoint) {
     val startString =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(dataPoint.getStartTime(
-            TimeUnit.MILLISECONDS)))
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(
+            Date(
+                dataPoint.getStartTime(
+                    TimeUnit.MILLISECONDS
+                )
+            )
+        )
     val endString =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(dataPoint.getEndTime(
-            TimeUnit.MILLISECONDS)))
+        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(
+            Date(
+                dataPoint.getEndTime(
+                    TimeUnit.MILLISECONDS
+                )
+            )
+        )
     when (dataPoint.dataType) {
         DataType.TYPE_HEIGHT -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_HEIGHT)
-                }")
+                }"
+            )
         }
         DataType.TYPE_WEIGHT -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} WEIGHT: ${
                     dataPoint.getValue(Field.FIELD_WEIGHT)
-                }")
+                }"
+            )
         }
         DataType.TYPE_SPEED -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} M/S: ${
                     dataPoint.getValue(Field.FIELD_SPEED)
-                }")
+                }"
+            )
         }
         DataType.TYPE_CYCLING_WHEEL_REVOLUTION -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} REVS: ${
                     dataPoint.getValue(Field.FIELD_REVOLUTIONS)
-                }")
+                }"
+            )
         }
         DataType.TYPE_CYCLING_WHEEL_RPM -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} RPM: ${
                     dataPoint.getValue(Field.FIELD_RPM)
-                }")
+                }"
+            )
         }
         DataType.TYPE_CYCLING_PEDALING_CUMULATIVE -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} REVS: ${
                     dataPoint.getValue(Field.FIELD_REVOLUTIONS)
-                }")
+                }"
+            )
         }
         DataType.TYPE_CYCLING_PEDALING_CADENCE -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} RPM: ${
                     dataPoint.getValue(Field.FIELD_RPM)
-                }")
+                }"
+            )
         }
         DataType.TYPE_LOCATION_SAMPLE -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} LAT: ${
                     dataPoint.getValue(Field.FIELD_LATITUDE)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} LNG: ${
                     dataPoint.getValue(Field.FIELD_LONGITUDE)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} ALT: ${
                     dataPoint.getValue(Field.FIELD_ALTITUDE)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} ACC: ${
                     dataPoint.getValue(Field.FIELD_ACCURACY)
-                }")
+                }"
+            )
         }
         DataType.TYPE_DISTANCE_DELTA -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} M: ${
                     dataPoint.getValue(Field.FIELD_DISTANCE)
-                }")
+                }"
+            )
         }
         DataType.TYPE_HEART_RATE_BPM -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} BPM: ${
                     dataPoint.getValue(Field.FIELD_BPM)
-                }")
+                }"
+            )
         }
         DataType.AGGREGATE_HEIGHT_SUMMARY -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} AVG HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_AVERAGE)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} MIN HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_MIN)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} MAX HEIGHT: ${
                     dataPoint.getValue(Field.FIELD_MAX)
-                }")
+                }"
+            )
         }
         DataType.AGGREGATE_WEIGHT_SUMMARY -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} AVG KG: ${
                     dataPoint.getValue(Field.FIELD_AVERAGE)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} MIN KG: ${
                     dataPoint.getValue(Field.FIELD_MIN)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} MAX KG: ${
                     dataPoint.getValue(Field.FIELD_MAX)
-                }")
+                }"
+            )
         }
         DataType.AGGREGATE_HEART_RATE_SUMMARY -> {
-            Log.v(logTag,
+            Log.v(
+                logTag,
                 "${startString}><${endString} AVG BPM: ${
                     dataPoint.getValue(Field.FIELD_AVERAGE)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} MIN BPM: ${
                     dataPoint.getValue(Field.FIELD_MIN)
-                }")
-            Log.v(logTag,
+                }"
+            )
+            Log.v(
+                logTag,
                 "${startString}><${endString} MAX BPM: ${
                     dataPoint.getValue(Field.FIELD_MAX)
-                }")
+                }"
+            )
         }
     }
 }
@@ -187,8 +241,10 @@ fun getActivities(activity: Activity, start: Long, end: Long) {
             .addOnSuccessListener { response ->
                 // Use response data here
                 Log.d(logTag, "OnSuccess()")
-                Log.d(logTag,
-                    "DataSet: ${response.getDataSet(DataType.AGGREGATE_ACTIVITY_SUMMARY)}")
+                Log.d(
+                    logTag,
+                    "DataSet: ${response.getDataSet(DataType.AGGREGATE_ACTIVITY_SUMMARY)}"
+                )
                 response.buckets.forEachIndexed { idx, it ->
                     if (it.activity == "biking") {
                         Log.d(logTag, "index: ${idx}")
@@ -266,9 +322,11 @@ fun getLatestHeartRate(activity: Activity) {
         val end = SystemUtils.currentTimeMillis()
         val start = end - 1000L * 60 * 60 * 24 * 30
         Fitness.getHistoryClient(activity, it)
-            .readData(DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
-                .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
-                .setTimeRange(start, end, TimeUnit.MILLISECONDS).build())
+            .readData(
+                DataReadRequest.Builder().aggregate(DataType.TYPE_HEART_RATE_BPM)
+                    .bucketByTime(30, TimeUnit.DAYS).setLimit(1)
+                    .setTimeRange(start, end, TimeUnit.MILLISECONDS).build()
+            )
             .addOnSuccessListener { response ->
                 Log.d(logTag, "getLatestHeartRate")
                 response.buckets.forEach { bucket ->
@@ -328,10 +386,12 @@ fun configureGoogleFit(activity: Activity) {
     with(activity) {
         if (!hasFitnessPermissions(this)) {
             Log.i(logTag, "Logging in with Google Fit")
-            GoogleSignIn.requestPermissions(this,
+            GoogleSignIn.requestPermissions(
+                this,
                 1,
                 getGoogleAccount(this),
-                fitnessOptions)
+                fitnessOptions
+            )
         } else {
             Log.i(logTag, "Already logged in to Google Fit")
         }

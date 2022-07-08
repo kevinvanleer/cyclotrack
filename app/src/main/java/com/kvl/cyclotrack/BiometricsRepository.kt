@@ -4,6 +4,8 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.kvl.cyclotrack.util.getUserHeight
+import com.kvl.cyclotrack.util.getUserWeight
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject

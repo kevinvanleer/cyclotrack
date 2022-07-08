@@ -504,7 +504,7 @@ class TripInProgressService @Inject constructor() :
     }
 
     private suspend fun getCombinedBiometrics(id: Long): Biometrics =
-        getCombinedBiometrics(
+        com.kvl.cyclotrack.util.getCombinedBiometrics(
             id,
             SystemUtils.currentTimeMillis(),
             applicationContext,

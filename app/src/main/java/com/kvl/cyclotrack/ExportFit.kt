@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.content.Context
 import android.net.Uri
 import com.garmin.fit.*
+import com.kvl.cyclotrack.util.getFileName
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.*
