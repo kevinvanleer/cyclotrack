@@ -66,6 +66,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var defaultCameraPosition: CameraPosition
     private lateinit var maxCameraPosition: CameraPosition
     private lateinit var googleFitSyncStatus: GoogleFitSyncStatusEnum
+    private lateinit var stravaSyncStatus: GoogleFitSyncStatusEnum
 
     private fun drawPath(
         polyline: PolylineOptions,
@@ -160,7 +161,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
         //NOTE: TEMPORARY OVERRIDE FOR STRAVA TESTING
         menu.findItem(R.id.details_menu_action_unsync).isVisible = false
-        menu.findItem(R.id.details_menu_action_sync).isVisible = true
+        when (stravaSyncStatus) {
+            GoogleFitSyncStatusEnum.SYNCED -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = false
+            }
+            GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = true
+            }
+            else -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = false
+            }
+        }
     }
 
     private fun showMustBeLoggedInDialog() {
@@ -1168,12 +1179,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d(logTag, "Options menu created")
                 viewModel.tripOverview.observe(viewLifecycleOwner) {
                     googleFitSyncStatus = it.googleFitSyncStatus
+                    stravaSyncStatus = it.stravaSyncStatus
+                    configureSyncOptions(menu)
                 }
             }
 
             override fun onPrepareMenu(menu: Menu) {
                 super.onPrepareMenu(menu)
-                configureSyncOptions(menu)
+                if (this@TripDetailsFragment::googleFitSyncStatus.isInitialized &&
+                    this@TripDetailsFragment::stravaSyncStatus.isInitialized
+                )
+                //This is probably redundant now that this is called by the trip observer
+                    configureSyncOptions(menu)
             }
 
             override fun onMenuItemSelected(item: MenuItem): Boolean {
