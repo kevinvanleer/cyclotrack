@@ -337,7 +337,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ew += sin(it.windDirection * PI / 180) * it.windSpeed
                             ns += cos(it.windDirection * PI / 180) * it.windSpeed
                         }
-                        (atan2(ew, ns) * 180 / PI + 180).toFloat()
+                        (atan2(ew * -1, ns * -1) * 180 / PI + 180).toFloat()
                             .also { Log.d(logTag, "wind direction: $it") }
                     })
                 )
