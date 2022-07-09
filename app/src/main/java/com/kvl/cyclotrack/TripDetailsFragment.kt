@@ -46,10 +46,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.atan
-import kotlin.math.cos
-import kotlin.math.roundToInt
-import kotlin.math.sin
+import kotlin.math.*
 
 
 @AndroidEntryPoint
@@ -337,10 +334,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         var totalU = 0.0
                         var totalV = 0.0
                         directions.forEach {
-                            totalU += sin(it.toDouble())
-                            totalV += cos(it.toDouble())
+                            totalU += sin(it.toDouble() * PI / 180)
+                            totalV += cos(it.toDouble() * PI / 180)
                         }
-                        atan(totalU / totalV).toFloat()
+                        (atan(totalU / totalV) * 180 / PI).toFloat()
                     })
                 )
             }
