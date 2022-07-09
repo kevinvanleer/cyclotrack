@@ -143,12 +143,13 @@ class BiometricUtilitiesTests {
         Assert.assertEquals(
             estimateNetCaloriesBurned(
                 sex,
-            age,
-            weight,
-            height,
-            vo2max,
-            duration,
-            heartRate),
+                age,
+                weight,
+                height,
+                vo2max,
+                duration,
+                heartRate
+            ),
             estimateCaloriesBurnedVo2max(
                 sex,
                 age,
@@ -237,8 +238,9 @@ class BiometricUtilitiesTests {
                 weight,
                 height,
                 estimateVo2Max(restingHr, estimateMaxHeartRate(age)),
-            duration,
-            heartRate),
+                duration,
+                heartRate
+            ),
             estimateCaloriesBurnedVo2max(
                 sex,
                 age,

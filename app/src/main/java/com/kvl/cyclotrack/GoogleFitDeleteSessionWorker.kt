@@ -39,8 +39,10 @@ class GoogleFitDeleteSessionWorker @AssistedInject constructor(
                         timeStateRepository.getTimeStates(trip.id!!).let {
                             googleFitApiService.deleteTrip(trip, it)
                         }
-                        tripsRepository.setGoogleFitSyncStatus(trip.id,
-                            GoogleFitSyncStatusEnum.REMOVED)
+                        tripsRepository.setGoogleFitSyncStatus(
+                            trip.id,
+                            GoogleFitSyncStatusEnum.REMOVED
+                        )
                     } else {
                         Log.i(logTag, "Trip ${tripId} not synced to Google Fit")
                     }

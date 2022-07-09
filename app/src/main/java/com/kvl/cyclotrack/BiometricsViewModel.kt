@@ -68,11 +68,13 @@ class BiometricsViewModel constructor(
         set(newValue) {
             Log.d(logTag, "Sex $newValue")
             sharedPreferences.edit {
-                this.putString(keyUserSex, when (newValue) {
-                    R.id.preference_biometrics_sex_male -> UserSexEnum.MALE.name
-                    R.id.preference_biometrics_sex_female -> UserSexEnum.FEMALE.name
-                    else -> null
-                })
+                this.putString(
+                    keyUserSex, when (newValue) {
+                        R.id.preference_biometrics_sex_male -> UserSexEnum.MALE.name
+                        R.id.preference_biometrics_sex_female -> UserSexEnum.FEMALE.name
+                        else -> null
+                    }
+                )
             }
         }
 
@@ -109,8 +111,10 @@ class BiometricsViewModel constructor(
         set(newValue) {
             if (gfWeight == null || !useGoogleFitBiometrics) {
                 sharedPreferences.edit {
-                    this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
-                        newValue)
+                    this.putString(
+                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
+                        newValue
+                    )
                 }
                 notifyChange()
             }
@@ -138,8 +142,10 @@ class BiometricsViewModel constructor(
         set(newValue) {
             if (gfHeight == null || !useGoogleFitBiometrics) {
                 sharedPreferences.edit {
-                    this.putString(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
-                        newValue)
+                    this.putString(
+                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
+                        newValue
+                    )
                 }
                 notifyChange()
             }
@@ -175,8 +181,10 @@ class BiometricsViewModel constructor(
         @Bindable
         get() =
             try {
-                sharedPreferences.getBoolean(CyclotrackApp.instance.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
-                    true)
+                sharedPreferences.getBoolean(
+                    CyclotrackApp.instance.getString(R.string.preference_key_biometrics_use_google_fit_biometrics),
+                    true
+                )
             } catch (e: ClassCastException) {
                 true
             }
@@ -268,8 +276,10 @@ class BiometricsViewModel constructor(
     @get:Bindable
     val weightHint: String
         get() =
-            when (sharedPreferences.getString(CyclotrackApp.instance.getString(R.string.preference_key_system_of_measurement),
-                "1")) {
+            when (sharedPreferences.getString(
+                CyclotrackApp.instance.getString(R.string.preference_key_system_of_measurement),
+                "1"
+            )) {
                 "1" -> "Weight (lbs)"
                 else -> "Weight (kg)"
             }
