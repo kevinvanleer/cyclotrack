@@ -92,24 +92,34 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
             title = context.getString(R.string.preferences_sync_with_strava_title)
             summary = context.getString(R.string.preferences_sync_with_strava_summary)
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
-                    .buildUpon()
-                    .appendQueryParameter("client_id", getString(R.string.strava_client_id))
-                    .appendQueryParameter(
-                        "redirect_uri",
-                        "cyclotrack://kevinvanleer.com/strava-auth"
-                    )
-                    .appendQueryParameter("response_type", "code")
-                    .appendQueryParameter("approval_prompt", "auto")
-                    .appendQueryParameter("scope", "activity:write,read")
-                    .build()
-
-                Log.d(logTag, "${this.fragment}")
-                startActivity(Intent(Intent.ACTION_VIEW, intentUri))
-                requireActivity().finish()
+                AlertDialog.Builder(context).apply {
+                    setPositiveButton("SYNC") { _, _ ->
+                        startStravaConnectActivity()
+                    }
+                    setTitle(getString(R.string.preferences_sync_with_strava_title))
+                    setMessage(getString(R.string.strava_sync_dialog_description))
+                }.create().show()
                 true
             }
         }
+    }
+
+    private fun Preference.startStravaConnectActivity() {
+        val intentUri = Uri.parse("https://www.strava.com/oauth/mobile/authorize")
+            .buildUpon()
+            .appendQueryParameter("client_id", getString(R.string.strava_client_id))
+            .appendQueryParameter(
+                "redirect_uri",
+                "cyclotrack://kevinvanleer.com/strava-auth"
+            )
+            .appendQueryParameter("response_type", "code")
+            .appendQueryParameter("approval_prompt", "auto")
+            .appendQueryParameter("scope", "activity:write,read")
+            .build()
+
+        Log.d(logTag, "${this.fragment}")
+        startActivity(Intent(Intent.ACTION_VIEW, intentUri))
+        requireActivity().finish()
     }
 
     private fun configureStravaConnectPref() {
