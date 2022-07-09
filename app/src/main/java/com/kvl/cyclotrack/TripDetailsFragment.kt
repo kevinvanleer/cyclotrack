@@ -295,23 +295,23 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val windText = view.findViewById<TextView>(R.id.trip_details_wind_value)
         val temperatureIcon = view.findViewById<ImageView>(R.id.trip_details_temperature_icon)
         val windIcon = view.findViewById<ImageView>(R.id.trip_details_wind_icon)
-        viewModel.tripWeather.observe(viewLifecycleOwner) {
-            if (it.isNotEmpty()) {
+        viewModel.tripWeather.observe(viewLifecycleOwner) { weathers ->
+            if (weathers.isNotEmpty()) {
                 temperatureIcon.visibility = View.VISIBLE
                 temperatureText.visibility = View.VISIBLE
                 temperatureText.text = "${
                     getUserTemperature(
                         requireContext(),
-                        it[0].temperature
+                        weathers.map { it.temperature }.average()
                     )
                 } ${getUserTemperatureUnit(requireContext())}"
 
                 windIcon.visibility = View.VISIBLE
                 windText.visibility = View.VISIBLE
                 windText.text = "%.1f %s %s".format(
-                    getUserSpeed(requireContext(), it[0].windSpeed),
+                    getUserSpeed(requireContext(), weathers[0].windSpeed),
                     getUserSpeedUnitShort(requireContext()),
-                    degreesToCardinal(it[0].windDirection.toFloat())
+                    degreesToCardinal(weathers[0].windDirection.toFloat())
                 )
             }
         }
