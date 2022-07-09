@@ -337,7 +337,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             totalV += sin(it.toDouble() * PI / 180)
                             totalU += cos(it.toDouble() * PI / 180)
                         }
-                        (atan(totalU / totalV) * 180 / PI).toFloat()
+                        (atan(totalU / totalV) * 180 / PI).toFloat().also { Log.d(logTag, "$it") }
                     })
                 )
             }
