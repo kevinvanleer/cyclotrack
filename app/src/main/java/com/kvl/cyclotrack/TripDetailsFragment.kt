@@ -330,14 +330,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 windText.text = "%.1f %s %s".format(
                     getUserSpeed(requireContext(), weathers.map { it.windSpeed }.average()),
                     getUserSpeedUnitShort(requireContext()),
-                    degreesToCardinal(weathers.map { it.windDirection }.let { directions ->
-                        var totalU = 0.0
-                        var totalV = 0.0
-                        directions.forEach {
-                            totalV += sin(it.toDouble() * PI / 180)
-                            totalU += cos(it.toDouble() * PI / 180)
+                    degreesToCardinal(weathers.let { weathers ->
+                        var ew = 0.0
+                        var ns = 0.0
+                        weathers.forEach {
+                            ew += sin(it.windDirection * PI / 180) * it.windSpeed
+                            ns += cos(it.windDirection * PI / 180) + it.windSpeed
                         }
-                        (atan(totalU / totalV) * 180 / PI).toFloat().also { Log.d(logTag, "$it") }
+                        (atan2(ew, ns) * 180 / PI + 180).toFloat().also { Log.d(logTag, "$it") }
                     })
                 )
             }
