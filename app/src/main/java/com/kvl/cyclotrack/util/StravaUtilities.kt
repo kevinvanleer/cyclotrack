@@ -268,9 +268,9 @@ suspend fun syncTripWithStrava(
         exportData.onboardSensors != null &&
         exportData.weather != null
     ) {
-        when (syncTripWithStrava(appContext, tripId, exportData)) {
+        when (val result = syncTripWithStrava(appContext, tripId, exportData)) {
             in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
-            401, 403 -> throw IOException("Strava authentication failure")
+            401, 403 -> throw IOException("Strava authentication failure: $result")
             429, in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
             else -> GoogleFitSyncStatusEnum.FAILED
         }.let { status ->
