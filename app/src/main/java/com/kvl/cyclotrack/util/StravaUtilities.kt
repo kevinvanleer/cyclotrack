@@ -106,6 +106,7 @@ fun refreshStravaAccessToken(
         appContext.getString(R.string.preference_key_strava_access_expires_at),
         0
     ).let { expiresAt ->
+        Log.d("refreshStravaAccessToken", "refreshStravaAccessToken")
         when {
             (SystemUtils.currentTimeMillis() / 1000 + 300) > expiresAt -> {
                 getPreferences(appContext).getString(
@@ -123,6 +124,7 @@ fun refreshStravaAccessToken(
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
+    Log.d("sendActivityToStrava", "sendActivityToStrava")
     return OkHttpClient().let OkClient@{ client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
@@ -177,6 +179,8 @@ fun syncTripWithStrava(
         FirebaseCrashlytics.getInstance().recordException(e)
         return 401
     }
+
+    Log.d(logTag, "validAccessToken=$validAccessToken")
 
     val messages: MutableList<Mesg> = makeFitMessages(cyclotrackFitAppId, exportData)
 
