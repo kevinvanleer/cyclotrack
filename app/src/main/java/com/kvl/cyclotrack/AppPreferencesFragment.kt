@@ -43,27 +43,46 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         refreshToken: String
     ) {
         preference.apply {
-            title = context.getString(R.string.preferences_disconnect_from_strava_title)
-            summary = context.getString(R.string.preferences_disconnect_from_strava_summary)
+            title = context.getString(R.string.preferences_disconnect_strava_title)
+            summary = context.getString(R.string.preferences_disconnect_strava_summary)
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
-                CoroutineScope(Dispatchers.IO).launch {
-                    updateStravaAuthToken(
-                        context = context,
-                        refreshToken = refreshToken
-                    )?.let { accessToken ->
-                        try {
-                            deauthorizeStrava(accessToken, context)
-                        } catch (e: IOException) {
-                            FirebaseCrashlytics.getInstance().recordException(e)
-                            Toast.makeText(
-                                context,
-                                "Failed to disconnect from Strava. Please try again.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                AlertDialog.Builder(context).apply {
+                    val removeAllCheckboxView =
+                        View.inflate(
+                            context,
+                            R.layout.remove_all_google_fit_dialog_option,
+                            null
+                        )
+                    removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).text =
+                        getString(R.string.remove_cyclotrack_data_from_strava_message)
+                    setPositiveButton("DISCONNECT") { _, _ ->
+                        disconnectStrava(context, refreshToken)
                     }
+                    setView(removeAllCheckboxView)
+                    setTitle(getString(R.string.preferences_disconnect_strava_title))
+                    setMessage(getString(R.string.strava_logout_dialog_message))
                 }
                 true
+            }
+        }
+    }
+
+    private fun disconnectStrava(context: Context, refreshToken: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            updateStravaAuthToken(
+                context = context,
+                refreshToken = refreshToken
+            )?.let { accessToken ->
+                try {
+                    deauthorizeStrava(accessToken, context)
+                } catch (e: IOException) {
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                    Toast.makeText(
+                        context,
+                        "Failed to disconnect from Strava. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }
@@ -161,32 +180,12 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                                         .getWorkInfoByIdLiveData(id)
                                         .observe(viewLifecycleOwner) { workInfo ->
                                             if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                                                Log.i(
-                                                    logTag,
-                                                    "Sign out from Google Fit"
-                                                )
-                                                GoogleSignIn.getClient(
-                                                    context,
-                                                    GoogleSignInOptions.DEFAULT_SIGN_IN
-                                                )
-                                                    .signOut()
-                                                    .addOnSuccessListener {
-                                                        configureGoogleFitPreference(
-                                                            context
-                                                        )
-                                                    }
+                                                disconnectGoogleFit(context)
                                             }
                                         }
                                 })
                     } else {
-                        Log.i(logTag, "Sign out from Google Fit")
-                        GoogleSignIn.getClient(
-                            context,
-                            GoogleSignInOptions.DEFAULT_SIGN_IN
-                        ).signOut()
-                            .addOnSuccessListener {
-                                configureGoogleFitPreference(context)
-                            }
+                        disconnectGoogleFit(context)
                     }
                 }
                 setView(removeAllCheckboxView)
@@ -195,6 +194,23 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
             }.create().show()
             true
         }
+    }
+
+    private fun disconnectGoogleFit(context: Context) {
+        Log.i(
+            logTag,
+            "Sign out from Google Fit"
+        )
+        GoogleSignIn.getClient(
+            context,
+            GoogleSignInOptions.DEFAULT_SIGN_IN
+        )
+            .signOut()
+            .addOnSuccessListener {
+                configureGoogleFitPreference(
+                    context
+                )
+            }
     }
 
     private fun configureGoogleFitPreference(context: Context) {
