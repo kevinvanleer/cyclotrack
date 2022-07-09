@@ -46,7 +46,10 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.atan
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 
 @AndroidEntryPoint
@@ -328,9 +331,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 windIcon.visibility = View.VISIBLE
                 windText.visibility = View.VISIBLE
                 windText.text = "%.1f %s %s".format(
-                    getUserSpeed(requireContext(), weathers[0].windSpeed),
+                    getUserSpeed(requireContext(), weathers.map { it.windSpeed }.average()),
                     getUserSpeedUnitShort(requireContext()),
-                    degreesToCardinal(weathers[0].windDirection.toFloat())
+                    degreesToCardinal(weathers.map { it.windDirection }.let { directions ->
+                        var totalU = 0.0
+                        var totalV = 0.0
+                        directions.forEach {
+                            totalU += sin(it.toDouble())
+                            totalV += cos(it.toDouble())
+                        }
+                        atan(totalU / totalV).toFloat()
+                    })
                 )
             }
         }
