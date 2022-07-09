@@ -124,7 +124,7 @@ fun refreshStravaAccessToken(
 
 fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
     val logTag = "sendActivityToStrava"
-    Log.d("sendActivityToStrava", "sendActivityToStrava")
+    Log.d("sendActivityToStrava", "sendActivityToStrava: $accessToken")
     return OkHttpClient().let OkClient@{ client ->
         Request.Builder()
             .url("https://www.strava.com/api/v3/uploads")
@@ -200,6 +200,7 @@ fun syncTripWithStrava(
             appContext.getString(R.string.preference_key_strava_access_token),
             null
         )?.let { accessToken ->
+            Log.d(logTag, "Sending activity")
             return sendActivityToStrava(accessToken, privateAppFile, exportData.summary!!).also {
                 privateAppFile.delete()
             }
