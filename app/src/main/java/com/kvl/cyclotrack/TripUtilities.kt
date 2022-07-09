@@ -16,10 +16,7 @@ import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
+import kotlin.math.*
 
 fun getDistance(
     curr: Measurements,
@@ -613,19 +610,19 @@ fun calculateSplits(
 ): ArrayList<Split> {
     val tripSplits = arrayListOf<Split>()
     var totalDistance = 0.0
-    var totalActiveTime: Double = 0.0
+    var totalActiveTime = 0.0
     var timestamp: Long = 0
 
-    if (measurements.isNullOrEmpty()) return tripSplits
+    if (measurements.isEmpty()) return tripSplits
 
     val intervals = getTripIntervals(timeStates, measurements)
-    if (intervals.isNullOrEmpty()) return tripSplits
+    if (intervals.isEmpty()) return tripSplits
 
     val legs = getTripLegs(measurements, intervals)
-    if (legs.isNullOrEmpty()) return tripSplits
+    if (legs.isEmpty()) return tripSplits
 
     legs.forEachIndexed { legIdx, leg ->
-        if (leg.isNullOrEmpty()) return@forEachIndexed
+        if (leg.isEmpty()) return@forEachIndexed
         var prev = leg[0]
         for (measurementIdx in 1 until leg.size) {
             val lastSplit = getLastSplit(tripSplits)
@@ -885,3 +882,21 @@ fun calculateWheelCircumference(
         }
 
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)
+
+fun Array<Weather>.getAverageWind(): Pair<Double, Double> {
+    var ew = 0.0
+    var ns = 0.0
+    this.forEach {
+        ew += sin(it.windDirection * PI / 180) * it.windSpeed
+        ns += cos(it.windDirection * PI / 180) * it.windSpeed
+    }
+    ew /= this.size * -1
+    ns /= this.size * -1
+    return Pair(
+        sqrt(ew.pow(2) + ns.pow(2)),
+        atan2(
+            ew / this.size * -1,
+            ns / this.size * -1
+        ) * 180 / PI + 180
+    )
+}
