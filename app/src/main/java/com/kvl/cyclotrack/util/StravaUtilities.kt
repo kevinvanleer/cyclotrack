@@ -195,12 +195,13 @@ fun syncTripWithStrava(
         messages
     )
 
+    Log.d(logTag, "validAccessToken=$validAccessToken")
     try {
         validAccessToken ?: getPreferences(appContext).getString(
             appContext.getString(R.string.preference_key_strava_access_token),
             null
         )?.let { accessToken ->
-            Log.d(logTag, "Sending activity")
+            Log.d(logTag, "Sending activity: $accessToken")
             return sendActivityToStrava(accessToken, privateAppFile, exportData.summary!!).also {
                 privateAppFile.delete()
             }
