@@ -334,8 +334,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         var totalU = 0.0
                         var totalV = 0.0
                         directions.forEach {
-                            totalU += sin(it.toDouble() * PI / 180)
-                            totalV += cos(it.toDouble() * PI / 180)
+                            totalV += sin(it.toDouble() * PI / 180)
+                            totalU += cos(it.toDouble() * PI / 180)
                         }
                         (atan(totalU / totalV) * 180 / PI).toFloat()
                     })
