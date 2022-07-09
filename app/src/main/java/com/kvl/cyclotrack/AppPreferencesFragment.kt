@@ -61,7 +61,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     setView(removeAllCheckboxView)
                     setTitle(getString(R.string.preferences_disconnect_strava_title))
                     setMessage(getString(R.string.strava_logout_dialog_message))
-                }
+                }.create().show()
                 true
             }
         }
