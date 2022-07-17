@@ -1186,7 +1186,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 viewModel.tripOverview.observe(viewLifecycleOwner) {
                     googleFitSyncStatus = it.googleFitSyncStatus
                     stravaSyncStatus = it.stravaSyncStatus
-                    configureSyncOptions(menu)
                 }
             }
 
@@ -1194,9 +1193,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 super.onPrepareMenu(menu)
                 if (this@TripDetailsFragment::googleFitSyncStatus.isInitialized &&
                     this@TripDetailsFragment::stravaSyncStatus.isInitialized
-                )
-                //This is probably redundant now that this is called by the trip observer
-                    configureSyncOptions(menu)
+                ) configureSyncOptions(menu)
             }
 
             override fun onMenuItemSelected(item: MenuItem): Boolean {
