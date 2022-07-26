@@ -272,6 +272,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
+        findPreference<Preference>(getString(R.string.preference_key_bike_specs))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_edit_bike_specs)
+                    true
+                } == true
+            }
+        }
+
         findPreference<Preference>(getString(R.string.preferences_paired_ble_devices_key))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
                 view?.findNavController()?.let {
