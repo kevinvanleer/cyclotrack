@@ -263,12 +263,17 @@ class DiscoverSensorFragment : Fragment() {
         when (PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.checkSelfPermission(
                 requireContext(),
-                Manifest.permission.BLUETOOTH_SCAN
+                Manifest.permission.BLUETOOTH_CONNECT
             ) -> startBluetoothScan()
             else -> {
                 Log.w(logTag, "No bluetooth scan permission. Requesting!")
                 disableBluetoothScan()
-                requestBluetoothPermissions.launch(arrayOf(Manifest.permission.BLUETOOTH_SCAN))
+                requestBluetoothPermissions.launch(
+                    arrayOf(
+                        Manifest.permission.BLUETOOTH_SCAN,
+                        Manifest.permission.BLUETOOTH_CONNECT
+                    )
+                )
             }
         }
 
@@ -307,7 +312,7 @@ class DiscoverSensorFragment : Fragment() {
     ) { permissions ->
         permissions.entries.forEach { entry ->
             if (entry.key == Manifest.permission.BLUETOOTH_SCAN) {
-                Log.d(logTag, "Bluetooth permissions granted")
+                Log.d(logTag, "Bluetooth scan permissions granted")
                 startBluetoothScan()
             }
         }
