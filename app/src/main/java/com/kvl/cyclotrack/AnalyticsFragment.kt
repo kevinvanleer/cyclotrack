@@ -16,7 +16,6 @@ import com.kvl.cyclotrack.data.DailySummary
 import com.kvl.cyclotrack.widgets.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -293,16 +292,16 @@ class AnalyticsFragment : Fragment() {
     private fun doWeeklySummary(view: View) {
         thisWeekSummaryTable = view.findViewById(R.id.fragmentAnalytics_thisWeekSummaryTable)
 
-        Instant.now().atZone(ZoneId.systemDefault()).with(
-            TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)
-        ).truncatedTo(ChronoUnit.DAYS)
-            .toInstant()
-            // replace minus(6, DAYS) with minus(offset.toLong, DAYS)
-            // for this week instead of last 7 days
-            //Instant.parse("2021-09-04T05:00:00.00Z").atZone(ZoneId.systemDefault())
-            //    .truncatedTo(ChronoUnit.DAYS)
-            //Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
-            //.minus(6, ChronoUnit.DAYS).toInstant()
+        //Instant.now().atZone(ZoneId.systemDefault()).with(
+        //    TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)
+        //).truncatedTo(ChronoUnit.DAYS)
+        //    .toInstant()
+        // replace minus(6, DAYS) with minus(offset.toLong, DAYS)
+        // for this week instead of last 7 days
+        //Instant.parse("2021-09-04T05:00:00.00Z").atZone(ZoneId.systemDefault())
+        //    .truncatedTo(ChronoUnit.DAYS)
+        Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
+            .minus(6, ChronoUnit.DAYS).toInstant()
             .let { startDay ->
                 viewModel.recentTrips(
                     startDay.toEpochMilli(),
