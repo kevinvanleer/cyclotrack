@@ -95,16 +95,18 @@ class AnalyticsFragment : Fragment() {
                 columns = listOf(
                     TableColumn(id = "period", label = periodHeaderText),
                     TableColumn(id = "count", label = "RIDES"),
-                    TableColumn(id = "distance", label = "DISTANCE"),
+                    TableColumn(
+                        id = "distance",
+                        label = getUserDistanceUnitShort(context).uppercase()
+                    ),
                     TableColumn(id = "duration", label = "DURATION"),
                 )
                 populate(periodTotals.map {
                     listOf(
                         it.period,
                         it.tripCount.toString(),
-                        "%.1f %s".format(
-                            getUserDistance(context, it.totalDistance),
-                            getUserDistanceUnitShort(context)
+                        "%.1f".format(
+                            getUserDistance(context, it.totalDistance)
                         ),
                         formatDuration(it.totalDuration),
                     )
@@ -121,18 +123,18 @@ class AnalyticsFragment : Fragment() {
                 columns = listOf(
                     TableColumn(id = "bikeName", label = "BIKE"),
                     TableColumn(id = "count", label = "RIDES"),
-                    TableColumn(id = "distance", label = "DISTANCE"),
-                    TableColumn(id = "duration", label = "DURATION"),
+                    TableColumn(
+                        id = "distance",
+                        label = getUserDistanceUnitShort(context).uppercase()
+                    ),
+                    TableColumn(id = "duration", label = "HOURS"),
                 )
                 populate(bikes.map {
                     listOf(
                         it.name,
                         it.count.toString(),
-                        "%.1f %s".format(
-                            getUserDistance(context, it.distance),
-                            getUserDistanceUnitShort(context)
-                        ),
-                        formatDuration(it.duration),
+                        getUserDistance(context, it.distance).roundToInt().toString(),
+                        formatDurationHours(it.duration),
                     )
                 })
             }
@@ -270,7 +272,10 @@ class AnalyticsFragment : Fragment() {
             table.apply {
                 columns = listOf(
                     TableColumn(id = "date", label = "DATE"),
-                    TableColumn(id = "distance", label = "DISTANCE"),
+                    TableColumn(
+                        id = "distance",
+                        label = getUserDistanceUnitShort(context).uppercase()
+                    ),
                     TableColumn(id = "duration", label = "DURATION"),
                 )
                 populate(trips.map {
@@ -278,9 +283,8 @@ class AnalyticsFragment : Fragment() {
                         Instant.ofEpochMilli(it.timestamp)
                             .atZone(ZoneId.systemDefault())
                             .format(DateTimeFormatter.ISO_LOCAL_DATE),
-                        "%.1f %s".format(
-                            getUserDistance(context, it.distance!!),
-                            getUserDistanceUnitShort(context)
+                        "%.1f".format(
+                            getUserDistance(context, it.distance!!)
                         ),
                         formatDuration(it.duration!!),
                     )
@@ -384,7 +388,10 @@ class AnalyticsFragment : Fragment() {
                                 table.apply {
                                     columns = listOf(
                                         TableColumn(id = "date", label = "DATE"),
-                                        TableColumn(id = "speed", label = "SPEED"),
+                                        TableColumn(
+                                            id = "speed",
+                                            label = getUserSpeedUnitShort(context).uppercase()
+                                        ),
                                         TableColumn(id = "duration", label = "DURATION"),
                                     )
                                     populate(getTableFromSplits(systemOfMeasurement, splits))

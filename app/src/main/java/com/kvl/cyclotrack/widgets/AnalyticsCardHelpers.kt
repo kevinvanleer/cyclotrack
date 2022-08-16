@@ -31,14 +31,12 @@ fun getTableFromSplits(systemOfMeasurement: String?, splits: Array<Split>) =
             Instant.ofEpochMilli(split.timestamp)
                 .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ISO_LOCAL_DATE),
-            "%.1f %s".format(
+            "%.1f".format(
                 getUserSpeed(
                     systemOfMeasurement,
                     split.totalDistance / split.totalDuration
-                ),
-                getUserSpeedUnitShort(systemOfMeasurement)
+                )
             ),
             formatDuration(split.totalDuration),
         )
     }
-
