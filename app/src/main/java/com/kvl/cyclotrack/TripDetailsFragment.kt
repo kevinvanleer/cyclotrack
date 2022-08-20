@@ -1000,7 +1000,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         fun makeSplitRow(
             idx: Int,
             split: Split,
-            maxWidth: Int
+            maxSpeed: Float
         ): Triple<TextView, LinearLayout, TextView> {
             val distanceView = TextView(activity).apply {
                 text = String.format(
@@ -1070,11 +1070,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 doOnPreDraw {
                     speedText.width =
-                        (width * getUserSpeed(
-                            requireContext(),
-                            split.distance,
-                            split.duration
-                        ) / maxWidth).toInt()
+                        (measuredWidth * split.distance / split.duration / maxSpeed).toInt() - prIcon.measuredWidth
                 }
                 addView(speedText)
                 addView(Space(requireContext()).apply {
@@ -1110,14 +1106,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
             var maxSpeed = 0.0f
             splits.forEach {
-                val splitSpeed =
-                    getUserSpeed(requireContext(), it.distance, it.duration)
-                if (splitSpeed > maxSpeed) maxSpeed = splitSpeed
+                val splitSpeed = it.distance / it.duration
+                if (splitSpeed > maxSpeed) maxSpeed = splitSpeed.toFloat()
             }
-            val maxWidth = (maxSpeed / 10).toInt() * 10 + 10
 
             splits.forEachIndexed { idx, split ->
-                val (distanceView, speedView, timeView) = makeSplitRow(idx, split, maxWidth)
+                val (distanceView, speedView, timeView) = makeSplitRow(idx, split, maxSpeed)
                 splitsGridView.addView(distanceView)
                 splitsGridView.addView(speedView)
                 splitsGridView.addView(timeView)
