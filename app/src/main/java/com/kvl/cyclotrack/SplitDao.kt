@@ -30,8 +30,15 @@ interface SplitDao {
         limit: Int
     ): LiveData<Split>
 
-    @Query("select * from split where round(totalDistance * :bucketFactor) = :bucket and distance > 0.5/:bucketFactor order by totalDistance/totalDuration desc limit :limit")
-    fun fastestDistance(bucket: Int, bucketFactor: Double, limit: Int): LiveData<Array<Split>>
+    @Query("select * from split where round(totalDistance * :bucketFactor) = :bucket and distance > 0.99/:bucketFactor order by totalDistance/totalDuration desc limit :limit")
+    suspend fun loadFastestDistance(bucket: Int, bucketFactor: Double, limit: Int): Array<Split>
+
+    @Query("select * from split where round(totalDistance * :bucketFactor) = :bucket and distance > 0.99/:bucketFactor order by totalDistance/totalDuration desc limit :limit")
+    fun subscribeFastestDistance(
+        bucket: Int,
+        bucketFactor: Double,
+        limit: Int
+    ): LiveData<Array<Split>>
 
     @Query("DELETE FROM split WHERE tripId = :tripId")
     suspend fun removeTripSplits(tripId: Long)

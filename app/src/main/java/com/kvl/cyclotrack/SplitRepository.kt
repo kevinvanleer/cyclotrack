@@ -22,8 +22,15 @@ class SplitRepository @Inject constructor(private val splitDao: SplitDao) {
         limit = limit
     )
 
+    suspend fun getFastestDistance(distance: Int, conversionFactor: Double, limit: Int = 10) =
+        splitDao.loadFastestDistance(
+            bucket = distance,
+            bucketFactor = conversionFactor,
+            limit = limit
+        )
+
     fun observeFastestDistance(distance: Int, conversionFactor: Double, limit: Int = 10) =
-        splitDao.fastestDistance(
+        splitDao.subscribeFastestDistance(
             bucket = distance,
             bucketFactor = conversionFactor,
             limit = limit

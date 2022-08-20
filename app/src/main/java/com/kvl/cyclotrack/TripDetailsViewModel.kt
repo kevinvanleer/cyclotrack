@@ -76,6 +76,14 @@ class TripDetailsViewModel @Inject constructor(
             googleFitApiService
         )
 
+    suspend fun getFastestDistance(distance: Int, conversionFactor: Double, limit: Int = 10) =
+        splitRepository.getFastestDistance(
+            distance = distance,
+            conversionFactor = conversionFactor,
+            limit = limit
+        )
+
+
     data class ExportData(
         var summary: Trip? = null,
         var measurements: Array<Measurements>? = null,
