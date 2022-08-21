@@ -20,6 +20,7 @@ import androidx.core.view.doOnPreDraw
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceManager
@@ -33,11 +34,13 @@ import com.google.firebase.analytics.ktx.logEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.util.*
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 
 @AndroidEntryPoint
@@ -445,6 +448,19 @@ class TripInProgressFragment :
                         (split.distance / split.duration.coerceAtLeast(0.0001))
                     )
                 )
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewModel.getFastestDistance(
+                    split.totalDistance.roundToInt(),
+                    getUserDistance(requireContext(), 1.0),
+                    3
+                ).let {
+                    if (it.size == 3 && it.firstOrNull()?.tripId == split.tripId) {
+                        middleRightView.setIconVisibility(VISIBLE)
+                    } else {
+                        middleRightView.setIconVisibility(INVISIBLE)
+                    }
+                }
+            }
         }
 
         viewModel.hrmSensor.observe(viewLifecycleOwner) { hrm ->
@@ -587,6 +603,7 @@ class TripInProgressFragment :
 
         middleRightView.label =
             "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
+        middleRightView.setIcon(R.drawable.ic_trophy)
         topView.label =
             getUserDistanceUnitLong(requireContext()).uppercase(Locale.getDefault())
         bottomLeftView.label = "DURATION"

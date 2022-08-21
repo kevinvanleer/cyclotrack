@@ -55,8 +55,16 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         }
 
     fun setIcon(drawableId: Int) =
-        measurementExtraInfoImageView.setImageDrawable(ResourcesCompat.getDrawable(resources,
-            drawableId, null))
+        measurementExtraInfoImageView.setImageDrawable(
+            ResourcesCompat.getDrawable(
+                resources,
+                drawableId, null
+            )
+        )
+
+    fun setIconVisibility(visibility: Int) {
+        measurementExtraInfoImageView.visibility = visibility
+    }
 
     init {
         View.inflate(context, R.layout.view_measurement_view, this)

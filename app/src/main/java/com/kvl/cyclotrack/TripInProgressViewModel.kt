@@ -67,6 +67,13 @@ class TripInProgressViewModel @Inject constructor(
 
     val latestWeather = weatherRepository.observeLatest()
 
+    suspend fun getFastestDistance(distance: Int, conversionFactor: Double, limit: Int = 10) =
+        splitRepository.getFastestDistance(
+            distance = distance,
+            conversionFactor = conversionFactor,
+            limit = limit
+        )
+   
     @Subscribe
     fun onHrmData(hrm: HrmData) {
         hrmSensor.postValue(hrm)
