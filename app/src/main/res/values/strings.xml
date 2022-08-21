@@ -131,4 +131,5 @@
     <string name="preference_key_strava_access_token">strava_access_token</string>
     <string name="remove_cyclotrack_data_from_google_fit_message">Remove Cyclotrack data from Google Fit</string>
     <string name="remove_cyclotrack_data_from_strava_message">Remove Cyclotrack data from Strava</string>
+    <string name="preference_key_strava_next_sync_window">preference_key_strava_next_sync_window</string>
 </resources>

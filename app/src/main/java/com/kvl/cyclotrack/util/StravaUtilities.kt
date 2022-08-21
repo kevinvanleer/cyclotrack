@@ -14,6 +14,9 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.IOException
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 fun updateStravaAuthToken(
@@ -167,8 +170,6 @@ fun syncTripWithStrava(
     tripId: Long,
     exportData: TripDetailsViewModel.ExportData
 ): Response {
-    val logTag = "syncTripWithStrava"
-
     val validAccessToken = refreshStravaAccessToken(appContext)
         ?: throw AuthenticationFailure("Access token is null")
 
@@ -228,7 +229,7 @@ fun deauthorizeStrava(accessToken: String, context: Context) {
     }
 }
 
-class TooManyRequests(message: String, val limits: List<String>, val usage: List<String>) :
+class TooManyRequests(message: String, val limits: List<Int>?, val usage: List<Int>?) :
     IOException(message)
 
 class AuthenticationFailure(message: String) : IOException(message)
@@ -241,6 +242,7 @@ suspend fun syncTripWithStrava(
     onboardSensorsRepository: OnboardSensorsRepository,
     weatherRepository: WeatherRepository
 ) {
+    val logTag = "syncTripWithStrava"
     val exportData = TripDetailsViewModel.ExportData(
         summary = tripsRepository.get(tripId),
         measurements = measurementsRepository.get(tripId),
@@ -249,7 +251,22 @@ suspend fun syncTripWithStrava(
         onboardSensors = onboardSensorsRepository.get(tripId),
         weather = weatherRepository.getTripWeather(tripId)
     )
-    if (exportData.summary != null &&
+    val now = Instant.now()
+    val nextWindow = Instant.parse(
+        getPreferences(appContext).getString(
+            appContext.getString(R.string.preference_key_strava_next_sync_window),
+            now.toString()
+        )
+    )
+    if (nextWindow > now) {
+        throw TooManyRequests(
+            "Rate limit exceeded, next window begins at: $nextWindow",
+            limits = null,
+            usage = null
+        )
+    }
+    if (
+        exportData.summary != null &&
         exportData.measurements != null &&
         exportData.timeStates != null &&
         exportData.splits != null &&
@@ -257,19 +274,48 @@ suspend fun syncTripWithStrava(
         exportData.weather != null
     ) {
         syncTripWithStrava(appContext, tripId, exportData).let { response ->
+            val limits =
+                response.header("X-RateLimit-Limit")
+                    .let { header -> header?.split(',')?.map { it.toInt() } }
+            val usage =
+                response.header("X-RateLimit-Usage")
+                    .let { header -> header?.split(',')?.map { it.toInt() } }
+            //NOTE TO SELF: header names seem to be case insensitive
+            Log.d(logTag, "${limits.toString()} / ${usage.toString()}")
+            if (usage?.size == 2 && limits?.size == 2) {
+                when {
+                    usage[1] >= limits[1] ->
+                        // set backoff to tomorrow
+                        Instant.now().atZone(ZoneOffset.UTC).truncatedTo(ChronoUnit.DAYS)
+                            .plusDays(1).toInstant()
+
+                    usage[0] >= limits[0] ->
+                        // set backoff to next 15 minute window
+                        Instant.now().truncatedTo(ChronoUnit.MINUTES).let { now ->
+                            now.plus(
+                                15L - now.atZone(ZoneOffset.UTC).minute % 15,
+                                ChronoUnit.MINUTES
+                            )
+                        }
+                    else -> Instant.now()
+                }.let { nextWindow ->
+                    getPreferences(appContext).edit().apply {
+                        putString(
+                            appContext.getString(R.string.preference_key_strava_next_sync_window),
+                            nextWindow.toString()
+                        )
+                    }.commit()
+                }
+            }
             when (val result = response.code) {
                 401, 403 -> throw AuthenticationFailure("Strava authentication failure: $result")
-                429 -> {
-                    //TODO: Save retry/rate limit info in shared preferences
-                    // and block execution until new period begins
-                    TooManyRequests(
-                        "Rate limit exceeded: $result",
-                        limits = response.headers("X-RateLimit-Limit"),
-                        usage = response.headers("X-RateLimit-Usage")
-                    ).let { e ->
-                        FirebaseCrashlytics.getInstance().recordException(e)
-                        throw e
-                    }
+                429 -> TooManyRequests(
+                    "Rate limit exceeded: $result",
+                    limits = limits,
+                    usage = usage
+                ).let { e ->
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                    throw e
                 }
                 in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
                 in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
