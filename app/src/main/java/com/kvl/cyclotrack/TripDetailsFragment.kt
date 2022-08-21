@@ -1016,6 +1016,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 )
             }
             val speedText = TextView(activity).apply {
+                maxLines = 1
                 text = String.format(
                     "%.2f %s",
                     getUserSpeed(
