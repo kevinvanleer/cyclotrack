@@ -9,11 +9,8 @@ import com.kvl.cyclotrack.*
 import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import okhttp3.FormBody
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import java.io.IOException
@@ -113,15 +110,18 @@ fun refreshStravaAccessToken(
                     null
                 )?.let { refreshToken ->
                     updateStravaAuthToken(appContext, refreshToken = refreshToken)
-                } ?: throw IOException("Not authorized to sync with Strava -- no refresh token")
+                }
+                    ?: throw AuthenticationFailure("Not authorized to sync with Strava -- no refresh token")
             }
             else -> getPreferences(appContext).getString(
                 appContext.getString(R.string.preference_key_strava_access_token), null
             )
         }
+    }.also { accessToken ->
+        if (accessToken == null) throw AuthenticationFailure("Access token is null")
     }
 
-fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Int {
+fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Trip): Response {
     val logTag = "sendActivityToStrava"
     return OkHttpClient().let OkClient@{ client ->
         Request.Builder()
@@ -156,7 +156,7 @@ fun sendActivityToStrava(accessToken: String, privateAppFile: File, summary: Tri
                         Log.d(logTag, response.code.toString())
                         Log.d(logTag, response.body?.string() ?: "No body")
                     }
-                    return@response response.code
+                    return@response response
                 }
             }
     }
@@ -166,17 +166,11 @@ fun syncTripWithStrava(
     appContext: Context,
     tripId: Long,
     exportData: TripDetailsViewModel.ExportData
-): Int {
+): Response {
     val logTag = "syncTripWithStrava"
-    var validAccessToken: String?
 
-    try {
-        validAccessToken = refreshStravaAccessToken(appContext)
-    } catch (e: Exception) {
-        Log.d(logTag, "Strava token refresh failed.")
-        FirebaseCrashlytics.getInstance().recordException(e)
-        return 401
-    }
+    val validAccessToken = refreshStravaAccessToken(appContext)
+        ?: throw AuthenticationFailure("Access token is null")
 
     val messages: MutableList<Mesg> = makeFitMessages(cyclotrackFitAppId, exportData)
 
@@ -191,20 +185,9 @@ fun syncTripWithStrava(
         messages
     )
 
-    try {
-        (validAccessToken ?: getPreferences(appContext).getString(
-            appContext.getString(R.string.preference_key_strava_access_token),
-            null
-        ))?.let { accessToken ->
-            return sendActivityToStrava(accessToken, privateAppFile, exportData.summary!!).also {
-                privateAppFile.delete()
-            }
-        } ?: Log.d(logTag, "Not authorized to sync with Strava -- no access token")
-    } catch (e: Exception) {
-        FirebaseCrashlytics.getInstance().recordException(e)
-        return 400
+    return sendActivityToStrava(validAccessToken, privateAppFile, exportData.summary!!).also {
+        privateAppFile.delete()
     }
-    return 401
 }
 
 fun deauthorizeStrava(accessToken: String, context: Context) {
@@ -245,6 +228,11 @@ fun deauthorizeStrava(accessToken: String, context: Context) {
     }
 }
 
+class TooManyRequests(message: String, val limits: List<String>, val usage: List<String>) :
+    IOException(message)
+
+class AuthenticationFailure(message: String) : IOException(message)
+
 suspend fun syncTripWithStrava(
     appContext: Context, tripId: Long, tripsRepository: TripsRepository,
     measurementsRepository: MeasurementsRepository,
@@ -268,16 +256,30 @@ suspend fun syncTripWithStrava(
         exportData.onboardSensors != null &&
         exportData.weather != null
     ) {
-        when (val result = syncTripWithStrava(appContext, tripId, exportData)) {
-            in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
-            401, 403 -> throw IOException("Strava authentication failure: $result")
-            429, in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
-            else -> GoogleFitSyncStatusEnum.FAILED
-        }.let { status ->
-            tripsRepository.setStravaSyncStatus(
-                tripId,
-                status
-            )
+        syncTripWithStrava(appContext, tripId, exportData).let { response ->
+            when (val result = response.code) {
+                401, 403 -> throw AuthenticationFailure("Strava authentication failure: $result")
+                429 -> {
+                    //TODO: Save retry/rate limit info in shared preferences
+                    // and block execution until new period begins
+                    TooManyRequests(
+                        "Rate limit exceeded: $result",
+                        limits = response.headers("X-RateLimit-Limit"),
+                        usage = response.headers("X-RateLimit-Usage")
+                    ).let { e ->
+                        FirebaseCrashlytics.getInstance().recordException(e)
+                        throw e
+                    }
+                }
+                in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
+                in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
+                else -> GoogleFitSyncStatusEnum.FAILED
+            }.let { status ->
+                tripsRepository.setStravaSyncStatus(
+                    tripId,
+                    status
+                )
+            }
         }
     }
 }
