@@ -16,6 +16,7 @@ import androidx.core.content.edit
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
+import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -27,6 +28,7 @@ import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -184,7 +186,9 @@ class MainActivity : AppCompatActivity() {
             WorkManager.getInstance(this).beginUniqueWork(
                 "StravaSyncTripsWorker",
                 ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<StravaSyncTripsWorker>().build()
+                OneTimeWorkRequestBuilder<StravaSyncTripsWorker>()
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
+                    .build()
             ).enqueue()
         }
     }

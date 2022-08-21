@@ -8,6 +8,8 @@ import androidx.work.WorkerParameters
 import com.kvl.cyclotrack.util.syncTripWithStrava
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.time.Duration
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltWorker
@@ -37,6 +39,8 @@ class StravaSyncTripsWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         Log.d(logTag, "Syncing with Strava")
+        var startTime = Instant.now()
+        var periodSyncCount = 0
         tripsRepository.getStravaUnsynced().forEach { trip ->
             trip.id?.let { tripId ->
                 Log.d(logTag, "Syncing trip $tripId with Strava")
@@ -48,6 +52,16 @@ class StravaSyncTripsWorker @AssistedInject constructor(
                     onboardSensorsRepository,
                     weatherRepository
                 )
+            }
+
+            periodSyncCount++
+            if (Instant.now() < startTime + Duration.ofMinutes(15)) {
+                if (periodSyncCount >= 100) {
+                    return Result.retry()
+                }
+            } else {
+                periodSyncCount = 0
+                startTime = Instant.now()
             }
         }
         return Result.success()
