@@ -73,7 +73,14 @@ class TripInProgressViewModel @Inject constructor(
             conversionFactor = conversionFactor,
             limit = limit
         )
-   
+
+    suspend fun getFastestSplit(distance: Int, conversionFactor: Double, limit: Int = 10) =
+        splitRepository.getFastestSplit(
+            distance = distance,
+            conversionFactor = conversionFactor,
+            limit = limit
+        )
+
     @Subscribe
     fun onHrmData(hrm: HrmData) {
         hrmSensor.postValue(hrm)

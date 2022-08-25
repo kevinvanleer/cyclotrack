@@ -83,6 +83,12 @@ class TripDetailsViewModel @Inject constructor(
             limit = limit
         )
 
+    suspend fun getFastestSplit(distance: Int, conversionFactor: Double, limit: Int = 10) =
+        splitRepository.getFastestSplit(
+            distance = distance,
+            conversionFactor = conversionFactor,
+            limit = limit
+        )
 
     data class ExportData(
         var summary: Trip? = null,

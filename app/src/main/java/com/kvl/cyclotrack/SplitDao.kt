@@ -33,6 +33,9 @@ interface SplitDao {
     @Query("select * from split where round(totalDistance * :bucketFactor) = :bucket and distance > 0.99/:bucketFactor order by totalDistance/totalDuration desc limit :limit")
     suspend fun loadFastestDistance(bucket: Int, bucketFactor: Double, limit: Int): Array<Split>
 
+    @Query("select * from split where round(totalDistance * :bucketFactor) = :bucket and distance > 0.99/:bucketFactor order by distance/duration desc limit :limit")
+    suspend fun loadFastestSplit(bucket: Int, bucketFactor: Double, limit: Int): Array<Split>
+
     @Query("select * from split where round(totalDistance * :bucketFactor) = :bucket and distance > 0.99/:bucketFactor order by totalDistance/totalDuration desc limit :limit")
     fun subscribeFastestDistance(
         bucket: Int,

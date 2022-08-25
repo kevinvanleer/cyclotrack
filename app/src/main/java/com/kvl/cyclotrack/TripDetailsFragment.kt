@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.util.Log
@@ -1026,11 +1027,34 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     ),
                     getUserSpeedUnitShort(requireContext())
                 )
+            }
+            val splitPrIcon = ImageView(requireContext()).apply {
+                val heightDip = 12f
+                val heightPx = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP,
+                    heightDip,
+                    resources.displayMetrics
+                ).toInt()
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        heightPx
+                    ).apply { gravity = Gravity.CENTER }
+                setImageResource(R.drawable.ic_trophy)
+                setColorFilter(
+                    Color.WHITE,
+                    PorterDuff.Mode.SRC_ATOP
+                )
+                visibility = View.INVISIBLE
+            }
+            val speedBar = LinearLayout(activity).apply {
                 background = ResourcesCompat.getDrawable(
                     resources,
                     R.drawable.rounded_corner,
                     null
                 )
+                addView(speedText)
+                addView(splitPrIcon)
             }
             val prIcon = ImageView(requireContext()).apply {
                 val heightDip = 14f
@@ -1070,10 +1094,10 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     )
 
                 doOnPreDraw {
-                    speedText.width =
+                    speedBar.minimumWidth =
                         (measuredWidth * split.distance / split.duration / maxSpeed).toInt() - prIcon.measuredWidth
                 }
-                addView(speedText)
+                addView(speedBar)
                 addView(Space(requireContext()).apply {
                     layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
                 })
@@ -1087,6 +1111,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 )
                 prIcon.visibility =
                     when (fastestTotalDistance.firstOrNull()?.tripId == split.tripId && fastestTotalDistance.size == 3) {
+                        true -> View.VISIBLE
+                        else -> View.INVISIBLE
+                    }
+                val fastestSplit = viewModel.getFastestSplit(
+                    getUserDistance(requireContext(), split.totalDistance).roundToInt(),
+                    getUserDistance(requireContext(), 1.0), 3
+                )
+                splitPrIcon.visibility =
+                    when (fastestSplit.firstOrNull()?.tripId == split.tripId && fastestSplit.size == 3) {
                         true -> View.VISIBLE
                         else -> View.INVISIBLE
                     }

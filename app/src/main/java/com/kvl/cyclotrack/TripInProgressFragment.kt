@@ -455,6 +455,17 @@ class TripInProgressFragment :
                     3
                 ).let {
                     if (it.size == 3 && it.firstOrNull()?.tripId == split.tripId) {
+                        topView.setIconVisibility(VISIBLE)
+                    } else {
+                        topView.setIconVisibility(INVISIBLE)
+                    }
+                }
+                viewModel.getFastestSplit(
+                    split.totalDistance.roundToInt(),
+                    getUserDistance(requireContext(), 1.0),
+                    3
+                ).let {
+                    if (it.size == 3 && it.firstOrNull()?.tripId == split.tripId) {
                         middleRightView.setIconVisibility(VISIBLE)
                     } else {
                         middleRightView.setIconVisibility(INVISIBLE)
@@ -606,6 +617,7 @@ class TripInProgressFragment :
         middleRightView.setIcon(R.drawable.ic_trophy)
         topView.label =
             getUserDistanceUnitLong(requireContext()).uppercase(Locale.getDefault())
+        topView.setIcon(R.drawable.ic_trophy)
         bottomLeftView.label = "DURATION"
         middleLeftView.label = "AVG ${
             getUserSpeedUnitShort(requireContext()).uppercase(
