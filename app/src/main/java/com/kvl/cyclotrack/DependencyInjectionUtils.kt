@@ -16,7 +16,7 @@ import kotlin.coroutines.CoroutineContext
 //https://medium.com/@daptronic/kotlin-coroutines-android-how-to-unit-test-lifecyclecoroutinescope-654ab324f3e7
 
 interface ManagedCoroutineScope : CoroutineScope {
-    abstract fun launch(block: suspend CoroutineScope.() -> Unit): Job
+    fun launch(block: suspend CoroutineScope.() -> Unit): Job
 }
 
 class LifecycleManagedCoroutineScope(
@@ -44,4 +44,3 @@ class ViewModelModule {
     @Provides
     fun provideCoroutineScope(): CoroutineScope? = null
 }
-

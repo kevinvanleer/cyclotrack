@@ -1,4 +1,3 @@
 package com.kvl.cyclotrack.events
 
-class GoogleFitAccessGranted {
-}
+class GoogleFitAccessGranted
