@@ -26,9 +26,9 @@ function Privacy() {
         data is transmitted from the device to the developer of Cyclotrack. No
         data is transmitted to a third party unless you explicitly enable a
         third party integration (e.g. Google Fit).
-        <h4>Google Fit</h4>A user may choose to link Cyclotrack with a Google
-        Fit account. This is done by signing in to a Google account in
-        Cyclotrack settings. When linked Cyclotrack will:
+        <h4>Google Fit</h4>A user may link Cyclotrack with a Google Fit account.
+        This is done by signing in to a Google account in Cyclotrack settings.
+        When linked Cyclotrack will:
         <ul>
           <li>
             Read height, weight, and resting heart rate stored in Google Fit.
@@ -55,6 +55,14 @@ function Privacy() {
             , including the Limited Use requirements.
           </i>
         </span>
+        <h4>Strava</h4>A user may connect Cyclotrack to Strava for the purpose
+        of uploading data collected during cycling activities from Cyclotrack to
+        Strava. To start uploading data to Strava, login to Strava from
+        Cyclotrack settings. Data sent to Strava includes: GPS location, heart
+        rate, speed, and cadence. It also includes notes and comments made on
+        the ride. Data uploaded to Strava cannot be deleted from Cyclotrack and
+        must be deleted using the Strava app. To stop uploading data to Strava,
+        use the logout option in Cyclotrack settings.
         <h4>Google Analytics</h4>Cyclotrack uses Google Analytics to help
         understand user behavior and improve the overall user experience. The
         Advertising ID and the Secure Settings Android ID (SSAID) are not
