@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.6.21'
+    ext.kotlin_version = '1.6.21' //cannot upgrade to 1.7 because of hilt (I think)
     ext.room_version = '2.4.3'
     ext.dagger_version = '2.40.1'
     ext.nav_version = "2.5.1"
