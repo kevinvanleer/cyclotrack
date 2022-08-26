@@ -49,6 +49,7 @@ class PreferencesActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.preferences_toolbar))
     }
 
+    @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
     @SuppressWarnings("deprecation")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
