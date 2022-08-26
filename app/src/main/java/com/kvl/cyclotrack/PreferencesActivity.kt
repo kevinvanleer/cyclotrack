@@ -51,7 +51,6 @@ class PreferencesActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
-    @SuppressWarnings("deprecation")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         //Required for Google Sign-in
         Log.d(logTag, "onActivityResult")
