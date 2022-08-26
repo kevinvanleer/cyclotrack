@@ -16,11 +16,19 @@ import androidx.core.content.edit
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
+import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.isStravaSynced
+import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -152,6 +160,37 @@ class MainActivity : AppCompatActivity() {
                 setMessage("Cyclotrack would like to use Google Analytics to collect data about how you use the app to help improve it. Your participation is appreciated. Would you like to enable Google Analytics? You may change this option at any time from the settings menu. See the Cyclotrack privacy policy, also available in the Settings menu, for more details.")
                 setView(optInCheckbox.rootView)
             }.create().show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        Log.d(logTag, "MainActivity onResume")
+        if (hasFitnessPermissions(this)) {
+            WorkManager.getInstance(this).beginUniqueWork(
+                "GoogleFitSyncTripsWorker",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build()
+            ).enqueue()
+        }
+        if (shouldSyncGoogleFitBiometrics(this) &&
+            hasFitnessPermissions(this)
+        ) {
+            WorkManager.getInstance(this).beginUniqueWork(
+                "GoogleFitSyncBiometricsWorker",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build()
+            ).enqueue()
+        }
+        if (isStravaSynced(this)) {
+            WorkManager.getInstance(this).beginUniqueWork(
+                "StravaSyncTripsWorker",
+                ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<StravaSyncTripsWorker>()
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
+                    .build()
+            ).enqueue()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

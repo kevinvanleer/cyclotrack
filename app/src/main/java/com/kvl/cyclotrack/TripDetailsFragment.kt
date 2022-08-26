@@ -37,6 +37,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.*
+import com.kvl.cyclotrack.util.configureGoogleFit
+import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
+import com.kvl.cyclotrack.util.getDatasets
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.widgets.HeadingView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -66,6 +70,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var defaultCameraPosition: CameraPosition
     private lateinit var maxCameraPosition: CameraPosition
     private lateinit var googleFitSyncStatus: GoogleFitSyncStatusEnum
+    private lateinit var stravaSyncStatus: GoogleFitSyncStatusEnum
 
     private fun drawPath(
         polyline: PolylineOptions,
@@ -158,6 +163,21 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 menu.findItem(R.id.details_menu_action_unsync).isVisible = false
             }
         }
+        /*
+        //NOTE: TEMPORARY OVERRIDE FOR STRAVA TESTING
+        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
+        when (stravaSyncStatus) {
+            GoogleFitSyncStatusEnum.SYNCED -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = false
+            }
+            GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = true
+            }
+            else -> {
+                menu.findItem(R.id.details_menu_action_sync).isVisible = false
+            }
+        }
+        */
     }
 
     private fun showMustBeLoggedInDialog() {
@@ -309,11 +329,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 windIcon.visibility = View.VISIBLE
                 windText.visibility = View.VISIBLE
-                windText.text = "%.1f %s %s".format(
-                    getUserSpeed(requireContext(), weathers[0].windSpeed),
-                    getUserSpeedUnitShort(requireContext()),
-                    degreesToCardinal(weathers[0].windDirection.toFloat())
-                )
+                weathers.getAverageWind().let { wind ->
+                    windText.text = "%.1f %s %s".format(
+                        getUserSpeed(requireContext(), wind.first),
+                        getUserSpeedUnitShort(requireContext()),
+                        degreesToCardinal(wind.second.toFloat())
+                    )
+                }
             }
         }
     }
@@ -970,7 +992,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             requireView().findViewById(R.id.trip_details_calories)
         val avgHr = getAverageHeartRate(measurements)
         try {
-            getCaloriesBurned(
+            com.kvl.cyclotrack.util.getCaloriesBurned(
                 requireContext(),
                 biometrics,
                 overview,
@@ -1165,12 +1187,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 Log.d(logTag, "Options menu created")
                 viewModel.tripOverview.observe(viewLifecycleOwner) {
                     googleFitSyncStatus = it.googleFitSyncStatus
+                    stravaSyncStatus = it.stravaSyncStatus
                 }
             }
 
             override fun onPrepareMenu(menu: Menu) {
                 super.onPrepareMenu(menu)
-                configureSyncOptions(menu)
+                if (this@TripDetailsFragment::googleFitSyncStatus.isInitialized &&
+                    this@TripDetailsFragment::stravaSyncStatus.isInitialized
+                ) configureSyncOptions(menu)
             }
 
             override fun onMenuItemSelected(item: MenuItem): Boolean {
@@ -1239,6 +1264,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
                                     .setInputData(workDataOf("tripId" to viewModel.tripId)).build()
                             )
+                        /*WorkManager.getInstance(requireContext())
+                            .enqueue(
+                                OneTimeWorkRequestBuilder<StravaCreateActivityWorker>()
+                                    .setInputData(workDataOf("tripId" to viewModel.tripId)).build()
+                            )*/
                         true
                     }
                     R.id.details_menu_action_unsync -> {

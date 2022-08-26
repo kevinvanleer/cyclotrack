@@ -58,6 +58,9 @@ class EditTripViewModel @Inject constructor(
             if (tripsRepository.get(tripInfo.id!!).googleFitSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {
                 tripsRepository.setGoogleFitSyncStatus(tripInfo.id!!, GoogleFitSyncStatusEnum.DIRTY)
             }
+            if (tripsRepository.get(tripInfo.id!!).stravaSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {
+                tripsRepository.setStravaSyncStatus(tripInfo.id!!, GoogleFitSyncStatusEnum.DIRTY)
+            }
             tripsRepository.updateTripStuff(TripStuff(tripInfo.id!!, name, notes, circumference))
             tripInfo = tripsRepository.get(tripInfo.id!!)
         }

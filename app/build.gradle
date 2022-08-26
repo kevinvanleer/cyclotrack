@@ -33,8 +33,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
         targetSdkVersion 30
-        versionCode 50
-        versionName "BLE fixes"
+        versionCode 51
+        versionName "Strava"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
@@ -82,6 +82,8 @@ android {
         }
         resValue "string", "maps_api_key", (secureProps.getProperty("MAPS_API_KEY") ?: "")
         resValue "string", "openweather_api_key", (openMapsVariantApiKey)
+        resValue "string", "strava_client_id", (secureProps.getProperty("STRAVA_CLIENT_ID") ?: "")
+        resValue "string", "strava_client_secret", (secureProps.getProperty("STRAVA_CLIENT_SECRET") ?: "")
     }
 
     buildFeatures {

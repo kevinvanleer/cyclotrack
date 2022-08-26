@@ -30,6 +30,11 @@ data class TripGoogleFitSync(
     val googleFitSyncStatus: GoogleFitSyncStatusEnum,
 )
 
+data class TripStravaSync(
+    val id: Long,
+    val stravaSyncStatus: GoogleFitSyncStatusEnum,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
@@ -99,6 +104,9 @@ interface TripDao {
     suspend fun updateBiometrics(biometrics: Biometrics)
 
     @Update(entity = Trip::class)
+    suspend fun updateStravaSyncStatus(stravaSyncStatus: TripStravaSync)
+
+    @Update(entity = Trip::class)
     suspend fun updateGoogleFitSyncStatus(googleFitSyncStatus: TripGoogleFitSync)
 
     @Query("UPDATE trip SET bikeId=:bikeId where id = :id")
@@ -121,6 +129,9 @@ interface TripDao {
 
     @Query("SELECT * FROM trip WHERE timestamp >= :start and timestamp < :end and distance > 1 AND duration > 60 ORDER BY timestamp ASC")
     fun subscribeDateRange(start: Long, end: Long): LiveData<Array<Trip>>
+
+    @Query("SELECT * FROM trip WHERE stravaSyncStatus == 0 and inProgress = 0 ORDER BY id DESC")
+    suspend fun loadStravaUnsyncedTrips(): Array<Trip>
 
     @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 0 and inProgress = 0 ORDER BY id DESC")
     suspend fun loadGoogleFitUnsyncedTrips(): Array<Trip>

@@ -4,6 +4,8 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.kvl.cyclotrack.util.getUserHeight
+import com.kvl.cyclotrack.util.getUserWeight
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -13,18 +15,29 @@ class BiometricsRepository @Inject constructor(
     private val googleFitApiService: GoogleFitApiService,
 ) {
 
-    val sex = sharedPreferences.getString(CyclotrackApp.instance.getString(
-        R.string.preference_key_biometrics_user_sex), "")
-    val dob = sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_dob), "")
-    val maxHeartRate = sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_maxHeartRate), "")
-    val vo2max = sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_vo2max), "")
+    val sex = sharedPreferences.getString(
+        CyclotrackApp.instance.getString(
+            R.string.preference_key_biometrics_user_sex
+        ), ""
+    )
+    val dob = sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_dob), ""
+    )
+    val maxHeartRate = sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_maxHeartRate), ""
+    )
+    val vo2max = sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_vo2max), ""
+    )
 
     private val _restingHeartRate = MutableLiveData<String>(
-        sharedPreferences.getString(CyclotrackApp.instance
-            .getString(R.string.preference_key_biometrics_user_restingHeartRate), "")
+        sharedPreferences.getString(
+            CyclotrackApp.instance
+                .getString(R.string.preference_key_biometrics_user_restingHeartRate), ""
+        )
     )
     var restingHeartRate: LiveData<String>
         get() {
@@ -39,9 +52,11 @@ class BiometricsRepository @Inject constructor(
         }
         set(newValue) {
             sharedPreferences.edit {
-                this.putString(CyclotrackApp.instance
-                    .getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                    newValue.value)
+                this.putString(
+                    CyclotrackApp.instance
+                        .getString(R.string.preference_key_biometrics_user_restingHeartRate),
+                    newValue.value
+                )
             }
         }
 

@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.view.View
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.kvl.cyclotrack.util.SystemUtils
 
 class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
 
@@ -31,7 +32,7 @@ class RollupView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
                     getInspiringMessage(SystemUtils.currentTimeMillis() - lastStart)
             }
         }
-       
+
         totalDistanceView.text = distanceText
         totalDurationView.text = durationText
         inspiringMessageView.text = inspiringMessage

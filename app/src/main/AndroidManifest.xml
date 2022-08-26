@@ -45,16 +45,12 @@
         <meta-data
             android:name="google_analytics_default_allow_ad_personalization_signals"
             android:value="false" />
-
-        <activity
-            android:name=".PreferencesActivity"
-            android:exported="true" />
-        <activity
-            android:name=".TripDetailsActivity"
-            android:exported="true" />
-        <activity
-            android:name=".DashboardActivity"
-            android:exported="true" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/maps_api_key" />
 
         <receiver
             android:name=".DeleteExportBroadcastReceiver"
@@ -77,22 +73,34 @@
             android:authorities="${applicationId}.androidx-startup"
             tools:node="remove" /-->
 
+
+        <activity
+            android:name=".PreferencesActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="android.intent.action.VIEW" />
+                <data
+                    android:host="kevinvanleer.com"
+                    android:pathPattern="/strava-auth.*"
+                    android:scheme="cyclotrack" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".TripDetailsActivity"
+            android:exported="true" />
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <meta-data
-            android:name="preloaded_fonts"
-            android:resource="@array/preloaded_fonts" />
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="@string/maps_api_key" />
 
         <service
             android:name=".TripInProgressService"

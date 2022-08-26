@@ -10,6 +10,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import com.kvl.cyclotrack.util.getBikeMassOrNull
+import com.kvl.cyclotrack.util.getPreferences
+import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -259,6 +262,13 @@ val MIGRATION_21_22 = object : Migration(21, 22) {
     }
 }
 
+val MIGRATION_22_23 = object : Migration(22, 23) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `stravaSyncStatus` INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -289,6 +299,7 @@ object TripsDatabaseModule {
                 MIGRATION_19_20,
                 MIGRATION_20_21,
                 MIGRATION_21_22,
+                MIGRATION_22_23,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {

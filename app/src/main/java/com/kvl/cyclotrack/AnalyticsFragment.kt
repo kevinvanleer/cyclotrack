@@ -13,6 +13,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.navGraphViewModels
 import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
+import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import com.kvl.cyclotrack.widgets.*
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch

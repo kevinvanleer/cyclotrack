@@ -16,6 +16,7 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.PolylineOptions
+import com.kvl.cyclotrack.util.SystemUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -70,7 +71,8 @@ class TripSummaryCard : CardView {
                 )
             )
             else -> if (this::defaultBackgroundColor.isInitialized) setCardBackgroundColor(
-                defaultBackgroundColor)
+                defaultBackgroundColor
+            )
         }
         super.setSelected(selected)
     }
@@ -118,16 +120,20 @@ class TripSummaryCard : CardView {
     fun setTripDetails(_duration: Double, _distance: Double) {
         duration =
             "${
-                String.format("%.2f",
-                    getUserDistance(context, _distance))
+                String.format(
+                    "%.2f",
+                    getUserDistance(context, _distance)
+                )
             }${getUserDistanceUnitShort(context)}  in  ${formatDuration(_duration)}"
     }
 
     fun setTripInProgress(_duration: Double, _distance: Double) {
         title = "Ride in progress"
         date = "Tap to continue"
-        startTime = String.format("%.2f %s",
-            getUserDistance(context, _distance), getUserDistanceUnitShort(context))
+        startTime = String.format(
+            "%.2f %s",
+            getUserDistance(context, _distance), getUserDistanceUnitShort(context)
+        )
         duration = formatDuration(_duration)
     }
 

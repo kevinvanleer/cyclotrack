@@ -1,9 +1,10 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
+import com.kvl.cyclotrack.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -74,9 +75,11 @@ fun getBiometrics(id: Long, sharedPreferences: SharedPreferences) = Biometrics(
 
 fun getUserSex(context: Context) =
     try {
-        PreferenceManager.getDefaultSharedPreferences(context).getString(context
-            .getString(R.string.preference_key_biometrics_user_sex),
-            "")?.let {
+        PreferenceManager.getDefaultSharedPreferences(context).getString(
+            context
+                .getString(R.string.preference_key_biometrics_user_sex),
+            ""
+        )?.let {
             UserSexEnum.valueOf(it)
         }
     } catch (e: IllegalArgumentException) {
@@ -84,17 +87,21 @@ fun getUserSex(context: Context) =
     }
 
 fun getUserWeight(context: Context): Float? =
-    PreferenceManager.getDefaultSharedPreferences(context).getString(context
-        .getString(R.string.preference_key_biometrics_user_weight),
-        "")?.toFloatOrNull()?.let {
+    PreferenceManager.getDefaultSharedPreferences(context).getString(
+        context
+            .getString(R.string.preference_key_biometrics_user_weight),
+        ""
+    )?.toFloatOrNull()?.let {
         getMassConversionFactor(PreferenceManager.getDefaultSharedPreferences(context)) * it
 
     }?.toFloat()
 
 fun getUserHeight(context: Context): Float? =
-    PreferenceManager.getDefaultSharedPreferences(context).getString(context
-        .getString(R.string.preference_key_biometrics_user_height),
-        "")?.toFloatOrNull()?.let {
+    PreferenceManager.getDefaultSharedPreferences(context).getString(
+        context
+            .getString(R.string.preference_key_biometrics_user_height),
+        ""
+    )?.toFloatOrNull()?.let {
         when (PreferenceManager.getDefaultSharedPreferences(context)
             .getString("display_units", "1")) {
             "1" -> INCHES_TO_FEET * FEET_TO_METERS
@@ -105,9 +112,11 @@ fun getUserHeight(context: Context): Float? =
 
 fun getUserDob(sharedPreferences: SharedPreferences): String? =
     try {
-        sharedPreferences.getString(CyclotrackApp.instance
-            .getString(R.string.preference_key_biometrics_user_dob),
-            "")
+        sharedPreferences.getString(
+            CyclotrackApp.instance
+                .getString(R.string.preference_key_biometrics_user_dob),
+            ""
+        )
     } catch (e: ParseException) {
         null
     }
@@ -117,7 +126,8 @@ fun getUserDob(context: Context): String? =
         PreferenceManager.getDefaultSharedPreferences(context).getString(
             context
                 .getString(R.string.preference_key_biometrics_user_dob),
-            "")
+            ""
+        )
     } catch (e: ParseException) {
         null
     }
@@ -127,7 +137,8 @@ fun getUserAge(context: Context): Float? =
         PreferenceManager.getDefaultSharedPreferences(context).getString(
             context
                 .getString(R.string.preference_key_biometrics_user_dob),
-            "")?.let { dateString ->
+            ""
+        )?.let { dateString ->
             dateStringToAge(dateString)
         }
     } catch (e: ParseException) {
@@ -135,25 +146,33 @@ fun getUserAge(context: Context): Float? =
     }
 
 fun getUserVo2max(context: Context) =
-    PreferenceManager.getDefaultSharedPreferences(context).getString(context
-        .getString(R.string.preference_key_biometrics_user_vo2max),
-        "")?.toFloatOrNull()
+    PreferenceManager.getDefaultSharedPreferences(context).getString(
+        context
+            .getString(R.string.preference_key_biometrics_user_vo2max),
+        ""
+    )?.toFloatOrNull()
 
 fun getUserRestingHeartRate(context: Context) =
-    PreferenceManager.getDefaultSharedPreferences(context).getString(context
-        .getString(R.string.preference_key_biometrics_user_restingHeartRate),
-        "")?.toIntOrNull()
+    PreferenceManager.getDefaultSharedPreferences(context).getString(
+        context
+            .getString(R.string.preference_key_biometrics_user_restingHeartRate),
+        ""
+    )?.toIntOrNull()
 
 fun getUserMaxHeartRate(context: Context) =
-    PreferenceManager.getDefaultSharedPreferences(context).getString(context
-        .getString(R.string.preference_key_biometrics_user_maxHeartRate),
-        "")?.toIntOrNull()
+    PreferenceManager.getDefaultSharedPreferences(context).getString(
+        context
+            .getString(R.string.preference_key_biometrics_user_maxHeartRate),
+        ""
+    )?.toIntOrNull()
 
 fun getUserSex(sharedPreferences: SharedPreferences) =
     try {
-        sharedPreferences.getString(CyclotrackApp.instance
-            .getString(R.string.preference_key_biometrics_user_sex),
-            "")?.let {
+        sharedPreferences.getString(
+            CyclotrackApp.instance
+                .getString(R.string.preference_key_biometrics_user_sex),
+            ""
+        )?.let {
             UserSexEnum.valueOf(it)
         }
     } catch (e: IllegalArgumentException) {
@@ -161,17 +180,21 @@ fun getUserSex(sharedPreferences: SharedPreferences) =
     }
 
 fun getUserWeight(sharedPreferences: SharedPreferences): Float? =
-    sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_weight),
-        "")?.toFloatOrNull()?.let {
+    sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_weight),
+        ""
+    )?.toFloatOrNull()?.let {
         getMassConversionFactor(sharedPreferences) * it
 
     }?.toFloat()
 
 fun getUserHeight(sharedPreferences: SharedPreferences): Float? =
-    sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_height),
-        "")?.toFloatOrNull()?.let {
+    sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_height),
+        ""
+    )?.toFloatOrNull()?.let {
         when (sharedPreferences.getString("display_units", "1")) {
             "1" -> INCHES_TO_FEET * FEET_TO_METERS
             "2" -> 0.001
@@ -185,7 +208,8 @@ fun getUserAge(sharedPreferences: SharedPreferences): Float? =
         sharedPreferences.getString(
             CyclotrackApp.instance
                 .getString(R.string.preference_key_biometrics_user_dob),
-            "")?.let { dateString ->
+            ""
+        )?.let { dateString ->
             dateStringToAge(dateString)
         }
     } catch (e: ParseException) {
@@ -193,19 +217,25 @@ fun getUserAge(sharedPreferences: SharedPreferences): Float? =
     }
 
 fun getUserVo2max(sharedPreferences: SharedPreferences) =
-    sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_vo2max),
-        "")?.toFloatOrNull()
+    sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_vo2max),
+        ""
+    )?.toFloatOrNull()
 
 fun getUserRestingHeartRate(sharedPreferences: SharedPreferences) =
-    sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_restingHeartRate),
-        "")?.toIntOrNull()
+    sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_restingHeartRate),
+        ""
+    )?.toIntOrNull()
 
 fun getUserMaxHeartRate(sharedPreferences: SharedPreferences) =
-    sharedPreferences.getString(CyclotrackApp.instance
-        .getString(R.string.preference_key_biometrics_user_maxHeartRate),
-        "")?.toIntOrNull()
+    sharedPreferences.getString(
+        CyclotrackApp.instance
+            .getString(R.string.preference_key_biometrics_user_maxHeartRate),
+        ""
+    )?.toIntOrNull()
 
 fun estimateMaxHeartRate(age: Int) = (208 - 0.7 * age).toInt()
 

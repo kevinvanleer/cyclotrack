@@ -1,14 +1,19 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
+import com.kvl.cyclotrack.FeatureFlags
+import com.kvl.cyclotrack.R
+import com.kvl.cyclotrack.userCircumferenceToMeters
 
 fun getBrightnessPreference(context: Context): Float {
     return if (getPreferences(context)
-            .getBoolean(context.getString(R.string.preferences_dashboard_brightness_toggle_key),
-                true)
+            .getBoolean(
+                context.getString(R.string.preferences_dashboard_brightness_toggle_key),
+                true
+            )
     ) {
         getPreferences(context)
             .getInt(context.getString(R.string.preferences_dashboard_brightness_key), 50) / 100f
@@ -41,12 +46,6 @@ fun getBikeMassOrNull(context: Context): Float? {
     )
 }
 
-fun getPairedBleSensors(context: Context): Set<String>? =
-    PreferenceManager.getDefaultSharedPreferences(context).getStringSet(
-        context.resources.getString(R.string.preferences_paired_ble_devices_key),
-        HashSet()
-    )
-
 fun getUserCircumferenceOrNull(context: Context): Float? =
     userCircumferenceToMeters(
         getPreferences(context).getString(
@@ -57,7 +56,7 @@ fun getUserCircumferenceOrNull(context: Context): Float? =
 
 fun getBikeMassOrNull(prefs: SharedPreferences, key: String): String? {
     val stored = prefs.getString(key, "")
-    Log.d("PreferenceUtilities", "Bike mass preference: ${stored}")
+    Log.d("PreferenceUtilities", "Bike mass preference: $stored")
     return stored
 }
 
@@ -67,7 +66,7 @@ fun metersToUserCircumference(context: Context, meters: Float): String {
 
 fun metersToUserCircumference(meters: Float, prefs: SharedPreferences): String {
     val storedCircumference = prefs.getString("wheel_circumference", "2037")
-    return metersToUserCircumference(meters, storedCircumference)
+    return com.kvl.cyclotrack.metersToUserCircumference(meters, storedCircumference)
 }
 
 fun getSystemOfMeasurement(context: Context): String? =
@@ -100,3 +99,8 @@ fun shouldCollectOnboardSensors(context: Context) = getPreferences(context).getB
 fun useVo2maxCalorieEstimate(context: Context) = getPreferences(context).getBoolean(
     context.getString(R.string.preferences_key_advanced_use_vo2max_calorie_estimate), false
 )
+
+fun isStravaSynced(context: Context) = getPreferences(context).getString(
+    context.getString(R.string.preference_key_strava_refresh_token),
+    null
+).isNullOrBlank().not()

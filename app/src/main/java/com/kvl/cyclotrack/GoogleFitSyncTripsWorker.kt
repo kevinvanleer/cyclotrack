@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject
@@ -38,12 +39,16 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
                 try {
                     Log.d(logTag, "Syncing trip; ID: ${trip.id} name: ${trip.name}")
                     WorkManager.getInstance(applicationContext)
-                        .enqueue(OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
-                            .setInputData(workDataOf("tripId" to trip.id)).build())
+                        .enqueue(
+                            OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                                .setInputData(workDataOf("tripId" to trip.id)).build()
+                        )
                 } catch (e: NullPointerException) {
                     Log.e(logTag, "Trip contains invalid data, don't sync", e)
-                    tripsRepository.setGoogleFitSyncStatus(trip.id!!,
-                        GoogleFitSyncStatusEnum.FAILED)
+                    tripsRepository.setGoogleFitSyncStatus(
+                        trip.id!!,
+                        GoogleFitSyncStatusEnum.FAILED
+                    )
 
                 }
             }
@@ -51,12 +56,16 @@ class GoogleFitSyncTripsWorker @AssistedInject constructor(
                 try {
                     Log.d(logTag, "Updating trip; ID: ${trip.id} name: ${trip.name}")
                     WorkManager.getInstance(applicationContext)
-                        .enqueue(OneTimeWorkRequestBuilder<GoogleFitUpdateSessionWorker>()
-                            .setInputData(workDataOf("tripId" to trip.id)).build())
+                        .enqueue(
+                            OneTimeWorkRequestBuilder<GoogleFitUpdateSessionWorker>()
+                                .setInputData(workDataOf("tripId" to trip.id)).build()
+                        )
                 } catch (e: NullPointerException) {
                     Log.e(logTag, "Trip contains invalid data, don't sync", e)
-                    tripsRepository.setGoogleFitSyncStatus(trip.id!!,
-                        GoogleFitSyncStatusEnum.FAILED)
+                    tripsRepository.setGoogleFitSyncStatus(
+                        trip.id!!,
+                        GoogleFitSyncStatusEnum.FAILED
+                    )
                 }
             }
         }

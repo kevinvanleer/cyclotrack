@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject
@@ -38,8 +39,10 @@ class GoogleFitDeleteSessionWorker @AssistedInject constructor(
                         timeStateRepository.getTimeStates(trip.id!!).let {
                             googleFitApiService.deleteTrip(trip, it)
                         }
-                        tripsRepository.setGoogleFitSyncStatus(trip.id,
-                            GoogleFitSyncStatusEnum.REMOVED)
+                        tripsRepository.setGoogleFitSyncStatus(
+                            trip.id,
+                            GoogleFitSyncStatusEnum.REMOVED
+                        )
                     } else {
                         Log.i(logTag, "Trip ${tripId} not synced to Google Fit")
                     }

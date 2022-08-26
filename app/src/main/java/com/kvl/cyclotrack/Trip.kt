@@ -2,6 +2,7 @@ package com.kvl.cyclotrack
 
 import androidx.annotation.Keep
 import androidx.room.*
+import com.kvl.cyclotrack.util.SystemUtils
 import java.util.*
 
 enum class GoogleFitSyncStatusEnum(val value: Int) {
@@ -97,4 +98,5 @@ data class Trip(
     val userRestingHeartRate: Int? = null,
     val userMaxHeartRate: Int? = null,
     val googleFitSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
+    val stravaSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
 )

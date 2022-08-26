@@ -70,6 +70,13 @@
     <string name="action_summaryview_multiselect_enabled">com.kvl.cyclotrack.action_summaryview_multiselect_enabled</string>
     <string name="action_clear_multiselect">Cancel</string>
     <string name="action_delete">Delete</string>
+    <string name="preferences_key_strava">preferences_key_strava</string>
+    <string name="preferences_sync_with_strava_title">Connect with Strava</string>
+    <string name="preferences_sync_with_strava_summary">Sign in to Strava to sync your workouts</string>
+    <string name="preferences_disconnect_strava_title">Disconnect from Strava</string>
+    <string name="preferences_disconnect_strava_summary">Sign out from Strava to stop syncing activities</string>
+    <string name="strava_sync_dialog_description">Sign in to Strava to sync your workouts. Data from your rides, including location, heart rate, speed, and cadence will be shared with and stored in Strava.</string>
+    <string name="strava_logout_dialog_message">You are about to logout from your Strava Account and stop sharing data with Strava. Your rides will no longer be synchronized with Strava. If you would like to remove your Cyclotrack rides from Strava please visit the Strava app.</string>
     <string name="preferences_key_google_fit">preferences_key_google_fit</string>
     <string name="preferences_sync_with_google_fit_title">Sync with Google Fit</string>
     <string name="preferences_sync_with_google_fit_summary">Sign in to Google Fit to sync your workouts</string>
@@ -119,4 +126,10 @@
     <string name="heading_icon_description">Icon that represents this heading</string>
     <string name="wind_icon_description">Wind icon</string>
     <string name="details_menu_title_export_fit">Export FIT</string>
+    <string name="preference_key_strava_refresh_token">strava_refresh_token</string>
+    <string name="preference_key_strava_access_expires_at">strava_access_expires_at</string>
+    <string name="preference_key_strava_access_token">strava_access_token</string>
+    <string name="remove_cyclotrack_data_from_google_fit_message">Remove Cyclotrack data from Google Fit</string>
+    <string name="remove_cyclotrack_data_from_strava_message">Remove Cyclotrack data from Strava</string>
+    <string name="preference_key_strava_next_sync_window">preference_key_strava_next_sync_window</string>
 </resources>

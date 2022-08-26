@@ -1,4 +1,4 @@
-package com.kvl.cyclotrack
+package com.kvl.cyclotrack.util
 
 import android.content.ContentResolver
 import android.net.Uri

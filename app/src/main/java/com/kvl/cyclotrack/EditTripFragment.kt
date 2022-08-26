@@ -39,7 +39,7 @@ class EditTripFragment : Fragment() {
                 findNavController().backQueue.map { it.destination.label }
             }"
         )
-       
+
         val tripName: EditText = view.findViewById(R.id.edit_trip_name)
         val tripNotes: EditText = view.findViewById(R.id.edit_trip_notes)
         val tripWheelCirc: EditText = view.findViewById(R.id.edit_trip_wheel_circumference)
@@ -51,7 +51,12 @@ class EditTripFragment : Fragment() {
         tripNotes.setText(args.tripNotes)
         tripDate.text = args.tripDate
         viewModel.tripInfo.userWheelCircumference?.let {
-            tripWheelCirc.setText(metersToUserCircumference(requireContext(), it))
+            tripWheelCirc.setText(
+                com.kvl.cyclotrack.util.metersToUserCircumference(
+                    requireContext(),
+                    it
+                )
+            )
         }
 
         viewModel.observeBikes().observe(viewLifecycleOwner) { bikes ->

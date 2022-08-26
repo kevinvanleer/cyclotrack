@@ -17,6 +17,7 @@ import com.google.firebase.analytics.ktx.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
+import com.kvl.cyclotrack.util.SystemUtils
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus

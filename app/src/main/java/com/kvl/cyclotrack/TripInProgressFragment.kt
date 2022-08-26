@@ -33,6 +33,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
+import com.kvl.cyclotrack.util.getBrightnessPreference
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
@@ -414,7 +415,7 @@ class TripInProgressFragment :
                 topRightView.value =
                     getGpsSpeed(location, topRightView.value.toString().toDoubleOrNull())
             footerView.text = degreesToCardinal(location.bearing)
-            debugTextView.text = getDebugString(location)
+            debugTextView.text = getDebugString()
         }
 
         viewModel.currentProgress.observe(viewLifecycleOwner) {
@@ -632,14 +633,11 @@ class TripInProgressFragment :
         debugTextView.text = "-.-"
     }
 
-    private fun getDebugString(
-        location: Location,
-    ): String {
+    private fun getDebugString(): String {
         var debugString = ""
         //debugString += "%.2f".format(location.accuracy)
         //autoCircumference?.let { c -> debugString += " | C%.3f".format(c) }
         //autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
-        //debugString += " | %d°".format(location.bearing.toInt())
         //viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
         viewModel.currentProgress.value?.slope?.takeIf { it.isFinite() }
             ?.let { s -> debugString += "S%.1f".format(s * 100f) }
