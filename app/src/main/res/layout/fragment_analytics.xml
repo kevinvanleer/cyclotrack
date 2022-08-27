@@ -15,18 +15,18 @@
             android:id="@+id/fragmentAnalytics_topLinearLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="50dp"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="50dp">
 
             <com.kvl.cyclotrack.RollupView
                 android:id="@+id/trips_rollup"
-                android:layout_margin="10dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp" />
 
             <TextView
-                style="@style/TextAppearance.AppCompat.CardHeading"
                 android:id="@+id/fragmentAnalytics_spotlightRideHeading"
+                style="@style/TextAppearance.AppCompat.CardHeading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="15dp"
@@ -41,9 +41,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="10dp"
                 android:layout_marginBottom="20dp"
+                android:visibility="gone"
                 app:cardCornerRadius="8dp"
-                app:contentPadding="0dp"
-                android:visibility="gone" />
+                app:contentPadding="0dp" />
 
             <TextView
                 style="@style/TextAppearance.AppCompat.CardHeading"
@@ -59,8 +59,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="10dp"
                 android:layout_marginBottom="20dp"
-                app:contentPadding="10dp"
-                app:cardCornerRadius="8dp">
+                app:cardCornerRadius="8dp"
+                app:contentPadding="10dp">
 
                 <include layout="@layout/fragment_weekly_summary" />
             </androidx.cardview.widget.CardView>
@@ -69,19 +69,19 @@
                 android:id="@+id/fragmentAnalytics_analyticsCard_thisMonth"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
                 android:layout_marginHorizontal="10dp"
-                app:contentPadding="10dp"
-                app:cardCornerRadius="8dp" />
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:contentPadding="10dp" />
 
             <com.kvl.cyclotrack.widgets.AnalyticsCard
                 android:id="@+id/fragmentAnalytics_analyticsCard_thisYear"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
                 android:layout_marginHorizontal="10dp"
-                app:contentPadding="10dp"
-                app:cardCornerRadius="8dp" />
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:contentPadding="10dp" />
 
             <TextView
                 style="@style/TextAppearance.AppCompat.CardHeading"
@@ -102,28 +102,28 @@
                 android:id="@+id/fragmentAnalytics_analyticsCard_topWeeks"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
                 android:layout_marginHorizontal="10dp"
-                app:contentPadding="10dp"
-                app:cardCornerRadius="8dp" />
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:contentPadding="10dp" />
 
             <com.kvl.cyclotrack.widgets.AnalyticsCard
                 android:id="@+id/fragmentAnalytics_analyticsCard_topMonths"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
                 android:layout_marginHorizontal="10dp"
-                app:contentPadding="10dp"
-                app:cardCornerRadius="8dp" />
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:contentPadding="10dp" />
 
             <com.kvl.cyclotrack.widgets.AnalyticsCard
                 android:id="@+id/fragmentAnalytics_analyticsCard_longestRides"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="20dp"
                 android:layout_marginHorizontal="10dp"
-                app:contentPadding="10dp"
-                app:cardCornerRadius="8dp" />
+                android:layout_marginBottom="20dp"
+                app:cardCornerRadius="8dp"
+                app:contentPadding="10dp" />
 
         </LinearLayout>
     </ScrollView>

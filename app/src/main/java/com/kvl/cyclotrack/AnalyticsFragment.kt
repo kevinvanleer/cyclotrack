@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.roundToInt
@@ -216,6 +217,42 @@ class AnalyticsFragment : Fragment() {
                 )
             }
         }
+        val lastYearEnd = Instant.now().atZone(ZoneId.systemDefault()).minusYears(1)
+            .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        viewModel.tripTotals(
+            Instant.now().atZone(ZoneId.systemDefault()).minusYears(1).with(
+                TemporalAdjusters.firstDayOfYear()
+            ).truncatedTo(ChronoUnit.DAYS)
+                .toInstant().toEpochMilli(),
+            lastYearEnd.toInstant().toEpochMilli()
+        ).observe(viewLifecycleOwner) {
+            ThreeStat(requireContext()).apply {
+                populate(
+                    arrayOf(
+                        Pair("RIDES", it.tripCount.toString()),
+                        Pair(
+                            getUserDistanceUnitShort(requireContext()).uppercase(),
+                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                                .toString()
+                        ),
+                        Pair(
+                            "HOURS",
+                            formatDurationHours(it.totalDuration)
+                        )
+                    )
+                )
+            }.let {
+                view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear)
+                    .apply {
+                        addView(TextView(requireContext()).apply {
+                            text =
+                                lastYearEnd.minusDays(1)
+                                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                        })
+                        addView(it)
+                    }
+            }
+        }
     }
 
     private fun doMonthlyTotals(view: View) {
@@ -246,6 +283,50 @@ class AnalyticsFragment : Fragment() {
                         )
                     )
                 )
+            }
+        }
+        val lastMonthEnd =
+            Instant.now().atZone(ZoneId.systemDefault()).minusMonths(1)
+                .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        Instant.now().atZone(ZoneId.systemDefault()).minusMonths(1)
+            .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        viewModel.tripTotals(
+            Instant.now().atZone(ZoneId.systemDefault()).with(
+                TemporalAdjusters.firstDayOfMonth()
+            ).truncatedTo(ChronoUnit.DAYS).minusMonths(1)
+                .toInstant().toEpochMilli(),
+            lastMonthEnd.toInstant().toEpochMilli()
+        ).observe(viewLifecycleOwner) {
+            ThreeStat(requireContext()).apply {
+                populate(
+                    arrayOf(
+                        Pair("RIDES", it.tripCount.toString()),
+                        Pair(
+                            getUserDistanceUnitShort(requireContext()).uppercase(),
+                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                                .toString()
+                        ),
+                        Pair(
+                            "HOURS",
+                            formatDurationHours(it.totalDuration)
+                        )
+                    )
+                )
+            }.let {
+                view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth)
+                    .apply {
+                        addView(TextView(requireContext()).apply {
+                            text =
+                                lastMonthEnd.minusDays(1)
+                                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                        })
+                        addView(it)
+                        /*addView(ImageView(requireContext()).apply {
+                            minimumWidth = 100
+                            minimumHeight = 100
+                            setImageDrawable(LineGraph())
+                        })*/
+                    }
             }
         }
     }
