@@ -2,39 +2,43 @@ package com.kvl.cyclotrack.widgets
 
 import android.graphics.*
 import android.graphics.drawable.Drawable
-import java.time.ZonedDateTime
+import android.util.Log
+
+data class LineGraphDataset(
+    val points: List<Pair<Float, Float>>,
+    val xRange: Pair<Float, Float>? = null,
+    val yRange: Pair<Float, Float>? = null,
+    val xAxisWidth: Float? = null,
+    val yAxisHeight: Float? = null,
+)
 
 class LineGraph(
-    private val thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
-    private val lastPeriod: Pair<ZonedDateTime, ZonedDateTime>,
-    private val thisPeriodPoints: List<Pair<Long, Double>>,
-    private val lastPeriodPoints: List<Pair<Long, Double>>
+    private val thisPeriod: LineGraphDataset,
+    private val lastPeriod: LineGraphDataset,
 ) : Drawable() {
 
     private fun drawPath(
         canvas: Canvas,
         paint: Paint,
-        period: Pair<ZonedDateTime, ZonedDateTime>,
-        points: List<Pair<Long, Double>>,
-        _yScale: Float? = null
+        points: List<Pair<Float, Float>>,
+        xAxisWidth: Float,
+        yAxisHeight: Float
     ) {
         val width: Int = bounds.width()
         val height: Int = bounds.height()
 
-        val totalDistance = points.sumOf { point -> point.second }
-        val durationStart = period.first.toInstant().toEpochMilli()
-        val totalDuration = period.second.toInstant().minusMillis(durationStart)
-        val xScale = width.toFloat() / totalDuration.toEpochMilli()
-        val yScale = _yScale ?: (height / totalDistance.toFloat())
+        val xScale = width / xAxisWidth
+        val yScale = height / yAxisHeight
+
+        Log.d("LineGraph", "xScale:$xScale")
+        Log.d("LineGraph", "yScale:$yScale")
         canvas.drawPath(
             Path().apply {
                 moveTo(0f, height.toFloat())
-                var accDistance = 0f
                 points.forEach { point ->
-                    accDistance += point.second.toFloat() * yScale
                     lineTo(
-                        (point.first - durationStart) * xScale,
-                        height - accDistance
+                        point.first * xScale,
+                        height - (point.second * yScale)
                     )
                 }
             }, paint
@@ -61,14 +65,20 @@ class LineGraph(
             setARGB(255, 0, 150, 0)
         }
 
-        val height: Int = bounds.height()
-
-        val totalDistanceThis = thisPeriodPoints.sumOf { point -> point.second }
-        val totalDistanceLast = lastPeriodPoints.sumOf { point -> point.second }
-        val yScale = (height / maxOf(totalDistanceLast, totalDistanceThis).toFloat())
-        // Get the drawable's bounds
-        drawPath(canvas, lastPaint, lastPeriod, lastPeriodPoints, yScale)
-        drawPath(canvas, greenPaint, thisPeriod, thisPeriodPoints, yScale)
+        drawPath(
+            canvas,
+            lastPaint,
+            lastPeriod.points,
+            lastPeriod.xAxisWidth ?: 0f, //TODO: replace zero with xRange distance
+            lastPeriod.yAxisHeight ?: 0f //TODO: replace zero with yRange distance
+        )
+        drawPath(
+            canvas,
+            greenPaint,
+            thisPeriod.points,
+            thisPeriod.xAxisWidth ?: 0f,
+            thisPeriod.yAxisHeight ?: 0f
+        )
     }
 
     override fun setAlpha(p0: Int) {

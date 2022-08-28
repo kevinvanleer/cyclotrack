@@ -378,26 +378,82 @@ class AnalyticsFragment : Fragment() {
                     lastMonthEnd.toInstant().toEpochMilli()
                 )
             ).observe(viewLifecycleOwner) {
-                setImageDrawable(
-                    LineGraph(
-                        Pair(thisMonthStart, thisMonthEnd),
-                        Pair(lastMonthStart, lastMonthEnd),
-                        it.first.map { trip ->
-                            Pair(
-                                first = trip.timestamp,
-                                second = trip.distance ?: 0.0
-                            )
-                        },
-                        it.second.map { trip ->
-                            Pair(
-                                first = trip.timestamp,
-                                second = trip.distance ?: 0.0
-                            )
-                        }
-                    )
-                )
+                getDistanceComparisonGraphProps(
+                    Pair(thisMonthStart, thisMonthEnd),
+                    Pair(lastMonthStart, lastMonthEnd),
+                    it.first,
+                    it.second,
+                ).let { datasets -> setImageDrawable(LineGraph(datasets.first, datasets.second)) }
             }
         }
+
+    private fun getDistanceComparisonGraphProps(
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
+        lastPeriod: Pair<ZonedDateTime, ZonedDateTime>,
+        thisPeriodPoints: Array<Trip>,
+        lastPeriodPoints: Array<Trip>
+    ): Pair<LineGraphDataset, LineGraphDataset> {
+        val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
+            thisPeriodPoints,
+            thisPeriod
+        )
+
+        val (xRangeLast, yRangeLast, lastPoints) = getDistanceGraphPoints(
+            lastPeriodPoints,
+            lastPeriod
+        )
+
+        val xAxisWidth =
+            maxOf(
+                xRangeThis.second - xRangeThis.first,
+                xRangeLast.second - xRangeLast.first
+            ).toFloat()
+        val yAxisHeight =
+            maxOf(
+                yRangeThis.second - yRangeThis.first,
+                yRangeLast.second - yRangeLast.first
+            ).toFloat()
+
+        return Pair(
+            LineGraphDataset(
+                points = thisPoints,
+                xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
+                yRange = Pair(yRangeThis.first.toFloat(), yRangeThis.second.toFloat()),
+                xAxisWidth = xAxisWidth,
+                yAxisHeight = yAxisHeight
+            ),
+            LineGraphDataset(
+                points = lastPoints,
+                xRange = Pair(xRangeLast.first.toFloat(), xRangeLast.second.toFloat()),
+                yRange = Pair(yRangeLast.first.toFloat(), yRangeLast.second.toFloat()),
+                xAxisWidth = xAxisWidth,
+                yAxisHeight = yAxisHeight
+            ),
+        )
+    }
+
+    private fun getDistanceGraphPoints(
+        thisPeriodPoints: Array<Trip>,
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>
+    ): Triple<Pair<Long, Long>, Pair<Double, Double>, List<Pair<Float, Float>>> {
+        var accDistance = 0f
+        val durationStart =
+            thisPeriod.first.toInstant().toEpochMilli()
+        return Triple(
+            Pair(
+                durationStart,
+                thisPeriod.second.toInstant().toEpochMilli()
+            ),
+            Pair(0.0, thisPeriodPoints.sumOf { point -> point.distance ?: 0.0 }),
+            thisPeriodPoints.map { point ->
+                accDistance += (point.distance ?: 0.0).toFloat()
+                Pair(
+                    (point.timestamp - durationStart).toFloat(),
+                    accDistance
+                )
+            }
+        )
+    }
 
     private fun doTopWeeks(view: View) {
         viewModel.weeklyTotals().observe(viewLifecycleOwner) { totals ->
