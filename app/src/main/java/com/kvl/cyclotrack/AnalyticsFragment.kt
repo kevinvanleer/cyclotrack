@@ -439,7 +439,7 @@ class AnalyticsFragment : Fragment() {
                 yRange = Pair(yRangeLast.first.toFloat(), yRangeLast.second.toFloat()),
                 xAxisWidth = xAxisWidth,
                 yAxisHeight = yAxisHeight,
-                paint = strokeStyle.apply { setARGB(255, 0, 150, 0) }
+                paint = Paint(strokeStyle).apply { setARGB(255, 0, 150, 0) }
             ),
         )
     }
