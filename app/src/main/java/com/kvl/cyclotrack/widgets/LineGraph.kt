@@ -54,7 +54,7 @@ class LineGraph(
             strokeWidth = 5F
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            setARGB(255, 0, 255, 0)
+            setARGB(255, 255, 0, 0)
         }
 
         //canvas.drawColor(Color.BLACK)
