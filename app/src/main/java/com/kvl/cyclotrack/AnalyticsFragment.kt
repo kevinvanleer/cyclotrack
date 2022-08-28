@@ -397,9 +397,7 @@ class AnalyticsFragment : Fragment() {
         val xAxisWidth =
             (xRangeThis.second - xRangeThis.first
                     ).toFloat()
-        val yAxisHeight = (
-                yRangeThis.second - yRangeThis.first
-                ).toFloat()
+        val yAxisHeight = yRangeThis.second - yRangeThis.first
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
@@ -423,7 +421,7 @@ class AnalyticsFragment : Fragment() {
     private fun getSpeedGraphPoints(
         thisPeriodPoints: Array<Trip>,
         thisPeriod: Pair<ZonedDateTime, ZonedDateTime>
-    ): Triple<Pair<Long, Long>, Pair<Double, Double>, List<Pair<Float, Float>>> {
+    ): Triple<Pair<Long, Long>, Pair<Float, Float>, List<Pair<Float, Float>>> {
         val durationStart =
             thisPeriod.first.toInstant().toEpochMilli()
         return Triple(
@@ -431,7 +429,7 @@ class AnalyticsFragment : Fragment() {
                 durationStart,
                 thisPeriod.second.toInstant().toEpochMilli()
             ),
-            Pair(0.0, thisPeriodPoints.sumOf { point -> point.distance ?: 0.0 }),
+            Pair(0f, thisPeriodPoints.maxOf { point -> point.averageSpeed ?: 0.0f }),
             thisPeriodPoints.map { point ->
                 Pair(
                     (point.timestamp - durationStart).toFloat(),
