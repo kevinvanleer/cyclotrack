@@ -41,7 +41,8 @@ class LineGraph(
         canvas.drawPath(
             Path().apply {
                 moveTo(
-                    (dataset.xRange?.first ?: 0f) * xScale,
+                    //(dataset.xRange?.first ?: 0f) * xScale,
+                    0f,
                     height - ((dataset.yRange?.first ?: 0f) * yScale)
                 )
                 dataset.points.forEach { point ->
