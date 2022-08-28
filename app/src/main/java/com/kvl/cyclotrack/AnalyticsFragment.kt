@@ -429,7 +429,7 @@ class AnalyticsFragment : Fragment() {
                 xAxisWidth = xAxisWidth,
                 yAxisHeight = yAxisHeight,
                 paint = Paint(strokeStyle).apply {
-                    color = requireContext().getColor(R.color.secondaryColor)
+                    color = requireContext().getColor(R.color.primaryDarkColor)
                 }
             ),
             LineGraphDataset(
