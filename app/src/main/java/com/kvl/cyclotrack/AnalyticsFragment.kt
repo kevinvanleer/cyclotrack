@@ -422,7 +422,6 @@ class AnalyticsFragment : Fragment() {
             strokeWidth = 5F
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            setARGB(255, 0, 255, 0)
         }
         return Pair(
             LineGraphDataset(
@@ -431,7 +430,9 @@ class AnalyticsFragment : Fragment() {
                 yRange = Pair(yRangeThis.first.toFloat(), yRangeThis.second.toFloat()),
                 xAxisWidth = xAxisWidth,
                 yAxisHeight = yAxisHeight,
-                paint = strokeStyle
+                paint = Paint(strokeStyle).apply {
+                    color = requireContext().getColor(R.color.secondaryColor)
+                }
             ),
             LineGraphDataset(
                 points = lastPoints,
