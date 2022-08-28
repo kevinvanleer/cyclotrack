@@ -353,7 +353,7 @@ class AnalyticsFragment : Fragment() {
                         )
                         addView(
                             drawSpeedGraph(
-                                Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()),
+                                ZonedDateTime.of(2019, 10, 1, 0, 0, 0, 0, ZoneId.systemDefault()),
                                 ZonedDateTime.now(ZoneId.systemDefault())
                             )
                         )
