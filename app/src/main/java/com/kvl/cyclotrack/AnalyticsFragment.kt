@@ -351,10 +351,75 @@ class AnalyticsFragment : Fragment() {
                                 lastMonthEnd
                             )
                         )
+                        addView(
+                            drawSpeedGraph(
+                                thisMonthStart,
+                                thisMonthEnd,
+                            )
+                        )
                     }
             }
         }
     }
+
+    private fun drawSpeedGraph(
+        thisMonthStart: ZonedDateTime,
+        thisMonthEnd: ZonedDateTime,
+    ) =
+        ImageView(requireContext()).apply {
+            layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            minimumHeight = 200
+            viewModel.observeDateRange(
+                thisMonthStart.toInstant().toEpochMilli(),
+                thisMonthEnd.toInstant().toEpochMilli()
+            )
+                .observe(viewLifecycleOwner) {
+                    getSpeedGraphProps(
+                        Pair(thisMonthStart, thisMonthEnd),
+                        it,
+                    ).let { datasets -> setImageDrawable(LineGraph(listOf(datasets))) }
+                }
+        }
+
+    private fun getSpeedGraphProps(
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
+        thisPeriodPoints: Array<Trip>,
+    ): LineGraphDataset {
+        val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
+            thisPeriodPoints,
+            thisPeriod
+        )
+
+        val xAxisWidth =
+            (xRangeThis.second - xRangeThis.first
+                    ).toFloat()
+        val yAxisHeight = (
+                yRangeThis.second - yRangeThis.first
+                ).toFloat()
+
+        val strokeStyle = Paint().apply {
+            isAntiAlias = true
+            isDither = true
+            style = Paint.Style.STROKE
+            strokeWidth = 5F
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+
+        return LineGraphDataset(
+            points = thisPoints,
+            xAxisWidth = xAxisWidth,
+            yAxisHeight = yAxisHeight,
+            paint = Paint(strokeStyle).apply {
+                color = requireContext().getColor(R.color.primaryDarkColor)
+            }
+        )
+    }
+
 
     private fun drawDistanceComparison(
         thisMonthStart: ZonedDateTime,
