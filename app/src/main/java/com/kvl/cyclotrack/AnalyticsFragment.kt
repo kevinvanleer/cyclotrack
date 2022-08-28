@@ -384,7 +384,7 @@ class AnalyticsFragment : Fragment() {
                     Pair(lastMonthStart, lastMonthEnd),
                     it.first,
                     it.second,
-                ).let { datasets -> setImageDrawable(LineGraph(datasets.first, datasets.second)) }
+                ).let { datasets -> setImageDrawable(LineGraph(datasets.toList())) }
             }
         }
 

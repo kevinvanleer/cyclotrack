@@ -14,8 +14,7 @@ data class LineGraphDataset(
 )
 
 class LineGraph(
-    private val thisPeriod: LineGraphDataset,
-    private val lastPeriod: LineGraphDataset,
+    private val datasets: List<LineGraphDataset>,
 ) : Drawable() {
 
     private fun drawPath(
@@ -58,20 +57,15 @@ class LineGraph(
         }
 
         //canvas.drawColor(Color.BLACK)
-        drawPath(
-            canvas,
-            lastPeriod.paint ?: greenPaint,
-            lastPeriod.points,
-            lastPeriod.xAxisWidth ?: 0f, //TODO: replace zero with xRange distance
-            lastPeriod.yAxisHeight ?: 0f //TODO: replace zero with yRange distance
-        )
-        drawPath(
-            canvas,
-            thisPeriod.paint ?: greenPaint,
-            thisPeriod.points,
-            thisPeriod.xAxisWidth ?: 0f,
-            thisPeriod.yAxisHeight ?: 0f
-        )
+        datasets.forEach { dataset ->
+            drawPath(
+                canvas,
+                dataset.paint ?: greenPaint,
+                dataset.points,
+                dataset.xAxisWidth ?: 0f, //TODO: replace zero with xRange distance
+                dataset.yAxisHeight ?: 0f //TODO: replace zero with yRange distance
+            )
+        }
     }
 
     override fun setAlpha(p0: Int) {
