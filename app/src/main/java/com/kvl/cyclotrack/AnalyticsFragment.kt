@@ -389,7 +389,7 @@ class AnalyticsFragment : Fragment() {
         thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
         thisPeriodPoints: Array<Trip>,
     ): LineGraphDataset {
-        val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
+        val (xRangeThis, yRangeThis, thisPoints) = getSpeedGraphPoints(
             thisPeriodPoints,
             thisPeriod
         )
@@ -420,6 +420,26 @@ class AnalyticsFragment : Fragment() {
         )
     }
 
+    private fun getSpeedGraphPoints(
+        thisPeriodPoints: Array<Trip>,
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>
+    ): Triple<Pair<Long, Long>, Pair<Double, Double>, List<Pair<Float, Float>>> {
+        val durationStart =
+            thisPeriod.first.toInstant().toEpochMilli()
+        return Triple(
+            Pair(
+                durationStart,
+                thisPeriod.second.toInstant().toEpochMilli()
+            ),
+            Pair(0.0, thisPeriodPoints.sumOf { point -> point.distance ?: 0.0 }),
+            thisPeriodPoints.map { point ->
+                Pair(
+                    (point.timestamp - durationStart).toFloat(),
+                    (point.averageSpeed ?: 0.0).toFloat()
+                )
+            }
+        )
+    }
 
     private fun drawDistanceComparison(
         thisMonthStart: ZonedDateTime,
