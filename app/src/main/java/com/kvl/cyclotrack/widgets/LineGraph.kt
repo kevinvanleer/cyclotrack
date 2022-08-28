@@ -2,7 +2,6 @@ package com.kvl.cyclotrack.widgets
 
 import android.graphics.*
 import android.graphics.drawable.Drawable
-import android.util.Log
 
 data class LineGraphDataset(
     val points: List<Pair<Float, Float>>,
@@ -36,8 +35,6 @@ class LineGraph(
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
 
-        Log.d("LineGraph", "xScale:$xScale")
-        Log.d("LineGraph", "yScale:$yScale")
         canvas.drawPath(
             Path().apply {
                 moveTo(
@@ -49,7 +46,7 @@ class LineGraph(
                 dataset.points.forEach { point ->
                     lineTo(
                         point.first * xScale,
-                        height - (point.second * yScale) + ((dataset.yRange?.first ?: 0) * yScale)
+                        height - (point.second * yScale) + ((dataset.yRange?.first ?: 0f) * yScale)
                     )
                 }
             }, dataset.paint ?: greenPaint
