@@ -353,8 +353,8 @@ class AnalyticsFragment : Fragment() {
                         )
                         addView(
                             drawSpeedGraph(
-                                thisMonthStart,
-                                thisMonthEnd,
+                                Instant.ofEpochMilli(0).atZone(ZoneId.systemDefault()),
+                                ZonedDateTime.now(ZoneId.systemDefault())
                             )
                         )
                     }
@@ -373,7 +373,7 @@ class AnalyticsFragment : Fragment() {
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
             minimumHeight = 200
-            viewModel.observeDateRange(
+            viewModel.recentTrips(
                 thisMonthStart.toInstant().toEpochMilli(),
                 thisMonthEnd.toInstant().toEpochMilli()
             )
@@ -453,11 +453,11 @@ class AnalyticsFragment : Fragment() {
                 )
             minimumHeight = 200
             zipLiveData(
-                viewModel.observeDateRange(
+                viewModel.recentTrips(
                     thisMonthStart.toInstant().toEpochMilli(),
                     thisMonthEnd.toInstant().toEpochMilli()
                 ),
-                viewModel.observeDateRange(
+                viewModel.recentTrips(
                     lastMonthStart.toInstant().toEpochMilli(),
                     lastMonthEnd.toInstant().toEpochMilli()
                 )
