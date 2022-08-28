@@ -410,6 +410,8 @@ class AnalyticsFragment : Fragment() {
 
         return LineGraphDataset(
             points = thisPoints,
+            xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
+            yRange = Pair(yRangeThis.first, yRangeThis.second),
             xAxisWidth = xAxisWidth,
             yAxisHeight = yAxisHeight,
             paint = Paint(strokeStyle).apply {
@@ -429,7 +431,9 @@ class AnalyticsFragment : Fragment() {
                 durationStart,
                 thisPeriod.second.toInstant().toEpochMilli()
             ),
-            Pair(0f, thisPeriodPoints.maxOf { point -> point.averageSpeed ?: 0.0f }),
+            Pair(
+                thisPeriodPoints.minOf { point -> point.averageSpeed ?: 0f },
+                thisPeriodPoints.maxOf { point -> point.averageSpeed ?: 0f }),
             thisPeriodPoints.map { point ->
                 Pair(
                     (point.timestamp - durationStart).toFloat(),
@@ -509,6 +513,8 @@ class AnalyticsFragment : Fragment() {
         return Pair(
             LineGraphDataset(
                 points = lastPoints,
+                xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
+                yRange = Pair(yRangeThis.first.toFloat(), yRangeThis.second.toFloat()),
                 xAxisWidth = xAxisWidth,
                 yAxisHeight = yAxisHeight,
                 paint = Paint(strokeStyle).apply {
@@ -517,6 +523,8 @@ class AnalyticsFragment : Fragment() {
             ),
             LineGraphDataset(
                 points = thisPoints,
+                xRange = Pair(xRangeLast.first.toFloat(), xRangeLast.second.toFloat()),
+                yRange = Pair(yRangeLast.first.toFloat(), yRangeLast.second.toFloat()),
                 xAxisWidth = xAxisWidth,
                 yAxisHeight = yAxisHeight,
                 paint = Paint(strokeStyle).apply {

@@ -19,33 +19,8 @@ class LineGraph(
 
     private fun drawPath(
         canvas: Canvas,
-        paint: Paint,
-        points: List<Pair<Float, Float>>,
-        xAxisWidth: Float,
-        yAxisHeight: Float
+        dataset: LineGraphDataset
     ) {
-        val width: Int = bounds.width()
-        val height: Int = bounds.height()
-
-        val xScale = width / xAxisWidth
-        val yScale = height / yAxisHeight
-
-        Log.d("LineGraph", "xScale:$xScale")
-        Log.d("LineGraph", "yScale:$yScale")
-        canvas.drawPath(
-            Path().apply {
-                moveTo(0f, height.toFloat())
-                points.forEach { point ->
-                    lineTo(
-                        point.first * xScale,
-                        height - (point.second * yScale)
-                    )
-                }
-            }, paint
-        )
-    }
-
-    override fun draw(canvas: Canvas) {
         val greenPaint: Paint = Paint().apply {
             isAntiAlias = true
             isDither = true
@@ -55,15 +30,36 @@ class LineGraph(
             strokeJoin = Paint.Join.ROUND
             setARGB(255, 255, 0, 0)
         }
+        val width: Int = bounds.width()
+        val height: Int = bounds.height()
 
+        val xScale = width / (dataset.xAxisWidth ?: 1f)
+        val yScale = height / (dataset.yAxisHeight ?: 1f)
+
+        Log.d("LineGraph", "xScale:$xScale")
+        Log.d("LineGraph", "yScale:$yScale")
+        canvas.drawPath(
+            Path().apply {
+                moveTo(
+                    (dataset.xRange?.first ?: 0f) * xScale,
+                    height - ((dataset.yRange?.first ?: 0f) * yScale)
+                )
+                dataset.points.forEach { point ->
+                    lineTo(
+                        point.first * xScale,
+                        height - (point.second * yScale)
+                    )
+                }
+            }, dataset.paint ?: greenPaint
+        )
+    }
+
+    override fun draw(canvas: Canvas) {
         //canvas.drawColor(Color.BLACK)
         datasets.forEach { dataset ->
             drawPath(
                 canvas,
-                dataset.paint ?: greenPaint,
-                dataset.points,
-                dataset.xAxisWidth ?: 0f, //TODO: replace zero with xRange distance
-                dataset.yAxisHeight ?: 0f //TODO: replace zero with yRange distance
+                dataset
             )
         }
     }
