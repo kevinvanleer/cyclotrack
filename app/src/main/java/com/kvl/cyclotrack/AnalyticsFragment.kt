@@ -389,15 +389,15 @@ class AnalyticsFragment : Fragment() {
         thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
         thisPeriodPoints: Array<Trip>,
     ): LineGraphDataset {
-        val (xRangeThis, yRangeThis, thisPoints) = getSpeedGraphPoints(
+        val (xRange, yRange, points) = getSpeedGraphPoints(
             thisPeriodPoints,
             thisPeriod
         )
 
         val xAxisWidth =
-            (xRangeThis.second - xRangeThis.first
+            (xRange.second - xRange.first
                     ).toFloat()
-        val yAxisHeight = yRangeThis.second - yRangeThis.first
+        val yAxisHeight = yRange.second - yRange.first
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
@@ -409,9 +409,9 @@ class AnalyticsFragment : Fragment() {
         }
 
         return LineGraphDataset(
-            points = thisPoints,
-            xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
-            yRange = Pair(yRangeThis.first, yRangeThis.second),
+            points = points,
+            xRange = Pair(xRange.first.toFloat(), xRange.second.toFloat()),
+            yRange = Pair(yRange.first, yRange.second),
             xAxisWidth = xAxisWidth,
             yAxisHeight = yAxisHeight,
             paint = Paint(strokeStyle).apply {

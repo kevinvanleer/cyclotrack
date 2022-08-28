@@ -43,13 +43,13 @@ class LineGraph(
                 moveTo(
                     //(dataset.xRange?.first ?: 0f) * xScale,
                     0f,
-                    //height - (dataset.points.first().second * yScale)
-                    height.toFloat()
+                    height - (dataset.points.first().second * yScale)
+                    //height.toFloat()
                 )
                 dataset.points.forEach { point ->
                     lineTo(
                         point.first * xScale,
-                        height - (point.second * yScale)
+                        height - (point.second * yScale) + ((dataset.yRange?.first ?: 0) * yScale)
                     )
                 }
             }, dataset.paint ?: greenPaint
