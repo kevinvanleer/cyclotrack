@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.graphics.Paint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -414,20 +415,31 @@ class AnalyticsFragment : Fragment() {
                 yRangeLast.second - yRangeLast.first
             ).toFloat()
 
+        val strokeStyle = Paint().apply {
+            isAntiAlias = true
+            isDither = true
+            style = Paint.Style.STROKE
+            strokeWidth = 5F
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+            setARGB(255, 0, 255, 0)
+        }
         return Pair(
             LineGraphDataset(
                 points = thisPoints,
                 xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
                 yRange = Pair(yRangeThis.first.toFloat(), yRangeThis.second.toFloat()),
                 xAxisWidth = xAxisWidth,
-                yAxisHeight = yAxisHeight
+                yAxisHeight = yAxisHeight,
+                paint = strokeStyle
             ),
             LineGraphDataset(
                 points = lastPoints,
                 xRange = Pair(xRangeLast.first.toFloat(), xRangeLast.second.toFloat()),
                 yRange = Pair(yRangeLast.first.toFloat(), yRangeLast.second.toFloat()),
                 xAxisWidth = xAxisWidth,
-                yAxisHeight = yAxisHeight
+                yAxisHeight = yAxisHeight,
+                paint = strokeStyle.apply { setARGB(255, 0, 150, 0) }
             ),
         )
     }

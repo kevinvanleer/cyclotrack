@@ -10,6 +10,7 @@ data class LineGraphDataset(
     val yRange: Pair<Float, Float>? = null,
     val xAxisWidth: Float? = null,
     val yAxisHeight: Float? = null,
+    val paint: Paint? = null,
 )
 
 class LineGraph(
@@ -55,26 +56,17 @@ class LineGraph(
             strokeJoin = Paint.Join.ROUND
             setARGB(255, 0, 255, 0)
         }
-        val lastPaint: Paint = Paint().apply {
-            isAntiAlias = true
-            isDither = true
-            style = Paint.Style.STROKE
-            strokeWidth = 5F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            setARGB(255, 0, 150, 0)
-        }
 
         drawPath(
             canvas,
-            lastPaint,
+            lastPeriod.paint ?: greenPaint,
             lastPeriod.points,
             lastPeriod.xAxisWidth ?: 0f, //TODO: replace zero with xRange distance
             lastPeriod.yAxisHeight ?: 0f //TODO: replace zero with yRange distance
         )
         drawPath(
             canvas,
-            greenPaint,
+            thisPeriod.paint ?: greenPaint,
             thisPeriod.points,
             thisPeriod.xAxisWidth ?: 0f,
             thisPeriod.yAxisHeight ?: 0f
