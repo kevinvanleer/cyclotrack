@@ -425,19 +425,19 @@ class AnalyticsFragment : Fragment() {
         }
         return Pair(
             LineGraphDataset(
-                points = thisPoints,
-                xAxisWidth = xAxisWidth,
-                yAxisHeight = yAxisHeight,
-                paint = Paint(strokeStyle).apply {
-                    color = requireContext().getColor(R.color.primaryDarkColor)
-                }
-            ),
-            LineGraphDataset(
                 points = lastPoints,
                 xAxisWidth = xAxisWidth,
                 yAxisHeight = yAxisHeight,
                 paint = Paint(strokeStyle).apply {
                     color = requireContext().getColor(R.color.secondaryDarkColor)
+                }
+            ),
+            LineGraphDataset(
+                points = thisPoints,
+                xAxisWidth = xAxisWidth,
+                yAxisHeight = yAxisHeight,
+                paint = Paint(strokeStyle).apply {
+                    color = requireContext().getColor(R.color.primaryDarkColor)
                 }
             ),
         )
