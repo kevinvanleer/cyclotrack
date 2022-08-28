@@ -16,6 +16,13 @@ class LineGraph(
     private val datasets: List<LineGraphDataset>,
 ) : Drawable() {
 
+    private fun adjustCoordinateY(
+        height: Int,
+        point: Float,
+        offset: Float,
+        yScale: Float
+    ) = height - (point * yScale) + offset * yScale
+
     private fun drawPath(
         canvas: Canvas,
         dataset: LineGraphDataset
@@ -40,14 +47,24 @@ class LineGraph(
                 moveTo(
                     //(dataset.xRange?.first ?: 0f) * xScale,
                     0f,
-                    height - (dataset.points.first().second * yScale) + ((dataset.yRange?.first
-                        ?: 0f) * yScale)
+                    adjustCoordinateY(
+                        height,
+                        dataset.points.first().second,
+                        dataset.yRange?.first ?: 0f,
+                        yScale
+                    )
                     //height.toFloat()
                 )
                 dataset.points.forEach { point ->
                     lineTo(
                         point.first * xScale,
-                        height - (point.second * yScale) + ((dataset.yRange?.first ?: 0f) * yScale)
+                        //height - (point.second * yScale) + ((dataset.yRange?.first ?: 0f) * yScale)
+                        adjustCoordinateY(
+                            height,
+                            point.second,
+                            dataset.yRange?.first ?: 0f,
+                            yScale
+                        )
                     )
                 }
             }, dataset.paint ?: greenPaint
