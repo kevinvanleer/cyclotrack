@@ -57,7 +57,7 @@ class LineGraph(
             setARGB(255, 0, 255, 0)
         }
 
-        canvas.drawColor(Color.BLACK)
+        //canvas.drawColor(Color.BLACK)
         drawPath(
             canvas,
             lastPeriod.paint ?: greenPaint,
