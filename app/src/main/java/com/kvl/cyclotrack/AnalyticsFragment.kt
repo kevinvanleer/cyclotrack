@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
@@ -19,6 +20,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
@@ -188,14 +190,26 @@ class AnalyticsFragment : Fragment() {
     }
 
     private fun doAnnualTotals(view: View) {
+        val now = Instant.now().atZone(ZoneId.systemDefault())
+        val thisYearStart = now.with(
+            TemporalAdjusters.firstDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS)
+        val thisYearEnd = now.with(
+            TemporalAdjusters.lastDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        val lastYearStart = now.minusYears(1).with(
+            TemporalAdjusters.firstDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS)
+        val lastYearToday = now.minusYears(1)
+            .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        val lastYearEnd = lastYearToday.with(
+            TemporalAdjusters.lastDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+
         viewModel.tripTotals(
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.firstDayOfYear()
-            ).truncatedTo(ChronoUnit.DAYS)
+            thisYearStart
                 .toInstant().toEpochMilli(),
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.lastDayOfYear()
-            ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+            thisYearEnd
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner) {
             view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear).apply {
@@ -217,14 +231,10 @@ class AnalyticsFragment : Fragment() {
                 )
             }
         }
-        val lastYearEnd = Instant.now().atZone(ZoneId.systemDefault()).minusYears(1)
-            .truncatedTo(ChronoUnit.DAYS).plusDays(1)
         viewModel.tripTotals(
-            Instant.now().atZone(ZoneId.systemDefault()).minusYears(1).with(
-                TemporalAdjusters.firstDayOfYear()
-            ).truncatedTo(ChronoUnit.DAYS)
+            lastYearStart
                 .toInstant().toEpochMilli(),
-            lastYearEnd.toInstant().toEpochMilli()
+            lastYearToday.toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner) {
             ThreeStat(requireContext()).apply {
                 populate(
@@ -246,24 +256,43 @@ class AnalyticsFragment : Fragment() {
                     .apply {
                         addView(TextView(requireContext()).apply {
                             text =
-                                lastYearEnd.minusDays(1)
+                                lastYearToday.minusDays(1)
                                     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                         })
                         addView(it)
+                        addView(
+                            drawDistanceComparison(
+                                thisYearStart,
+                                thisYearEnd,
+                                lastYearStart,
+                                lastYearEnd
+                            )
+                        )
                     }
             }
         }
     }
 
     private fun doMonthlyTotals(view: View) {
+        val now = Instant.now().atZone(ZoneId.systemDefault())
+        val thisMonthStart = now.with(
+            TemporalAdjusters.firstDayOfMonth()
+        ).truncatedTo(ChronoUnit.DAYS)
+        val thisMonthEnd = now.with(
+            TemporalAdjusters.lastDayOfMonth()
+        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+
+        val lastMonthStart =
+            thisMonthStart.minusMonths(1)
+        val lastMonthToday =
+            now.minusMonths(1)
+                .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        val lastMonthEnd = lastMonthStart.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
+
         viewModel.tripTotals(
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.firstDayOfMonth()
-            ).truncatedTo(ChronoUnit.DAYS)
+            thisMonthStart
                 .toInstant().toEpochMilli(),
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.lastDayOfMonth()
-            ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+            thisMonthEnd
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner) {
             view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
@@ -285,17 +314,9 @@ class AnalyticsFragment : Fragment() {
                 )
             }
         }
-        val lastMonthEnd =
-            Instant.now().atZone(ZoneId.systemDefault()).minusMonths(1)
-                .truncatedTo(ChronoUnit.DAYS).plusDays(1)
-        Instant.now().atZone(ZoneId.systemDefault()).minusMonths(1)
-            .truncatedTo(ChronoUnit.DAYS).plusDays(1)
         viewModel.tripTotals(
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.firstDayOfMonth()
-            ).truncatedTo(ChronoUnit.DAYS).minusMonths(1)
-                .toInstant().toEpochMilli(),
-            lastMonthEnd.toInstant().toEpochMilli()
+            lastMonthStart.toInstant().toEpochMilli(),
+            lastMonthToday.toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner) {
             ThreeStat(requireContext()).apply {
                 populate(
@@ -317,19 +338,66 @@ class AnalyticsFragment : Fragment() {
                     .apply {
                         addView(TextView(requireContext()).apply {
                             text =
-                                lastMonthEnd.minusDays(1)
+                                lastMonthToday.minusDays(1)
                                     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                         })
                         addView(it)
-                        /*addView(ImageView(requireContext()).apply {
-                            minimumWidth = 100
-                            minimumHeight = 100
-                            setImageDrawable(LineGraph())
-                        })*/
+                        addView(
+                            drawDistanceComparison(
+                                thisMonthStart,
+                                thisMonthEnd,
+                                lastMonthStart,
+                                lastMonthEnd
+                            )
+                        )
                     }
             }
         }
     }
+
+    private fun drawDistanceComparison(
+        thisMonthStart: ZonedDateTime,
+        thisMonthEnd: ZonedDateTime,
+        lastMonthStart: ZonedDateTime,
+        lastMonthEnd: ZonedDateTime
+    ) =
+        ImageView(requireContext()).apply {
+            layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            minimumHeight = 200
+            zipLiveData(
+                viewModel.observeDateRange(
+                    thisMonthStart.toInstant().toEpochMilli(),
+                    thisMonthEnd.toInstant().toEpochMilli()
+                ),
+                viewModel.observeDateRange(
+                    lastMonthStart.toInstant().toEpochMilli(),
+                    lastMonthEnd.toInstant().toEpochMilli()
+                )
+            ).observe(viewLifecycleOwner) {
+                setImageDrawable(
+                    LineGraph(
+                        Pair(thisMonthStart, thisMonthEnd),
+                        Pair(lastMonthStart, lastMonthEnd),
+                        it.first.map { trip ->
+                            Pair(
+                                first = trip.timestamp,
+                                second = trip.distance ?: 0.0
+                            )
+                        },
+                        it.second.map { trip ->
+                            Pair(
+                                first = trip.timestamp,
+                                second = trip.distance ?: 0.0
+                            )
+                        }
+                    )
+                )
+            }
+        }
 
     private fun doTopWeeks(view: View) {
         viewModel.weeklyTotals().observe(viewLifecycleOwner) { totals ->

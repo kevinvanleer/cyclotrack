@@ -32,4 +32,5 @@ class AnalyticsViewModel @Inject constructor(
     fun fastestDistance(distance: Int, conversionFactor: Double, limit: Int = 3) =
         splitRepository.observeFastestDistance(distance, conversionFactor, limit)
 
+    fun observeDateRange(start: Long, end: Long) = tripsRepository.observeDateRange(start, end)
 }
