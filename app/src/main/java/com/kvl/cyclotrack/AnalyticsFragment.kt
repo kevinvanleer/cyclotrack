@@ -481,7 +481,7 @@ class AnalyticsFragment : Fragment() {
         thisPeriodPoints: Array<Trip>,
         lastPeriodPoints: Array<Trip>
     ): Pair<LineGraphDataset, LineGraphDataset> {
-        val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
+        var (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
             thisPeriodPoints,
             thisPeriod
         )
@@ -501,6 +501,10 @@ class AnalyticsFragment : Fragment() {
                 yRangeThis.second - yRangeThis.first,
                 yRangeLast.second - yRangeLast.first
             ).toFloat()
+
+        thisPoints +=
+            thisPoints.last()
+                .copy(first = (Instant.now().toEpochMilli() - xRangeThis.first).toFloat())
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
