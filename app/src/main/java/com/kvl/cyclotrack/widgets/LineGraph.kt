@@ -93,7 +93,7 @@ class LineGraph(
     }
 
     override fun draw(canvas: Canvas) {
-        canvas.drawColor(Color.argb(50, 0, 0, 0))
+        canvas.drawColor(Color.argb(25, 0, 0, 0))
         datasets.forEach { dataset ->
             drawPath(
                 canvas,
