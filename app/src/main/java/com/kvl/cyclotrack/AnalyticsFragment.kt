@@ -451,10 +451,13 @@ class AnalyticsFragment : Fragment() {
     ) =
         ImageView(requireContext()).apply {
             layoutParams =
-                ViewGroup.LayoutParams(
+                ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
-                )
+
+                ).apply {
+                    setMargins(0, 30, 0, 30)
+                }
             minimumHeight = 300
             zipLiveData(
                 viewModel.recentTrips(
