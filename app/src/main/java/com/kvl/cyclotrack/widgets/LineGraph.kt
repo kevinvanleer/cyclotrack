@@ -72,7 +72,7 @@ class LineGraph(
     }
 
     override fun draw(canvas: Canvas) {
-        //canvas.drawColor(Color.BLACK)
+        canvas.drawColor(Color.BLACK)
         datasets.forEach { dataset ->
             drawPath(
                 canvas,
