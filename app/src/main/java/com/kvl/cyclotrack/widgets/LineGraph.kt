@@ -43,7 +43,7 @@ class LineGraph(
             strokeWidth = 2F
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            setARGB(255, 255, 255, 255)
+            setARGB(150, 0, 0, 0)
         }
         val width: Int = bounds.width()
         val height: Int = bounds.height()
@@ -93,7 +93,7 @@ class LineGraph(
     }
 
     override fun draw(canvas: Canvas) {
-        canvas.drawColor(Color.argb(255, 75, 75, 75))
+        canvas.drawColor(Color.argb(100, 0, 0, 0))
         datasets.forEach { dataset ->
             drawPath(
                 canvas,
