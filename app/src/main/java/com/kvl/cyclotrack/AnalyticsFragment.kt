@@ -486,7 +486,11 @@ class AnalyticsFragment : Fragment() {
     ): Pair<LineGraphDataset, LineGraphDataset> {
         val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
             thisPeriodPoints.copyOf() + thisPeriodPoints.last()
-                .copy(timestamp = Instant.now().toEpochMilli(), distance = 0.0),
+                .copy(
+                    timestamp = Instant.now().toEpochMilli(),
+                    distance = 0.0
+                ) + thisPeriodPoints.first()
+                .copy(timestamp = thisPeriod.first.toInstant().toEpochMilli(), distance = 0.0),
             thisPeriod
         )
 

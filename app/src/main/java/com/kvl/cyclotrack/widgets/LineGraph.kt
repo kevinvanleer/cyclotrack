@@ -50,7 +50,12 @@ class LineGraph(
 
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
-
+        adjustCoordinateY(
+            height,
+            dataset.points.first().second,
+            dataset.yRange?.first ?: 0f,
+            yScale
+        )
         canvas.drawPath(
             Path().apply {
                 moveTo(
