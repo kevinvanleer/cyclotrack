@@ -342,7 +342,7 @@ class AnalyticsFragment : Fragment() {
                                 lastMonthToday.minusDays(1)
                                     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                         })
-                        addView(it)
+                        //addView(it)
                         addView(
                             drawDistanceComparison(
                                 thisMonthStart,
