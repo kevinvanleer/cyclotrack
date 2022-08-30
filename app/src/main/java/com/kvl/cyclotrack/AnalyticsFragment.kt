@@ -351,12 +351,12 @@ class AnalyticsFragment : Fragment() {
                                 lastMonthEnd
                             )
                         )
-                        addView(
+                        /*addView(
                             drawSpeedGraph(
                                 ZonedDateTime.of(2020, 10, 1, 0, 0, 0, 0, ZoneId.systemDefault()),
                                 ZonedDateTime.now(ZoneId.systemDefault())
                             )
-                        )
+                        )*/
                     }
             }
         }
@@ -455,7 +455,7 @@ class AnalyticsFragment : Fragment() {
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT
                 )
-            minimumHeight = 200
+            minimumHeight = 300
             zipLiveData(
                 viewModel.recentTrips(
                     thisMonthStart.toInstant().toEpochMilli(),
@@ -502,10 +502,6 @@ class AnalyticsFragment : Fragment() {
                 yRangeThis.second - yRangeThis.first,
                 yRangeLast.second - yRangeLast.first
             ).toFloat()
-
-        //thisPoints +=
-        //    thisPoints.last()
-        //        .copy(first = (Instant.now().toEpochMilli() - xRangeThis.first).toFloat())
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
