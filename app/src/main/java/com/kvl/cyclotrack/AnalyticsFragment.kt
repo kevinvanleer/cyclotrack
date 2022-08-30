@@ -485,18 +485,13 @@ class AnalyticsFragment : Fragment() {
         lastPeriodPoints: Array<Trip>
     ): Pair<LineGraphDataset, LineGraphDataset> {
         val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
-            arrayOf(
-                thisPeriodPoints.first()
-                    .copy(timestamp = thisPeriod.first.toInstant().toEpochMilli(), distance = 0.0)
-            )
-                .plus(thisPeriodPoints)
-                .plus(
-                    thisPeriodPoints.last()
-                        .copy(
-                            timestamp = Instant.now().toEpochMilli(),
-                            distance = 0.0
-                        )
-                ),
+            thisPeriodPoints.plus(
+                thisPeriodPoints.last()
+                    .copy(
+                        timestamp = Instant.now().toEpochMilli(),
+                        distance = 0.0
+                    )
+            ),
             thisPeriod
         )
 
@@ -561,7 +556,11 @@ class AnalyticsFragment : Fragment() {
                 thisPeriod.second.toInstant().toEpochMilli()
             ),
             Pair(0.0, thisPeriodPoints.sumOf { point -> point.distance ?: 0.0 }),
-            thisPeriodPoints.map { point ->
+
+            arrayOf(
+                thisPeriodPoints.first()
+                    .copy(timestamp = thisPeriod.first.toInstant().toEpochMilli(), distance = 0.0)
+            ).plus(thisPeriodPoints).map { point ->
                 accDistance += (point.distance ?: 0.0).toFloat()
                 Pair(
                     (point.timestamp - durationStart).toFloat(),
