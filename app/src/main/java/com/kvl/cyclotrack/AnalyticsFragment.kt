@@ -489,8 +489,7 @@ class AnalyticsFragment : Fragment() {
                 .copy(
                     timestamp = Instant.now().toEpochMilli(),
                     distance = 0.0
-                ) + thisPeriodPoints.first()
-                .copy(timestamp = thisPeriod.first.toInstant().toEpochMilli(), distance = 0.0),
+                ),
             thisPeriod
         )
 

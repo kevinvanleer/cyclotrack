@@ -61,13 +61,13 @@ class LineGraph(
                 moveTo(
                     //(dataset.xRange?.first ?: 0f) * xScale,
                     0f,
-                    adjustCoordinateY(
+                    /*adjustCoordinateY(
                         height,
                         dataset.points.first().second,
                         dataset.yRange?.first ?: 0f,
                         yScale
-                    )
-                    //height.toFloat()
+                    )*/
+                    height.toFloat()
                 )
                 dataset.points.forEach { point ->
                     lineTo(
