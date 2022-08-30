@@ -456,7 +456,7 @@ class AnalyticsFragment : Fragment() {
                     ViewGroup.LayoutParams.WRAP_CONTENT
 
                 ).apply {
-                    setMargins(0, 30, 0, 30)
+                    setMargins(0, 50, 0, 50)
                 }
             minimumHeight = 300
             zipLiveData(
