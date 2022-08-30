@@ -36,6 +36,15 @@ class LineGraph(
             strokeJoin = Paint.Join.ROUND
             setARGB(255, 255, 0, 0)
         }
+        val borderPaint: Paint = Paint().apply {
+            isAntiAlias = true
+            isDither = true
+            style = Paint.Style.STROKE
+            strokeWidth = 2F
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+            setARGB(255, 255, 255, 255)
+        }
         val width: Int = bounds.width()
         val height: Int = bounds.height()
 
@@ -69,6 +78,13 @@ class LineGraph(
                 }
             }, dataset.paint ?: greenPaint
         )
+        canvas.drawPath(Path().apply {
+            moveTo(0f, 0f)
+            lineTo(0f, height.toFloat())
+            lineTo(width.toFloat(), height.toFloat())
+            lineTo(width.toFloat(), 0f)
+            close()
+        }, borderPaint)
     }
 
     override fun draw(canvas: Canvas) {
