@@ -337,12 +337,12 @@ class AnalyticsFragment : Fragment() {
             }.let {
                 view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth)
                     .apply {
-                        addView(TextView(requireContext()).apply {
+                        /*addView(TextView(requireContext()).apply {
                             text =
                                 lastMonthToday.minusDays(1)
                                     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
                         })
-                        //addView(it)
+                        addView(it)*/
                         addView(
                             drawDistanceComparison(
                                 thisMonthStart,
