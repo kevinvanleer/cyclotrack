@@ -290,13 +290,13 @@ class AnalyticsFragment : Fragment() {
                 .truncatedTo(ChronoUnit.DAYS).plusDays(1)
         val lastMonthEnd = lastMonthStart.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
 
-        viewModel.tripTotals(
-            thisMonthStart
-                .toInstant().toEpochMilli(),
-            thisMonthEnd
-                .toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner) {
-            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
+        view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
+            viewModel.tripTotals(
+                thisMonthStart
+                    .toInstant().toEpochMilli(),
+                thisMonthEnd
+                    .toInstant().toEpochMilli()
+            ).observe(viewLifecycleOwner) {
                 table.visibility = View.GONE
                 heading.text = "This month"
                 threeStat.populate(
@@ -315,51 +315,53 @@ class AnalyticsFragment : Fragment() {
                 )
             }
         }
-        viewModel.tripTotals(
-            lastMonthStart.toInstant().toEpochMilli(),
-            lastMonthToday.toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner) {
-            ThreeStat(requireContext()).apply {
-                populate(
-                    arrayOf(
-                        Pair("RIDES", it.tripCount.toString()),
-                        Pair(
-                            getUserDistanceUnitShort(requireContext()).uppercase(),
-                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
-                                .toString()
-                        ),
-                        Pair(
-                            "HOURS",
-                            formatDurationHours(it.totalDuration)
-                        )
+        view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth)
+            .let { card ->
+                card.addView(TextView(requireContext()).apply {
+                    text =
+                        lastMonthToday.minusDays(1)
+                            .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+                })
+                card.addView(
+                    ThreeStat(requireContext()).apply {
+                        viewModel.tripTotals(
+                            lastMonthStart.toInstant().toEpochMilli(),
+                            lastMonthToday.toInstant().toEpochMilli()
+                        ).observe(viewLifecycleOwner) {
+                            populate(
+                                arrayOf(
+                                    Pair("RIDES", it.tripCount.toString()),
+                                    Pair(
+                                        getUserDistanceUnitShort(requireContext()).uppercase(),
+                                        getUserDistance(
+                                            requireContext(),
+                                            it.totalDistance
+                                        ).roundToInt()
+                                            .toString()
+                                    ),
+                                    Pair(
+                                        "HOURS",
+                                        formatDurationHours(it.totalDuration)
+                                    )
+                                )
+                            )
+                        }
+                    })
+                card.addView(
+                    drawDistanceComparison(
+                        thisMonthStart,
+                        thisMonthEnd,
+                        lastMonthStart,
+                        lastMonthEnd
                     )
                 )
-            }.let {
-                view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth)
-                    .apply {
-                        addView(TextView(requireContext()).apply {
-                            text =
-                                lastMonthToday.minusDays(1)
-                                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                        })
-                        addView(it)
-                        addView(
-                            drawDistanceComparison(
-                                thisMonthStart,
-                                thisMonthEnd,
-                                lastMonthStart,
-                                lastMonthEnd
-                            )
-                        )
-                        /*addView(
-                            drawSpeedGraph(
-                                ZonedDateTime.of(2020, 10, 1, 0, 0, 0, 0, ZoneId.systemDefault()),
-                                ZonedDateTime.now(ZoneId.systemDefault())
-                            )
-                        )*/
-                    }
+                /*addView(
+                    drawSpeedGraph(
+                        ZonedDateTime.of(2020, 10, 1, 0, 0, 0, 0, ZoneId.systemDefault()),
+                        ZonedDateTime.now(ZoneId.systemDefault())
+                    )
+                )*/
             }
-        }
     }
 
     private fun drawSpeedGraph(
