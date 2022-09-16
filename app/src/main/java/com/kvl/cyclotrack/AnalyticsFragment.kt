@@ -190,6 +190,77 @@ class AnalyticsFragment : Fragment() {
         }
     }
 
+    private fun buildPeriodTotalsAnalyticsCard(
+        card: AnalyticsCard,
+        thisPeriodStart: ZonedDateTime,
+        thisPeriodEnd: ZonedDateTime,
+        lastPeriodStart: ZonedDateTime,
+        lastPeriodEnd: ZonedDateTime,
+        lastPeriodToday: ZonedDateTime
+    ) {
+        viewModel.tripTotals(
+            thisPeriodStart
+                .toInstant().toEpochMilli(),
+            thisPeriodEnd
+                .toInstant().toEpochMilli()
+        ).observe(viewLifecycleOwner) {
+            card.table.visibility = View.GONE
+            card.heading.text = "This year"
+            card.threeStat.populate(
+                arrayOf(
+                    Pair("RIDES", it.tripCount.toString()),
+                    Pair(
+                        getUserDistanceUnitShort(requireContext()).uppercase(),
+                        getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                            .toString()
+                    ),
+                    Pair(
+                        "HOURS",
+                        formatDurationHours(it.totalDuration)
+                    )
+                )
+            )
+        }
+        card.addView(TextView(requireContext()).apply {
+            text =
+                lastPeriodToday.minusDays(1)
+                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+        })
+        card.addView(ThreeStat(requireContext()).apply {
+            viewModel.tripTotals(
+                lastPeriodStart
+                    .toInstant().toEpochMilli(),
+                lastPeriodToday.toInstant().toEpochMilli()
+            ).observe(viewLifecycleOwner) {
+                populate(
+                    arrayOf(
+                        Pair("RIDES", it.tripCount.toString()),
+                        Pair(
+                            getUserDistanceUnitShort(requireContext()).uppercase(),
+                            getUserDistance(
+                                requireContext(),
+                                it.totalDistance
+                            ).roundToInt()
+                                .toString()
+                        ),
+                        Pair(
+                            "HOURS",
+                            formatDurationHours(it.totalDuration)
+                        )
+                    )
+                )
+            }
+        })
+        card.addView(
+            drawDistanceComparison(
+                thisPeriodStart,
+                thisPeriodEnd,
+                lastPeriodStart,
+                lastPeriodEnd
+            )
+        )
+    }
+
     private fun doAnnualTotals(view: View) {
         val now = Instant.now().atZone(ZoneId.systemDefault())
         val thisYearStart = now.with(
@@ -198,6 +269,7 @@ class AnalyticsFragment : Fragment() {
         val thisYearEnd = now.with(
             TemporalAdjusters.lastDayOfYear()
         ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+       
         val lastYearStart = now.minusYears(1).with(
             TemporalAdjusters.firstDayOfYear()
         ).truncatedTo(ChronoUnit.DAYS)
@@ -207,71 +279,14 @@ class AnalyticsFragment : Fragment() {
             TemporalAdjusters.lastDayOfYear()
         ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
 
-        viewModel.tripTotals(
-            thisYearStart
-                .toInstant().toEpochMilli(),
-            thisYearEnd
-                .toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner) {
-            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear).apply {
-                table.visibility = View.GONE
-                heading.text = "This year"
-                threeStat.populate(
-                    arrayOf(
-                        Pair("RIDES", it.tripCount.toString()),
-                        Pair(
-                            getUserDistanceUnitShort(requireContext()).uppercase(),
-                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
-                                .toString()
-                        ),
-                        Pair(
-                            "HOURS",
-                            formatDurationHours(it.totalDuration)
-                        )
-                    )
-                )
-            }
-        }
-        viewModel.tripTotals(
-            lastYearStart
-                .toInstant().toEpochMilli(),
-            lastYearToday.toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner) {
-            ThreeStat(requireContext()).apply {
-                populate(
-                    arrayOf(
-                        Pair("RIDES", it.tripCount.toString()),
-                        Pair(
-                            getUserDistanceUnitShort(requireContext()).uppercase(),
-                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
-                                .toString()
-                        ),
-                        Pair(
-                            "HOURS",
-                            formatDurationHours(it.totalDuration)
-                        )
-                    )
-                )
-            }.let {
-                view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear)
-                    .apply {
-                        addView(TextView(requireContext()).apply {
-                            text =
-                                lastYearToday.minusDays(1)
-                                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                        })
-                        addView(it)
-                        addView(
-                            drawDistanceComparison(
-                                thisYearStart,
-                                thisYearEnd,
-                                lastYearStart,
-                                lastYearEnd
-                            )
-                        )
-                    }
-            }
-        }
+        buildPeriodTotalsAnalyticsCard(
+            view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisYear),
+            thisYearStart,
+            thisYearEnd,
+            lastYearStart,
+            lastYearEnd,
+            lastYearToday
+        )
     }
 
     private fun doMonthlyTotals(view: View) {
@@ -290,78 +305,14 @@ class AnalyticsFragment : Fragment() {
                 .truncatedTo(ChronoUnit.DAYS).plusDays(1)
         val lastMonthEnd = lastMonthStart.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
 
-        view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
-            viewModel.tripTotals(
-                thisMonthStart
-                    .toInstant().toEpochMilli(),
-                thisMonthEnd
-                    .toInstant().toEpochMilli()
-            ).observe(viewLifecycleOwner) {
-                table.visibility = View.GONE
-                heading.text = "This month"
-                threeStat.populate(
-                    arrayOf(
-                        Pair("RIDES", it.tripCount.toString()),
-                        Pair(
-                            getUserDistanceUnitShort(requireContext()).uppercase(),
-                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
-                                .toString()
-                        ),
-                        Pair(
-                            "HOURS",
-                            formatDurationHours(it.totalDuration)
-                        )
-                    )
-                )
-            }
-        }
-        view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth)
-            .let { card ->
-                card.addView(TextView(requireContext()).apply {
-                    text =
-                        lastMonthToday.minusDays(1)
-                            .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
-                })
-                card.addView(
-                    ThreeStat(requireContext()).apply {
-                        viewModel.tripTotals(
-                            lastMonthStart.toInstant().toEpochMilli(),
-                            lastMonthToday.toInstant().toEpochMilli()
-                        ).observe(viewLifecycleOwner) {
-                            populate(
-                                arrayOf(
-                                    Pair("RIDES", it.tripCount.toString()),
-                                    Pair(
-                                        getUserDistanceUnitShort(requireContext()).uppercase(),
-                                        getUserDistance(
-                                            requireContext(),
-                                            it.totalDistance
-                                        ).roundToInt()
-                                            .toString()
-                                    ),
-                                    Pair(
-                                        "HOURS",
-                                        formatDurationHours(it.totalDuration)
-                                    )
-                                )
-                            )
-                        }
-                    })
-                card.addView(
-                    drawDistanceComparison(
-                        thisMonthStart,
-                        thisMonthEnd,
-                        lastMonthStart,
-                        lastMonthEnd
-                    )
-                )
-                /*addView(
-                    drawSpeedGraph(
-                        ZonedDateTime.of(2020, 10, 1, 0, 0, 0, 0, ZoneId.systemDefault()),
-                        ZonedDateTime.now(ZoneId.systemDefault())
-                    )
-                )*/
-            }
+        buildPeriodTotalsAnalyticsCard(
+            view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisMonth),
+            thisMonthStart,
+            thisMonthEnd,
+            lastMonthStart,
+            lastMonthEnd,
+            lastMonthToday
+        )
     }
 
     private fun drawSpeedGraph(
