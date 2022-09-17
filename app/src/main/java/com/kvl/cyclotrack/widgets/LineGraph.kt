@@ -83,13 +83,6 @@ class LineGraph(
                 }
             }, dataset.paint ?: greenPaint
         )
-        /*canvas.drawPath(Path().apply {
-            moveTo(0f, 0f)
-            lineTo(0f, height.toFloat())
-            lineTo(width.toFloat(), height.toFloat())
-            lineTo(width.toFloat(), 0f)
-            close()
-        }, borderPaint)*/
     }
 
     override fun draw(canvas: Canvas) {

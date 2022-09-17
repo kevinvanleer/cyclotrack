@@ -222,6 +222,14 @@ class AnalyticsFragment : Fragment() {
             )
         }
         card.addView(TextView(requireContext()).apply {
+            layoutParams =
+                ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+
+                ).apply {
+                    setMargins(0, 0, 0, 20)
+                }
             text =
                 lastPeriodToday.minusDays(1)
                     .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
@@ -269,7 +277,7 @@ class AnalyticsFragment : Fragment() {
         val thisYearEnd = now.with(
             TemporalAdjusters.lastDayOfYear()
         ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
-       
+
         val lastYearStart = now.minusYears(1).with(
             TemporalAdjusters.firstDayOfYear()
         ).truncatedTo(ChronoUnit.DAYS)
