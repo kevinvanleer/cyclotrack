@@ -192,6 +192,7 @@ class AnalyticsFragment : Fragment() {
 
     private fun buildPeriodTotalsAnalyticsCard(
         card: AnalyticsCard,
+        title: String,
         thisPeriodStart: ZonedDateTime,
         thisPeriodEnd: ZonedDateTime,
         lastPeriodStart: ZonedDateTime,
@@ -205,7 +206,7 @@ class AnalyticsFragment : Fragment() {
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner) {
             card.table.visibility = View.GONE
-            card.heading.text = "This year"
+            card.heading.text = title
             card.threeStat.populate(
                 arrayOf(
                     Pair("RIDES", it.tripCount.toString()),
@@ -289,6 +290,7 @@ class AnalyticsFragment : Fragment() {
 
         buildPeriodTotalsAnalyticsCard(
             view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisYear),
+            "This year",
             thisYearStart,
             thisYearEnd,
             lastYearStart,
@@ -315,6 +317,7 @@ class AnalyticsFragment : Fragment() {
 
         buildPeriodTotalsAnalyticsCard(
             view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisMonth),
+            "This month",
             thisMonthStart,
             thisMonthEnd,
             lastMonthStart,
