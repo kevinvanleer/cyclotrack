@@ -788,7 +788,7 @@ class TripInProgressFragment :
     private fun isPauseButtonHidden() = pauseButton.translationY != 0f
 
     private fun handleScreenTouchClick(): Boolean {
-        Log.d("TIP_FRAG", "handleTouchClick")
+        Log.d(logTag, "handleTouchClick")
         if (isPauseButtonHidden()) {
             pauseButton.animate().setDuration(100).translationY(0f)
             hidePauseHandler.postDelayed(

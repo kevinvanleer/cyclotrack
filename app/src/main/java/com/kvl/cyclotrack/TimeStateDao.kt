@@ -11,15 +11,15 @@ interface TimeStateDao {
     @Update
     fun update(timeState: TimeState)
 
-    @Query("SELECT * FROM timeState WHERE tripId = :tripId")
+    @Query("SELECT * FROM timeState WHERE tripId = :tripId order by timestamp asc")
     suspend fun load(tripId: Long): Array<TimeState>
 
-    @Query("SELECT * FROM timeState WHERE tripId = :tripId")
+    @Query("SELECT * FROM timeState WHERE tripId = :tripId order by timestamp asc")
     fun subscribe(tripId: Long): LiveData<Array<TimeState>>
 
-    @Query("SELECT * FROM timeState WHERE id = (SELECT max(id) FROM timeState WHERE tripId = :tripId)")
+    @Query("SELECT * FROM timeState WHERE timestamp = (SELECT max(timestamp) FROM timeState WHERE tripId = :tripId)")
     fun subscribeCurrentState(tripId: Long): LiveData<TimeState>
 
-    @Query("SELECT * FROM timeState WHERE id = (SELECT max(id) FROM timeState WHERE tripId = :tripId)")
+    @Query("SELECT * FROM timeState WHERE timestamp = (SELECT max(timestamp) FROM timeState WHERE tripId = :tripId)")
     suspend fun loadCurrentState(tripId: Long): TimeState
 }
