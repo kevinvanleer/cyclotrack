@@ -9,10 +9,13 @@ import androidx.lifecycle.MediatorLiveData
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.DerivedTripState
+import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.getSystemOfMeasurement
+import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock
@@ -210,12 +213,100 @@ fun getTripInProgressIntervals(
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
+    measurements: Array<HeartRateMeasurement>? = null,
+): Array<LongRange> =
+    when (measurements.isNullOrEmpty()) {
+        true -> getTripIntervals(timeStates)
+        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
+    }
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    measurements: Array<CadenceSpeedMeasurement>? = null,
+): Array<LongRange> =
+    when (measurements.isNullOrEmpty()) {
+        true -> getTripIntervals(timeStates)
+        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
+    }
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
     measurements: Array<CriticalMeasurements>? = null,
 ): Array<LongRange> =
     when (measurements.isNullOrEmpty()) {
-        true -> getTripIntervals(timeStates, null, null)
+        true -> getTripIntervals(timeStates)
         false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
     }
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    measurements: Array<Measurements>? = null,
+): Array<LongRange> =
+    when (measurements.isNullOrEmpty()) {
+        true -> getTripIntervals(timeStates)
+        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
+    }
+
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    firstMeasurement: CadenceSpeedMeasurement? = null,
+    lastMeasurement: CadenceSpeedMeasurement? = null,
+): Array<LongRange> {
+    val intervals = ArrayList<LongRange>()
+    var intervalStart = -1L
+    timeStates?.forEach { timeState ->
+        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
+            timeState.timestamp
+        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervalStart = -1L
+        }
+    }
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
+        if (timeStates.last().timestamp < lastMeasurement.timestamp) {
+            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.timestamp))
+        }
+    }
+    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
+        arrayOf(
+            LongRange(
+                firstMeasurement.timestamp,
+                lastMeasurement.timestamp
+            )
+        )
+    } else intervals.toTypedArray()
+}
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    firstMeasurement: HeartRateMeasurement? = null,
+    lastMeasurement: HeartRateMeasurement? = null,
+): Array<LongRange> {
+    val intervals = ArrayList<LongRange>()
+    var intervalStart = -1L
+    timeStates?.forEach { timeState ->
+        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
+            timeState.timestamp
+        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervalStart = -1L
+        }
+    }
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
+        if (timeStates.last().timestamp < lastMeasurement.timestamp) {
+            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.timestamp))
+        }
+    }
+    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
+        arrayOf(
+            LongRange(
+                firstMeasurement.timestamp,
+                lastMeasurement.timestamp
+            )
+        )
+    } else intervals.toTypedArray()
+}
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
@@ -247,11 +338,90 @@ fun getTripIntervals(
     } else intervals.toTypedArray()
 }
 
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+    firstMeasurement: Measurements? = null,
+    lastMeasurement: Measurements? = null,
+): Array<LongRange> {
+    val intervals = ArrayList<LongRange>()
+    var intervalStart = -1L
+    timeStates?.forEach { timeState ->
+        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
+            timeState.timestamp
+        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervalStart = -1L
+        }
+    }
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
+        if (timeStates.last().timestamp < lastMeasurement.time) {
+            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.time))
+        }
+    }
+    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
+        arrayOf(
+            LongRange(
+                firstMeasurement.time,
+                lastMeasurement.time
+            )
+        )
+    } else intervals.toTypedArray()
+}
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
+): Array<LongRange> {
+    val intervals = ArrayList<LongRange>()
+    var intervalStart = -1L
+    timeStates?.forEach { timeState ->
+        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
+            timeState.timestamp
+        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
+            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervalStart = -1L
+        }
+    }
+    return intervals.toTypedArray()
+}
+
 fun getStartTime(timeStates: Array<TimeState>) =
     timeStates.find { isTripInProgress(it.state) }?.timestamp
 
 fun getEndTime(timeStates: Array<TimeState>) =
     timeStates.findLast { !isTripInProgress(it.state) }?.timestamp
+
+fun getTripLegs(
+    measurements: Array<Measurements>,
+    intervals: Array<LongRange>,
+): Array<Array<Measurements>> {
+    val legs = ArrayList<Array<Measurements>>()
+    intervals.forEach { interval ->
+        legs.add(measurements.filter { interval.contains(it.time) }.toTypedArray())
+    }
+    return legs.toTypedArray()
+}
+
+fun getTripLegs(
+    measurements: Array<HeartRateMeasurement>,
+    intervals: Array<LongRange>,
+): Array<Array<HeartRateMeasurement>> {
+    val legs = ArrayList<Array<HeartRateMeasurement>>()
+    intervals.forEach { interval ->
+        legs.add(measurements.filter { interval.contains(it.timestamp) }.toTypedArray())
+    }
+    return legs.toTypedArray()
+}
+
+fun getTripLegs(
+    measurements: Array<CadenceSpeedMeasurement>,
+    intervals: Array<LongRange>,
+): Array<Array<CadenceSpeedMeasurement>> {
+    val legs = ArrayList<Array<CadenceSpeedMeasurement>>()
+    intervals.forEach { interval ->
+        legs.add(measurements.filter { interval.contains(it.timestamp) }.toTypedArray())
+    }
+    return legs.toTypedArray()
+}
 
 fun getTripLegs(
     measurements: Array<CriticalMeasurements>,
@@ -272,23 +442,16 @@ fun getTripLegs(
     return getTripLegs(measurements, intervals)
 }
 
-fun getEffectiveCircumference(trip: Trip, measurements: Array<CriticalMeasurements>) =
-    trip.distance?.let { distance ->
-        measurements.filter { meas -> meas.speedRevolutions != null }
-            .map { filtered -> filtered.speedRevolutions!! }
-            .let { mapped ->
-                if (mapped.isNotEmpty()) {
-                    distance.div(
-                        mapped.last()
-                            .minus(mapped.first().toDouble())
-                    )
-                        .toFloat()
-                } else null
+fun getEffectiveCircumference(trip: Trip, measurements: Array<CadenceSpeedMeasurement>) =
+    measurements.firstOrNull()?.revolutions?.toDouble()?.let { firstRev ->
+        measurements.lastOrNull()?.revolutions
+            ?.minus(firstRev)?.let { totalRevs ->
+                trip.distance?.div(totalRevs)?.toFloat()
             }
     }
 
 suspend fun plotPath(
-    measurements: Array<CriticalMeasurements>,
+    measurements: Array<Measurements>,
     timeStates: Array<TimeState>?,
 ): MapPath =
     withContext(Dispatchers.IO) {
@@ -398,6 +561,36 @@ fun getUserTemperature(systemOfMeasurement: String?, temperature: Double): Int =
         "2" -> kelvinToCelsius(temperature)
         else -> 1.0
     }.roundToInt()
+
+fun getSystemSpeed(context: Context, speed: Double): Float =
+    getSystemSpeed(context, speed.toFloat())
+
+fun getSystemSpeed(systemOfMeasurement: String?, speed: Double): Float =
+    getSystemSpeed(systemOfMeasurement, speed.toFloat())
+
+fun getSystemSpeed(context: Context, speed: Int): Int =
+    getSystemSpeed(getSystemOfMeasurement(context), speed.toFloat()).roundToInt()
+
+fun getSystemSpeed(context: Context, speed: Float): Float =
+    getSystemSpeed(getSystemOfMeasurement(context), speed)
+
+fun getSystemSpeed(systemOfMeasurement: String?, speed: Float): Float =
+    (when (systemOfMeasurement) {
+        "1" -> 1 / (METERS_TO_FEET * FEET_TO_MILES / SECONDS_TO_HOURS)
+        "2" -> 1 / (METERS_TO_KM / SECONDS_TO_HOURS)
+        else -> 1.0
+    } * speed).toFloat()
+
+fun getRpm(context: Context, speed: Int, defaultCircumference: Float? = null): Int =
+    getRpm(context, speed.toDouble(), defaultCircumference).toInt()
+
+fun getRpm(context: Context, speed: Float, defaultCircumference: Float? = null): Float =
+    getRpm(context, speed.toDouble(), defaultCircumference).toFloat()
+
+fun getRpm(context: Context, speed: Double, defaultCircumference: Float? = null): Double =
+    (getUserCircumferenceOrNull(context)
+        ?: defaultCircumference)?.let { circ -> speed * 60f / circ }
+        ?: 0.0
 
 fun getUserSpeed(context: Context, meters: Double, seconds: Double): Float =
     getUserSpeed(context, meters / seconds)
@@ -604,7 +797,7 @@ fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Do
 
 fun calculateSplits(
     tripId: Long,
-    measurements: Array<CriticalMeasurements>,
+    measurements: Array<Measurements>,
     timeStates: Array<TimeState>?,
     sharedPreferences: SharedPreferences,
 ): ArrayList<Split> {
@@ -762,71 +955,69 @@ fun degreesToCardinal(degrees: Float): String {
     }
 }
 
-fun didDeviceFail(current: CriticalMeasurements, previous: CriticalMeasurements): Boolean {
+fun didDeviceFail(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
     val doubleRollover =
-        (current.cadenceLastEvent!! < previous.cadenceLastEvent!! && current.cadenceRevolutions!! < previous.cadenceRevolutions!!)
+        (current.lastEvent < previous.lastEvent && current.revolutions < previous.revolutions)
     val prematureRollover =
-        (previous.cadenceRevolutions!! < 65525f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
+        (previous.revolutions < 65525f && current.revolutions < previous.revolutions)
     val veryPrematureRollover =
-        (previous.cadenceRevolutions < 65400f && current.cadenceRevolutions!! < previous.cadenceRevolutions)
+        (previous.revolutions < 65400f && current.revolutions < previous.revolutions)
     val deviceReset = prematureRollover && doubleRollover
 
     return deviceReset || veryPrematureRollover
 }
 
-fun validateCadence(current: CriticalMeasurements, previous: CriticalMeasurements): Boolean {
-    val cadenceDidNotUpdate = current.cadenceLastEvent == previous.cadenceLastEvent
-    return !(cadenceDidNotUpdate || didDeviceFail(current, previous))
+fun validateCadence(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
+    val didNotUpdate = current.lastEvent == previous.lastEvent
+    return !(didNotUpdate || didDeviceFail(current, previous))
 }
 
-fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CriticalMeasurements>): Float {
+fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
     Log.d("getAverageCadenceTheHardWay", "called")
     var totalTime = 0L
     var totalRevs = 0
-    var lastMeasurements: CriticalMeasurements? = null
-    cadenceMeasurements.filter { it.cadenceRevolutions != null }.forEach { measurements ->
-        lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+    var lastMeasurement: CadenceSpeedMeasurement? = null
+    cadenceMeasurements.forEach { measurements ->
+        lastMeasurement
             ?.let { last ->
                 if (!didDeviceFail(measurements, last)) {
                     totalRevs += getDifferenceRollover(
-                        measurements.cadenceRevolutions!!,
-                        last.cadenceRevolutions!!
+                        measurements.revolutions,
+                        last.revolutions
                     )
                     totalTime += getDifferenceRollover(
-                        measurements.cadenceLastEvent!!,
-                        last.cadenceLastEvent!!
+                        measurements.lastEvent,
+                        last.lastEvent
                     )
                 }
             }
-        lastMeasurements = measurements
+        lastMeasurement = measurements
     }
     return totalRevs.toFloat() / totalTime * 1024f * 60f
 }
 
-fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CriticalMeasurements>): Float? {
+fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
     Log.d("getAverageCadenceTheEasyWay", "called")
-    val totalRevs = cadenceMeasurements.last().cadenceRevolutions?.let {
+    val totalRevs =
         getDifferenceRollover(
-            it,
-            cadenceMeasurements.first().cadenceRevolutions!!
+            cadenceMeasurements.last().revolutions,
+            cadenceMeasurements.first().revolutions
         )
-    }
     val duration =
-        (cadenceMeasurements.last().time - cadenceMeasurements.first().time) / 1000f / 60f
+        (cadenceMeasurements.last().timestamp - cadenceMeasurements.first().timestamp) / 1000f / 60f
 
-    return totalRevs?.toFloat()?.div(duration)
+    return totalRevs.toFloat().div(duration)
 }
 
-fun getAverageCadence(measurements: Array<CriticalMeasurements>): Float? {
-
-    return try {
-        val cadenceMeasurements = measurements.filter { it.cadenceRevolutions != null }
-            .sortedBy { it.time }
+fun getAverageCadence(measurements: Array<CadenceSpeedMeasurement>): Float? =
+    try {
+        val cadenceMeasurements = measurements.toList()
+            .sortedBy { it.timestamp }
         var hardWay = false
-        var lastMeasurements: CriticalMeasurements? = null
-        cadenceMeasurements.filter { it.cadenceRevolutions != null }
+        var lastMeasurements: CadenceSpeedMeasurement? = null
+        cadenceMeasurements
             .forEach { meas ->
-                lastMeasurements?.takeIf { it.cadenceRevolutions != null }
+                lastMeasurements
                     ?.let { last ->
                         if (didDeviceFail(meas, last)) {
                             hardWay = true
@@ -835,12 +1026,11 @@ fun getAverageCadence(measurements: Array<CriticalMeasurements>): Float? {
                 lastMeasurements = meas
             }
 
-        return if (hardWay) getAverageCadenceTheHardWay(cadenceMeasurements)
+        if (hardWay) getAverageCadenceTheHardWay(cadenceMeasurements)
         else getAverageCadenceTheEasyWay(cadenceMeasurements)
     } catch (e: Exception) {
         null
     }
-}
 
 fun getAcceleration(
     durationDelta: Double,
@@ -849,6 +1039,7 @@ fun getAcceleration(
 ) = if (durationDelta == 0.0) 0f
 else ((newSpeed - oldSpeed) / durationDelta).toFloat()
 
+/*
 fun getSpeed(
     new: Measurements,
     speedThreshold: Float,
@@ -859,6 +1050,7 @@ fun getSpeed(
         circumference * rps
     } else if (new.speed > speedThreshold) new.speed else 0f
 }
+ */
 
 fun getSpeed(
     new: Measurements,

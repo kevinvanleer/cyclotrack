@@ -7,6 +7,8 @@ import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.gms.maps.model.LatLng
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.HeartRateMeasurement
 import kotlin.math.roundToInt
 
 fun configureLineChart(chart: LineChart, yMin: Float = 0f) {
@@ -38,25 +40,24 @@ fun configureLineChart(chart: LineChart, yMin: Float = 0f) {
     chart.axisRight.setDrawGridLines(false)
 }
 
-fun getElevationChange(measurements: Array<CriticalMeasurements>): Pair<Double, Double> =
+fun getElevationChange(measurements: Array<Measurements>): Pair<Double, Double> =
     accumulateAscentDescent(measurements.map {
         Pair(
             it.altitude,
-            it.verticalAccuracyMeters!!.toDouble()
+            it.verticalAccuracyMeters.toDouble()
         )
     })
 
-fun getAverageSpeedRpm(measurements: Array<CriticalMeasurements>): Float? {
+fun getAverageSpeedRpm(measurements: Array<CadenceSpeedMeasurement>): Float? {
     return try {
-        val speedMeasurements = measurements.filter { it.speedRevolutions != null }
-        val totalRevs = speedMeasurements.last().speedRevolutions?.let {
+        val totalRevs = measurements.lastOrNull()?.revolutions?.let {
             getDifferenceRollover(
                 it,
-                speedMeasurements.first().speedRevolutions!!
+                measurements.first().revolutions
             )
         }
         val duration =
-            (speedMeasurements.last().time - speedMeasurements.first().time) / 1000 / 60
+            (measurements.last().timestamp - measurements.first().timestamp) / 1000 / 60
 
         totalRevs?.toFloat()?.div(duration).takeIf { it?.isFinite() ?: false }
     } catch (e: Exception) {
@@ -76,14 +77,12 @@ fun getRotation(start: LatLng, end: LatLng): Float {
     return results[1]
 }
 
-fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
+fun getAverageHeartRate(measurements: Array<HeartRateMeasurement>): Short? {
     var sum = 0f
     var count = 0
     measurements.forEach {
-        if (it.heartRate != null) {
-            sum += it.heartRate
-            ++count
-        }
+        sum += it.heartRate
+        ++count
     }
     return if (count == 0) {
         null
@@ -91,5 +90,3 @@ fun getAverageHeartRate(measurements: Array<CriticalMeasurements>): Short? {
         (sum / count).roundToInt().toShort()
     }
 }
-
-

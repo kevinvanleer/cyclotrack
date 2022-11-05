@@ -54,6 +54,7 @@ class TripInProgressFragment :
     private lateinit var pauseButton: Button
     private lateinit var stopButton: Button
     private lateinit var resumeButton: Button
+    private lateinit var autoPauseChip: Button
     private lateinit var bottomRightView: MeasurementView
     private lateinit var middleRightView: MeasurementView
     private lateinit var topView: MeasurementView
@@ -239,6 +240,7 @@ class TripInProgressFragment :
                 pauseButton.setOnClickListener(pauseTripListener(tripId))
                 resumeButton.setOnClickListener(resumeTripListener(tripId))
                 stopButton.setOnClickListener(stopTripListener(tripId))
+                autoPauseChip.visibility = GONE
                 when (currentState.state) {
                     TimeStateEnum.START, TimeStateEnum.RESUME -> {
                         view?.doOnPreDraw { hideResumeStop() }
@@ -247,6 +249,10 @@ class TripInProgressFragment :
                     }
                     TimeStateEnum.PAUSE -> {
                         view?.doOnPreDraw { hidePause() }
+                        autoPauseChip.visibility = when (currentState.auto) {
+                            true -> VISIBLE
+                            else -> GONE
+                        }
                         slideInResumeStop()
                     }
                     else -> {
@@ -588,6 +594,7 @@ class TripInProgressFragment :
     private fun initializeViews(view: View) {
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
+        autoPauseChip = view.findViewById(R.id.autopause_button)
         stopButton = view.findViewById(R.id.stop_button)
         bottomRightView = view.findViewById(R.id.measurement_bottomRight)
         middleRightView = view.findViewById(R.id.measurement_middleRight)

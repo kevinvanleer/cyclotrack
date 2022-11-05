@@ -21,7 +21,7 @@ class RemoveTripWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         inputData.getLongArray("tripIds")?.takeIf { it.isNotEmpty() }?.forEach { tripId ->
-            Log.i(logTag, "Removing data from dB for trip ${tripId}")
+            Log.i(logTag, "Removing data from dB for trip $tripId")
             tripsRepository.removeTrip(tripId)
         }
         return Result.success()

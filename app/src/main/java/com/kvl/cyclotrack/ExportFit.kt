@@ -20,6 +20,9 @@ fun makeFitMessages(
     val toSemicircles = 2.0.pow(31.0) / 180
     val messages: MutableList<Mesg> = ArrayList()
 
+    val circumference = exportData.summary?.autoWheelCircumference
+        ?: exportData.summary?.userWheelCircumference
+
     exportData.timeStates?.let {
         getStartTime(it)?.let {
             messages.add(EventMesg().apply {
@@ -42,14 +45,41 @@ fun makeFitMessages(
     exportData.measurements?.forEach {
         messages.add(RecordMesg().apply {
             timestamp = DateTime(Date(it.time))
-            speed = it.speed
-            heartRate = it.heartRate
-            cadence = it.cadenceRpm?.toInt()?.toShort()
+            if (exportData.speedMeasurements == null || circumference == null) {
+                speed = it.speed
+            }
             altitude = it.altitude.toFloat()
             positionLat = (it.latitude * toSemicircles).toInt()
             positionLong = (it.longitude * toSemicircles).toInt()
             gpsAccuracy = it.accuracy.roundToInt().toShort()
         })
+    }
+
+    exportData.heartRateMeasurements?.forEach {
+        messages.add(RecordMesg().apply {
+            timestamp = DateTime(Date(it.timestamp))
+            heartRate = it.heartRate
+        })
+    }
+
+    if (circumference != null) {
+        exportData.speedMeasurements?.forEach {
+            it.rpm?.let { rpm ->
+                messages.add(RecordMesg().apply {
+                    timestamp = DateTime(Date(it.timestamp))
+                    speed = rpm * circumference / 60
+                })
+            }
+        }
+    }
+
+    exportData.cadenceMeasurements?.forEach {
+        it.rpm?.let { rpm ->
+            messages.add(RecordMesg().apply {
+                timestamp = DateTime(Date(it.timestamp))
+                cadence = rpm.toInt().toShort()
+            })
+        }
     }
 
 

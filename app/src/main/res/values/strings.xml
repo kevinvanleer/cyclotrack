@@ -132,4 +132,33 @@
     <string name="remove_cyclotrack_data_from_google_fit_message">Remove Cyclotrack data from Google Fit</string>
     <string name="remove_cyclotrack_data_from_strava_message">Remove Cyclotrack data from Strava</string>
     <string name="preference_key_strava_next_sync_window">preference_key_strava_next_sync_window</string>
+    <string name="preference_key_autopause_preferences">preference_key_autopause</string>
+    <string name="preference_key_autopause_enable">preferences_key_autopause_enable</string>
+    <string name="preference_key_autopause_pause_threshold">preference_key_autopause_pause_threshold</string>
+    <string name="preference_key_autopause_resume_threshold">preference_key_autopause_resume_threshold</string>
+    <string name="preference_key_autopause_speed_threshold">preference_key_autopause_speed_threshold</string>
+    <string name="preference_key_autopause_manual_override">preferences_key_autopause_manual_override</string>
+    <string name="seekbar_preference_autopause_pauseThreshold_title">Pause threshold</string>
+    <string name="seekbar_preference_autopause_pauseThreshold_description">
+        Seconds to wait before pausing your ride.
+        Your speed must be below th speed threshold for this duration before your ride will automatically pause.
+        The pause will be recorded at the time you stopped moving.
+    </string>
+    <string name="seekbar_preference_autopause_resumeThreshold_title">Resume threshold</string>
+    <string name="seekbar_preference_autopause_resumeThreshold_description">
+        Seconds to wait before resuming your ride.
+        Your speed must be above the speed threshold for this duration before your ride with automatically resume.
+        Your ride will resume at the time you started moving.
+    </string>
+    <string name="seekbar_preference_autopause_speedThreshold_title">Speed threshold</string>
+    <string name="seekbar_preference_autopause_speedThreshold_description">
+        Speed at which pausing and resuming will be triggered.
+    </string>
+    <string name="switch_preference_autopause_enable_title">Enable Auto-pause</string>
+    <string name="switch_preference_autopause_enable_description">Automatically pause and resume rides when not moving.</string>
+    <string name="switch_preference_autopause_resume_lockout_title">Auto-pause resume lockout</string>
+    <string name="switch_preference_autopause_resume_lockout_description">
+        When you press the pause button, the ride will not be resumed until you press resume.
+    </string>
+    <string name="autopause_label">AUTO-PAUSE</string>
 </resources>

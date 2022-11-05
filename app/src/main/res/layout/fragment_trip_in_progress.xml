@@ -246,4 +246,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/stop_button" />
 
+    <Button
+        android:id="@+id/autopause_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:ellipsize="none"
+        android:fontFamily="@font/orbitron_medium"
+        android:maxLines="1"
+        android:text="@string/autopause_label"
+        android:textAppearance="@style/DashboardFontAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="0.1in"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/resume_button"
+        app:layout_constraintEnd_toEndOf="@id/resume_button"
+        app:layout_constraintStart_toStartOf="@id/stop_button" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

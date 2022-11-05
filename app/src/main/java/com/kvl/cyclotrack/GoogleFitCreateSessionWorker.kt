@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -27,6 +29,12 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
     lateinit var measurementsRepository: MeasurementsRepository
 
     @Inject
+    lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
+
+    @Inject
+    lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
+
+    @Inject
     lateinit var timeStateRepository: TimeStateRepository
 
     @Inject
@@ -34,16 +42,23 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         inputData.getLong("tripId", -1).takeIf { it >= 0 }?.let { tripId ->
-            Log.i(logTag, "Syncing data with Google Fit for trip ${tripId}")
+            Log.i(logTag, "Syncing data with Google Fit for trip $tripId")
             try {
                 if (hasFitnessPermissions(applicationContext)) {
                     val trip = tripsRepository.get(tripId)
                     val timeStates = timeStateRepository.getTimeStates(tripId)
-                    val measurements = measurementsRepository.getCritical(tripId)
+                    val measurements = measurementsRepository.get(tripId)
+                    val speedMeasurements =
+                        cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId)
 
                     googleFitApiService.insertDatasets(
-                        measurements,
-                        getEffectiveCircumference(trip, measurements)
+                        measurements = measurements,
+                        heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
+                        speedMeasurements = speedMeasurements,
+                        cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(
+                            tripId
+                        ),
+                        wheelCircumference = getEffectiveCircumference(trip, speedMeasurements)
                             ?: userCircumferenceToMeters(bikeRepository.get(trip.bikeId)?.wheelCircumference)
                             ?: 0f
                     )
@@ -58,7 +73,7 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                     tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.SYNCED)
                 }
             } catch (e: Exception) {
-                Log.e(logTag, "Failed to insert trip ${tripId}", e)
+                Log.e(logTag, "Failed to insert trip $tripId", e)
                 tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.FAILED)
                 return Result.failure()
             }

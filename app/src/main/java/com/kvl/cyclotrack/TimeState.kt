@@ -43,6 +43,7 @@ data class TimeState(
     val tripId: Long,
     val state: TimeStateEnum,
     val timestamp: Long = SystemUtils.currentTimeMillis(),
+    val auto: Boolean = false,
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
     val originalTripId: Long? = tripId,

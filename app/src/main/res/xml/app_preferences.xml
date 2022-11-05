@@ -24,6 +24,10 @@
         app:title="Bikes"
         app:summary="Track key information about your equipment" />
     <Preference
+        app:key="@string/preference_key_autopause_preferences"
+        app:title="Auto-pause"
+        app:summary="Automatically pause/resume rides when not moving"/>
+    <Preference
         app:key="@string/preferences_key_google_fit"
         app:title="@string/preferences_sync_with_google_fit_title"
         app:summary="@string/preferences_sync_with_google_fit_summary"

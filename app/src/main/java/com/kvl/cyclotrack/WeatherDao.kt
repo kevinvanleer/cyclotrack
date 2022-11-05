@@ -19,4 +19,7 @@ interface WeatherDao {
 
     @Query("SELECT * FROM Weather WHERE tripId = :tripId")
     fun observeTripWeather(tripId: Long): LiveData<Array<Weather>>
+
+    @Query("UPDATE Weather SET tripId = :newTripId WHERE tripId = :tripId")
+    suspend fun changeTrip(tripId: Long, newTripId: Long)
 }

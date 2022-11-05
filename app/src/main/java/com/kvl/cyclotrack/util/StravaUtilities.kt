@@ -6,6 +6,8 @@ import com.garmin.fit.DateTime
 import com.garmin.fit.Mesg
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.*
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -237,6 +239,8 @@ class AuthenticationFailure(message: String) : IOException(message)
 suspend fun syncTripWithStrava(
     appContext: Context, tripId: Long, tripsRepository: TripsRepository,
     measurementsRepository: MeasurementsRepository,
+    heartRateMeasurementRepository: HeartRateMeasurementRepository,
+    cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository,
     timeStateRepository: TimeStateRepository,
     splitRepository: SplitRepository,
     onboardSensorsRepository: OnboardSensorsRepository,
@@ -249,7 +253,10 @@ suspend fun syncTripWithStrava(
         timeStates = timeStateRepository.getTimeStates(tripId),
         splits = splitRepository.getTripSplits(tripId),
         onboardSensors = onboardSensorsRepository.get(tripId),
-        weather = weatherRepository.getTripWeather(tripId)
+        weather = weatherRepository.getTripWeather(tripId),
+        heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
+        speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),
+        cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(tripId)
     )
     val now = Instant.now()
     val nextWindow = Instant.parse(

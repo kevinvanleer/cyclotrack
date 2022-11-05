@@ -7,6 +7,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.preference.PreferenceManager
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject
@@ -28,10 +30,19 @@ class StitchWorker @AssistedInject constructor(
     lateinit var measurementsRepository: MeasurementsRepository
 
     @Inject
+    lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
+
+    @Inject
+    lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
+
+    @Inject
     lateinit var timeStateRepository: TimeStateRepository
 
     @Inject
     lateinit var onboardSensorsRepository: OnboardSensorsRepository
+
+    @Inject
+    lateinit var weatherRepository: WeatherRepository
 
     @Inject
     lateinit var splitRepository: SplitRepository
@@ -53,25 +64,40 @@ class StitchWorker @AssistedInject constructor(
         Log.d(logTag, "Trip name: ${destinationTrip.name}")
 
         trips.filterNot { it == destinationTrip.id }.forEach { tripId ->
-            Log.d(logTag, "Processing trip measurements: ${tripId} -> ${destinationTrip.id}")
+            Log.d(logTag, "Processing trip measurements: $tripId -> ${destinationTrip.id}")
             measurementsRepository.changeTrip(tripId, destinationTrip.id!!)
 
-            Log.d(logTag, "Processing trip sensors: ${tripId} -> ${destinationTrip.id}")
+            Log.d(logTag, "Processing trip sensors: $tripId -> ${destinationTrip.id}")
             onboardSensorsRepository.changeTrip(tripId, destinationTrip.id)
 
-            Log.d(logTag, "Processing trip time states: ${tripId} -> ${destinationTrip.id}")
+            Log.d(logTag, "Processing trip heart rates: $tripId -> ${destinationTrip.id}")
+            heartRateMeasurementRepository.changeTrip(tripId, destinationTrip.id)
+
+            Log.d(logTag, "Processing trip csc: $tripId -> ${destinationTrip.id}")
+            cadenceSpeedMeasurementRepository.changeTrip(tripId, destinationTrip.id)
+
+            Log.d(logTag, "Processing trip weather: $tripId -> ${destinationTrip.id}")
+            weatherRepository.changeTrip(tripId, destinationTrip.id)
+
+            Log.d(logTag, "Processing trip time states: $tripId -> ${destinationTrip.id}")
             timeStateRepository.getTimeStates(tripId).forEach {
-                timeStateRepository.update(it.copy(tripId = destinationTrip.id,
-                    originalTripId = it.tripId,
-                    state = when (it.state) {
-                        TimeStateEnum.START -> TimeStateEnum.RESUME
-                        TimeStateEnum.STOP -> TimeStateEnum.PAUSE
-                        else -> it.state
-                    }))
+                timeStateRepository.update(
+                    it.copy(
+                        tripId = destinationTrip.id,
+                        originalTripId = it.tripId,
+                        state = when (it.state) {
+                            TimeStateEnum.START -> TimeStateEnum.RESUME
+                            TimeStateEnum.STOP -> TimeStateEnum.PAUSE
+                            else -> it.state
+                        }
+                    )
+                )
             }
-            Log.d(logTag, "Removing trip: ${tripId}")
-            googleFitApiService.deleteTrip(trip = tripsRepository.get(tripId),
-                timeStates = timeStateRepository.getTimeStates(tripId))
+            Log.d(logTag, "Removing trip: $tripId")
+            googleFitApiService.deleteTrip(
+                trip = tripsRepository.get(tripId),
+                timeStates = timeStateRepository.getTimeStates(tripId)
+            )
             tripsRepository.removeTrip(tripId)
         }
 
@@ -85,31 +111,50 @@ class StitchWorker @AssistedInject constructor(
         splitRepository.removeTripSplits(destinationTrip.id)
 
         val destinationTimeStates = timeStateRepository.getTimeStates(destinationTrip.id)
-        val splits = calculateSplits(destinationTrip.id,
-            measurementsRepository.getCritical(destinationTrip.id),
+        val splits = calculateSplits(
+            destinationTrip.id,
+            measurementsRepository.get(destinationTrip.id),
             destinationTimeStates,
-            PreferenceManager.getDefaultSharedPreferences(applicationContext)).toTypedArray()
+            PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        ).toTypedArray()
         splitRepository.addSplits(splits)
 
-        tripsRepository.updateTripStats(TripStats(id = destinationTrip.id,
-            distance = splits.last().totalDistance,
-            duration = splits.last().totalDuration,
-            averageSpeed = (splits.last().totalDistance / splits.last().totalDuration).toFloat()))
-
-        tripsRepository.updateWheelCircumference(TripWheelCircumference(
-            id = destinationTrip.id,
-            userWheelCircumference = destinationTrip.userWheelCircumference,
-            autoWheelCircumference = destinationTrip.autoWheelCircumference))
-
-        measurementsRepository.getCritical(destinationTrip.id).let { measurements ->
-            googleFitApiService.updateDatasets(
-                measurements,
-                getEffectiveCircumference(destinationTrip, measurements)
-                    ?: userCircumferenceToMeters(bikeRepository.get(destinationTrip.bikeId)?.wheelCircumference)
-                    ?: 0f
+        tripsRepository.updateTripStats(
+            TripStats(
+                id = destinationTrip.id,
+                distance = splits.last().totalDistance,
+                duration = splits.last().totalDuration,
+                averageSpeed = (splits.last().totalDistance / splits.last().totalDuration).toFloat()
             )
-            googleFitApiService.updateSession(destinationTrip, destinationTimeStates)
-        }
+        )
+
+        tripsRepository.updateWheelCircumference(
+            TripWheelCircumference(
+                id = destinationTrip.id,
+                userWheelCircumference = destinationTrip.userWheelCircumference,
+                autoWheelCircumference = destinationTrip.autoWheelCircumference
+            )
+        )
+
+
+        cadenceSpeedMeasurementRepository.getSpeedMeasurements(destinationTrip.id)
+            .let { speedMeasurements ->
+                googleFitApiService.updateDatasets(
+                    measurements = measurementsRepository.get(destinationTrip.id),
+                    heartRateMeasurements = heartRateMeasurementRepository.get(destinationTrip.id),
+                    speedMeasurements = speedMeasurements,
+                    cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(
+                        destinationTrip.id
+                    ),
+                    wheelCircumference = getEffectiveCircumference(
+                        destinationTrip,
+                        speedMeasurements
+                    )
+                        ?: userCircumferenceToMeters(bikeRepository.get(destinationTrip.bikeId)?.wheelCircumference)
+                        ?: 0f
+                )
+                googleFitApiService.updateSession(destinationTrip, destinationTimeStates)
+            }
         return Result.success()
     }
 }

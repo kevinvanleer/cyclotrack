@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 23,
-    "identityHash": "31faf353e62dd4bb9ac2149284b8b2c7",
+    "version": 27,
+    "identityHash": "d0cb6cb0e9c2190bc0889edbdc111651",
     "entities": [
       {
         "tableName": "Trip",
@@ -162,7 +162,7 @@
       },
       {
         "tableName": "Measurements",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `heartRate` INTEGER, `cadenceRevolutions` INTEGER, `cadenceLastEvent` INTEGER, `cadenceRpm` REAL, `speedRevolutions` INTEGER, `speedLastEvent` INTEGER, `speedRpm` REAL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "tripId",
@@ -243,48 +243,6 @@
             "notNull": true
           },
           {
-            "fieldPath": "heartRate",
-            "columnName": "heartRate",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "cadenceRevolutions",
-            "columnName": "cadenceRevolutions",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "cadenceLastEvent",
-            "columnName": "cadenceLastEvent",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "cadenceRpm",
-            "columnName": "cadenceRpm",
-            "affinity": "REAL",
-            "notNull": false
-          },
-          {
-            "fieldPath": "speedRevolutions",
-            "columnName": "speedRevolutions",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "speedLastEvent",
-            "columnName": "speedLastEvent",
-            "affinity": "INTEGER",
-            "notNull": false
-          },
-          {
-            "fieldPath": "speedRpm",
-            "columnName": "speedRpm",
-            "affinity": "REAL",
-            "notNull": false
-          },
-          {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
@@ -324,7 +282,7 @@
       },
       {
         "tableName": "TimeState",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `state` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `originalTripId` INTEGER, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `state` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `auto` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, `originalTripId` INTEGER, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "tripId",
@@ -341,6 +299,12 @@
           {
             "fieldPath": "timestamp",
             "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "auto",
+            "columnName": "auto",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -878,7 +842,7 @@
       },
       {
         "tableName": "CadenceSpeedMeasurement",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, `lastEvent` INTEGER NOT NULL, `rpm` REAL NOT NULL, `sensorType` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, `lastEvent` INTEGER NOT NULL, `rpm` REAL, `sensorType` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "tripId",
@@ -908,7 +872,7 @@
             "fieldPath": "rpm",
             "columnName": "rpm",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "sensorType",
@@ -958,7 +922,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '31faf353e62dd4bb9ac2149284b8b2c7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd0cb6cb0e9c2190bc0889edbdc111651')"
     ]
   }
 }

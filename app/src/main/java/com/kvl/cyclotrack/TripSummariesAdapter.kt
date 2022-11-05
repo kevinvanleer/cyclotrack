@@ -110,8 +110,10 @@ class TripSummariesAdapter(
 
         Log.d(logTag, "Building in progress view for ${tripId}:${position}")
         holder.tripSummaryView.tripId = tripId
-        holder.tripSummaryView.setTripInProgress(trips[position].duration ?: 0.0,
-            trips[position].distance ?: 0.0)
+        holder.tripSummaryView.setTripInProgress(
+            trips[position].duration ?: 0.0,
+            trips[position].distance ?: 0.0
+        )
         holder.tripSummaryView.onResumeMap()
         holder.tripSummaryView.clearMap()
         holder.tripSummaryView.showSelectionIndicator = multiSelectMode
@@ -120,7 +122,7 @@ class TripSummariesAdapter(
 
         viewLifecycleOwner.lifecycleScope.launch {
             Log.d(logTag, "Updating view for ${tripId}:${position}")
-            val measurements = viewModel.getTripMeasurements(tripId)
+            val measurements = viewModel.getMeasurements(tripId)
             val timeStates = viewModel.getTripTimeStates(tripId)
             Log.d(logTag, "Retrieved data for ${tripId}:${position}")
             val mapData = plotPath(measurements, timeStates)
@@ -130,11 +132,13 @@ class TripSummariesAdapter(
                     path.startCap(RoundCap())
                     path.endCap(RoundCap())
                     path.width(5f)
-                    path.color(ResourcesCompat.getColor(
-                        context.resources,
-                        R.color.accentColor,
-                        null
-                    ))
+                    path.color(
+                        ResourcesCompat.getColor(
+                            context.resources,
+                            R.color.accentColor,
+                            null
+                        )
+                    )
                     holder.tripSummaryView.drawPath(path, mapData.bounds)
                 }
             }
@@ -153,8 +157,10 @@ class TripSummariesAdapter(
         holder.tripSummaryView.title = trips[position].name ?: "Unnamed trip"
         holder.tripSummaryView.setStartTime(trips[position].timestamp)
         holder.tripSummaryView.setDate(trips[position].timestamp)
-        holder.tripSummaryView.setTripDetails(trips[position].duration ?: 0.0,
-            trips[position].distance ?: 0.0)
+        holder.tripSummaryView.setTripDetails(
+            trips[position].duration ?: 0.0,
+            trips[position].distance ?: 0.0
+        )
         holder.tripSummaryView.onResumeMap()
         holder.tripSummaryView.clearMap()
         holder.tripSummaryView.showSelectionIndicator = multiSelectMode
@@ -163,7 +169,7 @@ class TripSummariesAdapter(
 
         viewLifecycleOwner.lifecycleScope.launch {
             Log.d(logTag, "Updating view for ${tripId}:${position}")
-            val measurements = viewModel.getTripMeasurements(tripId)
+            val measurements = viewModel.getMeasurements(tripId)
             val timeStates = viewModel.getTripTimeStates(tripId)
             Log.d(logTag, "Retrieved data for ${tripId}:${position}")
             val mapData = plotPath(measurements, timeStates)
@@ -173,11 +179,13 @@ class TripSummariesAdapter(
                     path.startCap(RoundCap())
                     path.endCap(RoundCap())
                     path.width(5f)
-                    path.color(ResourcesCompat.getColor(
-                        context.resources,
-                        R.color.accentColor,
-                        null
-                    ))
+                    path.color(
+                        ResourcesCompat.getColor(
+                            context.resources,
+                            R.color.accentColor,
+                            null
+                        )
+                    )
                     holder.tripSummaryView.drawPath(path, mapData.bounds)
                 }
             }

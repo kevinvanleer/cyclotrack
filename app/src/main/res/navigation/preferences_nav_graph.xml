@@ -17,6 +17,9 @@
             android:id="@+id/action_advanced_preferences"
             app:destination="@id/AdvancedPreferencesFragment" />
         <action
+            android:id="@+id/action_autopause_preferences"
+            app:destination="@id/AutoPausePreferencesFragment" />
+        <action
             android:id="@+id/action_show_linked_sensors"
             app:destination="@id/LinkedSensorFragment" />
     </fragment>
@@ -25,6 +28,11 @@
         android:name="com.kvl.cyclotrack.preferences.AdvancedPreferencesFragment"
         android:label="Advanced Preferences"
         tools:layout="@layout/fragment_advanced_preferences" />
+    <fragment
+        android:id="@+id/AutoPausePreferencesFragment"
+        android:name="com.kvl.cyclotrack.preferences.AutoPausePreferencesFragment"
+        android:label="Auto-pause Preferences"
+        tools:layout="@layout/fragment_autopause_preferences" />
     <fragment
         android:id="@+id/LinkedSensorFragment"
         android:name="com.kvl.cyclotrack.LinkedSensorsFragment"

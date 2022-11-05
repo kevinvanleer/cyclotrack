@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen  xmlns:app="http://schemas.android.com/apk/res-auto">
+    <SwitchPreference
+        app:key="@string/preference_key_autopause_enable"
+        app:title="@string/switch_preference_autopause_enable_title"
+        app:summary="@string/switch_preference_autopause_enable_description"
+        app:defaultValue="false" />
+    <SwitchPreference
+        app:key="@string/preference_key_autopause_manual_override"
+        app:title="@string/switch_preference_autopause_resume_lockout_title"
+        app:summary="@string/switch_preference_autopause_resume_lockout_description"
+        app:defaultValue="true" />
+    <SeekBarPreference
+        app:key="@string/preference_key_autopause_speed_threshold"
+        app:title="@string/seekbar_preference_autopause_speedThreshold_title"
+        app:summary="@string/seekbar_preference_autopause_speedThreshold_description"
+        app:defaultValue="5" />
+    <SeekBarPreference
+        app:key="@string/preference_key_autopause_pause_threshold"
+        app:title="@string/seekbar_preference_autopause_pauseThreshold_title"
+        app:summary="@string/seekbar_preference_autopause_pauseThreshold_description"
+        app:defaultValue="5" />
+    <SeekBarPreference
+        app:key="@string/preference_key_autopause_resume_threshold"
+        app:title="@string/seekbar_preference_autopause_resumeThreshold_title"
+        app:summary="@string/seekbar_preference_autopause_resumeThreshold_description"
+        app:defaultValue="5" />
+</PreferenceScreen>

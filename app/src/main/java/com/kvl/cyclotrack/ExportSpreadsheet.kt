@@ -181,6 +181,16 @@ fun exportRideToFastExcel(
             if (exportData.weather?.isNotEmpty() == true) {
                 addDataToSheet(workbook.newWorksheet("weather"), exportData.weather!!)
             }
+            if (exportData.heartRateMeasurements?.isNotEmpty() == true) {
+                addDataToSheet(workbook.newWorksheet("heartRate"), exportData.heartRateMeasurements)
+            }
+            if (exportData.cadenceMeasurements?.isNotEmpty() == true) {
+                addDataToSheet(workbook.newWorksheet("cadence"), exportData.cadenceMeasurements)
+            }
+            if (exportData.speedMeasurements?.isNotEmpty() == true) {
+                addDataToSheet(workbook.newWorksheet("speed"), exportData.speedMeasurements)
+            }
+
             workbook.setCompressionLevel(9)
             workbook.finish()
             stream.close()

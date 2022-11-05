@@ -10,6 +10,9 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementDao
+import com.kvl.cyclotrack.data.HeartRateMeasurementDao
+import com.kvl.cyclotrack.data.SensorType
 import com.kvl.cyclotrack.util.getBikeMassOrNull
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
@@ -268,6 +271,99 @@ val MIGRATION_22_23 = object : Migration(22, 23) {
     }
 }
 
+val MIGRATION_23_24 = object : Migration(23, 24) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE `CadenceSpeedMeasurement` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sensorType` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, lastEvent INTEGER NOT NULL, rpm REAL, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("CREATE INDEX index_CadenceSpeedMeasurement_tripId on CadenceSpeedMeasurement(`tripId`)")
+        database.execSQL("CREATE TABLE `HeartRateMeasurement` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `heartRate` INTEGER NOT NULL, energyExpended INTEGER, rrIntervals TEXT, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("CREATE INDEX index_HeartRateMeasurement_tripId on HeartRateMeasurement(`tripId`)")
+    }
+}
+
+val MIGRATION_24_23 = object : Migration(24, 23) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("DROP TABLE `CadenceSpeedMeasurement`")
+        database.execSQL("DROP TABLE `HeartRateMeasurement`")
+    }
+}
+
+val MIGRATION_25_24 = object : Migration(25, 24) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("DELETE FROM `CadenceSpeedMeasurement`")
+        database.execSQL("DELETE FROM `HeartRateMeasurement`")
+    }
+}
+
+val MIGRATION_24_25 = object : Migration(24, 25) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """INSERT INTO `HeartRateMeasurement`
+                    (tripId, 
+                    timestamp, 
+                    heartRate)
+                SELECT 
+                    tripId,
+                    time,
+                    heartRate
+                FROM Measurements
+                WHERE heartRate IS NOT NULL"""
+        )
+        database.execSQL(
+            """INSERT INTO `CadenceSpeedMeasurement`
+                    (tripId, 
+                    timestamp, 
+                    sensorType,
+                    revolutions,
+                    lastEvent,
+                    rpm)
+                SELECT 
+                    tripId,
+                    time,
+                    ?,
+                    cadenceRevolutions,
+                    cadenceLastEvent,
+                    cadenceRpm 
+                FROM Measurements
+                WHERE cadenceRevolutions IS NOT NULL""",
+            arrayOf(SensorType.CADENCE.value)
+        )
+        database.execSQL(
+            """INSERT INTO `CadenceSpeedMeasurement`
+                    (tripId, 
+                    timestamp, 
+                    sensorType,
+                    revolutions,
+                    lastEvent,
+                    rpm) 
+                SELECT 
+                    tripId,
+                    time,
+                    ?,
+                    speedRevolutions, 
+                    speedLastEvent, 
+                    speedRpm
+                FROM Measurements
+                WHERE speedRevolutions IS NOT NULL""",
+            arrayOf(SensorType.SPEED.value)
+        )
+    }
+}
+
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE TABLE IF NOT EXISTS `measurements_schema25_to_26`(`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("INSERT INTO `measurements_schema25_to_26`(tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, id) SELECT tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, id FROM Measurements")
+        database.execSQL("DROP TABLE `Measurements`")
+        database.execSQL("ALTER TABLE `measurements_schema25_to_26` RENAME TO `Measurements`")
+        database.execSQL("CREATE INDEX index_Measurements_tripId on Measurements(`tripId`)")
+    }
+}
+
+val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE `TimeState` ADD COLUMN auto INTEGER NOT NULL DEFAULT 0")
+    }
+}
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -300,6 +396,12 @@ object TripsDatabaseModule {
                 MIGRATION_20_21,
                 MIGRATION_21_22,
                 MIGRATION_22_23,
+                MIGRATION_23_24,
+                MIGRATION_24_23,
+                MIGRATION_25_24,
+                MIGRATION_24_25,
+                MIGRATION_25_26,
+                MIGRATION_26_27,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -359,5 +461,17 @@ object TripsDatabaseModule {
     @Singleton
     fun provideWeatherDao(db: TripsDatabase): WeatherDao {
         return db.weatherDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCadenceSpeedMeasurementDao(db: TripsDatabase): CadenceSpeedMeasurementDao {
+        return db.cadenceSpeedMeasurementDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideHeartRateMeasurementDao(db: TripsDatabase): HeartRateMeasurementDao {
+        return db.heartRateMeasurementDao()
     }
 }

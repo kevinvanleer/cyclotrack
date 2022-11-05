@@ -17,6 +17,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import javax.inject.Inject
@@ -35,6 +37,12 @@ class ExportTripWorker @AssistedInject constructor(
 
     @Inject
     lateinit var measurementsRepository: MeasurementsRepository
+
+    @Inject
+    lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
+
+    @Inject
+    lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
 
     @Inject
     lateinit var timeStateRepository: TimeStateRepository
@@ -108,6 +116,9 @@ class ExportTripWorker @AssistedInject constructor(
         val exportData = TripDetailsViewModel.ExportData(
             summary = tripsRepository.get(tripId),
             measurements = measurementsRepository.get(tripId),
+            heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
+            speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),
+            cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(tripId),
             timeStates = timeStateRepository.getTimeStates(tripId),
             splits = splitRepository.getTripSplits(tripId),
             onboardSensors = onboardSensorsRepository.get(tripId),
@@ -115,6 +126,9 @@ class ExportTripWorker @AssistedInject constructor(
         )
         if (exportData.summary != null &&
             exportData.measurements != null &&
+            exportData.heartRateMeasurements != null &&
+            exportData.cadenceMeasurements != null &&
+            exportData.speedMeasurements != null &&
             exportData.timeStates != null &&
             exportData.splits != null &&
             exportData.onboardSensors != null &&

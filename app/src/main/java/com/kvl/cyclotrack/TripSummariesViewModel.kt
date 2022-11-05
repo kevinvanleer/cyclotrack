@@ -16,23 +16,12 @@ class TripSummariesViewModel @Inject constructor(
 ) : ViewModel() {
     val tripListState = Bundle()
     val allTrips = tripsRepository.observeAll()
-    val realTrips = tripsRepository.observeRealTrips()
-    fun observeTripMeasurements(tripId: Long) =
-        measurementsRepository.observeCritical(tripId)
 
-    suspend fun getTripMeasurements(tripId: Long) =
-        measurementsRepository.getCritical(tripId)
+    suspend fun getMeasurements(tripId: Long) =
+        measurementsRepository.get(tripId)
 
     suspend fun getTripTimeStates(tripId: Long): Array<TimeState> =
         timeStateRepository.getTimeStates(tripId)
-
-    fun removeTrips(trips: Array<Long>) {
-        viewModelScope.launch {
-            trips.forEach {
-                tripsRepository.removeTrip(it)
-            }
-        }
-    }
 
     fun cleanupTrips() =
         viewModelScope.launch {

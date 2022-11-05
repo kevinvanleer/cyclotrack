@@ -318,6 +318,16 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
             }
         }
 
+        findPreference<Preference>(getString(R.string.preference_key_autopause_preferences))?.apply {
+            onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                view?.findNavController()?.let {
+                    Log.d(logTag, it.toString())
+                    it.navigate(R.id.action_autopause_preferences)
+                    true
+                } == true
+            }
+        }
+
         findPreference<Preference>(getString(R.string.preference_key_advanced_preferences))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
                 view?.findNavController()?.let {

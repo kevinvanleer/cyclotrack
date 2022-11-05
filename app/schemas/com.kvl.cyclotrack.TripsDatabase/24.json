@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 23,
-    "identityHash": "31faf353e62dd4bb9ac2149284b8b2c7",
+    "version": 24,
+    "identityHash": "a8dd0e15309037382e8620e48aee8eed",
     "entities": [
       {
         "tableName": "Trip",
@@ -878,7 +878,7 @@
       },
       {
         "tableName": "CadenceSpeedMeasurement",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, `lastEvent` INTEGER NOT NULL, `rpm` REAL NOT NULL, `sensorType` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, `lastEvent` INTEGER NOT NULL, `rpm` REAL, `sensorType` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
         "fields": [
           {
             "fieldPath": "tripId",
@@ -908,7 +908,7 @@
             "fieldPath": "rpm",
             "columnName": "rpm",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "sensorType",
@@ -958,7 +958,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '31faf353e62dd4bb9ac2149284b8b2c7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a8dd0e15309037382e8620e48aee8eed')"
     ]
   }
 }

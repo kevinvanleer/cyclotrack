@@ -4,6 +4,10 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.*
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.HeartRateMeasurement
+import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,6 +24,8 @@ class TripDetailsViewModel @Inject constructor(
     private val sharedPreferences: SharedPreferences,
     private val googleFitApiService: GoogleFitApiService,
     private val weatherRepository: WeatherRepository,
+    private val hrmRepository: HeartRateMeasurementRepository,
+    private val cscRepository: CadenceSpeedMeasurementRepository
 ) : ViewModel() {
     val logTag = "TripDetailsViewModel"
     var tripId: Long = 0
@@ -27,10 +33,12 @@ class TripDetailsViewModel @Inject constructor(
             tripOverview = tripsRepository.observe(value)
             timeState = timeStateRepository.observeTimeStates(value)
             splits = splitRepository.observeTripSplits(value)
-            measurements = measurementsRepository.observeCritical(value)
-            exportMeasurements = measurementsRepository.observe(value)
+            locationMeasurements = measurementsRepository.observe(value)
             onboardSensors = onboardSensorsRepository.observeDecimated(value)
             tripWeather = weatherRepository.observeTripWeather(value)
+            heartRateMeasurements = hrmRepository.observeTripHeartRates(value)
+            cadenceMeasurements = cscRepository.observeTripCadence(value)
+            speedMeasurements = cscRepository.observeTripSpeed(value)
             field = value
         }
 
@@ -38,9 +46,12 @@ class TripDetailsViewModel @Inject constructor(
     lateinit var timeState: LiveData<Array<TimeState>> private set
     lateinit var splits: LiveData<Array<Split>> private set
     lateinit var measurements: LiveData<Array<CriticalMeasurements>> private set
+    lateinit var locationMeasurements: LiveData<Array<Measurements>> private set
     lateinit var onboardSensors: LiveData<Array<OnboardSensors>> private set
     lateinit var tripWeather: LiveData<Array<Weather>> private set
-    private lateinit var exportMeasurements: LiveData<Array<Measurements>>
+    lateinit var heartRateMeasurements: LiveData<Array<HeartRateMeasurement>> private set
+    lateinit var cadenceMeasurements: LiveData<Array<CadenceSpeedMeasurement>> private set
+    lateinit var speedMeasurements: LiveData<Array<CadenceSpeedMeasurement>> private set
 
     suspend fun getBikeWheelCircumference(bikeId: Long) =
         userCircumferenceToMeters(bikeRepository.get(bikeId)?.wheelCircumference) ?: 0f
@@ -90,48 +101,45 @@ class TripDetailsViewModel @Inject constructor(
             limit = limit
         )
 
-    data class ExportData(
-        var summary: Trip? = null,
-        var measurements: Array<Measurements>? = null,
-        var timeStates: Array<TimeState>? = null,
-        var splits: Array<Split>? = null,
-        var onboardSensors: Array<OnboardSensors>? = null,
-        var weather: Array<Weather>? = null,
+    data class SpeedData(
+        val summary: Trip? = null,
+        val locationMeasurements: Array<Measurements> = emptyArray(),
+        val timeStates: Array<TimeState> = emptyArray(),
+        val speedMeasurements: Array<CadenceSpeedMeasurement> = emptyArray(),
     )
 
-    fun exportData() = MediatorLiveData<ExportData>().apply {
-        value = ExportData()
+    data class ExportData(
+        val summary: Trip? = null,
+        val measurements: Array<Measurements>? = null,
+        val timeStates: Array<TimeState>? = null,
+        val splits: Array<Split>? = null,
+        val onboardSensors: Array<OnboardSensors>? = null,
+        val weather: Array<Weather>? = null,
+        val heartRateMeasurements: Array<HeartRateMeasurement>? = null,
+        val speedMeasurements: Array<CadenceSpeedMeasurement>? = null,
+        val cadenceMeasurements: Array<CadenceSpeedMeasurement>? = null,
+    )
+
+    fun speedLiveData() = MediatorLiveData<SpeedData>().apply {
         addSource(tripOverview) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export trip")
-            value = value?.copy(summary = it)
+            value = value?.copy(summary = it) ?: SpeedData(summary = it)
         }
-        addSource(exportMeasurements) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export measurements")
-            value = value?.copy(measurements = it)
+        addSource(locationMeasurements) {
+            value = value?.copy(locationMeasurements = it) ?: SpeedData(locationMeasurements = it)
         }
         addSource(timeState) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export timeStates")
-            value = value?.copy(timeStates = it)
+            value = value?.copy(timeStates = it) ?: SpeedData(timeStates = it)
         }
-        addSource(splits) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export splits")
-            value = value?.copy(splits = it)
-        }
-        addSource(onboardSensors) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export onboardSensors")
-            value = value?.copy(onboardSensors = it)
-        }
-        addSource(tripWeather) {
-            Log.d("TRIP_DETAILS_VIEW_MODEL", "Updating export weather")
-            value = value?.copy(weather = it)
+        addSource(speedMeasurements) {
+            value = value?.copy(speedMeasurements = it) ?: SpeedData(speedMeasurements = it)
         }
     }
 
     fun addSplits() {
-        val combined = zipLiveData(measurements, timeState)
+        val combined = zipLiveData(locationMeasurements, timeState)
         combined.observeForever(object :
-            Observer<Pair<Array<CriticalMeasurements>, Array<TimeState>>> {
-            override fun onChanged(pair: Pair<Array<CriticalMeasurements>, Array<TimeState>>) {
+            Observer<Pair<Array<Measurements>, Array<TimeState>>> {
+            override fun onChanged(pair: Pair<Array<Measurements>, Array<TimeState>>) {
                 val measurements = pair.first
                 val timeStates = pair.second
 
@@ -150,5 +158,4 @@ class TripDetailsViewModel @Inject constructor(
             }
         })
     }
-
 }

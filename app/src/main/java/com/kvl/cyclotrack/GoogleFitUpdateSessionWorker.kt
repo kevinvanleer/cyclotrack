@@ -30,21 +30,23 @@ class GoogleFitUpdateSessionWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         inputData.getLong("tripId", -1).takeIf { it >= 0 }?.let { tripId ->
-            Log.i(logTag, "Syncing data with Google Fit for trip ${tripId}")
+            Log.i(logTag, "Syncing data with Google Fit for trip $tripId")
             try {
                 val trip = tripsRepository.get(tripId)
                 val timeStates = timeStateRepository.getTimeStates(tripId)
-                val measurements = measurementsRepository.getCritical(tripId)
+                val measurements = measurementsRepository.get(tripId)
 
                 timeStates.takeIf { it.isNotEmpty() }
                     ?.let { googleFitApiService.updateSession(trip, it) }
-                    ?: googleFitApiService.updateSession(trip,
+                    ?: googleFitApiService.updateSession(
+                        trip,
                         measurements.first().time,
-                        measurements.last().time)
+                        measurements.last().time
+                    )
 
                 tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.SYNCED)
             } catch (e: Exception) {
-                Log.e(logTag, "Failed to update trip ${tripId}", e)
+                Log.e(logTag, "Failed to update trip $tripId", e)
                 tripsRepository.setGoogleFitSyncStatus(tripId, GoogleFitSyncStatusEnum.FAILED)
                 return Result.failure()
             }

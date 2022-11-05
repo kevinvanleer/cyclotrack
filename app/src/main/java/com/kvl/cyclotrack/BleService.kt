@@ -23,7 +23,13 @@ import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import javax.inject.Inject
 
-data class HrmData(val batteryLevel: Byte?, val bpm: Short?)
+data class HrmData(
+    val batteryLevel: Byte?,
+    val bpm: Short?,
+    val energyExpended: Short? = null,
+    val rrIntervals: String? = null,
+    val timestamp: Long? = null,
+)
 
 data class SpeedData(
     val batteryLevel: Byte?,
@@ -126,7 +132,11 @@ class BleService @Inject constructor(
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(logTag, "Disconnected ${gatt.device.address} from GATT server.")
                     if (gatts.any { it.device.address == gatt.device.address }) {
-                        gatt.connect()
+                        try {
+                            gatt.connect()
+                        } catch (e: SecurityException) {
+                            Log.w(logTag, "Bluetooth permissions have not been granted", e)
+                        }
                     }
                 }
             }
@@ -240,8 +250,8 @@ class BleService @Inject constructor(
     }
 
     private fun broadcastUpdate(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+        val eventTime = SystemUtils.currentTimeMillis()
         Log.d(logTag, "broadcast update for ${characteristic.uuid} on ${gatt.device.address}")
-
         when (characteristic.uuid) {
             hrmCharacteristicUuid -> {
                 if (addresses.hrm == null) {
@@ -249,8 +259,9 @@ class BleService @Inject constructor(
                     readBatteryLevel(gatt)
                 }
                 val flag = characteristic.properties
-                val format = when (flag and 0x01) {
-                    0x01 -> {
+                Log.d("DEBUG", Integer.toBinaryString(characteristic.properties))
+                val format = when (flag and 0b01) {
+                    0b01 -> {
                         Log.d(logTag, "Heart rate format UINT16.")
                         BluetoothGattCharacteristic.FORMAT_UINT16
                     }
@@ -259,11 +270,16 @@ class BleService @Inject constructor(
                         BluetoothGattCharacteristic.FORMAT_UINT8
                     }
                 }
+                if (flag and 0b1000 == 0x01) {
+                    Log.d("DEBUG", "Supports RR interval")
+                }
+                Log.d("DEBUG", characteristic.value.toString())
                 val heartRate = characteristic.getIntValue(format, 1)
                 Log.d(logTag, String.format("Received heart rate: %d", heartRate))
                 HrmData(
-                    hrmSensor.batteryLevel,
-                    heartRate.toShort()
+                    batteryLevel = hrmSensor.batteryLevel,
+                    bpm = heartRate.toShort(),
+                    timestamp = eventTime
                 ).let {
                     hrmSensor = it
                     EventBus.getDefault().post(it)
@@ -317,7 +333,7 @@ class BleService @Inject constructor(
                         val lastEvent =
                             characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 5)
                         if (revolutionCount != speedSensor.revolutionCount ||
-                            SystemUtils.currentTimeMillis() - (speedSensor.timestamp
+                            eventTime - (speedSensor.timestamp
                                 ?: 0) > timeout
                         ) {
                             val rpm = getRpm(
@@ -336,7 +352,7 @@ class BleService @Inject constructor(
                             SpeedData(
                                 speedSensor.batteryLevel,
                                 revolutionCount,
-                                lastEvent, rpm, SystemUtils.currentTimeMillis()
+                                lastEvent, rpm, eventTime
                             ).let {
                                 speedSensor = it
                                 EventBus.getDefault().post(it)
@@ -357,7 +373,7 @@ class BleService @Inject constructor(
                             "Cadence sensor changed: $revolutionCount :: $lastEvent"
                         )
                         if (revolutionCount != cadenceSensor.revolutionCount ||
-                            SystemUtils.currentTimeMillis() - (cadenceSensor.timestamp
+                            eventTime - (cadenceSensor.timestamp
                                 ?: 0) > timeout
                         ) {
                             val rpm = getRpm(
@@ -376,7 +392,7 @@ class BleService @Inject constructor(
                             CadenceData(
                                 cadenceSensor.batteryLevel,
                                 revolutionCount,
-                                lastEvent, rpm, SystemUtils.currentTimeMillis()
+                                lastEvent, rpm, eventTime
                             ).let {
                                 cadenceSensor = it
                                 EventBus.getDefault().post(it)
@@ -580,12 +596,17 @@ class BleService @Inject constructor(
     }
 
     private fun shouldConnect(gatt: BluetoothGatt) =
-        when (bluetoothManager.getConnectionState(
-            gatt.device,
-            BluetoothProfile.GATT
-        )) {
-            BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_CONNECTED -> false
-            else -> true
+        try {
+            when (bluetoothManager.getConnectionState(
+                gatt.device,
+                BluetoothProfile.GATT
+            )) {
+                BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_CONNECTED -> false
+                else -> true
+            }
+        } catch (e: SecurityException) {
+            Log.w(logTag, "Bluetooth permissions have not been granted", e)
+            false
         }
 
     fun restore() {

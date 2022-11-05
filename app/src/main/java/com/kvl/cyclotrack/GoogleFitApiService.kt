@@ -9,6 +9,8 @@ import com.google.android.gms.fitness.data.*
 import com.google.android.gms.fitness.request.*
 import com.google.android.gms.fitness.result.SessionReadResponse
 import com.google.android.gms.tasks.Task
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.fitnessOptions
 import com.kvl.cyclotrack.util.getGoogleAccount
@@ -91,7 +93,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return hr
     }
 
-    private fun createLocationDataset(measurements: Array<CriticalMeasurements>): DataSet {
+    private fun createLocationDataset(measurements: Array<Measurements>): DataSet {
         val dataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_LOCATION_SAMPLE)
@@ -111,7 +113,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return locations.build()
     }
 
-    private fun createHeartRateDataset(measurements: Array<CriticalMeasurements>): DataSet {
+    private fun createHeartRateDataset(measurements: Array<HeartRateMeasurement>): DataSet {
         val dataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_HEART_RATE_BPM)
@@ -120,39 +122,47 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         val heartRates = DataSet.builder(dataSource)
         measurements.forEach {
             val dataPoint = DataPoint.builder(dataSource)
-            it.heartRate?.let { heartRate ->
-                dataPoint.setField(Field.FIELD_BPM, heartRate.toFloat())
-                dataPoint.setTimestamp(it.time, TimeUnit.MILLISECONDS)
-                heartRates.add(dataPoint.build())
+            it.heartRate.let { heartRate ->
+                try {
+                    dataPoint.setField(Field.FIELD_BPM, heartRate.toFloat())
+                    dataPoint.setTimestamp(it.timestamp, TimeUnit.MILLISECONDS)
+                    heartRates.add(dataPoint.build())
+                } catch (e: IllegalArgumentException) {
+                    Log.w(logTag, "Heart rate value out of range: $heartRate")
+                }
             }
         }
 
         return heartRates.build()
     }
 
-    private fun createCadenceDataset(measurements: Array<CriticalMeasurements>): DataSet {
+    private fun createCadenceDataset(measurements: Array<CadenceSpeedMeasurement>): DataSet {
         val dataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE)
             .setType(DataSource.TYPE_DERIVED)
             .build()
         val cadenceData = DataSet.builder(dataSource)
-        var lastMeasurements: CriticalMeasurements? = null
+        var lastMeasurements: CadenceSpeedMeasurement? = null
         measurements.forEach { current ->
-            current.takeIf { it.cadenceRevolutions != null }?.let { curr ->
-                lastMeasurements?.takeIf { it.cadenceRevolutions != null && it.cadenceRpm != 0f }
+            current.let { curr ->
+                lastMeasurements?.takeIf { it.rpm != 0f }
                     ?.let { last ->
                         val dataPoint = DataPoint.builder(dataSource)
                         getRpm(
-                            rev = curr.cadenceRevolutions ?: 0,
-                            revLast = last.cadenceRevolutions ?: 0,
-                            time = curr.cadenceLastEvent ?: 0,
-                            timeLast = last.cadenceLastEvent ?: 0
+                            rev = curr.revolutions,
+                            revLast = last.revolutions,
+                            time = curr.lastEvent,
+                            timeLast = last.lastEvent
                         ).takeIf { it.isFinite() }
                             ?.let { cadence ->
-                                dataPoint.setField(Field.FIELD_RPM, cadence)
-                                dataPoint.setTimestamp(curr.time, TimeUnit.MILLISECONDS)
-                                cadenceData.add(dataPoint.build())
+                                try {
+                                    dataPoint.setField(Field.FIELD_RPM, cadence)
+                                    dataPoint.setTimestamp(curr.timestamp, TimeUnit.MILLISECONDS)
+                                    cadenceData.add(dataPoint.build())
+                                } catch (e: IllegalArgumentException) {
+                                    Log.w(logTag, "Cadence value out of range: $cadence")
+                                }
                             }
                     }
                 lastMeasurements = curr
@@ -162,20 +172,20 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return cadenceData.build()
     }
 
-    private fun createCrankRevolutionsDataset(measurements: Array<CriticalMeasurements>): DataSet {
+    private fun createCrankRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>): DataSet {
         val dataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_CYCLING_PEDALING_CUMULATIVE)
             .setType(DataSource.TYPE_RAW)
             .build()
         val crankRevData = DataSet.builder(dataSource)
-        var lastMeasurements: CriticalMeasurements? = null
+        var lastMeasurements: CadenceSpeedMeasurement? = null
         measurements.forEach {
             val dataPoint = DataPoint.builder(dataSource)
-            it.cadenceRevolutions?.let { revs ->
+            it.revolutions.let { revs ->
                 lastMeasurements?.let { last ->
                     dataPoint.setField(Field.FIELD_REVOLUTIONS, revs)
-                    dataPoint.setTimeInterval(last.time, it.time, TimeUnit.MILLISECONDS)
+                    dataPoint.setTimeInterval(last.timestamp, it.timestamp, TimeUnit.MILLISECONDS)
                     crankRevData.add(dataPoint.build())
                 }
             }
@@ -185,20 +195,20 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return crankRevData.build()
     }
 
-    private fun createWheelRevolutionsDataset(measurements: Array<CriticalMeasurements>): DataSet {
+    private fun createWheelRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>): DataSet {
         val dataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_CYCLING_WHEEL_REVOLUTION)
             .setType(DataSource.TYPE_RAW)
             .build()
         val crankRevData = DataSet.builder(dataSource)
-        var lastMeasurements: CriticalMeasurements? = null
+        var lastMeasurements: CadenceSpeedMeasurement? = null
         measurements.forEach {
             val dataPoint = DataPoint.builder(dataSource)
-            it.speedRevolutions?.let { revs ->
+            it.revolutions.let { revs ->
                 lastMeasurements?.let { last ->
                     dataPoint.setField(Field.FIELD_REVOLUTIONS, revs)
-                    dataPoint.setTimeInterval(last.time, it.time, TimeUnit.MILLISECONDS)
+                    dataPoint.setTimeInterval(last.timestamp, it.timestamp, TimeUnit.MILLISECONDS)
                     crankRevData.add(dataPoint.build())
                 }
             }
@@ -208,14 +218,14 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         return crankRevData.build()
     }
 
-    private fun createDistanceDeltaDataset(measurements: Array<CriticalMeasurements>): DataSet {
+    private fun createDistanceDeltaDataset(measurements: Array<Measurements>): DataSet {
         val dataSource = DataSource.Builder()
             .setAppPackageName(context)
             .setDataType(DataType.TYPE_DISTANCE_DELTA)
             .setType(DataSource.TYPE_DERIVED)
             .build()
         val datasetBuilder = DataSet.builder(dataSource)
-        var lastMeasurements: CriticalMeasurements? = null
+        var lastMeasurements: Measurements? = null
         measurements.forEach {
             val dataPoint = DataPoint.builder(dataSource)
             lastMeasurements?.let { last ->
@@ -230,7 +240,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     }
 
     private fun createSpeedDataset(
-        measurements: Array<CriticalMeasurements>,
+        measurements: Array<CadenceSpeedMeasurement>,
         wheelCircumference: Float,
     ): DataSet {
         Log.d(logTag, "wheelCircumference=${wheelCircumference}")
@@ -240,21 +250,28 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
             .setType(DataSource.TYPE_DERIVED)
             .build()
         val speedData = DataSet.builder(dataSource)
-        var lastMeasurements: CriticalMeasurements? = null
+        var lastMeasurements: CadenceSpeedMeasurement? = null
         measurements.forEach { current ->
-            current.takeIf { it.speedRevolutions != null }?.let { curr ->
-                lastMeasurements?.takeIf { it.speedRevolutions != null && it.speedRpm != 0f }
+            current.let { curr ->
+                lastMeasurements?.takeIf { it.rpm != 0f }
                     ?.let { last ->
                         getRpm(
-                            rev = curr.speedRevolutions ?: 0,
-                            revLast = last.speedRevolutions ?: 0,
-                            curr.speedLastEvent ?: 0,
-                            last.speedLastEvent ?: 0
-                        ).takeIf { it.isFinite() }?.let { speedRpm ->
-                            val dataPoint = DataPoint.builder(dataSource)
-                                .setField(Field.FIELD_SPEED, speedRpm / 60 * wheelCircumference)
-                                .setTimestamp(curr.time, TimeUnit.MILLISECONDS)
-                            speedData.add(dataPoint.build())
+                            rev = curr.revolutions,
+                            revLast = last.revolutions,
+                            curr.lastEvent,
+                            last.lastEvent
+                        ).takeIf { it.isFinite() }?.let { rpm ->
+                            try {
+                                val dataPoint = DataPoint.builder(dataSource)
+                                    .setField(Field.FIELD_SPEED, rpm / 60 * wheelCircumference)
+                                    .setTimestamp(curr.timestamp, TimeUnit.MILLISECONDS)
+                                speedData.add(dataPoint.build())
+                            } catch (e: IllegalArgumentException) {
+                                Log.w(
+                                    logTag,
+                                    "Speed value out of range: ${rpm / 60 * wheelCircumference}"
+                                )
+                            }
                         }
                     }
                 lastMeasurements = curr
@@ -321,7 +338,7 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    private fun insertHeartRateDataset(measurements: Array<CriticalMeasurements>) {
+    private fun insertHeartRateDataset(measurements: Array<HeartRateMeasurement>) {
         try {
             insertDataset(createHeartRateDataset(measurements))
         } catch (e: NoSuchElementException) {
@@ -329,43 +346,43 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         }
     }
 
-    private fun updateHeartRateDataset(measurements: Array<CriticalMeasurements>) {
+    private fun updateHeartRateDataset(measurements: Array<HeartRateMeasurement>) {
         updateDataset(
             createHeartRateDataset(measurements),
-            measurements.first().time,
-            measurements.last().time
+            measurements.first().timestamp,
+            measurements.last().timestamp
         )
     }
 
-    fun insertCrankRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
+    fun insertCrankRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>) {
         insertDataset(createCrankRevolutionsDataset(measurements))
     }
 
-    fun updateCrankRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
+    fun updateCrankRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>) {
         updateDataset(
             createCrankRevolutionsDataset(measurements),
-            measurements.first().time,
-            measurements.last().time
+            measurements.first().timestamp,
+            measurements.last().timestamp
         )
     }
 
-    fun insertWheelRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
+    fun insertWheelRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>) {
         insertDataset(createWheelRevolutionsDataset(measurements))
     }
 
-    fun updateWheelRevolutionsDataset(measurements: Array<CriticalMeasurements>) {
+    fun updateWheelRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>) {
         updateDataset(
             createWheelRevolutionsDataset(measurements),
-            measurements.first().time,
-            measurements.last().time
+            measurements.first().timestamp,
+            measurements.last().timestamp
         )
     }
 
-    private fun insertLocationDataset(measurements: Array<CriticalMeasurements>) {
+    private fun insertLocationDataset(measurements: Array<Measurements>) {
         insertDataset(createLocationDataset(measurements))
     }
 
-    fun updateLocationDataset(measurements: Array<CriticalMeasurements>) {
+    fun updateLocationDataset(measurements: Array<Measurements>) {
         updateDataset(
             createLocationDataset(measurements),
             measurements.first().time,
@@ -373,11 +390,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         )
     }
 
-    private fun insertDistanceDeltaDataset(measurements: Array<CriticalMeasurements>) {
+    private fun insertDistanceDeltaDataset(measurements: Array<Measurements>) {
         insertDataset(createDistanceDeltaDataset(measurements))
     }
 
-    private fun updateDistanceDeltaDataset(measurements: Array<CriticalMeasurements>) {
+    private fun updateDistanceDeltaDataset(measurements: Array<Measurements>) {
         updateDataset(
             createDistanceDeltaDataset(measurements),
             measurements.first().time,
@@ -385,63 +402,71 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         )
     }
 
-    private fun insertCadenceDataset(measurements: Array<CriticalMeasurements>) {
+    private fun insertCadenceDataset(measurements: Array<CadenceSpeedMeasurement>) {
         insertDataset(createCadenceDataset(measurements))
     }
 
-    private fun updateCadenceDataset(measurements: Array<CriticalMeasurements>) {
+    private fun updateCadenceDataset(measurements: Array<CadenceSpeedMeasurement>) {
         updateDataset(
             createCadenceDataset(measurements),
-            measurements.first().time,
-            measurements.last().time
+            measurements.first().timestamp,
+            measurements.last().timestamp
         )
     }
 
     private fun insertSpeedDataset(
-        measurements: Array<CriticalMeasurements>,
+        measurements: Array<CadenceSpeedMeasurement>,
         wheelCircumference: Float,
     ) {
         insertDataset(createSpeedDataset(measurements, wheelCircumference))
     }
 
     private fun updateSpeedDataset(
-        measurements: Array<CriticalMeasurements>,
+        measurements: Array<CadenceSpeedMeasurement>,
         wheelCircumference: Float,
     ) {
         updateDataset(
             createSpeedDataset(measurements, wheelCircumference),
-            measurements.first().time,
-            measurements.last().time
+            measurements.first().timestamp,
+            measurements.last().timestamp
         )
     }
 
-    fun insertDatasets(measurements: Array<CriticalMeasurements>, wheelCircumference: Float) {
+    fun insertDatasets(
+        measurements: Array<Measurements>,
+        heartRateMeasurements: Array<HeartRateMeasurement>,
+        speedMeasurements: Array<CadenceSpeedMeasurement>,
+        cadenceMeasurements: Array<CadenceSpeedMeasurement>,
+        wheelCircumference: Float
+    ) {
         measurements.toList().chunked(1000).forEach {
             Log.d(logTag, "Processing measurements chunk")
-            insertHeartRateDataset(it.toTypedArray())
+            insertHeartRateDataset(heartRateMeasurements)
             insertLocationDataset(it.toTypedArray())
             insertDistanceDeltaDataset(it.toTypedArray())
-            insertCadenceDataset(it.toTypedArray())
-            insertSpeedDataset(it.toTypedArray(), wheelCircumference)
-            //Timestamps are not precise enough to store this data in Google Fit
-            //Need to merge the sensor timestamps with epoch timestamps
-            //insertCrankRevolutionsDataset(it.toTypedArray())
-            //insertWheelRevolutionsDataset(it.toTypedArray())
+            insertCadenceDataset(cadenceMeasurements)
+            insertSpeedDataset(speedMeasurements, wheelCircumference)
+            insertCrankRevolutionsDataset(cadenceMeasurements)
+            insertWheelRevolutionsDataset(speedMeasurements)
         }
     }
 
-    fun updateDatasets(measurements: Array<CriticalMeasurements>, wheelCircumference: Float) {
+    fun updateDatasets(
+        measurements: Array<Measurements>,
+        heartRateMeasurements: Array<HeartRateMeasurement>,
+        speedMeasurements: Array<CadenceSpeedMeasurement>,
+        cadenceMeasurements: Array<CadenceSpeedMeasurement>,
+        wheelCircumference: Float
+    ) {
         measurements.toList().chunked(1000).forEach {
             Log.d(logTag, "Processing measurements chunk")
-            updateHeartRateDataset(it.toTypedArray())
+            updateHeartRateDataset(heartRateMeasurements)
             updateLocationDataset(it.toTypedArray())
             updateDistanceDeltaDataset(it.toTypedArray())
-            updateCadenceDataset(it.toTypedArray())
-            updateSpeedDataset(it.toTypedArray(), wheelCircumference)
-            //Timestamps are not precise enough to store this data in Google Fit
-            //Need to merge the sensor timestamps with epoch timestamps
-            //updateCrankRevolutionsDataset(it.toTypedArray())
-            //updateWheelRevolutionsDataset(it.toTypedArray())
+            updateCadenceDataset(cadenceMeasurements)
+            updateSpeedDataset(speedMeasurements, wheelCircumference)
+            updateCrankRevolutionsDataset(cadenceMeasurements)
+            updateWheelRevolutionsDataset(speedMeasurements)
         }
     }
 

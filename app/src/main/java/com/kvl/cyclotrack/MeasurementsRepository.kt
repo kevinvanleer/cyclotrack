@@ -11,9 +11,6 @@ class MeasurementsRepository @Inject constructor(private val measurementsDao: Me
 
     fun observe(tripId: Long) = measurementsDao.subscribe(tripId)
 
-    fun observeCritical(tripId: Long) = measurementsDao.subscribeCritical(tripId)
-    suspend fun getCritical(tripId: Long) = measurementsDao.loadCritical(tripId)
-
     suspend fun insertMeasurements(measurements: Measurements) = measurementsDao.save(measurements)
 
     fun observeLatest(tripId: Long) = measurementsDao.subscribeLatest(tripId)
@@ -22,4 +19,7 @@ class MeasurementsRepository @Inject constructor(private val measurementsDao: Me
 
     suspend fun changeTrip(tripId: Long, newTripId: Long) =
         measurementsDao.changeTrip(tripId, newTripId)
+
+    //fun observeCritical(tripId: Long) = measurementsDao.subscribeCritical(tripId)
+    //suspend fun getCritical(tripId: Long) = measurementsDao.loadCritical(tripId)
 }

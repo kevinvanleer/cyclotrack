@@ -18,7 +18,7 @@ import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.kvl.cyclotrack.data.DerivedTripState
+import com.kvl.cyclotrack.data.*
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
@@ -40,14 +40,18 @@ import kotlin.math.max
 
 @AndroidEntryPoint
 class TripInProgressService @Inject constructor() :
-    LifecycleService() {
+    LifecycleService(), SharedPreferences.OnSharedPreferenceChangeListener {
+    private var blockAutoResumeEnabled = true
+    private var autopauseEnabled = false
+    private var autopausePauseThreshold = 5000L
+    private var autopauseResumeThreshold = 5000L
+    private var autopauseRpmThreshold: Float = 50f
+    private var autoTimeState = TimeStateEnum.RESUME
     private val logTag = "TripInProgressService"
     private val accuracyThreshold = 7.5f
     private val speedThreshold = 0.5f
     private var nextWeatherUpdate = 0L
     private val weatherUpdatePeriod = 5 * 60000
-
-
     private var running = false
     var bike: Bike? = null
 
@@ -71,6 +75,12 @@ class TripInProgressService @Inject constructor() :
 
     @Inject
     lateinit var weatherRepository: WeatherRepository
+
+    @Inject
+    lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
+
+    @Inject
+    lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
 
     @Inject
     lateinit var gpsService: GpsService
@@ -100,19 +110,123 @@ class TripInProgressService @Inject constructor() :
     private var speed: SpeedData? = null
     private var cadence: CadenceData? = null
 
+    val hrmEventHandler: (Long) -> (HrmData) -> Unit = { tripId ->
+        { event ->
+            event.bpm?.let {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    heartRateMeasurementRepository.save(
+                        HeartRateMeasurement(
+                            tripId = tripId,
+                            heartRate = event.bpm,
+                            energyExpended = event.energyExpended,
+                            rrIntervals = event.rrIntervals,
+                            timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+        }
+    }
+    lateinit var thisHrmEventHandler: (HrmData) -> Unit
+
     @Subscribe
     fun onHrmData(event: HrmData) {
         hrmBpm = event.bpm
+        thisHrmEventHandler(event)
     }
+
+    val cadenceEventHandler: (Long) -> (CadenceData) -> Unit = { tripId ->
+        { event ->
+            event.revolutionCount?.let {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    cadenceSpeedMeasurementRepository.save(
+                        CadenceSpeedMeasurement(
+                            tripId = tripId,
+                            revolutions = event.revolutionCount,
+                            lastEvent = event.lastEvent!!,
+                            rpm = event.rpm,
+                            sensorType = SensorType.CADENCE,
+                            timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+        }
+    }
+    lateinit var thisCadenceEventHandler: (CadenceData) -> Unit
 
     @Subscribe
     fun onCadenceData(event: CadenceData) {
         cadence = event
+        thisCadenceEventHandler(event)
     }
+
+    val speedEventHandler: (Long) -> (SpeedData) -> Unit = { tripId ->
+        { event ->
+            event.revolutionCount?.let {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    cadenceSpeedMeasurementRepository.save(
+                        CadenceSpeedMeasurement(
+                            tripId = tripId,
+                            revolutions = event.revolutionCount,
+                            lastEvent = event.lastEvent!!,
+                            rpm = event.rpm,
+                            sensorType = SensorType.SPEED,
+                            timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                        )
+                    )
+
+                    if (autopauseEnabled) {
+                        handleAutoPause(tripId)
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun handleAutoPause(tripId: Long) {
+        Log.d(
+            logTag,
+            "$autopauseEnabled,$autopausePauseThreshold,$autopauseResumeThreshold,$autopauseRpmThreshold"
+        )
+        val currentAutoTimeState =
+            cadenceSpeedMeasurementRepository.getAutoTimeStates(
+                tripId = tripId,
+                pauseThreshold = autopausePauseThreshold,
+                resumeThreshold = autopauseResumeThreshold,
+                rpmThreshold = autopauseRpmThreshold,
+            ).find { p -> p.sensorType == SensorType.SPEED && p.triggered }
+
+        val currentTimeState = timeStateRepository.getLatest(tripId)
+        val newAutoTimeState =
+            currentAutoTimeState?.timeState ?: autoTimeState
+
+        val blockAutoResume =
+            blockAutoResumeEnabled && newAutoTimeState == TimeStateEnum.RESUME
+                    && !currentTimeState.auto
+                    && currentTimeState.state == TimeStateEnum.PAUSE
+
+        if (newAutoTimeState != autoTimeState) {
+            autoTimeState = newAutoTimeState
+            if (!blockAutoResume && autoTimeState != currentTimeState.state) {
+                timeStateRepository.appendTimeState(
+                    TimeState(
+                        tripId = tripId,
+                        state = autoTimeState,
+                        timestamp = currentAutoTimeState!!.timestamp,
+                        auto = true
+                    )
+                )
+            }
+        }
+    }
+
+    lateinit var thisSpeedEventHandler: (SpeedData) -> Unit
 
     @Subscribe
     fun onSpeedData(event: SpeedData) {
         speed = event
+        thisSpeedEventHandler(event)
     }
 
     @Subscribe
@@ -205,9 +319,6 @@ class TripInProgressService @Inject constructor() :
         val newMeasurement = Measurements(
             tripId,
             LocationData(newLocation),
-            hrmBpm,
-            cadence,
-            speed,
         )
         getWeather(LocationData(newLocation), tripId)
         lifecycleScope.launch {
@@ -238,12 +349,11 @@ class TripInProgressService @Inject constructor() :
         newMeasurements: Measurements,
         derivedTripState: ArrayList<DerivedTripState>,
     ): DerivedTripState {
-
         var revCount = 0
         var distance = 0.0
         derivedTripState.find { it.speedRevolutions != null }?.let {
             revCount = it.speedRevolutions?.let { startRevs ->
-                newMeasurements.speedRevolutions?.minus(startRevs)
+                speed?.revolutionCount?.minus(startRevs)
             } ?: derivedTripState.lastOrNull()?.revTotal ?: 0
             distance = totalDistance - it.totalDistance
         }
@@ -262,7 +372,7 @@ class TripInProgressService @Inject constructor() :
             revTotal = revCount,
             circumference = distance / revCount,
             slope = 0.0,
-            speedRevolutions = newMeasurements.speedRevolutions
+            speedRevolutions = speed?.revolutionCount
         )
     }
 
@@ -602,6 +712,18 @@ class TripInProgressService @Inject constructor() :
             gpsService.observe(this, thisGpsObserver)
         }
 
+        if (!::thisHrmEventHandler.isInitialized) {
+            thisHrmEventHandler = hrmEventHandler(tripId)
+        }
+
+        if (!::thisCadenceEventHandler.isInitialized) {
+            thisCadenceEventHandler = cadenceEventHandler(tripId)
+        }
+
+        if (!::thisSpeedEventHandler.isInitialized) {
+            thisSpeedEventHandler = speedEventHandler(tripId)
+        }
+
         if (shouldCollectOnboardSensors(applicationContext)) {
             if (!::thisSensorObserver.isInitialized || !onboardSensors.hasObservers()) {
                 thisSensorObserver = sensorObserver(tripId)
@@ -716,6 +838,49 @@ class TripInProgressService @Inject constructor() :
         bleService.initialize()
         clearState()
         EventBus.getDefault().register(this)
+        initializeFromSharedPrefs()
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this)
+    }
+
+    private fun getAutoPauseRpmThreshold(key: String?) =
+        sharedPreferences.getInt(
+            key, 0
+        ).toFloat().let { thresholdSpeed ->
+            getSystemSpeed(
+                applicationContext,
+                thresholdSpeed
+            )
+        }.let { systemSpeed ->
+            systemSpeed * 60f / (userCircumference ?: 2f)
+        }
+
+    private fun initializeFromSharedPrefs() {
+        autopauseEnabled =
+            sharedPreferences.getBoolean(
+                getString(R.string.preference_key_autopause_enable),
+                false
+            ) == true
+        blockAutoResumeEnabled =
+            sharedPreferences.getBoolean(
+                getString(R.string.preference_key_autopause_manual_override),
+                true
+            ) == true
+        autopausePauseThreshold =
+            sharedPreferences.getInt(
+                getString(R.string.preference_key_autopause_pause_threshold),
+                5
+            ) * 1000.toLong()
+        autopauseResumeThreshold =
+            sharedPreferences.getInt(
+                getString(R.string.preference_key_autopause_resume_threshold),
+                5
+            ) * 1000.toLong()
+        autopauseRpmThreshold =
+            getAutoPauseRpmThreshold(getString(R.string.preference_key_autopause_speed_threshold))
+        Log.d(
+            logTag,
+            "SharedPrefsInit: $autopauseEnabled,$autopausePauseThreshold,$autopauseResumeThreshold,$autopauseRpmThreshold"
+        )
     }
 
     override fun onDestroy() {
@@ -725,9 +890,31 @@ class TripInProgressService @Inject constructor() :
 
         if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
 
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
         EventBus.getDefault().unregister(this)
         bleService.disconnect()
         gpsService.stopListening()
         Log.d(logTag, "onDestroy")
+    }
+
+    override fun onSharedPreferenceChanged(sharedPrefs: SharedPreferences?, key: String?) {
+        sharedPrefs?.let { prefs ->
+            when (key) {
+                getString(R.string.preference_key_autopause_enable) -> autopauseEnabled =
+                    prefs.getBoolean(key, false) == true
+                getString(R.string.preference_key_autopause_manual_override) -> blockAutoResumeEnabled =
+                    prefs.getBoolean(key, true) == true
+                getString(R.string.preference_key_autopause_pause_threshold) -> autopausePauseThreshold =
+                    prefs.getInt(key, 5) * 1000.toLong()
+                getString(R.string.preference_key_autopause_resume_threshold) -> autopauseResumeThreshold =
+                    prefs.getInt(key, 5) * 1000.toLong()
+                getString(R.string.preference_key_autopause_speed_threshold) -> autopauseRpmThreshold =
+                    getAutoPauseRpmThreshold(key)
+            }
+        }
+        Log.d(
+            logTag,
+            "SharedPrefsChanged: $autopauseEnabled,$autopausePauseThreshold,$autopauseResumeThreshold,$autopauseRpmThreshold"
+        )
     }
 }
