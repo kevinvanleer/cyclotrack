@@ -30,6 +30,8 @@ import androidx.lifecycle.Observer
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.ktx.logEvent
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -135,6 +137,10 @@ class DiscoverSensorFragment : Fragment() {
                 } else {
                     Log.d(logTag, "Adding device")
                     viewModel.linkDevice(device)
+                    FirebaseAnalytics.getInstance(requireContext()).logEvent("AddedBleSensor") {
+                        param("sensorName", device.name ?: "N/A")
+                        param("sensorFeatures", (device.features ?: -1).toLong())
+                    }
                 }
             }
             false -> {

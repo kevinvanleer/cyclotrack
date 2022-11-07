@@ -517,6 +517,7 @@ class BleService @Inject constructor(
         lifecycle.coroutineScope.launch {
             externalSensorRepository.all().takeIf { it.isNotEmpty() }?.let { myMacs ->
                 bluetoothManager.adapter?.let { bluetoothAdapter ->
+                    FirebaseAnalytics.getInstance(context).logEvent("BleConnect") {}
                     myMacs.forEach { sensor ->
                         try {
                             connectToSensor(bluetoothAdapter, sensor.address)
@@ -526,7 +527,7 @@ class BleService @Inject constructor(
                             externalSensorRepository.removeSensor(sensor)
                         }
                     }
-                } ?: Log.d(logTag, "Cannot connect to sensors. Bluetooth not supported")
+                } ?: Log.d(logTag, "Cannot connect to sensors. Bluetooth not supported.")
             }
         }
     }
