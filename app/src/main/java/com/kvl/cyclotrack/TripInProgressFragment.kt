@@ -231,6 +231,24 @@ class TripInProgressFragment :
             this.action = getString(R.string.action_stop_trip_service)
             this.putExtra("tripId", tripId)
         })
+
+        when (tripId >= 0) {
+            true -> {
+                Log.d(
+                    "backStack", "${
+                        findNavController().backQueue.map { it.destination.label }
+                    }"
+                )
+                requireActivity().finish()
+                findNavController().navigate(
+                    TripInProgressFragmentDirections.actionFinishTrip(
+                        tripId
+                    )
+                )
+            }
+            else -> findNavController()
+                .navigate(R.id.action_back_to_summaries)
+        }
     }
 
     private fun handleTimeStateChanges(tripId: Long) =
@@ -318,23 +336,6 @@ class TripInProgressFragment :
 
     private fun stopTripListener(tripId: Long): OnClickListener = OnClickListener {
         endTrip(tripId)
-        when (tripId >= 0) {
-            true -> {
-                Log.d(
-                    "backStack", "${
-                        findNavController().backQueue.map { it.destination.label }
-                    }"
-                )
-                requireActivity().finish()
-                findNavController().navigate(
-                    TripInProgressFragmentDirections.actionFinishTrip(
-                        tripId
-                    )
-                )
-            }
-            else -> findNavController()
-                .navigate(R.id.action_back_to_summaries)
-        }
     }
 
     override fun onDestroy() {
@@ -398,7 +399,7 @@ class TripInProgressFragment :
                             "CANCEL"
                         ) { _, _ ->
                             Log.d("TIP_GPS_DISABLED", "CLICKED CANCEL")
-                            findNavController().navigate(R.id.action_finish_trip)
+                            endTrip(viewModel.tripId ?: -1)
                         }
                         setTitle("Enable location service")
                         setMessage("Location service has been disabled. Please enable location services before starting your ride.")
