@@ -31,6 +31,7 @@ import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import com.kvl.cyclotrack.util.getBrightnessPreference
@@ -697,32 +698,38 @@ class TripInProgressFragment :
         pauseButton.setOnClickListener(startTripListener)
         pauseButton.text = getString(R.string.start_label)
 
-        //arguments?.getLong("tripId", args.tripId ?: -1)
-        args.tripId.takeIf { tripId -> tripId != -1L }?.let { tripId ->
-            viewModel.tripId = tripId
-        }
-
-        when (val tripId = viewModel.tripId) {
-            null -> requireActivity().startService(Intent(
-                requireContext(),
-                TripInProgressService::class.java
-            ).apply {
-                this.action = getString(R.string.action_initialize_trip_service)
-            })
-            else -> {
-                Log.d(logTag, "Received trip ID argument $tripId")
-                Log.d(logTag, "Resuming trip $tripId")
-                initializeAfterTripCreated(tripId)
-                viewModel.resumeTrip(tripId, viewLifecycleOwner)
-                requireActivity().startService(
-                    Intent(
-                        requireContext(),
-                        TripInProgressService::class.java
-                    ).apply {
-                        this.action = getString(R.string.action_start_trip_service)
-                        this.putExtra("tripId", tripId)
-                    })
+        try {
+            //arguments?.getLong("tripId", args.tripId ?: -1)
+            args.tripId.takeIf { tripId -> tripId != -1L }?.let { tripId ->
+                viewModel.tripId = tripId
             }
+
+            when (val tripId = viewModel.tripId) {
+                null -> requireActivity().startService(Intent(
+                    requireContext(),
+                    TripInProgressService::class.java
+                ).apply {
+                    this.action = getString(R.string.action_initialize_trip_service)
+                })
+                else -> {
+                    Log.d(logTag, "Received trip ID argument $tripId")
+                    Log.d(logTag, "Resuming trip $tripId")
+                    initializeAfterTripCreated(tripId)
+                    viewModel.resumeTrip(tripId, viewLifecycleOwner)
+                    requireActivity().startService(
+                        Intent(
+                            requireContext(),
+                            TripInProgressService::class.java
+                        ).apply {
+                            this.action = getString(R.string.action_start_trip_service)
+                            this.putExtra("tripId", tripId)
+                        })
+                }
+            }
+        } catch (e: java.lang.IllegalArgumentException) {
+            Log.e(logTag, "Failed to parse navigation args", e)
+            FirebaseCrashlytics.getInstance().recordException(e)
+            endTrip(-1)
         }
     }
 

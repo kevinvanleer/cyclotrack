@@ -37,6 +37,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.*
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.*
@@ -396,270 +397,266 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             getUserAltitudeUnitLong(requireContext())
 
         val elevationAlpha = 0.05
-        val tripId = args.tripId
-        Log.d(logTag, String.format("Displaying details for trip %d", tripId))
-        viewModel.tripId = tripId
+        try {
+            val tripId = args.tripId
+            Log.d(logTag, String.format("Displaying details for trip %d", tripId))
+            viewModel.tripId = tripId
 
+            observeWeather(view)
+            viewModel.updateSplits()
+            drawSplitsGrid()
 
-        observeWeather(view)
-        viewModel.updateSplits()
-        drawSplitsGrid()
+            observeHeartRate(heartRateHeadingView, heartRateChartView)
+            observeCadence(cadenceHeadingView, cadenceChartView)
 
-        observeHeartRate(heartRateHeadingView, heartRateChartView)
-        observeCadence(cadenceHeadingView, cadenceChartView)
-        /*
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-        }
-        val speedData = viewModel.speedMeasurements.value
-        val gpsData = viewModel.locationMeasurements.value
-        val gpsFirst = gpsData?.first()
-        val gpsLast = gpsData?.last()
-        val gpsSize = gpsData?.size
-        val firstSpeed = speedData?.firstOrNull()
-        val lastSpeed = speedData?.lastOrNull()
-        val speedCount = speedData?.size
-        Log.v(logTag, "$gpsSize, $speedCount")
-         */
+            observeSpeed(speedChartView)
 
-        observeSpeed(speedChartView)
-
-        viewModel.tripOverview.observe(viewLifecycleOwner) { overview ->
-            if (overview != null) {
-                distanceHeadingView.value =
-                    String.format(
-                        "%.2f %s",
-                        getUserDistance(requireContext(), overview.distance ?: 0.0),
-                        getUserDistanceUnitShort(requireContext())
+            viewModel.tripOverview.observe(viewLifecycleOwner) { overview ->
+                if (overview != null) {
+                    distanceHeadingView.value =
+                        String.format(
+                            "%.2f %s",
+                            getUserDistance(requireContext(), overview.distance ?: 0.0),
+                            getUserDistanceUnitShort(requireContext())
+                        )
+                    durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
+                    speedHeadingView.value = String.format(
+                        "%.1f %s (average)",
+                        getUserSpeed(
+                            requireContext(),
+                            overview.distance ?: 0.0,
+                            overview.duration ?: 1.0
+                        ),
+                        getUserSpeedUnitShort(requireContext())
                     )
-                durationHeadingView.value = formatDuration(overview.duration ?: 0.0)
-                speedHeadingView.value = String.format(
-                    "%.1f %s (average)",
-                    getUserSpeed(
-                        requireContext(),
-                        overview.distance ?: 0.0,
-                        overview.duration ?: 1.0
-                    ),
-                    getUserSpeedUnitShort(requireContext())
-                )
 
-                titleNameView.text = overview.name
-                if (overview.notes != null) {
-                    notesView.visibility = View.VISIBLE
-                    notesView.text = overview.notes
-                }
-            }
-        }
-
-        zipLiveData(viewModel.locationMeasurements, viewModel.timeState).observe(
-            viewLifecycleOwner
-        ) { pair ->
-            viewLifecycleOwner.lifecycleScope.launch {
-                val measurements = pair.first
-                val timeStates = pair.second
-                val mapData = plotPath(measurements, timeStates)
-                if (this@TripDetailsFragment::map.isInitialized && mapData.bounds != null) {
-                    Log.d(logTag, "Plotting path")
-                    mapData.paths.forEachIndexed { idx, path ->
-                        path.startCap(RoundCap())
-                        path.endCap(RoundCap())
-                        path.width(5f)
-                        path.color(
-                            ResourcesCompat.getColor(
-                                resources,
-                                R.color.accentColor,
-                                null
-                            )
-                        )
-                        this@TripDetailsFragment.drawPath(
-                            path,
-                            idx == 0,
-                            idx == mapData.paths.lastIndex,
-                            idx
-                        )
-                    }
-                    try {
-                        map.moveCamera(
-                            CameraUpdateFactory.newLatLngBounds(
-                                mapData.bounds,
-                                mapView.width,
-                                scrollView.marginTop,
-                                100
-                            )
-                        )
-                        maxCameraPosition = map.cameraPosition
-                        map.moveCamera(
-                            CameraUpdateFactory.scrollBy(
-                                0f,
-                                (mapView.height - scrollView.marginTop) / 2f
-                            )
-                        )
-                        defaultCameraPosition = map.cameraPosition
-                    } catch (e: Exception) {
-                        Log.e(logTag, "Couldn't draw trip details map", e)
+                    titleNameView.text = overview.name
+                    if (overview.notes != null) {
+                        notesView.visibility = View.VISIBLE
+                        notesView.text = overview.notes
                     }
                 }
             }
-        }
 
-        zipLiveData(viewModel.locationMeasurements, viewModel.timeState).observe(
-            viewLifecycleOwner
-        ) { observed ->
-            val tripMeasurements = observed.first
-            val timeStates = observed.second
-            Log.d(logTag, "Observed change to measurements and time state")
-
-            fun makeElevationDataset(
-                measurements: Array<Measurements>,
-                _totalDistance: Float,
-            ): LineDataSet {
-                val entries = ArrayList<Entry>()
-                var totalDistance = _totalDistance
-                var lastMeasurements: Measurements? = null
-                var smoothed: Double = measurements[0].altitude
-                var smoothedLast = smoothed
-                measurements.forEach {
-                    smoothed =
-                        exponentialSmoothing(
-                            elevationAlpha,
-                            it.altitude,
-                            smoothedLast
-                        )
-                    smoothedLast = smoothed
-
-                    lastMeasurements?.let { last ->
-                        totalDistance += getDistance(it, last)
+            zipLiveData(viewModel.locationMeasurements, viewModel.timeState).observe(
+                viewLifecycleOwner
+            ) { pair ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val measurements = pair.first
+                    val timeStates = pair.second
+                    val mapData = plotPath(measurements, timeStates)
+                    if (this@TripDetailsFragment::map.isInitialized && mapData.bounds != null) {
+                        Log.d(logTag, "Plotting path")
+                        mapData.paths.forEachIndexed { idx, path ->
+                            path.startCap(RoundCap())
+                            path.endCap(RoundCap())
+                            path.width(5f)
+                            path.color(
+                                ResourcesCompat.getColor(
+                                    resources,
+                                    R.color.accentColor,
+                                    null
+                                )
+                            )
+                            this@TripDetailsFragment.drawPath(
+                                path,
+                                idx == 0,
+                                idx == mapData.paths.lastIndex,
+                                idx
+                            )
+                        }
+                        try {
+                            map.moveCamera(
+                                CameraUpdateFactory.newLatLngBounds(
+                                    mapData.bounds,
+                                    mapView.width,
+                                    scrollView.marginTop,
+                                    100
+                                )
+                            )
+                            maxCameraPosition = map.cameraPosition
+                            map.moveCamera(
+                                CameraUpdateFactory.scrollBy(
+                                    0f,
+                                    (mapView.height - scrollView.marginTop) / 2f
+                                )
+                            )
+                            defaultCameraPosition = map.cameraPosition
+                        } catch (e: Exception) {
+                            Log.e(logTag, "Couldn't draw trip details map", e)
+                        }
                     }
-                    lastMeasurements = it
-
-                    entries.add(
-                        Entry(
-                            totalDistance,
-                            getUserAltitude(
-                                requireContext(),
-                                smoothed
-                            ).toFloat()
-                        )
-                    )
                 }
-                val dataset = LineDataSet(entries, "Elevation")
-                dataset.setDrawCircles(false)
-                dataset.setDrawValues(false)
-                dataset.color =
-                    ResourcesCompat.getColor(
-                        resources,
-                        R.color.accentColor,
-                        null
-                    )
-                dataset.lineWidth = 3f
-                return dataset
             }
 
-            fun makeElevationLineChart(intervals: Array<LongRange>) {
-                configureLineChart(elevationChartView)
+            zipLiveData(viewModel.locationMeasurements, viewModel.timeState).observe(
+                viewLifecycleOwner
+            ) { observed ->
+                val tripMeasurements = observed.first
+                val timeStates = observed.second
+                Log.d(logTag, "Observed change to measurements and time state")
 
-                elevationChartView.xAxis.valueFormatter = object : ValueFormatter() {
-                    override fun getAxisLabel(value: Float, axis: AxisBase?): String {
-                        return if (value == 0f) "" else "${
-                            getUserDistance(
-                                requireContext(),
-                                value.toDouble()
-                            ).roundToInt()
-                        } ${getUserDistanceUnitShort(requireContext())}"
+                fun makeElevationDataset(
+                    measurements: Array<Measurements>,
+                    _totalDistance: Float,
+                ): LineDataSet {
+                    val entries = ArrayList<Entry>()
+                    var totalDistance = _totalDistance
+                    var lastMeasurements: Measurements? = null
+                    var smoothed: Double = measurements[0].altitude
+                    var smoothedLast = smoothed
+                    measurements.forEach {
+                        smoothed =
+                            exponentialSmoothing(
+                                elevationAlpha,
+                                it.altitude,
+                                smoothedLast
+                            )
+                        smoothedLast = smoothed
+
+                        lastMeasurements?.let { last ->
+                            totalDistance += getDistance(it, last)
+                        }
+                        lastMeasurements = it
+
+                        entries.add(
+                            Entry(
+                                totalDistance,
+                                getUserAltitude(
+                                    requireContext(),
+                                    smoothed
+                                ).toFloat()
+                            )
+                        )
                     }
+                    val dataset = LineDataSet(entries, "Elevation")
+                    dataset.setDrawCircles(false)
+                    dataset.setDrawValues(false)
+                    dataset.color =
+                        ResourcesCompat.getColor(
+                            resources,
+                            R.color.accentColor,
+                            null
+                        )
+                    dataset.lineWidth = 3f
+                    return dataset
                 }
 
-                val legs = getTripLegs(tripMeasurements, intervals)
-                val data = LineData()
+                fun makeElevationLineChart(intervals: Array<LongRange>) {
+                    configureLineChart(elevationChartView)
 
-                var totalDistance = 0f
-                legs.forEach { leg ->
-                    if (leg.isNotEmpty()) {
-                        makeElevationDataset(leg, totalDistance).let { dataset ->
-                            data.addDataSet(dataset)
-                            dataset.values.takeIf { it.isNotEmpty() }?.let {
-                                totalDistance = it.last().x
+                    elevationChartView.xAxis.valueFormatter = object : ValueFormatter() {
+                        override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+                            return if (value == 0f) "" else "${
+                                getUserDistance(
+                                    requireContext(),
+                                    value.toDouble()
+                                ).roundToInt()
+                            } ${getUserDistanceUnitShort(requireContext())}"
+                        }
+                    }
+
+                    val legs = getTripLegs(tripMeasurements, intervals)
+                    val data = LineData()
+
+                    var totalDistance = 0f
+                    legs.forEach { leg ->
+                        if (leg.isNotEmpty()) {
+                            makeElevationDataset(leg, totalDistance).let { dataset ->
+                                data.addDataSet(dataset)
+                                dataset.values.takeIf { it.isNotEmpty() }?.let {
+                                    totalDistance = it.last().x
+                                }
                             }
                         }
                     }
+                    elevationChartView.data = data
+                    elevationChartView.invalidate()
                 }
-                elevationChartView.data = data
-                elevationChartView.invalidate()
-            }
 
-            Log.d(
-                logTag,
-                "Recorded ${tripMeasurements.size} measurements for trip $tripId"
-            )
-
-            if (tripMeasurements.isEmpty()) return@observe
-            if (timeStates.isNotEmpty()) titleDateView.text =
-                String.format(
-                    "%s: %s - %s",
-                    SimpleDateFormat(
-                        "MMMM d",
-                        Locale.US
-                    ).format(Date(timeStates.first().timestamp)),
-                    SimpleDateFormat(
-                        "h:mm",
-                        Locale.US
-                    ).format(Date(timeStates.first().timestamp)),
-                    SimpleDateFormat(
-                        "h:mm",
-                        Locale.US
-                    ).format(Date(timeStates.last().timestamp))
+                Log.d(
+                    logTag,
+                    "Recorded ${tripMeasurements.size} measurements for trip $tripId"
                 )
-            val intervals = getTripIntervals(timeStates, tripMeasurements)
-            viewLifecycleOwner.lifecycleScope.launch {
-                val elevationChange = getElevationChange(tripMeasurements)
-                view.findViewById<HeadingView>(R.id.trip_details_elevation).value =
-                    "+${
-                        getUserAltitude(
-                            requireContext(),
-                            elevationChange.first
-                        ).roundToInt()
-                    }/${
-                        getUserAltitude(
-                            requireContext(),
-                            elevationChange.second
-                        ).roundToInt()
-                    } ${
-                        getUserAltitudeUnitLong(requireContext())
-                    }"
-                makeElevationLineChart(intervals)
 
-                scrollView.setOnTouchListener(this@TripDetailsFragment)
-            }
-        }
-
-        zipLiveData(viewModel.heartRateMeasurements, viewModel.tripOverview).observe(
-            viewLifecycleOwner
-        ) { pairs ->
-            val measurements = pairs.first
-            val overview = pairs.second
-            Log.d(logTag, "Observed change to measurements and overview")
-            viewLifecycleOwner.lifecycleScope.launch {
-                viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
-                    .let { biometrics ->
-                        Log.d(logTag, "biometrics: $biometrics")
-                        if (biometrics.userWeight != null) {
-                            Log.d(logTag, "Calculating calories burned")
-                            getCaloriesBurned(biometrics, overview, measurements)
-                        }
-                    }
-            }
-        }
-        if (FeatureFlags.devBuild) {
-            viewModel.tripOverview.observe(viewLifecycleOwner) { trip ->
-                trip?.timestamp?.let { timestamp ->
-                    getDatasets(
-                        requireActivity(),
-                        timestamp,
-                        (timestamp + (trip.duration?.times(
-                            1000
-                        ) ?: 1).toLong())
+                if (tripMeasurements.isEmpty()) return@observe
+                if (timeStates.isNotEmpty()) titleDateView.text =
+                    String.format(
+                        "%s: %s - %s",
+                        SimpleDateFormat(
+                            "MMMM d",
+                            Locale.US
+                        ).format(Date(timeStates.first().timestamp)),
+                        SimpleDateFormat(
+                            "h:mm",
+                            Locale.US
+                        ).format(Date(timeStates.first().timestamp)),
+                        SimpleDateFormat(
+                            "h:mm",
+                            Locale.US
+                        ).format(Date(timeStates.last().timestamp))
                     )
+                val intervals = getTripIntervals(timeStates, tripMeasurements)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val elevationChange = getElevationChange(tripMeasurements)
+                    view.findViewById<HeadingView>(R.id.trip_details_elevation).value =
+                        "+${
+                            getUserAltitude(
+                                requireContext(),
+                                elevationChange.first
+                            ).roundToInt()
+                        }/${
+                            getUserAltitude(
+                                requireContext(),
+                                elevationChange.second
+                            ).roundToInt()
+                        } ${
+                            getUserAltitudeUnitLong(requireContext())
+                        }"
+                    makeElevationLineChart(intervals)
+
+                    scrollView.setOnTouchListener(this@TripDetailsFragment)
                 }
             }
+
+            zipLiveData(viewModel.heartRateMeasurements, viewModel.tripOverview).observe(
+                viewLifecycleOwner
+            ) { pairs ->
+                val measurements = pairs.first
+                val overview = pairs.second
+                Log.d(logTag, "Observed change to measurements and overview")
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
+                        .let { biometrics ->
+                            Log.d(logTag, "biometrics: $biometrics")
+                            if (biometrics.userWeight != null) {
+                                Log.d(logTag, "Calculating calories burned")
+                                getCaloriesBurned(biometrics, overview, measurements)
+                            }
+                        }
+                }
+            }
+            if (FeatureFlags.devBuild) {
+                viewModel.tripOverview.observe(viewLifecycleOwner) { trip ->
+                    trip?.timestamp?.let { timestamp ->
+                        getDatasets(
+                            requireActivity(),
+                            timestamp,
+                            (timestamp + (trip.duration?.times(
+                                1000
+                            ) ?: 1).toLong())
+                        )
+                    }
+                }
+            }
+        } catch (e: IllegalArgumentException) {
+            Log.e(logTag, "Failed to parse navigation args", e)
+            FirebaseCrashlytics.getInstance().recordException(e)
+            AlertDialog.Builder(requireContext()).apply {
+                setTitle("Something went wrong!")
+                setMessage("There was a problem accessing the data for this ride. Please try again.")
+                setPositiveButton("OK") { _, _ -> }
+            }.create()
         }
     }
 
