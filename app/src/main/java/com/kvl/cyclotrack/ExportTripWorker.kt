@@ -180,7 +180,7 @@ class ExportTripWorker @AssistedInject constructor(
                     DeleteExportBroadcastReceiver::class.java
                 ).apply {
                     action = appContext.getString(R.string.intent_action_delete_exported_data)
-                    putExtra("TRIP_ID", exportData.summary?.id)
+                    putExtra("TRIP_ID", exportData.summary.id)
                     data = uri
                 }
                 val deletePendingIntent = PendingIntent.getBroadcast(
@@ -215,7 +215,7 @@ class ExportTripWorker @AssistedInject constructor(
                 with(NotificationManagerCompat.from(appContext)) {
                     Log.d(logTag, "notify export complete")
                     cancel(inProgressId)
-                    notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
+                    notify(exportData.summary.id?.toInt() ?: 0, builder.build())
                 }
             } catch (e: RuntimeException) {
                 Log.e(logTag, "Export failed", e)
@@ -236,7 +236,7 @@ class ExportTripWorker @AssistedInject constructor(
                 with(NotificationManagerCompat.from(appContext)) {
                     Log.d(logTag, "notify export complete")
                     cancel(inProgressId)
-                    notify(exportData.summary?.id?.toInt() ?: 0, builder.build())
+                    notify(exportData.summary.id?.toInt() ?: 0, builder.build())
                 }
                 throw e
             }

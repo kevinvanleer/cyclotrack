@@ -193,6 +193,40 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showWhatsNewDialog() {
+        getString(R.string.whats_new_message).takeIf { it.isNotEmpty() }?.let { message ->
+            AlertDialog.Builder(this).apply {
+                setTitle("What's new in version ${BuildConfig.VERSION_CODE}")
+                setMessage(message)
+                setPositiveButton(
+                    "OK"
+                ) { _, _ ->
+                    Log.d(logTag, "What's new acknowledged")
+                }
+            }.create().show()
+        }
+    }
+
+    private fun checkUserCurrentVersion() {
+        Log.v(logTag, "checkUserCurrentVersion")
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .getInt(getString(R.string.preference_key_user_current_version), -1)
+            .let { currentVersion ->
+                if (currentVersion != BuildConfig.VERSION_CODE) {
+                    Log.d(logTag, "New app version detected. Version ${BuildConfig.VERSION_CODE}")
+                    PreferenceManager.getDefaultSharedPreferences(this)
+                        .edit {
+                            putInt(
+                                getString(R.string.preference_key_user_current_version),
+                                BuildConfig.VERSION_CODE
+                            )
+                            commit()
+                        }
+                    showWhatsNewDialog()
+                }
+            }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
@@ -218,6 +252,8 @@ class MainActivity : AppCompatActivity() {
                     requestAnalytics()
                 }
             }
+
+        checkUserCurrentVersion()
 
         newRidesDisabledDialog = this.let {
             AlertDialog.Builder(it).apply {

@@ -91,7 +91,7 @@ fun exportRideToCsv(
                     "${
                         String.format(
                             "%06d",
-                            exportData.summary!!.id
+                            exportData.summary.id
                         )
                     }_onboardSensors.csv"
                 )
@@ -106,7 +106,7 @@ fun exportRideToCsv(
                     "${
                         String.format(
                             "%06d",
-                            exportData.summary!!.id
+                            exportData.summary.id
                         )
                     }_timeStates.csv"
                 )
@@ -176,10 +176,10 @@ fun exportRideToFastExcel(
             addDataToSheet(workbook.newWorksheet("timeStates"), exportData.timeStates!!)
             addDataToSheet(workbook.newWorksheet("splits"), exportData.splits!!)
             if (exportData.onboardSensors?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("onboardSensors"), exportData.onboardSensors!!)
+                addDataToSheet(workbook.newWorksheet("onboardSensors"), exportData.onboardSensors)
             }
             if (exportData.weather?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("weather"), exportData.weather!!)
+                addDataToSheet(workbook.newWorksheet("weather"), exportData.weather)
             }
             if (exportData.heartRateMeasurements?.isNotEmpty() == true) {
                 addDataToSheet(workbook.newWorksheet("heartRate"), exportData.heartRateMeasurements)

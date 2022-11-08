@@ -161,4 +161,11 @@
         When you press the pause button, the ride will not be resumed until you press resume.
     </string>
     <string name="autopause_label">AUTO-PAUSE</string>
+    <string name="preference_key_user_current_version">preference_key_user_current_version</string>
+    <string name="whats_new_message">
+        If you use BLE sensors, now you don\'t have to worry about manually pausing and resuming
+        rides. Enable the "Auto-pause" feature in the preferences menu and let Cyclotrack pause
+        rides when you stop and resume rides when you start moving again. Tune auto-pause to your
+        liking by setting custom speed and delay thresholds.
+    </string>
 </resources>

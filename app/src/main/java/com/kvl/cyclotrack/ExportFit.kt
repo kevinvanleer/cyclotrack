@@ -111,10 +111,10 @@ fun makeFitMessages(
         SessionMesg().apply {
             messageIndex = 0
             timestamp =
-                DateTime(Date(exportData.summary!!.timestamp + (exportData.summary!!.duration!! * 1000).toLong()))
+                DateTime(Date(exportData.summary!!.timestamp + (exportData.summary.duration!! * 1000).toLong()))
             startTime = DateTime(getStartTime(exportData.timeStates!!)!!)
-            totalElapsedTime = (exportData.summary!!.duration!!).toFloat()
-            totalTimerTime = accumulateActiveTime(exportData.timeStates!!).toFloat()
+            totalElapsedTime = (exportData.summary.duration).toFloat()
+            totalTimerTime = accumulateActiveTime(exportData.timeStates).toFloat()
             sport = Sport.CYCLING
             subSport = SubSport.ROAD
             firstLapIndex = 0
@@ -131,7 +131,7 @@ fun makeFitMessages(
         numSessions = 1
         val timeZone: TimeZone = TimeZone.getDefault()
         val timezoneOffset = timeZone.rawOffset + timeZone.dstSavings
-        localTimestamp = DateTime(Date(exportData.summary!!.timestamp + timezoneOffset)).timestamp
+        localTimestamp = DateTime(Date(exportData.summary.timestamp + timezoneOffset)).timestamp
         totalTimerTime = accumulateActiveTime(exportData.timeStates!!).toFloat()
     })
     return messages

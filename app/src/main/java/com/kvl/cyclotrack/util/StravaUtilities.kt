@@ -188,7 +188,7 @@ fun syncTripWithStrava(
         messages
     )
 
-    return sendActivityToStrava(validAccessToken, privateAppFile, exportData.summary!!).also {
+    return sendActivityToStrava(validAccessToken, privateAppFile, exportData.summary).also {
         privateAppFile.delete()
     }
 }
