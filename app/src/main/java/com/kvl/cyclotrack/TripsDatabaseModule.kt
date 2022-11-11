@@ -8,11 +8,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementDao
 import com.kvl.cyclotrack.data.HeartRateMeasurementDao
 import com.kvl.cyclotrack.data.SensorType
+import com.kvl.cyclotrack.events.DatabaseOpen
+import com.kvl.cyclotrack.events.PostMigration
+import com.kvl.cyclotrack.events.PreMigration
 import com.kvl.cyclotrack.util.getBikeMassOrNull
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
@@ -21,6 +26,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import org.greenrobot.eventbus.EventBus
 import javax.inject.Singleton
 
 fun resetFailedGoogleFitSyncs(database: SupportSQLiteDatabase) {
@@ -111,6 +117,13 @@ val MIGRATION_10_11 = object : Migration(10, 11) {
 val MIGRATION_11_12 = object : Migration(11, 12) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("DROP TABLE `OnboardSensors`")
+        database.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` integer not null, `gravityX` FLOAT,`gravityY` FLOAT,`gravityZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
+    }
+}
+
+val MIGRATION_10_12 = object : Migration(10, 12) {
+    override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` integer not null, `gravityX` FLOAT,`gravityY` FLOAT,`gravityZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
         database.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
     }
@@ -385,6 +398,7 @@ object TripsDatabaseModule {
                 MIGRATION_9_10,
                 MIGRATION_10_11,
                 MIGRATION_11_12,
+                MIGRATION_10_12,
                 MIGRATION_12_13,
                 MIGRATION_13_14,
                 MIGRATION_14_15,
@@ -403,6 +417,36 @@ object TripsDatabaseModule {
                 MIGRATION_25_26,
                 MIGRATION_26_27,
             )
+            .openHelperFactory { configuration ->
+                FrameworkSQLiteOpenHelperFactory().create(
+                    SupportSQLiteOpenHelper.Configuration.builder(configuration.context)
+                        .name(configuration.name)
+                        .callback(object :
+                            SupportSQLiteOpenHelper.Callback(configuration.callback.version) {
+                            override fun onCreate(db: SupportSQLiteDatabase) {
+                                configuration.callback.onCreate(db)
+                            }
+
+                            override fun onOpen(db: SupportSQLiteDatabase) {
+                                configuration.callback.onCreate(db)
+                                EventBus.getDefault().post(DatabaseOpen())
+                            }
+
+                            override fun onUpgrade(
+                                db: SupportSQLiteDatabase,
+                                oldVersion: Int,
+                                newVersion: Int
+                            ) {
+                                Log.d("onUpgrade", "Pre-migration")
+                                EventBus.getDefault().post(PreMigration(oldVersion, newVersion))
+                                configuration.callback.onUpgrade(db, oldVersion, newVersion)
+                                Log.d("onUpgrade", "Post-migration")
+                                EventBus.getDefault().post(PostMigration(oldVersion, newVersion))
+                            }
+                        })
+                        .build()
+                )
+            }
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
