@@ -222,7 +222,9 @@ class MainActivity : AppCompatActivity() {
                             )
                             commit()
                         }
-                    showWhatsNewDialog()
+                    if (currentVersion != 52) {
+                        showWhatsNewDialog()
+                    }
                 }
             }
     }
