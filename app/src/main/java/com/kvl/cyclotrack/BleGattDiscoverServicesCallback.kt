@@ -2,7 +2,9 @@ package com.kvl.cyclotrack
 
 import android.annotation.SuppressLint
 import android.bluetooth.*
+import android.os.Build
 import android.util.Log
+import com.kvl.cyclotrack.util.getIntValue
 import java.util.*
 
 
@@ -66,13 +68,18 @@ fun enableNotifications(
 ) {
     val descriptor =
         characteristic.getDescriptor(characteristicUpdateNotificationDescriptorUuid)
-    descriptor?.value =
+    val descriptorValue =
         if (enable) BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE else byteArrayOf(
             0x00,
             0x00
         )
     try {
-        gatt.writeDescriptor(descriptor)
+        if (Build.VERSION.SDK_INT >= 33) {
+            gatt.writeDescriptor(descriptor, descriptorValue)
+        } else {
+            @Suppress("DEPRECATION")
+            gatt.writeDescriptor(descriptor.apply { value = descriptorValue })
+        }
     } catch (e: SecurityException) {
         Log.w("BleUtils:enableNotifications", "Bluetooth permissions have not been granted", e)
     }
@@ -198,21 +205,19 @@ fun getGattDiscoverServicesCallback(
             }
         }
 
+        @Suppress("DEPRECATION")
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
         ) {
-            Log.v(logTag, "onCharacteristicChanged")
+            Log.v(logTag, "DEPRECATED -- onCharacteristicChanged")
             enableNotifications(gatt, characteristic, false)
             when (characteristic.uuid) {
                 cscMeasurementCharacteristicUuid -> {
                     val speedId = 0x01
                     val cadenceId = 0x02
-                    val sensorType =
-                        characteristic.getIntValue(
-                            BluetoothGattCharacteristic.FORMAT_UINT8,
-                            0
-                        )
+                    val sensorType = characteristic.value[0].toInt()
                     when {
                         (sensorType and speedId > 0) -> onGetFeatures(
                             gatt,
@@ -227,12 +232,40 @@ fun getGattDiscoverServicesCallback(
             }
         }
 
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            Log.v(logTag, "onCharacteristicChanged")
+            enableNotifications(gatt, characteristic, false)
+            when (characteristic.uuid) {
+                cscMeasurementCharacteristicUuid -> {
+                    val speedId = 0x01
+                    val cadenceId = 0x02
+                    val sensorType = value[0].toInt()
+                    when {
+                        (sensorType and speedId > 0) -> onGetFeatures(
+                            gatt,
+                            ExternalSensorFeatures().SPEED
+                        )
+                        (sensorType and cadenceId > 0) -> onGetFeatures(
+                            gatt,
+                            ExternalSensorFeatures().CADENCE
+                        )
+                    }
+                }
+            }
+        }
+
+        @Deprecated("Deprecated in Java")
+        @Suppress("DEPRECATION")
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             status: Int,
         ) {
-            Log.v(logTag, "onCharacteristicRead")
+            Log.v(logTag, "DEPRECATED -- onCharacteristicRead")
             when (status) {
                 BluetoothGatt.GATT_SUCCESS -> {
                     when (characteristic.uuid) {
@@ -245,6 +278,38 @@ fun getGattDiscoverServicesCallback(
                                     BluetoothGattCharacteristic.FORMAT_UINT8,
                                     0
                                 )
+                            when {
+                                (sensorType and speedId > 0) -> onGetFeatures(
+                                    gatt,
+                                    ExternalSensorFeatures().SPEED
+                                )
+                                (sensorType and cadenceId > 0) -> onGetFeatures(
+                                    gatt,
+                                    ExternalSensorFeatures().CADENCE
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray,
+            status: Int,
+        ) {
+            Log.v(logTag, "onCharacteristicRead")
+            when (status) {
+                BluetoothGatt.GATT_SUCCESS -> {
+                    when (characteristic.uuid) {
+                        batteryLevelCharUuid -> onReadBatteryLevel(gatt, value[0])
+                        cscFeatureCharacteristicUuid -> {
+                            val speedId = 0x01
+                            val cadenceId = 0x02
+                            val sensorType =
+                                value.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0) ?: 0
                             when {
                                 (sensorType and speedId > 0) -> onGetFeatures(
                                     gatt,

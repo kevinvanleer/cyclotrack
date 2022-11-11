@@ -48,7 +48,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         addMenuProvider()
         val viewManager = LinearLayoutManager(activity)
-        val listState: Parcelable? = savedInstanceState?.getParcelable("MY_KEY")
+        val listState: Parcelable? = savedInstanceState?.getParcelable("MY_KEY", Bundle::class.java)
         if (listState != null) viewManager.onRestoreInstanceState(listState)
 
         activity?.title = ""
@@ -235,7 +235,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         if (this::tripListView.isInitialized) {
             tripListView.layoutManager?.onRestoreInstanceState(
                 viewModel.tripListState.getParcelable(
-                    "MY_KEY"
+                    "MY_KEY", Bundle::class.java
                 )
             )
         }

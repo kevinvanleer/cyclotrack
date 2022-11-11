@@ -27,12 +27,12 @@ android {
             keyAlias "androiddebugkey"
         }
     }
-    compileSdkVersion 32
+    compileSdkVersion 33
 
     defaultConfig {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
-        targetSdkVersion 32
+        targetSdkVersion 33
         versionCode 53
         versionName "Auto-pause"
 
@@ -136,9 +136,9 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation 'androidx.core:core-ktx:1.8.0'
-    implementation 'androidx.appcompat:appcompat:1.5.0'
-    implementation 'com.google.android.material:material:1.6.1'
+    implementation 'androidx.core:core-ktx:1.9.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'com.google.android.material:material:1.7.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
@@ -159,9 +159,9 @@ dependencies {
 
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     implementation("com.google.android.gms:play-services-fitness:21.1.0")
-    implementation 'com.google.android.gms:play-services-location:20.0.0'
-    implementation("com.google.android.gms:play-services-auth:20.2.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.1")
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation("com.google.android.gms:play-services-auth:20.3.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
 
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
@@ -176,7 +176,7 @@ dependencies {
 
     kapt 'androidx.hilt:hilt-compiler:1.0.0'
 
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
 
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 

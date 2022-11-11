@@ -18,6 +18,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.BluetoothActionEvent
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.util.SystemUtils
+import com.kvl.cyclotrack.util.getIntValue
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
@@ -203,25 +204,52 @@ class BleService @Inject constructor(
         }
 
         // Result of a characteristic read operation
+        @Deprecated("Deprecated in Java")
+        @Suppress("DEPRECATION")
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             status: Int,
         ) {
+            Log.v(logTag, "DEPRECATED -- onCharacteristicRead")
+            when (status) {
+                BluetoothGatt.GATT_SUCCESS -> {
+                    broadcastUpdate(gatt, characteristic, characteristic.value)
+                }
+            }
+        }
+
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            byteArray: ByteArray,
+            status: Int,
+        ) {
             Log.v(logTag, "onCharacteristicRead")
             when (status) {
                 BluetoothGatt.GATT_SUCCESS -> {
-                    broadcastUpdate(gatt, characteristic)
+                    broadcastUpdate(gatt, characteristic, byteArray)
                 }
             }
+        }
+
+        @Deprecated("Deprecated in Java")
+        @Suppress("DEPRECATION")
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+        ) {
+            Log.v(logTag, "DEPRECATED -- onCharacteristicChanged")
+            broadcastUpdate(gatt, characteristic, characteristic.value)
         }
 
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
+            byteArray: ByteArray
         ) {
             Log.v(logTag, "onCharacteristicChanged")
-            broadcastUpdate(gatt, characteristic)
+            broadcastUpdate(gatt, characteristic, byteArray)
         }
     }
 
@@ -249,7 +277,11 @@ class BleService @Inject constructor(
         }
     }
 
-    private fun broadcastUpdate(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+    private fun broadcastUpdate(
+        gatt: BluetoothGatt,
+        characteristic: BluetoothGattCharacteristic,
+        characteristicValue: ByteArray
+    ) {
         val eventTime = SystemUtils.currentTimeMillis()
         Log.d(logTag, "broadcast update for ${characteristic.uuid} on ${gatt.device.address}")
         when (characteristic.uuid) {
@@ -273,8 +305,8 @@ class BleService @Inject constructor(
                 if (flag and 0b1000 == 0x01) {
                     Log.d("DEBUG", "Supports RR interval")
                 }
-                Log.d("DEBUG", characteristic.value.toString())
-                val heartRate = characteristic.getIntValue(format, 1)
+                Log.d("DEBUG", characteristicValue.toString())
+                val heartRate = characteristicValue.getIntValue(format, 1) ?: 0
                 Log.d(logTag, String.format("Received heart rate: %d", heartRate))
                 HrmData(
                     batteryLevel = hrmSensor.batteryLevel,
@@ -286,7 +318,7 @@ class BleService @Inject constructor(
                 }
             }
             batteryLevelCharUuid -> {
-                val batteryLevel = characteristic.value[0]
+                val batteryLevel = characteristicValue[0]
                 Log.d(logTag, "Battery level: $batteryLevel")
                 when (gatt.device.address) {
                     addresses.hrm -> {
@@ -318,7 +350,10 @@ class BleService @Inject constructor(
                 val speedId = 0x01
                 val cadenceId = 0x02
                 val sensorType =
-                    characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0)
+                    characteristicValue.getIntValue(
+                        BluetoothGattCharacteristic.FORMAT_UINT8,
+                        0
+                    ) ?: 0
                 when {
                     (sensorType and speedId > 0) -> {
                         if (addresses.speed == null) {
@@ -329,9 +364,15 @@ class BleService @Inject constructor(
                         //however in all practicality the value required to induce this bug will never be reached.
                         //Additionally the spec states that this value does not rollover.
                         val revolutionCount =
-                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 1)
+                            characteristicValue.getIntValue(
+                                BluetoothGattCharacteristic.FORMAT_SINT32,
+                                1
+                            ) ?: 0
                         val lastEvent =
-                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 5)
+                            characteristicValue.getIntValue(
+                                BluetoothGattCharacteristic.FORMAT_UINT16,
+                                5
+                            ) ?: 0
                         if (revolutionCount != speedSensor.revolutionCount ||
                             eventTime - (speedSensor.timestamp
                                 ?: 0) > timeout
@@ -365,9 +406,15 @@ class BleService @Inject constructor(
                             readBatteryLevel(gatt)
                         }
                         val revolutionCount =
-                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
+                            characteristicValue.getIntValue(
+                                BluetoothGattCharacteristic.FORMAT_UINT16,
+                                1
+                            ) ?: 0
                         val lastEvent =
-                            characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 3)
+                            characteristicValue.getIntValue(
+                                BluetoothGattCharacteristic.FORMAT_UINT16,
+                                3
+                            ) ?: 0
                         Log.d(
                             logTag,
                             "Cadence sensor changed: $revolutionCount :: $lastEvent"
@@ -401,8 +448,8 @@ class BleService @Inject constructor(
                     }
                     else -> {
                         Log.d(logTag, "Unknown CSC sensor type")
-                        val data: ByteArray? = characteristic.value
-                        if (data?.isNotEmpty() == true) {
+                        val data: ByteArray = characteristicValue
+                        if (data.isNotEmpty()) {
                             val hexString: String = data.joinToString(separator = " ") {
                                 String.format("%02X", it)
                             }
@@ -415,8 +462,8 @@ class BleService @Inject constructor(
                 }
             }
             getGattUuid(indoorBikeDataCharacteristicId) -> {
-                val data: ByteArray? = characteristic.value
-                if (data?.isNotEmpty() == true) {
+                val data: ByteArray = characteristicValue
+                if (data.isNotEmpty()) {
                     val hexString: String = data.joinToString(separator = " ") {
                         String.format("%02X", it)
                     }
@@ -428,12 +475,18 @@ class BleService @Inject constructor(
                 getFitnessMachineFeatures(gatt)
             }
             getGattUuid(fitnessMachineFeatureCharacteristicId) -> {
-                val data: ByteArray? = characteristic.value
-                if (data?.isNotEmpty() == true) {
+                val data: ByteArray = characteristicValue
+                if (data.isNotEmpty()) {
                     val supportedFeatures =
-                        characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+                        characteristicValue.getIntValue(
+                            BluetoothGattCharacteristic.FORMAT_UINT32,
+                            0
+                        ) ?: 0
                     val targetFeatures =
-                        characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 4)
+                        characteristicValue.getIntValue(
+                            BluetoothGattCharacteristic.FORMAT_UINT32,
+                            4
+                        ) ?: 0
                     val hexString = "${Integer.toBinaryString(supportedFeatures)} ${
                         Integer.toBinaryString(targetFeatures)
                     }"
@@ -442,7 +495,7 @@ class BleService @Inject constructor(
                         String.format("Supported fitness features: ${characteristic.uuid}: $hexString")
                     )
                 }
-                if (data?.isNotEmpty() == true) {
+                if (data.isNotEmpty()) {
                     val hexString: String = data.joinToString(separator = " ") {
                         String.format("%02X", it)
                     }
@@ -451,8 +504,8 @@ class BleService @Inject constructor(
             }
             else -> {
                 // For all other profiles, writes the data formatted in HEX.
-                val data: ByteArray? = characteristic.value
-                if (data?.isNotEmpty() == true) {
+                val data: ByteArray = characteristicValue
+                if (data.isNotEmpty()) {
                     val hexString: String = data.joinToString(separator = " ") {
                         String.format("%02X", it)
                     }

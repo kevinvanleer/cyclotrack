@@ -163,11 +163,9 @@ class TripInProgressFragment :
     }
 
     private fun turnOnGps() {
-        val locationRequest = LocationRequest.create().apply {
-            interval = 1000
-            fastestInterval = 100
-            priority = Priority.PRIORITY_HIGH_ACCURACY
-        }
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000)
+            .setMinUpdateIntervalMillis(100)
+            .build()
         val builder =
             locationRequest.let { LocationSettingsRequest.Builder().addLocationRequest(it) }
         val client = LocationServices.getSettingsClient(requireActivity())
