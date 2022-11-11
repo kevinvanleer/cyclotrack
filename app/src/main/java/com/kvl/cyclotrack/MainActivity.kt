@@ -24,18 +24,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.ktx.logEvent
-import com.kvl.cyclotrack.events.DatabaseOpen
-import com.kvl.cyclotrack.events.PreMigration
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -43,11 +36,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var googleFitApiService: GoogleFitApiService
     private var newRidesDisabledDialog: AlertDialog? = null
     private val viewModel: MainActivityViewModel by viewModels()
-    private lateinit var migrationDialog: AlertDialog
-    private var migrationComplete = AtomicBoolean(false)
-
-    @Inject
-    lateinit var db: TripsDatabase
 
     private lateinit var startTripHandler: () -> Unit
 
@@ -58,7 +46,7 @@ class MainActivity : AppCompatActivity() {
 
             Log.d("LOCATION_PERMISSIONS", "${entry.key} = ${entry.value}")
             if (entry.key == Manifest.permission.ACCESS_FINE_LOCATION) {
-                if (entry.value
+                if (entry.value == true
                 ) {
                     try {
                         startTripHandler()
@@ -176,6 +164,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
         Log.d(logTag, "MainActivity onResume")
         if (hasFitnessPermissions(this)) {
             WorkManager.getInstance(this).beginUniqueWork(
@@ -218,24 +207,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onPreMigration(event: PreMigration) {
-        if (!migrationComplete.get()) {
-            migrationDialog.show()
-            Log.d(logTag, "Showing migration dialog")
-        } else {
-            Log.d(logTag, "Migration already finished")
-        }
-    }
-
-    @Subscribe
-    fun onDatabaseReady(event: DatabaseOpen) {
-        EventBus.getDefault().unregister(this)
-        migrationComplete.set(true)
-        migrationDialog.dismiss()
-        Log.d(logTag, "Dismissing migration dialog")
-    }
-
     private fun checkUserCurrentVersion() {
         Log.v(logTag, "checkUserCurrentVersion")
         PreferenceManager.getDefaultSharedPreferences(this)
@@ -257,18 +228,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
         Log.d(logTag, "onCreate")
-
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-
-        migrationDialog = AlertDialog.Builder(this).apply {
-            setCancelable(false)
-            setTitle("Please wait...")
-            setView(R.layout.view_migration_in_progress)
-        }.create()
-        EventBus.getDefault().register(this)
-
         title = ""
         when (intent.getStringExtra("destinationView")) {
             TripInProgressFragment.toString() -> {
