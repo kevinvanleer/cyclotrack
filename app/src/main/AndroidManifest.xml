@@ -61,26 +61,35 @@
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
+
             <!-- If you are using androidx.startup to initialize other components -->
             <meta-data
                 android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup"
                 tools:node="remove" />
-        </provider>
-        <!-- If you want to disable android.startup completely. -->
-        <!--provider
+        </provider> <!-- If you want to disable android.startup completely. -->
+        <!--
+provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
-            tools:node="remove" /-->
-
-
+            tools:node="remove" /
+        -->
+        <activity
+            android:name=".preferences.DashboardSafeZonePreferenceActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
         <activity
             android:name=".PreferencesActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <action android:name="android.intent.action.VIEW" />
+
                 <data
                     android:host="kevinvanleer.com"
                     android:pathPattern="/strava-auth.*"
@@ -98,6 +107,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
