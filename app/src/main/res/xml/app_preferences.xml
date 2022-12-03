@@ -16,6 +16,11 @@
         app:key="@string/preferences_dashboard_brightness_key"
         app:defaultValue="50" />
     <Preference
+        app:key="@string/preference_key_dashboard_safe_zone"
+        app:title="@string/preference_title_dashboard_safe_zone"
+        app:summary="@string/preference_title_dashboard_safe_zone_summary"
+        />
+    <Preference
         android:key="@string/preferences_paired_ble_devices_key"
         android:title="Link BLE sensors"
         android:summary="Collect heart rate, cadence, and speed sensor data during your rides" />

@@ -168,4 +168,9 @@
         rides when you stop and resume rides when you start moving again. Tune auto-pause to your
         liking by setting custom speed and delay thresholds.
     </string>
+    <string name="preferences_dashboard_safe_zone_top_margin">preference_dashboard_safe_zone_top_margin</string>
+    <string name="preferences_dashboard_safe_zone_bottom_margin">preference_dashboard_safe_zone_bottom_margin</string>
+    <string name="preference_key_dashboard_safe_zone">preference_key_dashboard_safe_zone</string>
+    <string name="preference_title_dashboard_safe_zone">Dashboard safe zone</string>
+    <string name="preference_title_dashboard_safe_zone_summary">Adjust area of the screen used to draw the dashboard to avoid drawing under bike phone mount.</string>
 </resources>

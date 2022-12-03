@@ -8,6 +8,16 @@ import com.kvl.cyclotrack.FeatureFlags
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.userCircumferenceToMeters
 
+fun getSafeZoneTopMarginPreference(context: Context): Int =
+    getPreferences(context).getInt(
+        context.getString(R.string.preferences_dashboard_safe_zone_top_margin), 0
+    )
+
+fun getSafeZoneBottomMarginPreference(context: Context): Int =
+    getPreferences(context).getInt(
+        context.getString(R.string.preferences_dashboard_safe_zone_bottom_margin), 0
+    )
+
 fun getBrightnessPreference(context: Context): Float {
     return if (getPreferences(context)
             .getBoolean(

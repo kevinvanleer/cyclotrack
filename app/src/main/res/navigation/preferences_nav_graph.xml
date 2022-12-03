@@ -11,6 +11,9 @@
         android:label="Preferences"
         tools:layout="@layout/fragment_app_preferences">
         <action
+            android:id="@+id/action_set_dashboard_safe_zone"
+            app:destination="@id/DashboardSafeZonePreferenceActivity" />
+        <action
             android:id="@+id/action_edit_bike_specs"
             app:destination="@id/BikeSpecsPreferenceFragment" />
         <action
@@ -23,6 +26,11 @@
             android:id="@+id/action_show_linked_sensors"
             app:destination="@id/LinkedSensorFragment" />
     </fragment>
+    <activity
+        android:id="@+id/DashboardSafeZonePreferenceActivity"
+        android:name="com.kvl.cyclotrack.preferences.DashboardSafeZonePreferenceActivity"
+        android:label="Dashboard Safe Zone"
+        tools:layout="@layout/activity_dashboard_safe_zone_preference" />
     <fragment
         android:id="@+id/AdvancedPreferencesFragment"
         android:name="com.kvl.cyclotrack.preferences.AdvancedPreferencesFragment"
