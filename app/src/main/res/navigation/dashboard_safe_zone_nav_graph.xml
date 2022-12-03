@@ -8,6 +8,6 @@
         android:id="@+id/DashboardSafeZonePreferenceFragment"
         android:name="com.kvl.cyclotrack.preferences.DashboardSafeZonePreferenceFragment"
         android:label="Dashboard Safe Zone Pref"
-        tools:layout="@layout/fragment_trip_in_progress" />
+        tools:layout="@layout/fragment_dashboard_safe_zone" />
 
 </navigation>
