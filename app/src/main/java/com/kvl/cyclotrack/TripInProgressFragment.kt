@@ -35,6 +35,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import com.kvl.cyclotrack.util.getBrightnessPreference
+import com.kvl.cyclotrack.util.getSafeZoneBottomMarginPreference
+import com.kvl.cyclotrack.util.getSafeZoneTopMarginPreference
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
@@ -351,6 +353,11 @@ class TripInProgressFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        (view.layoutParams as ViewGroup.MarginLayoutParams).apply {
+            topMargin = getSafeZoneTopMarginPreference(requireContext())
+            bottomMargin = getSafeZoneBottomMarginPreference(requireContext())
+        }
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
         Log.d(
