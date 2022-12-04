@@ -16,7 +16,7 @@ fun rotate(
         else -> startAngle + radians
     }
 
-    return Pair(distance * cos(newAngle), distance * sin(newAngle))
+    return Pair(distance * cos(newAngle) + center.first, distance * sin(newAngle) + center.second)
 }
 
 fun isLoop(points: List<Pair<Float, Float>>): Boolean {
