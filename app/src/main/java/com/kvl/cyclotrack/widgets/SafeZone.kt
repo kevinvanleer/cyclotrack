@@ -8,7 +8,7 @@ class SafeZone(private val touchPoints: List<List<Pair<Float, Float>>>) : Drawab
         val brush = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.STROKE
-            strokeWidth = 30F
+            strokeWidth = 48F
             setARGB(255, 0, 255, 0)
         }
         touchPoints.forEach { pointSet ->
