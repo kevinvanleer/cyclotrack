@@ -121,6 +121,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 }
             }
 
+            if (!isTopToBottom && !isSideToSide) {
+                touchPoints.remove(zone)
+            }
+
         }
         //One segment
         ////Is segment a loop
