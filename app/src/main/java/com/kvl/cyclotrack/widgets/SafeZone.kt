@@ -12,14 +12,16 @@ class SafeZone(private val touchPoints: List<List<Pair<Float, Float>>>) : Drawab
             setARGB(255, 0, 255, 0)
         }
         touchPoints.forEach { pointSet ->
-            canvas.drawPath(
-                Path().apply {
-                    moveTo(pointSet[0].first, pointSet[0].second)
-                    pointSet.forEach {
-                        lineTo(it.first, it.second)
-                    }
-                }, brush
-            )
+            if (pointSet.isNotEmpty()) {
+                canvas.drawPath(
+                    Path().apply {
+                        moveTo(pointSet[0].first, pointSet[0].second)
+                        pointSet.forEach {
+                            lineTo(it.first, it.second)
+                        }
+                    }, brush
+                )
+            }
         }
     }
 
