@@ -20,8 +20,7 @@ import com.kvl.cyclotrack.util.getSafeZoneMargins
 import com.kvl.cyclotrack.util.putSafeZoneMargins
 import com.kvl.cyclotrack.widgets.SafeZone
 import java.lang.Float.min
-import kotlin.math.ceil
-import kotlin.math.floor
+import kotlin.math.*
 
 class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     val logTag = "DashboardSafeZoneFrag"
@@ -89,6 +88,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         }
     }
 
+
     private fun setSafeZoneMargins(strokeWidth: Float) {
         Log.v(logTag, touchPoints.toString())
         val displayMetrics = resources.displayMetrics
@@ -98,33 +98,31 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             val yAvg = yCoords.average()
             val xAvg = xCoords.average()
 
+            val isLoop = isLoop(zone)
             val isTopToBottom = yCoords.max() - yCoords.min() > displayMetrics.heightPixels * 0.8
             val isSideToSide = xCoords.max() - xCoords.min() > displayMetrics.widthPixels * 0.8
 
-            if (isSideToSide) {
-                val isBottomMargin = yAvg / displayMetrics.heightPixels > 0.5
-                if (isBottomMargin) {
-                    safeZone.bottom =
-                        (displayMetrics.heightPixels - floor(yCoords.min()).toInt() - strokeWidth / 2).toInt()
-                } else {
-                    safeZone.top = (ceil(yCoords.max()).toInt() + strokeWidth / 2).toInt()
+            when {
+                isSideToSide -> {
+                    val isBottomMargin = yAvg / displayMetrics.heightPixels > 0.5
+                    if (isBottomMargin) {
+                        safeZone.bottom =
+                            (displayMetrics.heightPixels - floor(yCoords.min()).toInt() - strokeWidth / 2).toInt()
+                    } else {
+                        safeZone.top = (ceil(yCoords.max()).toInt() + strokeWidth / 2).toInt()
+                    }
                 }
-            }
-
-            if (isTopToBottom) {
-                val isLeftMargin = xAvg / displayMetrics.widthPixels < 0.5
-                if (isLeftMargin) {
-                    safeZone.left = (ceil(xCoords.max()).toInt() + strokeWidth / 2).toInt()
-                } else {
-                    safeZone.right =
-                        (displayMetrics.widthPixels - floor(xCoords.min()).toInt() - strokeWidth / 2).toInt()
+                isTopToBottom -> {
+                    val isLeftMargin = xAvg / displayMetrics.widthPixels < 0.5
+                    if (isLeftMargin) {
+                        safeZone.left = (ceil(xCoords.max()).toInt() + strokeWidth / 2).toInt()
+                    } else {
+                        safeZone.right =
+                            (displayMetrics.widthPixels - floor(xCoords.min()).toInt() - strokeWidth / 2).toInt()
+                    }
                 }
+                else -> touchPoints.remove(zone)
             }
-
-            if (!isTopToBottom && !isSideToSide) {
-                touchPoints.remove(zone)
-            }
-
         }
         //One segment
         ////Is segment a loop
