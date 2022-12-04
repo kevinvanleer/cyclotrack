@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack.preferences
 
 import android.graphics.Rect
+import android.graphics.drawable.ShapeDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -26,6 +27,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     private var safeZone: Rect = Rect(0, 0, 0, 0)
     private lateinit var resetButton: Button
     private lateinit var dashboard: ConstraintLayout
+    private lateinit var canvas: ImageView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,6 +48,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         val debugTextView: View = view.findViewById(R.id.textview_debug)
         resetButton = view.findViewById(R.id.button_dashboard_safe_zone_reset)
         dashboard = view.findViewById(R.id.included_dashboard_layout)
+        canvas = view.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
 
         pauseButton.visibility = View.GONE
         resumeButton.visibility = View.GONE
@@ -70,6 +73,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         view.setOnTouchListener(this)
 
         resetButton.setOnClickListener {
+            canvas.setImageDrawable(ShapeDrawable())
             safeZone = Rect()
             touchPoints.clear()
             putSafeZoneMargins(requireContext(), safeZone)
@@ -144,8 +148,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf(Pair(event.x, event.y)))
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
-        val canvas: ImageView? = view?.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
-        canvas?.setImageDrawable(SafeZone(touchPoints))
+        canvas.setImageDrawable(SafeZone(touchPoints))
         return true
     }
 
