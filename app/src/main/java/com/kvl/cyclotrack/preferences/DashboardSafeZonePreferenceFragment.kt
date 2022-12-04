@@ -88,7 +88,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         }
     }
 
-    private fun setSafeZoneMargins() {
+    private fun setSafeZoneMargins(strokeWidth: Float) {
         Log.v(logTag, touchPoints.toString())
         val displayMetrics = resources.displayMetrics
         touchPoints.forEach { zone ->
@@ -103,18 +103,20 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             if (isSideToSide) {
                 val isBottomMargin = yAvg / displayMetrics.heightPixels > 0.5
                 if (isBottomMargin) {
-                    safeZone.bottom = displayMetrics.heightPixels - floor(yCoords.min()).toInt()
+                    safeZone.bottom =
+                        (displayMetrics.heightPixels - floor(yCoords.min()).toInt() - strokeWidth / 2).toInt()
                 } else {
-                    safeZone.top = ceil(yCoords.max()).toInt()
+                    safeZone.top = (ceil(yCoords.max()).toInt() + strokeWidth / 2).toInt()
                 }
             }
 
             if (isTopToBottom) {
                 val isLeftMargin = xAvg / displayMetrics.widthPixels < 0.5
                 if (isLeftMargin) {
-                    safeZone.left = ceil(xCoords.max()).toInt()
+                    safeZone.left = (ceil(xCoords.max()).toInt() + strokeWidth / 2).toInt()
                 } else {
-                    safeZone.right = displayMetrics.widthPixels - floor(xCoords.min()).toInt()
+                    safeZone.right =
+                        (displayMetrics.widthPixels - floor(xCoords.min()).toInt() - strokeWidth / 2).toInt()
                 }
             }
 
@@ -144,18 +146,14 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.v(logTag, event.toString())
+        val strokeWidth = 0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
         when (event?.action) {
-            MotionEvent.ACTION_UP -> setSafeZoneMargins()
+            MotionEvent.ACTION_UP -> setSafeZoneMargins(strokeWidth)
             MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf(Pair(event.x, event.y)))
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
         Log.v(logTag, "${resources.displayMetrics.xdpi}, ${resources.displayMetrics.ydpi}")
-        canvas.setImageDrawable(
-            SafeZone(
-                touchPoints,
-                0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
-            )
-        )
+        canvas.setImageDrawable(SafeZone(touchPoints, strokeWidth))
         return true
     }
 

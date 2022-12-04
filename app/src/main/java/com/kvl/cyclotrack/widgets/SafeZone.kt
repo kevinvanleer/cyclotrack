@@ -11,7 +11,7 @@ class SafeZone(
         val brush = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.STROKE
-            strokeWidth = strokeWidth
+            strokeWidth = this@SafeZone.strokeWidth
             setARGB(255, 0, 255, 0)
         }
         touchPoints.forEach { pointSet ->
