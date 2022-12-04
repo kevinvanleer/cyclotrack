@@ -13,6 +13,7 @@ import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
@@ -153,7 +154,13 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
         Log.v(logTag, "${resources.displayMetrics.xdpi}, ${resources.displayMetrics.ydpi}")
-        canvas.setImageDrawable(SafeZone(touchPoints, strokeWidth))
+        canvas.setImageDrawable(
+            SafeZone(
+                touchPoints,
+                strokeWidth,
+                ResourcesCompat.getColor(requireContext().resources, R.color.accentColor, null)
+            )
+        )
         return true
     }
 

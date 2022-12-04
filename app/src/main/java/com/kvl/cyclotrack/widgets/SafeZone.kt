@@ -5,14 +5,16 @@ import android.graphics.drawable.Drawable
 
 class SafeZone(
     private val touchPoints: List<List<Pair<Float, Float>>>,
-    private val strokeWidth: Float
+    private val strokeWidth: Float,
+    private val strokeColor: Int
 ) : Drawable() {
     override fun draw(canvas: Canvas) {
         val brush = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.STROKE
             strokeWidth = this@SafeZone.strokeWidth
-            setARGB(255, 0, 255, 0)
+            color = this@SafeZone.strokeColor
+            alpha = 128
         }
         touchPoints.forEach { pointSet ->
             if (pointSet.isNotEmpty()) {
