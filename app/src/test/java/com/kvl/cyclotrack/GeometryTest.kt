@@ -14,10 +14,10 @@ class GeometryTest {
 
         result = rotate((PI / 2).toFloat(), Pair(1f, 1f), Pair(0f, 1f))
         Assert.assertEquals(0f, result.first, 0.001f)
-        Assert.assertEquals(2f, result.first, 0.001f)
+        Assert.assertEquals(2f, result.second, 0.001f)
 
         result = rotate((PI / 2).toFloat(), Pair(1f, 1f), Pair(1f, 0f))
         Assert.assertEquals(0f, result.first, 0.001f)
-        Assert.assertEquals(0f, result.first, 0.001f)
+        Assert.assertEquals(0f, result.second, 0.001f)
     }
 }
