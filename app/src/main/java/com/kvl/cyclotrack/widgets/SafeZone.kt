@@ -13,8 +13,9 @@ class SafeZone(
             isAntiAlias = true
             style = Paint.Style.STROKE
             strokeWidth = this@SafeZone.strokeWidth
+            strokeCap = Paint.Cap.ROUND
             color = this@SafeZone.strokeColor
-            alpha = 128
+            alpha = 180
         }
         touchPoints.forEach { pointSet ->
             if (pointSet.isNotEmpty()) {
