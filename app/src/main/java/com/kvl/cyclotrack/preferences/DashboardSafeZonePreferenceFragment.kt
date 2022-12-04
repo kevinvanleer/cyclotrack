@@ -17,10 +17,12 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
+import com.kvl.cyclotrack.util.isLoop
 import com.kvl.cyclotrack.util.putSafeZoneMargins
 import com.kvl.cyclotrack.widgets.SafeZone
 import java.lang.Float.min
-import kotlin.math.*
+import kotlin.math.ceil
+import kotlin.math.floor
 
 class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     val logTag = "DashboardSafeZoneFrag"
