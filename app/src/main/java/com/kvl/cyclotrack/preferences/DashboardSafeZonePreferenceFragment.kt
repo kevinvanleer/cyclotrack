@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
 import com.kvl.cyclotrack.util.putSafeZoneMargins
+import com.kvl.cyclotrack.widgets.SafeZone
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -43,7 +44,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         val stopButton: Button = view.findViewById(R.id.stop_button)
         val trackingImage: View = view.findViewById(R.id.image_tracking)
         val debugTextView: View = view.findViewById(R.id.textview_debug)
-        val canvas: ImageView = view.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
         resetButton = view.findViewById(R.id.button_dashboard_safe_zone_reset)
         dashboard = view.findViewById(R.id.included_dashboard_layout)
 
@@ -67,7 +67,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             else -> resetButton.visibility = View.VISIBLE
         }
 
-        //canvas.setImageDrawable()
         view.setOnTouchListener(this)
 
         resetButton.setOnClickListener {
@@ -145,6 +144,8 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf())
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
+        val canvas: ImageView? = view?.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
+        canvas?.setImageDrawable(SafeZone(touchPoints))
         return true
     }
 
