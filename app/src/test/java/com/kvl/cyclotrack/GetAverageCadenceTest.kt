@@ -1,5 +1,7 @@
 package com.kvl.cyclotrack
 
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.SensorType
 import com.opencsv.CSVReader
 import org.junit.Assert
 import org.junit.Test
@@ -7,7 +9,7 @@ import java.io.File
 import java.io.FileReader
 
 class GetAverageCadenceTest {
-    private fun getMeasurementsData(filename: String): List<CriticalMeasurements> =
+    private fun getMeasurementsData(filename: String): List<CadenceSpeedMeasurement> =
         CSVReader(
             FileReader(
                 File(
@@ -19,18 +21,17 @@ class GetAverageCadenceTest {
         ).let { reader ->
             reader.readNext().let { line ->
                 val cadenceRevsIdx = line.indexOf("cadenceRevolutions")
+                val cadenceRpmIdx = line.indexOf("cadenceRpm")
                 val cadenceLastEventIdx = line.indexOf("cadenceLastEvent")
                 val timeIdx = line.indexOf("time")
                 reader.map {
-                    CriticalMeasurements(
-                        cadenceLastEvent = it[cadenceLastEventIdx].toInt(),
-                        cadenceRevolutions = it[cadenceRevsIdx].toInt(),
-                        time = it[timeIdx].toLong(),
-                        accuracy = 0f,
-                        altitude = 0.0,
-                        latitude = 0.0,
-                        longitude = 0.0,
-                        speed = 0f
+                    CadenceSpeedMeasurement(
+                        lastEvent = it[cadenceLastEventIdx].toInt(),
+                        revolutions = it[cadenceRevsIdx].toInt(),
+                        timestamp = it[timeIdx].toLong(),
+                        sensorType = SensorType.CADENCE,
+                        rpm = it[cadenceRpmIdx].toFloat(),
+                        tripId = 0
                     )
                 }
             }
@@ -40,10 +41,10 @@ class GetAverageCadenceTest {
     fun ride_000337_old100() {
         val measurements =
             getMeasurementsData("/ride-data/cyclotrack_000337_Evening-bike-ride.csv")
-                .filter { it.cadenceRevolutions != null }
-                .sortedBy { it.time }
+                .filter { it.revolutions != null }
+                .sortedBy { it.timestamp }
 
-        var last: CriticalMeasurements? = null
+        var last: CadenceSpeedMeasurement? = null
         var count = 0
         measurements.forEach {
             if (last != null) if (!didDeviceFail(it, last!!)) ++count
@@ -54,7 +55,7 @@ class GetAverageCadenceTest {
 
         Assert.assertEquals(
             76.5f,
-            getAverageCadenceTheEasyWay(measurements)!!, 1e-1f
+            getAverageCadenceTheEasyWay(measurements), 1e-1f
         )
         Assert.assertEquals(
             78f,
@@ -66,10 +67,10 @@ class GetAverageCadenceTest {
     fun ride_000309_cullumBranch() {
         val measurements =
             getMeasurementsData("/ride-data/cyclotrack_000309_Dutzow-to-Cullum-Branch.csv")
-                .filter { it.cadenceRevolutions != null }
-                .sortedBy { it.time }
+                .filter { it.revolutions != null }
+                .sortedBy { it.timestamp }
 
-        var last: CriticalMeasurements? = null
+        var last: CadenceSpeedMeasurement? = null
         var count = 0
         measurements.forEach {
             if (last != null) if (!didDeviceFail(it, last!!)) ++count
@@ -79,7 +80,7 @@ class GetAverageCadenceTest {
         Assert.assertEquals(measurements.size - 144, count)
 
         Assert.assertEquals(
-            20.9f, getAverageCadenceTheEasyWay(measurements)!!, 1e-1f
+            20.9f, getAverageCadenceTheEasyWay(measurements), 1e-1f
         )
         Assert.assertEquals(
             78.8f,
@@ -92,8 +93,8 @@ class GetAverageCadenceTest {
         val measurements =
             getMeasurementsData("/ride-data/cyclotrack_000309_Dutzow-to-Cullum-Branch.csv")
         val cleanedMeasurements = measurements
-            .filter { it.cadenceRevolutions != null }
-            .sortedBy { it.time }
+            .filter { it.revolutions != null }
+            .sortedBy { it.timestamp }
         Assert.assertEquals(
             getAverageCadenceTheHardWay(cleanedMeasurements),
             getAverageCadence(measurements.toTypedArray())
@@ -105,8 +106,8 @@ class GetAverageCadenceTest {
         val measurements =
             getMeasurementsData("/ride-data/cyclotrack_000337_Evening-bike-ride.csv")
         val cleanedMeasurements = measurements
-            .filter { it.cadenceRevolutions != null }
-            .sortedBy { it.time }
+            .filter { it.revolutions != null }
+            .sortedBy { it.timestamp }
         Assert.assertEquals(
             getAverageCadenceTheEasyWay(cleanedMeasurements),
             getAverageCadence(measurements.toTypedArray())
