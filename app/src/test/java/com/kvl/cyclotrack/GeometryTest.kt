@@ -10,7 +10,7 @@ class GeometryTest {
     fun rotate_basic() {
         var result = rotate((PI / 2).toFloat(), Pair(1f, 1f), Pair(0f, 0f))
         Assert.assertEquals(-1f, result.first, 0.001f)
-        Assert.assertEquals(-1f, result.second, 0.001f)
+        Assert.assertEquals(1f, result.second, 0.001f)
 
         result = rotate((PI / 2).toFloat(), Pair(1f, 1f), Pair(1f, 0f))
         Assert.assertEquals(0f, result.first, 0.001f)
