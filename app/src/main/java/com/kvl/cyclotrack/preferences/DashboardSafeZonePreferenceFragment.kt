@@ -148,6 +148,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf(Pair(event.x, event.y)))
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
+        Log.v(logTag, "${resources.displayMetrics.xdpi}, ${resources.displayMetrics.ydpi}")
         canvas.setImageDrawable(SafeZone(touchPoints))
         return true
     }
