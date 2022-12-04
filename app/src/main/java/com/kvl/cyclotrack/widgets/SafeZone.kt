@@ -3,12 +3,15 @@ package com.kvl.cyclotrack.widgets
 import android.graphics.*
 import android.graphics.drawable.Drawable
 
-class SafeZone(private val touchPoints: List<List<Pair<Float, Float>>>) : Drawable() {
+class SafeZone(
+    private val touchPoints: List<List<Pair<Float, Float>>>,
+    private val strokeWidth: Float
+) : Drawable() {
     override fun draw(canvas: Canvas) {
         val brush = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.STROKE
-            strokeWidth = 48F
+            strokeWidth = strokeWidth
             setARGB(255, 0, 255, 0)
         }
         touchPoints.forEach { pointSet ->

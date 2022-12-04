@@ -18,6 +18,7 @@ import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
 import com.kvl.cyclotrack.util.putSafeZoneMargins
 import com.kvl.cyclotrack.widgets.SafeZone
+import java.lang.Float.min
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -149,7 +150,12 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
         Log.v(logTag, "${resources.displayMetrics.xdpi}, ${resources.displayMetrics.ydpi}")
-        canvas.setImageDrawable(SafeZone(touchPoints))
+        canvas.setImageDrawable(
+            SafeZone(
+                touchPoints,
+                0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
+            )
+        )
         return true
     }
 
