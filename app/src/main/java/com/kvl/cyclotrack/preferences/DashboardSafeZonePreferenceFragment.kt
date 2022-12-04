@@ -141,7 +141,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         Log.v(logTag, event.toString())
         when (event?.action) {
             MotionEvent.ACTION_UP -> setSafeZoneMargins()
-            MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf())
+            MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf(Pair(event.x, event.y)))
             MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
         }
         val canvas: ImageView? = view?.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
