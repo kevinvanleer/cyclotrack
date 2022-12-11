@@ -28,6 +28,7 @@ fun isClosed(points: List<Pair<Float, Float>>): Boolean {
                 Pair(points[rt - 1], points[rt])
         }
     }
+    return false
 }
 
 fun isLoop(points: List<Pair<Float, Float>>): Boolean {
