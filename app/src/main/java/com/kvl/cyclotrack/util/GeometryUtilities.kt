@@ -19,6 +19,17 @@ fun rotate(
     return Pair(distance * cos(newAngle) + center.first, distance * sin(newAngle) + center.second)
 }
 
+fun isClosed(points: List<Pair<Float, Float>>): Boolean {
+    for (it in 1 until points.size) {
+        val refPair: Pair<Pair<Float, Float>, Pair<Float, Float>> = Pair(points[it - 1], points[it])
+        val remaining = points.slice(it until points.size)
+        for (rt in remaining.size downTo 1) {
+            val targetPair: Pair<Pair<Float, Float>, Pair<Float, Float>> =
+                Pair(points[rt - 1], points[rt])
+        }
+    }
+}
+
 fun isLoop(points: List<Pair<Float, Float>>): Boolean {
     if (points.size < 10) return false
 
