@@ -48,6 +48,7 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
             value = location
         }
 
+        @Deprecated("Uncommented for version 8.1")
         override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
             Log.d(logTag, "GPS status changed: $status")
         }
