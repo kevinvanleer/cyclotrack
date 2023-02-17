@@ -12,6 +12,10 @@ def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
+kotlin {
+    jvmToolchain(11)
+}
+
 android {
     signingConfigs {
         Default {
@@ -122,9 +126,6 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = '11'
     }
     testOptions {
         unitTests {
