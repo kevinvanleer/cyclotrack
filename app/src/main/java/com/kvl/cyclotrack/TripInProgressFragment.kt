@@ -724,10 +724,16 @@ class TripInProgressFragment :
                         })
                 }
             }
-        } catch (e: java.lang.IllegalArgumentException) {
-            Log.e(logTag, "Failed to parse navigation args", e)
-            FirebaseCrashlytics.getInstance().recordException(e)
-            endTrip(-1)
+        } catch (e: Exception) {
+            when (e) {
+                is java.lang.IllegalArgumentException,
+                is java.lang.reflect.InvocationTargetException -> {
+                    Log.e(logTag, "Failed to parse navigation args", e)
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                    endTrip(-1)
+                }
+                else -> throw e
+            }
         }
     }
 

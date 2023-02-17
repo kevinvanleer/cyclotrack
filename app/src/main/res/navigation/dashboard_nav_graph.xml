@@ -21,12 +21,14 @@
         tools:layout="@layout/fragment_trip_in_progress">
         <argument
             android:name="tripId"
+            android:defaultValue="-1L"
             app:argType="long" />
         <action
             android:id="@+id/action_finish_trip"
             app:destination="@id/TripDetailsActivity">
             <argument
                 android:name="tripId"
+                android:defaultValue="-1L"
                 app:argType="long" />
         </action>
         <action

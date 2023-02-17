@@ -30,6 +30,7 @@
             app:destination="@id/DashboardActivity">
             <argument
                 android:name="tripId"
+                android:defaultValue="-1L"
                 app:argType="long" />
         </action>
         <action
@@ -37,6 +38,7 @@
             app:destination="@id/TripDetailsActivity">
             <argument
                 android:name="tripId"
+                android:defaultValue="-1L"
                 app:argType="long" />
         </action>
     </fragment>
@@ -51,6 +53,7 @@
             app:destination="@id/DashboardActivity">
             <argument
                 android:name="tripId"
+                android:defaultValue="-1L"
                 app:argType="long" />
         </action>
         <action
@@ -58,6 +61,7 @@
             app:destination="@id/TripDetailsActivity">
             <argument
                 android:name="tripId"
+                android:defaultValue="-1L"
                 app:argType="long" />
         </action>
     </fragment>

@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
@@ -48,7 +49,11 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         addMenuProvider()
         val viewManager = LinearLayoutManager(activity)
-        val listState: Parcelable? = savedInstanceState?.getParcelable("MY_KEY", Bundle::class.java)
+        val listState: Parcelable? =
+            when (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                true -> savedInstanceState?.getParcelable("MY_KEY", Bundle::class.java)
+                else -> savedInstanceState?.getParcelable("MY_KEY")
+            }
         if (listState != null) viewManager.onRestoreInstanceState(listState)
 
         activity?.title = ""
@@ -233,11 +238,19 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
     override fun onResume() {
         super.onResume()
         if (this::tripListView.isInitialized) {
-            tripListView.layoutManager?.onRestoreInstanceState(
-                viewModel.tripListState.getParcelable(
-                    "MY_KEY", Bundle::class.java
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                tripListView.layoutManager?.onRestoreInstanceState(
+                    viewModel.tripListState.getParcelable(
+                        "MY_KEY", Bundle::class.java
+                    )
                 )
-            )
+            } else {
+                tripListView.layoutManager?.onRestoreInstanceState(
+                    viewModel.tripListState.getParcelable(
+                        "MY_KEY"
+                    )
+                )
+            }
         }
     }
 }

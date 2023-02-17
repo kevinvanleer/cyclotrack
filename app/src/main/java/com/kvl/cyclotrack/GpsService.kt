@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Bundle
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
@@ -47,9 +48,9 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
             value = location
         }
 
-        /*override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-            Log.d(logTag, "GPS status changed")
-        }*/
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+            Log.d(logTag, "GPS status changed: $status")
+        }
 
         override fun onProviderEnabled(provider: String) {
             Log.d(logTag, "GPS provider enabled")

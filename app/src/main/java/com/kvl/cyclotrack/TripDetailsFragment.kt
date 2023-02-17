@@ -203,7 +203,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     private fun unsyncAndDeleteTrip() {
         viewModel.tripOverview.removeObservers(viewLifecycleOwner)
-        viewModel.measurements.removeObservers(viewLifecycleOwner)
+        viewModel.locationMeasurements.removeObservers(viewLifecycleOwner)
         viewModel.splits.removeObservers(viewLifecycleOwner)
         viewModel.timeState.removeObservers(viewLifecycleOwner)
         viewModel.onboardSensors.removeObservers(viewLifecycleOwner)
@@ -230,7 +230,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private fun deleteTrip() {
         Log.d(logTag, "trip overview has observers: ${viewModel.tripOverview.hasObservers()}")
         viewModel.tripOverview.removeObservers(viewLifecycleOwner)
-        viewModel.measurements.removeObservers(viewLifecycleOwner)
+        viewModel.locationMeasurements.removeObservers(viewLifecycleOwner)
         viewModel.splits.removeObservers(viewLifecycleOwner)
         viewModel.timeState.removeObservers(viewLifecycleOwner)
         viewModel.onboardSensors.removeObservers(viewLifecycleOwner)
@@ -399,6 +399,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val elevationAlpha = 0.05
         try {
             val tripId = args.tripId
+            if (args.tripId == -1L) throw IllegalArgumentException()
             Log.d(logTag, String.format("Displaying details for trip %d", tripId))
             viewModel.tripId = tripId
 
@@ -649,14 +650,20 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
                 }
             }
-        } catch (e: IllegalArgumentException) {
-            Log.e(logTag, "Failed to parse navigation args", e)
-            FirebaseCrashlytics.getInstance().recordException(e)
-            AlertDialog.Builder(requireContext()).apply {
-                setTitle("Something went wrong!")
-                setMessage("There was a problem accessing the data for this ride. Please try again.")
-                setPositiveButton("OK") { _, _ -> }
-            }.create()
+        } catch (e: Exception) {
+            when (e) {
+                is java.lang.IllegalArgumentException,
+                is java.lang.reflect.InvocationTargetException -> {
+                    Log.e(logTag, "Failed to parse navigation args", e)
+                    FirebaseCrashlytics.getInstance().recordException(e)
+                    AlertDialog.Builder(requireContext()).apply {
+                        setTitle("Something went wrong!")
+                        setMessage("There was a problem accessing the data for this ride. Please try again.")
+                        setPositiveButton("OK") { _, _ -> }
+                    }.create()
+                }
+                else -> throw e
+            }
         }
     }
 

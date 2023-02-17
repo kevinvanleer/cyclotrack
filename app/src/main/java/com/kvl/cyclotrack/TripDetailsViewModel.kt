@@ -45,7 +45,7 @@ class TripDetailsViewModel @Inject constructor(
     lateinit var tripOverview: LiveData<Trip> private set
     lateinit var timeState: LiveData<Array<TimeState>> private set
     lateinit var splits: LiveData<Array<Split>> private set
-    lateinit var measurements: LiveData<Array<CriticalMeasurements>> private set
+
     lateinit var locationMeasurements: LiveData<Array<Measurements>> private set
     lateinit var onboardSensors: LiveData<Array<OnboardSensors>> private set
     lateinit var tripWeather: LiveData<Array<Weather>> private set

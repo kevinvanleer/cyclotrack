@@ -16,6 +16,7 @@
         tools:layout="@layout/fragment_trip_details">
         <argument
             android:name="tripId"
+            android:defaultValue="-1L"
             app:argType="long" />
         <action
             android:id="@+id/action_edit_trip"
