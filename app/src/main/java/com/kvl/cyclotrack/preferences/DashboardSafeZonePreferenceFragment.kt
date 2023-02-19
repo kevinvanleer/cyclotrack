@@ -66,7 +66,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
 
         WindowCompat.getInsetsController(requireActivity().window, view).apply {
-            hide(WindowInsetsCompat.Type.systemGestures())
+            hide(WindowInsetsCompat.Type.mandatorySystemGestures())
         }
         /*
         fun getExclusionRects(view: View): List<Rect> {
@@ -131,7 +131,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         backButton.setOnClickListener {
             WindowCompat.getInsetsController(requireActivity().window, view).apply {
-                show(WindowInsetsCompat.Type.systemGestures())
+                show(WindowInsetsCompat.Type.mandatorySystemGestures())
             }
             activity?.finish();
         }
