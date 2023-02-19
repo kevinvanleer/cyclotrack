@@ -69,8 +69,8 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 Log.d(logTag, "Setting exclusion zones");
                 v.systemGestureExclusionRects = listOf(
-                    Rect(0, 0, 50, v.height),
-                    Rect(v.width - 50, 0, v.width, v.height),
+                    Rect(-100, -100, 50, v.height),
+                    Rect(v.width - 50, 0, v.width + 100, v.height + 100),
                 )
             }
         }
