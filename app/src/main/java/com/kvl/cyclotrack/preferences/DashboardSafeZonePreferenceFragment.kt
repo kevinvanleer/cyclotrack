@@ -61,6 +61,15 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         view.findViewById<TextView>(R.id.dashboard_textview_timeOfDay).apply {
             text = "12:03 PM"
         }
+        view.findViewById<TextView>(R.id.measurement_footer).apply {
+            text = "N"
+        }
+        view.findViewById<TextView>(R.id.measurement_footer_right).apply {
+            text = "12"
+        }
+        view.findViewById<ImageView>(R.id.image_wind_icon).apply { visibility = View.VISIBLE }
+        view.findViewById<ImageView>(R.id.image_arrow_wind_direction)
+            .apply { visibility = View.VISIBLE }
 
         pauseButton.visibility = View.GONE
         resumeButton.visibility = View.GONE
