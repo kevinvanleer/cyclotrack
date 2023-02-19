@@ -70,7 +70,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             view
         ).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.systemGestures())
+            hide(WindowInsetsCompat.Type.systemBars())
         }
 
         fun getExclusionRects(view: View): List<Rect> {
@@ -139,7 +139,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 requireActivity().window.decorView
             ).apply {
                 systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE
-                show(WindowInsetsCompat.Type.systemGestures())
+                show(WindowInsetsCompat.Type.systemBars())
             }
             activity?.finish();
         }
