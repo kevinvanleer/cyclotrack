@@ -16,6 +16,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
@@ -65,8 +66,13 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         debugTextView.visibility = View.GONE
 
 
-        WindowCompat.getInsetsController(requireActivity().window, view).apply {
-            hide(WindowInsetsCompat.Type.mandatorySystemGestures())
+        WindowCompat.getInsetsController(
+            requireActivity().window,
+            requireActivity().window.decorView
+        ).apply {
+            //systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            hide(WindowInsetsCompat.Type.systemGestures())
         }
         /*
         fun getExclusionRects(view: View): List<Rect> {
@@ -130,7 +136,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         }
 
         backButton.setOnClickListener {
-            WindowCompat.getInsetsController(requireActivity().window, view).apply {
+            WindowCompat.getInsetsController(
+                requireActivity().window,
+                requireActivity().window.decorView
+            ).apply {
                 show(WindowInsetsCompat.Type.mandatorySystemGestures())
             }
             activity?.finish();
