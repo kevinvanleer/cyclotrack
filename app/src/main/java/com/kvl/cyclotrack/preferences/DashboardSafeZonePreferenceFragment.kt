@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.*
@@ -56,6 +57,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         backButton = view.findViewById(R.id.button_dashboard_safe_zone_back)
         dashboard = view.findViewById(R.id.included_dashboard_layout)
         canvas = view.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
+
+        view.findViewById<TextView>(R.id.dashboard_textview_timeOfDay).apply {
+            text = "12:03 PM"
+        }
 
         pauseButton.visibility = View.GONE
         resumeButton.visibility = View.GONE
