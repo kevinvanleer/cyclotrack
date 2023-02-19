@@ -67,10 +67,12 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         fun getExclusionRects(view: View): List<Rect> {
             var rects = mutableListOf<Rect>();
-            for (y in 0..view.height step 200) {
+            /*for (y in 0..view.height step 200) {
                 rects.add(Rect(0, y, 50, y + 200))
                 rects.add(Rect(view.width - 50, y, view.width, y + 200))
-            }
+            }*/
+            rects.add(Rect(0, 0, 50, 10000))
+            rects.add(Rect(view.width - 50, 0, view.width, 10000))
             return rects.toList();
         }
         view.doOnPreDraw { v ->
