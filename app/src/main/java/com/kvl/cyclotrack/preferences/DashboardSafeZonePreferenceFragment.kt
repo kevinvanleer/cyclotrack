@@ -65,22 +65,24 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         trackingImage.visibility = View.GONE
         debugTextView.visibility = View.GONE
 
+        fun getExclusionRects(view: View): List<Rect> {
+            var rects = mutableListOf<Rect>();
+            for (y in 0..view.height step 200) {
+                rects.add(Rect(0, y, 50, y + 200))
+                rects.add(Rect(view.width - 50, y, view.width, y + 200))
+            }
+            return rects.toList();
+        }
         view.doOnPreDraw { v ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 Log.d(logTag, "Setting exclusion zones");
-                v.systemGestureExclusionRects = listOf(
-                    Rect(0, 0, 50, v.height),
-                    Rect(v.width - 50, 0, v.width, v.height),
-                )
+                v.systemGestureExclusionRects = getExclusionRects(v)
             }
         }
         view.doOnLayout { v ->
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 Log.d(logTag, "Setting exclusion zones");
-                v.systemGestureExclusionRects = listOf(
-                    Rect(0, 0, 50, v.height),
-                    Rect(v.width - 50, 0, v.width, v.height),
-                )
+                v.systemGestureExclusionRects = getExclusionRects(v)
             }
         }
 
