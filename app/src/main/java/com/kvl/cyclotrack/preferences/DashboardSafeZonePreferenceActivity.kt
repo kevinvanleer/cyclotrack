@@ -13,4 +13,6 @@ class DashboardSafeZonePreferenceActivity : AppCompatActivity() {
             R.navigation.dashboard_safe_zone_nav_graph
         )
     }
+
+    override fun onBackPressed() {}
 }
