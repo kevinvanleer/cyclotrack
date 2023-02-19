@@ -2,7 +2,6 @@ package com.kvl.cyclotrack.preferences
 
 import android.graphics.Rect
 import android.graphics.drawable.ShapeDrawable
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,8 +14,8 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.doOnLayout
-import androidx.core.view.doOnPreDraw
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
@@ -65,14 +64,27 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         trackingImage.visibility = View.GONE
         debugTextView.visibility = View.GONE
 
+
+        WindowCompat.getInsetsController(requireActivity().window, view).apply {
+            hide(WindowInsetsCompat.Type.navigationBars())
+        }
+        /*
         fun getExclusionRects(view: View): List<Rect> {
             var rects = mutableListOf<Rect>();
+            val displayMetrics = resources.displayMetrics
             /*for (y in 0..view.height step 200) {
                 rects.add(Rect(0, y, 50, y + 200))
                 rects.add(Rect(view.width - 50, y, view.width, y + 200))
             }*/
-            rects.add(Rect(0, 0, 50, 10000))
-            rects.add(Rect(view.width - 50, 0, view.width, 10000))
+            rects.add(Rect(0, 0, 50, displayMetrics.heightPixels))
+            rects.add(
+                Rect(
+                    displayMetrics.widthPixels - 50,
+                    0,
+                    displayMetrics.widthPixels,
+                    displayMetrics.heightPixels
+                )
+            )
             return rects.toList();
         }
         view.doOnPreDraw { v ->
@@ -86,7 +98,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 Log.d(logTag, "Setting exclusion zones");
                 v.systemGestureExclusionRects = getExclusionRects(v)
             }
-        }
+        }*/
 
         safeZone = getSafeZoneMargins(requireContext())
         (dashboard.layoutParams as MarginLayoutParams).apply {
@@ -118,6 +130,9 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         }
 
         backButton.setOnClickListener {
+            WindowCompat.getInsetsController(requireActivity().window, view).apply {
+                show(WindowInsetsCompat.Type.navigationBars())
+            }
             activity?.finish();
         }
     }
