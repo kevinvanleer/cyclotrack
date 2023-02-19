@@ -179,9 +179,9 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                     val isBottomMargin = yAvg / displayMetrics.heightPixels > 0.5
                     if (isBottomMargin) {
                         safeZone.bottom =
-                            (displayMetrics.heightPixels - floor(yCoords.min()).toInt() - strokeWidth / 2).toInt()
+                            (displayMetrics.heightPixels - floor(yCoords.min()).toInt() + strokeWidth / 2).toInt()
                     } else {
-                        safeZone.top = (ceil(yCoords.max()).toInt() + strokeWidth / 2).toInt()
+                        safeZone.top = (ceil(yCoords.max()).toInt() - strokeWidth / 2).toInt()
                     }
                 }
                 isTopToBottom -> {
