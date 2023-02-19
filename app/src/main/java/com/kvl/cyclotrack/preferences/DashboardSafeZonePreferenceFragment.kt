@@ -67,7 +67,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         WindowCompat.getInsetsController(
             requireActivity().window,
-            requireActivity().window.decorView
+            view
         ).apply {
             //systemBarsBehavior =
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -139,6 +139,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 requireActivity().window,
                 requireActivity().window.decorView
             ).apply {
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE
                 show(WindowInsetsCompat.Type.systemGestures())
             }
             activity?.finish();
