@@ -65,6 +65,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             text = "N"
         }
         view.findViewById<TextView>(R.id.measurement_footer_right).apply {
+            visibility = View.VISIBLE
             text = "12"
         }
         view.findViewById<ImageView>(R.id.image_wind_icon).apply { visibility = View.VISIBLE }
