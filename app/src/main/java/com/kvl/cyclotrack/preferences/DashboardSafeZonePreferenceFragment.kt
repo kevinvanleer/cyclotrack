@@ -2,6 +2,7 @@ package com.kvl.cyclotrack.preferences
 
 import android.graphics.Rect
 import android.graphics.drawable.ShapeDrawable
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -14,6 +15,7 @@ import android.widget.Button
 import android.widget.ImageView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.doOnLayout
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
@@ -61,6 +63,17 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         stopButton.visibility = View.GONE
         trackingImage.visibility = View.GONE
         debugTextView.visibility = View.GONE
+
+
+        view.doOnLayout { v ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                Log.d(logTag, "Setting exclusion zones");
+                v.systemGestureExclusionRects = listOf(
+                    Rect(0, 0, 50, v.height),
+                    Rect(v.width - 50, 0, v.width, v.height),
+                )
+            }
+        }
 
         safeZone = getSafeZoneMargins(requireContext())
         (dashboard.layoutParams as MarginLayoutParams).apply {
