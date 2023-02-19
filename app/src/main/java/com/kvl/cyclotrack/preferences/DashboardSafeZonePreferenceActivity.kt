@@ -15,4 +15,5 @@ class DashboardSafeZonePreferenceActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {}
+
 }
