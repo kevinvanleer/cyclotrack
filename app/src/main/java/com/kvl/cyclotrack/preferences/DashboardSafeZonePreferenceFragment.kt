@@ -15,17 +15,15 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
 import com.kvl.cyclotrack.util.isLoop
 import com.kvl.cyclotrack.util.putSafeZoneMargins
-import com.kvl.cyclotrack.widgets.SafeZone
-import java.lang.Float.min
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     val logTag = "DashboardSafeZoneFrag"
@@ -219,9 +217,43 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         putSafeZoneMargins(requireContext(), safeZone)
     }
 
+    fun setSafeZoneMarginsFromPinch(endRect: Rect, startRect: Rect) {
+        val xDistanceDelta = endRect.right - endRect.left + startRect.right + startRect.left;
+        val yDistanceDelta = endRect.bottom - endRect.top + startRect.bottom + startRect.top;
+
+        when (yDistanceDelta > xDistanceDelta) {
+            true -> {
+                safeZone.bottom = endRect.bottom - startRect.bottom
+                safeZone.top = endRect.top - startRect.top
+            }
+            else -> {
+                safeZone.left = endRect.left - startRect.left
+                safeZone.right = endRect.right - startRect.right
+            }
+        }
+        when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
+            0 -> resetButton.visibility = View.INVISIBLE
+            else -> resetButton.visibility = View.VISIBLE
+        }
+        putSafeZoneMargins(requireContext(), safeZone)
+    }
+
+    fun getCoordRect(event: MotionEvent): Rect {
+        val xArray = floatArrayOf(event.getX(0), event.getX(1));
+        val yArray = floatArrayOf(event.getY(0), event.getY(1));
+
+        return Rect(
+            xArray.min().roundToInt(),
+            yArray.min().roundToInt(),
+            xArray.max().roundToInt(),
+            yArray.max().roundToInt()
+        )
+    }
+
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.v(logTag, event.toString())
-        val strokeWidth = 0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
+        var scaleReference: Rect;
+        /*val strokeWidth = 0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
         when (event?.action) {
             MotionEvent.ACTION_UP -> setSafeZoneMargins(strokeWidth)
             MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf(Pair(event.x, event.y)))
@@ -234,7 +266,18 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 strokeWidth,
                 ResourcesCompat.getColor(requireContext().resources, R.color.accentColor, null)
             )
-        )
+        )*/
+        if (event?.pointerCount == 2) {
+            when (event?.action) {
+                MotionEvent.ACTION_UP -> setSafeZoneMargins(0f)
+                MotionEvent.ACTION_DOWN -> scaleReference = getCoordRect(event)
+                MotionEvent.ACTION_MOVE -> setSafeZoneMarginsFromPinch(
+                    getCoordRect(event),
+                    scaleReference
+                )
+            }
+
+        }
         return true
     }
 
