@@ -150,10 +150,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     var scaleReference: Rect = Rect(0, 0, 0, 0);
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         if (event?.pointerCount == 2) {
-            v?.let {
-                v.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
-                    View.INVISIBLE
-            }
             Log.v(logTag, event.toString())
             when (event?.actionMasked) {
                 MotionEvent.ACTION_POINTER_DOWN -> {
