@@ -219,19 +219,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     }
 
     fun setSafeZoneMarginsFromPinch(endRect: Rect, startRect: Rect) {
-        val xDistanceDelta = endRect.right - endRect.left + startRect.right + startRect.left;
-        val yDistanceDelta = endRect.bottom - endRect.top + startRect.bottom + startRect.top;
-
-        when (yDistanceDelta > xDistanceDelta) {
-            true -> {
-                safeZone.bottom = max(startRect.bottom - endRect.bottom, 0)
-                safeZone.top = max(endRect.top - startRect.top, 0)
-            }
-            else -> {
-                safeZone.left = max(endRect.left - startRect.left, 0)
-                safeZone.right = max(startRect.right - endRect.right, 0)
-            }
-        }
         safeZone.bottom = max(startRect.bottom - endRect.bottom, 0)
         safeZone.top = max(endRect.top - startRect.top, 0)
         safeZone.left = max(endRect.left - startRect.left, 0)
