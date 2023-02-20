@@ -235,6 +235,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             0 -> resetButton.visibility = View.INVISIBLE
             else -> resetButton.visibility = View.VISIBLE
         }
+        Log.d(logTag, safeZone.toString())
         putSafeZoneMargins(requireContext(), safeZone)
     }
 
