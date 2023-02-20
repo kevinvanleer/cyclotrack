@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack.preferences
 
+import android.app.AlertDialog
 import android.graphics.Rect
 import android.graphics.drawable.ShapeDrawable
 import android.os.Build
@@ -90,10 +91,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         fun getExclusionRects(view: View): List<Rect> {
             var rects = mutableListOf<Rect>();
             val displayMetrics = resources.displayMetrics
-            /*for (y in 0..view.height step 200) {
-                rects.add(Rect(0, y, 50, y + 200))
-                rects.add(Rect(view.width - 50, y, view.width, y + 200))
-            }*/
+
             rects.add(Rect(0, 0, 50, displayMetrics.heightPixels))
             rects.add(
                 Rect(
@@ -156,6 +154,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 show(WindowInsetsCompat.Type.systemBars())
             }
             activity?.finish();
+        }
+
+        AlertDialog.Builder(requireContext()).apply {
+            setMessage("PINCH TO RESIZE")
         }
     }
 
