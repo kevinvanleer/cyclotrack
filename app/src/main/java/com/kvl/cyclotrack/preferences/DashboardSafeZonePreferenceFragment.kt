@@ -231,6 +231,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 safeZone.right = endRect.right - startRect.right
             }
         }
+
         dashboard.layoutParams = (dashboard.layoutParams as MarginLayoutParams).apply {
             Log.v(logTag, "UPDATING SAFE ZONE MARGINS")
             topMargin = safeZone.top
@@ -238,10 +239,12 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             leftMargin = safeZone.left
             rightMargin = safeZone.right
         }
+
         when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
             0 -> resetButton.visibility = View.INVISIBLE
             else -> resetButton.visibility = View.VISIBLE
         }
+
         Log.d(logTag, safeZone.toString())
         putSafeZoneMargins(requireContext(), safeZone)
     }
@@ -279,7 +282,12 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             when (event?.actionMasked) {
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     Log.d(logTag, "POINTER DOWN")
-                    scaleReference = getCoordRect(event)
+                    scaleReference = Rect(safeZone).apply {
+                        top -= getCoordRect(event).top
+                        bottom -= getCoordRect(event).bottom
+                        left -= getCoordRect(event).left
+                        right -= getCoordRect(event).right
+                    }
                 }
                 MotionEvent.ACTION_MOVE -> setSafeZoneMarginsFromPinch(
                     getCoordRect(event),
