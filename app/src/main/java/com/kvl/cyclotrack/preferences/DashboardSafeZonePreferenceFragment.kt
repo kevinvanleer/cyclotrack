@@ -232,6 +232,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 safeZone.right = max(startRect.right - endRect.right, 0)
             }
         }
+        safeZone.bottom = max(startRect.bottom - endRect.bottom, 0)
+        safeZone.top = max(endRect.top - startRect.top, 0)
+        safeZone.left = max(endRect.left - startRect.left, 0)
+        safeZone.right = max(startRect.right - endRect.right, 0)
 
         dashboard.layoutParams = (dashboard.layoutParams as MarginLayoutParams).apply {
             Log.v(logTag, "UPDATING SAFE ZONE MARGINS")
