@@ -252,7 +252,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.v(logTag, event.toString())
-        var scaleReference: Rect;
+        lateinit var scaleReference: Rect;
         /*val strokeWidth = 0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
         when (event?.action) {
             MotionEvent.ACTION_UP -> setSafeZoneMargins(strokeWidth)
