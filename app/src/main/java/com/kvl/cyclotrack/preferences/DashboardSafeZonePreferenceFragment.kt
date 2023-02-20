@@ -283,10 +283,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     Log.d(logTag, "POINTER DOWN")
                     scaleReference = getCoordRect(event).apply {
-                        top += safeZone.top
-                        left += safeZone.left
-                        bottom -= safeZone.bottom
-                        right -= safeZone.right
+                        top -= safeZone.top
+                        left -= safeZone.left
+                        bottom += safeZone.bottom
+                        right += safeZone.right
                     }
                 }
                 MotionEvent.ACTION_MOVE -> setSafeZoneMarginsFromPinch(
