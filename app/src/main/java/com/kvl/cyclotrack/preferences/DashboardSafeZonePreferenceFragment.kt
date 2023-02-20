@@ -2,7 +2,6 @@ package com.kvl.cyclotrack.preferences
 
 import android.graphics.Rect
 import android.graphics.drawable.ShapeDrawable
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,15 +14,11 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
-import com.kvl.cyclotrack.util.isLoop
 import com.kvl.cyclotrack.util.putSafeZoneMargins
 import java.lang.Integer.max
-import kotlin.math.ceil
-import kotlin.math.floor
 import kotlin.math.roundToInt
 
 class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
@@ -31,7 +26,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     private val touchPoints = mutableListOf<MutableList<Pair<Float, Float>>>()
     private var safeZone: Rect = Rect(0, 0, 0, 0)
     private lateinit var resetButton: Button
-    private lateinit var backButton: Button
     private lateinit var dashboard: ConstraintLayout
     private lateinit var canvas: ImageView
 
@@ -53,7 +47,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         val trackingImage: View = view.findViewById(R.id.image_tracking)
         val debugTextView: View = view.findViewById(R.id.textview_debug)
         resetButton = view.findViewById(R.id.button_dashboard_safe_zone_reset)
-        backButton = view.findViewById(R.id.button_dashboard_safe_zone_back)
         dashboard = view.findViewById(R.id.included_dashboard_layout)
         canvas = view.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
 
@@ -77,43 +70,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         stopButton.visibility = View.GONE
         trackingImage.visibility = View.GONE
         debugTextView.visibility = View.GONE
-
-
-        WindowCompat.getInsetsController(
-            requireActivity().window,
-            view
-        ).apply {
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            hide(WindowInsetsCompat.Type.systemBars())
-        }
-
-        fun getExclusionRects(view: View): List<Rect> {
-            var rects = mutableListOf<Rect>();
-            val displayMetrics = resources.displayMetrics
-
-            rects.add(Rect(0, 0, 50, displayMetrics.heightPixels))
-            rects.add(
-                Rect(
-                    displayMetrics.widthPixels - 50,
-                    0,
-                    displayMetrics.widthPixels,
-                    displayMetrics.heightPixels
-                )
-            )
-            return rects.toList();
-        }
-        view.doOnPreDraw { v ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Log.d(logTag, "Setting exclusion zones");
-                v.systemGestureExclusionRects = getExclusionRects(v)
-            }
-        }
-        view.doOnLayout { v ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                Log.d(logTag, "Setting exclusion zones");
-                v.systemGestureExclusionRects = getExclusionRects(v)
-            }
-        }
 
         safeZone = getSafeZoneMargins(requireContext())
         (dashboard.layoutParams as MarginLayoutParams).apply {
@@ -143,79 +99,9 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
                 rightMargin = safeZone.right
             }
         }
-
-        backButton.setOnClickListener {
-            WindowCompat.getInsetsController(
-                requireActivity().window,
-                requireActivity().window.decorView
-            ).apply {
-                systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_BARS_BY_SWIPE
-                show(WindowInsetsCompat.Type.systemBars())
-            }
-            activity?.finish();
-        }
     }
 
-
-    private fun setSafeZoneMargins(strokeWidth: Float) {
-        Log.v(logTag, touchPoints.toString())
-        val displayMetrics = resources.displayMetrics
-        touchPoints.forEach { zone ->
-            val xCoords = zone.map { coord -> coord.first }
-            val yCoords = zone.map { coord -> coord.second }
-            val yAvg = yCoords.average()
-            val xAvg = xCoords.average()
-
-            val isLoop = isLoop(zone)
-            val isTopToBottom = yCoords.max() - yCoords.min() > displayMetrics.heightPixels * 0.8
-            val isSideToSide = xCoords.max() - xCoords.min() > displayMetrics.widthPixels * 0.8
-
-            when {
-                isSideToSide -> {
-                    val isBottomMargin = yAvg / displayMetrics.heightPixels > 0.5
-                    if (isBottomMargin) {
-                        safeZone.bottom =
-                            (displayMetrics.heightPixels - floor(yCoords.min()).toInt() - strokeWidth / 2).toInt()
-                    } else {
-                        safeZone.top = (ceil(yCoords.max()).toInt() - strokeWidth / 2).toInt()
-                    }
-                }
-                isTopToBottom -> {
-                    val isLeftMargin = xAvg / displayMetrics.widthPixels < 0.5
-                    if (isLeftMargin) {
-                        safeZone.left = (ceil(xCoords.max()).toInt() + strokeWidth / 2).toInt()
-                    } else {
-                        safeZone.right =
-                            (displayMetrics.widthPixels - floor(xCoords.min()).toInt() - strokeWidth / 2).toInt()
-                    }
-                }
-                else -> touchPoints.remove(zone)
-            }
-        }
-        //One segment
-        ////Is segment a loop
-        //More than one
-        ////Is upper
-        ////Is lower
-        ////Is left
-        ////Is right
-        Log.v(logTag, safeZone.toString())
-        dashboard.layoutParams = (dashboard.layoutParams as MarginLayoutParams).apply {
-            Log.v(logTag, "UPDATING SAFE ZONE MARGINS")
-            topMargin = safeZone.top
-            bottomMargin = safeZone.bottom
-            leftMargin = safeZone.left
-            rightMargin = safeZone.right
-        }
-
-        when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
-            0 -> resetButton.visibility = View.INVISIBLE
-            else -> resetButton.visibility = View.VISIBLE
-        }
-        putSafeZoneMargins(requireContext(), safeZone)
-    }
-
-    fun setSafeZoneMarginsFromPinch(endRect: Rect, startRect: Rect) {
+    private fun setSafeZoneMarginsFromPinch(endRect: Rect, startRect: Rect) {
         safeZone.bottom = max(startRect.bottom - endRect.bottom, 0)
         safeZone.top = max(endRect.top - startRect.top, 0)
         safeZone.left = max(endRect.left - startRect.left, 0)
@@ -252,20 +138,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
     var scaleReference: Rect = Rect(0, 0, 0, 0);
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-        /*val strokeWidth = 0.25f * min(resources.displayMetrics.xdpi, resources.displayMetrics.ydpi)
-        when (event?.action) {
-            MotionEvent.ACTION_UP -> setSafeZoneMargins(strokeWidth)
-            MotionEvent.ACTION_DOWN -> touchPoints.add(mutableListOf(Pair(event.x, event.y)))
-            MotionEvent.ACTION_MOVE -> touchPoints.last().add(Pair(event.x, event.y))
-        }
-        Log.v(logTag, "${resources.displayMetrics.xdpi}, ${resources.displayMetrics.ydpi}")
-        canvas.setImageDrawable(
-            SafeZone(
-                touchPoints,
-                strokeWidth,
-                ResourcesCompat.getColor(requireContext().resources, R.color.accentColor, null)
-            )
-        )*/
         if (event?.pointerCount == 2) {
             v?.let {
                 v.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
