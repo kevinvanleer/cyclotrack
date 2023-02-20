@@ -79,14 +79,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             rightMargin = safeZone.right
         }
 
-        when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
-            0 -> resetButton.visibility = View.INVISIBLE
-            else -> {
-                resetButton.visibility = View.VISIBLE
-                view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
-                    View.INVISIBLE
-            }
-        }
+        setWidgetVisibility(view)
 
         view.setOnTouchListener(this)
 
@@ -96,11 +89,28 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             touchPoints.clear()
             putSafeZoneMargins(requireContext(), safeZone)
             resetButton.visibility = View.INVISIBLE
+            view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
+                View.VISIBLE
             dashboard.layoutParams = (dashboard.layoutParams as MarginLayoutParams).apply {
                 topMargin = safeZone.top
                 bottomMargin = safeZone.bottom
                 leftMargin = safeZone.left
                 rightMargin = safeZone.right
+            }
+        }
+    }
+
+    private fun setWidgetVisibility(view: View) {
+        when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
+            0 -> {
+                resetButton.visibility = View.INVISIBLE
+                view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
+                    View.VISIBLE
+            }
+            else -> {
+                resetButton.visibility = View.VISIBLE
+                view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
+                    View.INVISIBLE
             }
         }
     }
@@ -119,10 +129,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             rightMargin = safeZone.right
         }
 
-        when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
-            0 -> resetButton.visibility = View.INVISIBLE
-            else -> resetButton.visibility = View.VISIBLE
-        }
+        view?.let { setWidgetVisibility(it) }
 
         Log.d(logTag, safeZone.toString())
         putSafeZoneMargins(requireContext(), safeZone)
