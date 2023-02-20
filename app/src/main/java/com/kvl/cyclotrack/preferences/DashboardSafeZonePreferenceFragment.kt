@@ -21,6 +21,7 @@ import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.util.getSafeZoneMargins
 import com.kvl.cyclotrack.util.isLoop
 import com.kvl.cyclotrack.util.putSafeZoneMargins
+import java.lang.Integer.max
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -223,12 +224,12 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         when (yDistanceDelta > xDistanceDelta) {
             true -> {
-                safeZone.bottom = startRect.bottom - endRect.bottom
-                safeZone.top = endRect.top - startRect.top
+                safeZone.bottom = max(startRect.bottom - endRect.bottom, 0)
+                safeZone.top = max(endRect.top - startRect.top, 0)
             }
             else -> {
-                safeZone.left = endRect.left - startRect.left
-                safeZone.right = startRect.right - endRect.right
+                safeZone.left = max(endRect.left - startRect.left, 0)
+                safeZone.right = max(startRect.right - endRect.right, 0)
             }
         }
 
