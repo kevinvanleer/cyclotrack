@@ -228,7 +228,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             }
             else -> {
                 safeZone.left = endRect.left - startRect.left
-                safeZone.right = endRect.right - startRect.right
+                safeZone.right = startRect.right - endRect.right
             }
         }
 
