@@ -158,7 +158,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         AlertDialog.Builder(requireContext()).apply {
             setMessage("PINCH TO RESIZE")
-        }
+        }.create().show()
     }
 
 
