@@ -268,7 +268,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         )*/
         if (event?.pointerCount == 2) {
             Log.v(logTag, event.toString())
-            when (event?.action) {
+            when (event?.actionMasked) {
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     Log.d(logTag, "POINTER DOWN")
                     scaleReference = getCoordRect(event)
