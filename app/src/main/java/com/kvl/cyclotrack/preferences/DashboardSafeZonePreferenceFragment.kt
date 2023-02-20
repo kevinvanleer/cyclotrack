@@ -81,7 +81,11 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
             0 -> resetButton.visibility = View.INVISIBLE
-            else -> resetButton.visibility = View.VISIBLE
+            else -> {
+                resetButton.visibility = View.VISIBLE
+                view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
+                    View.INVISIBLE
+            }
         }
 
         view.setOnTouchListener(this)
