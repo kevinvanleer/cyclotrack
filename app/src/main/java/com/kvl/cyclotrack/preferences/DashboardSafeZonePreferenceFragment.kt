@@ -223,7 +223,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
 
         when (yDistanceDelta > xDistanceDelta) {
             true -> {
-                safeZone.bottom = endRect.bottom - startRect.bottom
+                safeZone.bottom = startRect.bottom - endRect.bottom
                 safeZone.top = endRect.top - startRect.top
             }
             else -> {
