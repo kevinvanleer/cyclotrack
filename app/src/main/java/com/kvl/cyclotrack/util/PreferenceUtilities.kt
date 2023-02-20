@@ -2,11 +2,70 @@ package com.kvl.cyclotrack.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Rect
 import android.util.Log
+import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.kvl.cyclotrack.FeatureFlags
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.userCircumferenceToMeters
+
+fun putSafeZoneMargins(context: Context, margins: Rect) =
+    PreferenceManager.getDefaultSharedPreferences(context).edit {
+        putInt(context.getString(R.string.preferences_dashboard_safe_zone_top_margin), margins.top)
+        putInt(
+            context.getString(R.string.preferences_dashboard_safe_zone_bottom_margin),
+            margins.bottom
+        )
+        putInt(
+            context.getString(R.string.preferences_dashboard_safe_zone_left_margin),
+            margins.left
+        )
+        putInt(
+            context.getString(R.string.preferences_dashboard_safe_zone_right_margin),
+            margins.right
+        )
+        commit()
+    }
+
+fun getSafeZoneMargins(context: Context) = Rect(
+    getSafeZoneLeftMarginPreference(context),
+    getSafeZoneTopMarginPreference(context),
+    getSafeZoneRightMarginPreference(context),
+    getSafeZoneBottomMarginPreference(context),
+)
+
+fun setSafeZoneTopMarginPreference(context: Context, margin: Int) =
+    PreferenceManager.getDefaultSharedPreferences(context).edit {
+        putInt(context.getString(R.string.preferences_dashboard_safe_zone_top_margin), margin)
+        commit()
+    }
+
+fun setSafeZoneBottomMarginPreference(context: Context, margin: Int) =
+    PreferenceManager.getDefaultSharedPreferences(context).edit {
+        putInt(context.getString(R.string.preferences_dashboard_safe_zone_bottom_margin), margin)
+        commit()
+    }
+
+fun getSafeZoneTopMarginPreference(context: Context): Int =
+    getPreferences(context).getInt(
+        context.getString(R.string.preferences_dashboard_safe_zone_top_margin), 0
+    )
+
+fun getSafeZoneBottomMarginPreference(context: Context): Int =
+    getPreferences(context).getInt(
+        context.getString(R.string.preferences_dashboard_safe_zone_bottom_margin), 0
+    )
+
+fun getSafeZoneLeftMarginPreference(context: Context): Int =
+    getPreferences(context).getInt(
+        context.getString(R.string.preferences_dashboard_safe_zone_left_margin), 0
+    )
+
+fun getSafeZoneRightMarginPreference(context: Context): Int =
+    getPreferences(context).getInt(
+        context.getString(R.string.preferences_dashboard_safe_zone_right_margin), 0
+    )
 
 fun getBrightnessPreference(context: Context): Float {
     return if (getPreferences(context)

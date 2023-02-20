@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <item name="menu_item_show_details" type="id"></item>
+    <item name="menu_item_show_details" type="id" />
+    <item name="action_set_dashboard_safe_zone" type="id" />
 </resources>
