@@ -1,7 +1,6 @@
 package com.kvl.cyclotrack.preferences
 
 import android.graphics.Rect
-import android.graphics.drawable.ShapeDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -23,11 +22,11 @@ import kotlin.math.roundToInt
 
 class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
     val logTag = "DashboardSafeZoneFrag"
-    private val touchPoints = mutableListOf<MutableList<Pair<Float, Float>>>()
-    private var safeZone: Rect = Rect(0, 0, 0, 0)
+    private var safeZone: Rect = Rect()
+    private var scaleReference: Rect = Rect();
     private lateinit var resetButton: Button
     private lateinit var dashboard: ConstraintLayout
-    private lateinit var canvas: ImageView
+    private lateinit var instructions: TextView
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,7 +47,7 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         val debugTextView: View = view.findViewById(R.id.textview_debug)
         resetButton = view.findViewById(R.id.button_dashboard_safe_zone_reset)
         dashboard = view.findViewById(R.id.included_dashboard_layout)
-        canvas = view.findViewById(R.id.imageView_dashboard_safe_zone_canvas)
+        instructions = view.findViewById(R.id.button_dashboard_safe_zone_instructions)
 
         view.findViewById<TextView>(R.id.dashboard_textview_timeOfDay).apply {
             text = "12:03 PM"
@@ -79,38 +78,26 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             rightMargin = safeZone.right
         }
 
-        setWidgetVisibility(view)
+        setWidgetVisibility()
 
         view.setOnTouchListener(this)
 
         resetButton.setOnClickListener {
-            canvas.setImageDrawable(ShapeDrawable())
             safeZone = Rect()
-            touchPoints.clear()
-            putSafeZoneMargins(requireContext(), safeZone)
-            resetButton.visibility = View.INVISIBLE
-            view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
-                View.VISIBLE
-            dashboard.layoutParams = (dashboard.layoutParams as MarginLayoutParams).apply {
-                topMargin = safeZone.top
-                bottomMargin = safeZone.bottom
-                leftMargin = safeZone.left
-                rightMargin = safeZone.right
-            }
+            setWidgetVisibility()
+            updateSafeZoneMargins()
         }
     }
 
-    private fun setWidgetVisibility(view: View) {
+    private fun setWidgetVisibility() {
         when (safeZone.top + safeZone.bottom + safeZone.left + safeZone.right) {
             0 -> {
                 resetButton.visibility = View.INVISIBLE
-                view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
-                    View.VISIBLE
+                instructions.visibility = View.VISIBLE
             }
             else -> {
                 resetButton.visibility = View.VISIBLE
-                view.findViewById<View>(R.id.button_dashboard_safe_zone_instructions).visibility =
-                    View.INVISIBLE
+                instructions.visibility = View.INVISIBLE
             }
         }
     }
@@ -121,6 +108,11 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         safeZone.left = max(endRect.left - startRect.left, 0)
         safeZone.right = max(startRect.right - endRect.right, 0)
 
+        setWidgetVisibility()
+        updateSafeZoneMargins()
+    }
+
+    private fun updateSafeZoneMargins() {
         dashboard.layoutParams = (dashboard.layoutParams as MarginLayoutParams).apply {
             Log.v(logTag, "UPDATING SAFE ZONE MARGINS")
             topMargin = safeZone.top
@@ -128,16 +120,12 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             leftMargin = safeZone.left
             rightMargin = safeZone.right
         }
-
-        view?.let { setWidgetVisibility(it) }
-
-        Log.d(logTag, safeZone.toString())
         putSafeZoneMargins(requireContext(), safeZone)
     }
 
-    fun getCoordRect(event: MotionEvent): Rect {
-        val xArray = floatArrayOf(event.getX(0), event.getX(1));
-        val yArray = floatArrayOf(event.getY(0), event.getY(1));
+    private fun getCoordRect(event: MotionEvent): Rect {
+        val xArray = floatArrayOf(event.getX(0), event.getX(1))
+        val yArray = floatArrayOf(event.getY(0), event.getY(1))
 
         return Rect(
             xArray.min().roundToInt(),
@@ -147,11 +135,10 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
         )
     }
 
-    var scaleReference: Rect = Rect(0, 0, 0, 0);
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         if (event?.pointerCount == 2) {
             Log.v(logTag, event.toString())
-            when (event?.actionMasked) {
+            when (event.actionMasked) {
                 MotionEvent.ACTION_POINTER_DOWN -> {
                     Log.d(logTag, "POINTER DOWN")
                     scaleReference = getCoordRect(event).apply {
