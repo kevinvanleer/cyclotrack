@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack.preferences
 
-import android.app.AlertDialog
 import android.graphics.Rect
 import android.graphics.drawable.ShapeDrawable
 import android.os.Build
@@ -155,10 +154,6 @@ class DashboardSafeZonePreferenceFragment : Fragment(), OnTouchListener {
             }
             activity?.finish();
         }
-
-        AlertDialog.Builder(requireContext()).apply {
-            setMessage("PINCH TO RESIZE")
-        }.create().show()
     }
 
 

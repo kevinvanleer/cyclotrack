@@ -32,6 +32,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="@style/DashboardFontAppearance"
+        android:padding="10sp"
+        android:background="@color/cardview_dark_background"
         android:text="PINCH TO RESIZE"
         android:textSize="24sp"
         app:layout_constraintBottom_toTopOf="@id/button_dashboard_safe_zone_back"
