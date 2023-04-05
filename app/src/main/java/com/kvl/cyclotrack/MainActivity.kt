@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -285,26 +284,6 @@ class MainActivity : AppCompatActivity() {
                 visibility = View.VISIBLE
                 setOnClickListener(handleFabClick())
             }
-        }
-
-
-        fun getExclusionRects(view: View): List<Rect> {
-            var rects = mutableListOf<Rect>();
-            val displayMetrics = resources.displayMetrics
-            /*for (y in 0..view.height step 200) {
-                rects.add(Rect(0, y, 50, y + 200))
-                rects.add(Rect(view.width - 50, y, view.width, y + 200))
-            }*/
-            rects.add(Rect(0, 0, 50, displayMetrics.heightPixels))
-            rects.add(
-                Rect(
-                    displayMetrics.widthPixels - 50,
-                    0,
-                    displayMetrics.widthPixels,
-                    displayMetrics.heightPixels
-                )
-            )
-            return rects.toList();
         }
     }
 }

@@ -48,10 +48,8 @@ class TripInProgressViewModel @Inject constructor(
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
     private val currentTimeStateObserver: Observer<TimeState> = Observer { timeState ->
-        timeState?.let {
-            Log.d(logTag, "onChanged current time state observer: ${it.state}")
-            currentState = it.state
-        }
+        Log.d(logTag, "onChanged current time state observer: ${timeState.state}")
+        currentState = timeState.state
     }
 
     private fun tripInProgress() = isTripInProgress(currentState)
@@ -125,9 +123,7 @@ class TripInProgressViewModel @Inject constructor(
         Observer { accumulateDuration(it) }
 
     private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
-        if (newSplit != null) {
-            _lastSplitLive.value = newSplit
-        }
+        _lastSplitLive.value = newSplit
     }
 
 

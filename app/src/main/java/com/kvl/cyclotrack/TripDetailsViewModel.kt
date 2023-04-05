@@ -135,13 +135,13 @@ class TripDetailsViewModel @Inject constructor(
         }
     }
 
-    fun addSplits() {
+    private fun addSplits() {
         val combined = zipLiveData(locationMeasurements, timeState)
         combined.observeForever(object :
             Observer<Pair<Array<Measurements>, Array<TimeState>>> {
-            override fun onChanged(pair: Pair<Array<Measurements>, Array<TimeState>>) {
-                val measurements = pair.first
-                val timeStates = pair.second
+            override fun onChanged(value: Pair<Array<Measurements>, Array<TimeState>>) {
+                val measurements = value.first
+                val timeStates = value.second
 
                 if (measurements.isNotEmpty()) {
                     val tripSplits =
