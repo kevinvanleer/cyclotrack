@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -45,6 +46,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
     }
 
+    @SuppressLint("NewApi")
+    @SuppressWarnings("deprecation")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         addMenuProvider()
@@ -112,18 +115,22 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                         stitchSelectedTrips()
                         true
                     }
+
                     R.id.action_delete -> {
                         deleteSelectedTrips()
                         true
                     }
+
                     R.id.action_cleanup -> {
                         cleanupTrips()
                         true
                     }
+
                     R.id.action_clear_multiselect -> {
                         (tripListView.adapter as TripSummariesAdapter).multiSelectMode = false
                         true
                     }
+
                     else -> {
                         Log.w(logTag, "unimplemented menu item selected")
                         false
@@ -235,6 +242,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         )
     }
 
+    @SuppressWarnings("deprecation")
     override fun onResume() {
         super.onResume()
         if (this::tripListView.isInitialized) {
