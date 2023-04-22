@@ -12,29 +12,6 @@ import java.util.zip.ZipOutputStream
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberProperties
 
-fun getMeasurementsHeaderRow(): String {
-    var row = ""
-    for (prop in Measurements::class.declaredMemberProperties) {
-        row += "${prop.name},"
-    }
-    return row
-}
-
-fun getRideMeasurementsCsv(measurements: Array<Measurements>): Array<String> {
-    val rows = ArrayList<String>()
-
-    rows.add(getMeasurementsHeaderRow())
-
-    measurements.forEach { measurement ->
-        var row = ""
-        for (prop in Measurements::class.declaredMemberProperties) {
-            row += "${prop.call(measurement).toString()},"
-        }
-        rows.add(row)
-    }
-    return rows.toTypedArray()
-}
-
 inline fun <reified T : Any> getDataCsv(measurements: Array<T>): Array<String> {
     val rows = ArrayList<String>()
 
