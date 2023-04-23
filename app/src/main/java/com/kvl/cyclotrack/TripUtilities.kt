@@ -19,7 +19,16 @@ import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Clock
-import kotlin.math.*
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 fun getDistance(
     curr: Measurements,
@@ -115,9 +124,11 @@ fun formatDuration(value: Double): String =
         value < 1.0 -> {
             "zero seconds"
         }
+
         value < 60 -> {
             "${value.roundToInt()} sec"
         }
+
         value < 3600 -> {
             val minutes = value / 60
             val minutePart = minutes.toLong()
@@ -125,6 +136,7 @@ fun formatDuration(value: Double): String =
             val secondPart = seconds.toLong()
             "${minutePart}m ${secondPart}s"
         }
+
         else -> {
             val hours = value / 3600
             val hourPart = hours.toLong()
@@ -639,14 +651,17 @@ fun metersToUserCircumference(meters: Float, storedCircumference: String?): Stri
                 //meters
                 String.format("%.3f", meters)
             }
+
             in 30f..120f -> {
                 //inches
                 String.format("%.2f", (meters * METERS_TO_FEET * FEET_TO_INCHES))
             }
+
             in 900f..10000f -> {
                 //mm
                 (meters * 1000f).toInt().toString()
             }
+
             else -> String.format("%.3f", meters)
         }
     } catch (e: NumberFormatException) {
@@ -663,14 +678,17 @@ fun userCircumferenceToMeters(input: Float?): Float? {
                 //meters
                 circumference
             }
+
             in 30f..120f -> {
                 //inches
                 (circumference * INCHES_TO_FEET * FEET_TO_METERS).toFloat()
             }
+
             in 900f..10000f -> {
                 //mm
                 circumference / 1000f
             }
+
             else -> null
         }
     } catch (e: NumberFormatException) {
@@ -680,7 +698,7 @@ fun userCircumferenceToMeters(input: Float?): Float? {
 }
 
 fun userCircumferenceToMeters(input: String?): Float? =
-    userCircumferenceToMeters(input?.takeIf { it != "" }?.toFloat())
+    userCircumferenceToMeters(input?.takeIf { it != "" }?.toFloatOrNull())
 
 fun getUserAltitude(context: Context, meters: Double): Double {
     val userConversionFactor =

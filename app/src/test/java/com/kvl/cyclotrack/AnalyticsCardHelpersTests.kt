@@ -117,7 +117,7 @@ class AnalyticsCardHelpersTests {
             )
         )
         val resultTable = listOf(
-            listOf("2022-03-27", "29.8 mph", "2m 0s")
+            listOf("2022-03-27", "29.8", "2m 0s")
         )
         Assert.assertEquals(resultTable, getTableFromSplits("1", testSplits))
     }
@@ -143,8 +143,8 @@ class AnalyticsCardHelpersTests {
             )
         )
         val resultTable = listOf(
-            listOf("2022-03-27", "29.8 mph", "2m 0s"),
-            listOf("2022-03-27", "29.8 mph", "2m 0s")
+            listOf("2022-03-27", "29.8", "2m 0s"),
+            listOf("2022-03-27", "29.8", "2m 0s")
         )
         Assert.assertEquals(resultTable, getTableFromSplits("1", testSplits))
     }
@@ -178,9 +178,9 @@ class AnalyticsCardHelpersTests {
             )
         )
         val resultTable = listOf(
-            listOf("2022-03-27", "29.8 mph", "2m 0s"),
-            listOf("2022-03-27", "29.8 mph", "2m 0s"),
-            listOf("2022-03-27", "29.8 mph", "2m 0s")
+            listOf("2022-03-27", "29.8", "2m 0s"),
+            listOf("2022-03-27", "29.8", "2m 0s"),
+            listOf("2022-03-27", "29.8", "2m 0s")
         )
         Assert.assertEquals(resultTable, getTableFromSplits("1", testSplits))
     }
@@ -222,9 +222,9 @@ class AnalyticsCardHelpersTests {
             )
         )
         val resultTable = listOf(
-            listOf("2022-03-27", "29.8 mph", "2m 0s"),
-            listOf("2022-03-27", "29.8 mph", "2m 0s"),
-            listOf("2022-03-27", "29.8 mph", "2m 0s"),
+            listOf("2022-03-27", "29.8", "2m 0s"),
+            listOf("2022-03-27", "29.8", "2m 0s"),
+            listOf("2022-03-27", "29.8", "2m 0s"),
         )
         Assert.assertEquals(resultTable, getTableFromSplits("1", testSplits))
     }

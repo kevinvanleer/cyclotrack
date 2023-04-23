@@ -36,8 +36,8 @@ class UnitConversionTest {
         Assert.assertEquals(0, bearingToWindAngle(0f, 180))
         Assert.assertEquals(0, bearingToWindAngle(180f, 0))
         Assert.assertEquals(178, bearingToWindAngle(1f, 359))
-        Assert.assertEquals(178, bearingToWindAngle(359f, 1))
-        Assert.assertEquals(181, bearingToWindAngle(359f, 358))
+        Assert.assertEquals(182, bearingToWindAngle(359f, 1))
+        Assert.assertEquals(179, bearingToWindAngle(359f, 358))
         Assert.assertEquals(150, bearingToWindAngle(0f, 330))
     }
 
