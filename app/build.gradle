@@ -20,7 +20,7 @@ kotlin {
 android {
     signingConfigs {
         Default {
-            storeFile file(keystoreProperties['storeFile'])
+            storeFile rootProject.file(keystoreProperties['storeFile'])
             storePassword keystoreProperties['storePassword']
             keyPassword keystoreProperties['keyPassword']
             keyAlias keystoreProperties['keyAlias']
