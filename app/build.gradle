@@ -8,6 +8,7 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 import org.ajoberstar.grgit.Grgit
 
+def homePath = System.properties['user.home']
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
@@ -25,7 +26,7 @@ android {
             keyAlias keystoreProperties['keyAlias']
         }
         debug {
-            storeFile file("/Users/kvl/.android/debug.keystore")
+            storeFile file(homePath + "/.android/debug.keystore")
             storePassword "android"
             keyPassword "android"
             keyAlias "androiddebugkey"
