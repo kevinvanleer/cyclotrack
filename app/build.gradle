@@ -61,7 +61,7 @@ android {
             return git.branch.current()
         }
         if (!noWipBranches.contains(currentBranch().name)) {
-            nmakeWipCommit()
+            //makeWipCommit()
         }
         def gitHash = lastCommitHash()
         buildConfigField "String", "GIT_HASH", "\"$gitHash\""
