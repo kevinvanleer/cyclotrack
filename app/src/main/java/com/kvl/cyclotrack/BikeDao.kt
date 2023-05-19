@@ -16,10 +16,10 @@ interface BikeDao {
     @Query("SELECT * FROM Bike WHERE id = :bikeId")
     suspend fun get(bikeId: Long): Bike?
 
-    @Query("SELECT * FROM Bike WHERE isDefault = 1")
+    @Query("SELECT * FROM Bike WHERE isDefault = 1 or id = (SELECT min(id) from Bike) order by isDefault desc limit 1")
     suspend fun getDefaultBike(): Bike
 
-    @Query("SELECT * FROM Bike WHERE isDefault = 1")
+    @Query("SELECT * FROM Bike WHERE isDefault = 1 or id = (SELECT min(id) from Bike) order by isDefault desc limit 1")
     fun observeDefaultBike(): LiveData<Bike>
 
     @Query("SELECT * FROM Bike WHERE id = :bikeId")

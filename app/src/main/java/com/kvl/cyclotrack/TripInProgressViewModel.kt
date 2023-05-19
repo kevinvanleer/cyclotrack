@@ -4,8 +4,12 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.lifecycle.*
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.util.SystemUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,7 +18,7 @@ import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.util.*
+import java.util.Timer
 import javax.inject.Inject
 import kotlin.concurrent.timerTask
 
@@ -122,8 +126,8 @@ class TripInProgressViewModel @Inject constructor(
     private val accumulateDurationObserver: Observer<Array<TimeState>> =
         Observer { accumulateDuration(it) }
 
-    private val lastSplitObserver: Observer<Split> = Observer { newSplit ->
-        _lastSplitLive.value = newSplit
+    private val lastSplitObserver: Observer<Split?> = Observer { newSplit ->
+        newSplit?.let { n -> _lastSplitLive.value = n };
     }
 
 

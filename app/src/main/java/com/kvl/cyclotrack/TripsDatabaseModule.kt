@@ -27,6 +27,53 @@ fun resetFailedGoogleFitSyncs(database: SupportSQLiteDatabase) {
     database.execSQL("UPDATE Trip SET googleFitSyncStatus = 0 WHERE googleFitSyncStatus = 2")
 }
 
+fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
+    database.execSQL(
+        """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_insert
+            AFTER INSERT ON Bike
+            FOR EACH ROW
+            WHEN NEW.isDefault = 1 AND (SELECT sum(isDefault) FROM Bike) > 1
+            BEGIN
+                UPDATE Bike SET isDefault = 0 WHERE id != NEW.id and isDefault = 1;
+            END
+            """
+    )
+    database.execSQL(
+        """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_update
+            AFTER UPDATE OF `isDefault` ON Bike
+            FOR EACH ROW
+            WHEN NEW.isDefault = 1 AND OLD.isDefault = 0 AND (SELECT sum(isDefault) FROM Bike) > 1
+            BEGIN
+                UPDATE Bike SET isDefault = 0 WHERE id != NEW.id and isDefault = 1;
+            END
+            """
+    )
+    database.execSQL(
+        """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_delete
+            AFTER DELETE ON Bike
+            FOR EACH ROW
+            WHEN OLD.isDefault = 1
+            BEGIN
+                UPDATE Bike SET isDefault = 1 WHERE id = (SELECT min(id) FROM Bike);
+            END
+            """
+    )
+    database.execSQL(
+        """
+            CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_update
+            AFTER UPDATE OF `isDefault` ON Bike
+            FOR EACH ROW
+            WHEN NEW.isDefault = 0 AND OLD.isDefault = 1 AND (SELECT sum(isDefault) FROM Bike) = 0
+            BEGIN
+                UPDATE Bike SET isDefault = 1 WHERE id = (SELECT min(id) FROM Bike) AND (SELECT sum(isDefault) FROM Bike) = 0;
+            END
+            """
+    )
+}
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("CREATE TABLE `TimeState` (`tripId` INTEGER NOT NULL, `state` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
@@ -161,50 +208,7 @@ val MIGRATION_17_18 = object : Migration(17, 18) {
 val MIGRATION_18_19 = object : Migration(18, 19) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL("CREATE TABLE IF NOT EXISTS `Bike` (`name` TEXT, `dateOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `isDefault` INTEGER NOT NULL DEFAULT 0, `id` INTEGER PRIMARY KEY AUTOINCREMENT)")
-        database.execSQL(
-            """
-            CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_insert
-            AFTER INSERT ON Bike
-            FOR EACH ROW
-            WHEN NEW.isDefault = 1 AND (SELECT sum(isDefault) FROM Bike) > 1
-            BEGIN 
-                UPDATE Bike SET isDefault = 0 WHERE id != NEW.id and isDefault = 1;
-            END
-            """
-        )
-        database.execSQL(
-            """
-            CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_update 
-            AFTER UPDATE OF `isDefault` ON Bike
-            FOR EACH ROW
-            WHEN NEW.isDefault = 1 AND OLD.isDefault = 0 AND (SELECT sum(isDefault) FROM Bike) > 1
-            BEGIN 
-                UPDATE Bike SET isDefault = 0 WHERE id != NEW.id and isDefault = 1;
-            END
-            """
-        )
-        database.execSQL(
-            """
-            CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_delete
-            AFTER DELETE ON Bike
-            FOR EACH ROW
-            WHEN OLD.isDefault = 1
-            BEGIN 
-                UPDATE Bike SET isDefault = 1 WHERE id = (SELECT min(id) FROM Bike);
-            END
-            """
-        )
-        database.execSQL(
-            """
-            CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_update 
-            AFTER UPDATE OF `isDefault` ON Bike
-            FOR EACH ROW
-            WHEN NEW.isDefault = 0 AND OLD.isDefault = 1 AND (SELECT sum(isDefault) FROM Bike) = 0
-            BEGIN 
-                UPDATE Bike SET isDefault = 1 WHERE id = (SELECT min(id) FROM Bike) AND (SELECT sum(isDefault) FROM Bike) = 0;
-            END
-            """
-        )
+        createDefaultBikeTriggers(database)
         database.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
             put("weight", getBikeMassOrNull(CyclotrackApp.instance))
             put("wheelCircumference", getUserCircumferenceOrNull(CyclotrackApp.instance))
@@ -298,10 +302,10 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL(
             """INSERT INTO `HeartRateMeasurement`
-                    (tripId, 
-                    timestamp, 
+                    (tripId,
+                    timestamp,
                     heartRate)
-                SELECT 
+                SELECT
                     tripId,
                     time,
                     heartRate
@@ -310,37 +314,37 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
         )
         database.execSQL(
             """INSERT INTO `CadenceSpeedMeasurement`
-                    (tripId, 
-                    timestamp, 
+                    (tripId,
+                    timestamp,
                     sensorType,
                     revolutions,
                     lastEvent,
                     rpm)
-                SELECT 
+                SELECT
                     tripId,
                     time,
                     ?,
                     cadenceRevolutions,
                     cadenceLastEvent,
-                    cadenceRpm 
+                    cadenceRpm
                 FROM Measurements
                 WHERE cadenceRevolutions IS NOT NULL""",
             arrayOf(SensorType.CADENCE.value)
         )
         database.execSQL(
             """INSERT INTO `CadenceSpeedMeasurement`
-                    (tripId, 
-                    timestamp, 
+                    (tripId,
+                    timestamp,
                     sensorType,
                     revolutions,
                     lastEvent,
-                    rpm) 
-                SELECT 
+                    rpm)
+                SELECT
                     tripId,
                     time,
                     ?,
-                    speedRevolutions, 
-                    speedLastEvent, 
+                    speedRevolutions,
+                    speedLastEvent,
                     speedRpm
                 FROM Measurements
                 WHERE speedRevolutions IS NOT NULL""",
@@ -404,9 +408,15 @@ object TripsDatabaseModule {
                 MIGRATION_26_27,
             )
             .addCallback(object : RoomDatabase.Callback() {
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    super.onOpen(db)
+                    createDefaultBikeTriggers(db);
+                }
+
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
 
+                    createDefaultBikeTriggers(db);
                     db.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
                         put("weight", getBikeMassOrNull(appContext))
                         put("wheelCircumference", getUserCircumferenceOrNull(appContext))
