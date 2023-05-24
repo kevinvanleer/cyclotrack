@@ -187,7 +187,7 @@ class ExportTripWorker @AssistedInject constructor(
                     appContext,
                     uri.hashCode() * 100 + 3,
                     deleteIntent,
-                    PendingIntent.FLAG_ONE_SHOT
+                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
                 )
                 val builder = NotificationCompat.Builder(
                     appContext,
