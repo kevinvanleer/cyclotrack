@@ -11,6 +11,8 @@ cyclotrack-keystore
 .gradle
 /local.properties
 /.idea/caches
+/.idea/misc.xml
+/.idea/.name
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
