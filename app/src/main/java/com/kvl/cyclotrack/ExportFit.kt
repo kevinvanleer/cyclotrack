@@ -2,11 +2,30 @@ package com.kvl.cyclotrack
 
 import android.content.Context
 import android.net.Uri
-import com.garmin.fit.*
+import com.garmin.fit.ActivityMesg
+import com.garmin.fit.DateTime
+import com.garmin.fit.DeveloperDataIdMesg
+import com.garmin.fit.DeviceIndex
+import com.garmin.fit.DeviceInfoMesg
+import com.garmin.fit.Event
+import com.garmin.fit.EventMesg
+import com.garmin.fit.EventType
+import com.garmin.fit.File
+import com.garmin.fit.FileEncoder
+import com.garmin.fit.FileIdMesg
+import com.garmin.fit.Fit
+import com.garmin.fit.LapMesg
+import com.garmin.fit.Manufacturer
+import com.garmin.fit.Mesg
+import com.garmin.fit.RecordMesg
+import com.garmin.fit.SessionMesg
+import com.garmin.fit.Sport
+import com.garmin.fit.SubSport
 import com.kvl.cyclotrack.util.getFileName
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.util.*
+import java.util.Date
+import java.util.Random
 import java.util.TimeZone
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -202,13 +221,13 @@ fun exportRideToFit(
     destination: Uri,
     exportData: TripDetailsViewModel.ExportData,
 ) {
-    val messages: MutableList<Mesg> = makeFitMessages(cyclotrackFitAppId, exportData)
 
     val privateAppFile = java.io.File(
         context.filesDir,
         getFileName(context.contentResolver, destination)!!
     )
 
+    val messages: MutableList<Mesg> = makeFitMessages(cyclotrackFitAppId, exportData)
     writeFitFile(DateTime(Date(exportData.summary!!.timestamp)), privateAppFile, messages)
 
     moveToDownloads(

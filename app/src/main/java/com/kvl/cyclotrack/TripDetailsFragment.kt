@@ -1,18 +1,32 @@
 package com.kvl.cyclotrack
 
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
-import android.view.*
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.Animation
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.Transformation
-import android.widget.*
+import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Space
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.MenuProvider
 import androidx.core.view.doOnPreDraw
@@ -36,16 +50,29 @@ import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
-import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.MapStyleOptions
+import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.RoundCap
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
-import com.kvl.cyclotrack.util.*
+import com.kvl.cyclotrack.util.configureGoogleFit
+import com.kvl.cyclotrack.util.formatRawTrendLineData
+import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
+import com.kvl.cyclotrack.util.getDatasets
+import com.kvl.cyclotrack.util.getSpeedDataFromGps
+import com.kvl.cyclotrack.util.getSpeedDataFromSensor
+import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.useBleSpeedData
 import com.kvl.cyclotrack.widgets.HeadingView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import kotlin.math.roundToInt
 
 
@@ -99,6 +126,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         )
                     )
                 }
+
                 else -> {
                     icon(
                         BitmapDescriptorFactory.fromResource(
@@ -121,6 +149,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     )
                     anchor(0f, 1f)
                 }
+
                 else -> {
                     icon(
                         BitmapDescriptorFactory.fromResource(
@@ -149,16 +178,19 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         menu.findItem(R.id.details_menu_action_unsync).isVisible = true
                         menu.findItem(R.id.details_menu_action_sync).isVisible = false
                     }
+
                     GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
                         menu.findItem(R.id.details_menu_action_unsync).isVisible = false
                         menu.findItem(R.id.details_menu_action_sync).isVisible = true
                     }
+
                     else -> {
                         menu.findItem(R.id.details_menu_action_sync).isVisible = false
                         menu.findItem(R.id.details_menu_action_unsync).isVisible = false
                     }
                 }
             }
+
             else -> {
                 menu.findItem(R.id.details_menu_action_sync).isVisible = false
                 menu.findItem(R.id.details_menu_action_unsync).isVisible = false
@@ -662,6 +694,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         setPositiveButton("OK") { _, _ -> }
                     }.create()
                 }
+
                 else -> throw e
             }
         }
@@ -902,6 +935,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                         true
                     }
+
                     R.id.details_menu_action_delete -> {
                         Log.d(logTag, "Options menu clicked delete")
                         when (googleFitSyncStatus) {
@@ -911,11 +945,30 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     else -> showUnsyncAndDeleteDialog()
                                 }
                             }
+
                             else -> showDeleteDialog()
                         }
                         true
                     }
+
                     R.id.details_menu_action_export_xlsx -> {
+                        if (requireActivity().checkSelfPermission(
+                                "android.permission.WRITE_EXTERNAL_STORAGE"
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            ActivityCompat.requestPermissions(
+                                requireActivity(),
+                                arrayOf("android.permission.WRITE_EXTERNAL_STORAGE"),
+                                0
+                            )
+                            // TODO: Consider calling
+                            //    ActivityCompat#requestPermissions
+                            // here to request the missing permissions, and then overriding
+                            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                            //                                          int[] grantResults)
+                            // to handle the case where the user grants the permission. See the documentation
+                            // for ActivityCompat#requestPermissions for more details.
+                        }
                         WorkManager.getInstance(requireContext())
                             .enqueue(
                                 OneTimeWorkRequestBuilder<ExportTripWorker>()
@@ -929,6 +982,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             )
                         true
                     }
+
                     R.id.details_menu_action_export_fit -> {
                         WorkManager.getInstance(requireContext())
                             .enqueue(
@@ -943,6 +997,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             )
                         true
                     }
+
                     R.id.details_menu_action_sync -> {
                         WorkManager.getInstance(requireContext())
                             .enqueue(
@@ -956,10 +1011,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             )*/
                         true
                     }
+
                     R.id.details_menu_action_unsync -> {
                         showUnsyncDialog()
                         true
                     }
+
                     else -> {
                         Log.w(logTag, "unimplemented menu item selected")
                         false
@@ -1108,6 +1165,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
                     map.uiSettings.setAllGesturesEnabled(true)
                 }
+
                 else -> {
                     if (this::maxCameraPosition.isInitialized) {
                         camFactory = CameraUpdateFactory.newCameraPosition(defaultCameraPosition)
@@ -1135,6 +1193,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
                 retVal
             }
+
             MotionEvent.ACTION_DOWN -> startTouchSequence(event)
             MotionEvent.ACTION_MOVE -> adjustMap(event)
             else -> false
@@ -1175,6 +1234,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     intervals.sliceArray(IntRange(0, idx))
                                 )
                             )
+
                             else -> Pair(
                                 LineDataSet(
                                     emptyList(),
@@ -1235,6 +1295,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     intervals.sliceArray(IntRange(0, idx))
                                 )
                             )
+
                             else -> Pair(
                                 LineDataSet(
                                     emptyList(),

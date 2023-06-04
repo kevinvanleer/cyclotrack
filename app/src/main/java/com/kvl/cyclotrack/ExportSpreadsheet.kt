@@ -146,34 +146,41 @@ fun exportRideToFastExcel(
 ) {
     contentResolver.openFileDescriptor(filePath, "w")?.use {
         FileOutputStream(it.fileDescriptor).use { stream ->
-            val workbook = Workbook(stream, "Cyclotrack", "${BuildConfig.VERSION_CODE}.0")
-
-            addDataToSheet(workbook.newWorksheet("summary"), exportData.summary!!)
-            addDataToSheet(workbook.newWorksheet("measurements"), exportData.measurements!!)
-            addDataToSheet(workbook.newWorksheet("timeStates"), exportData.timeStates!!)
-            addDataToSheet(workbook.newWorksheet("splits"), exportData.splits!!)
-            if (exportData.onboardSensors?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("onboardSensors"), exportData.onboardSensors)
-            }
-            if (exportData.weather?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("weather"), exportData.weather)
-            }
-            if (exportData.heartRateMeasurements?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("heartRate"), exportData.heartRateMeasurements)
-            }
-            if (exportData.cadenceMeasurements?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("cadence"), exportData.cadenceMeasurements)
-            }
-            if (exportData.speedMeasurements?.isNotEmpty() == true) {
-                addDataToSheet(workbook.newWorksheet("speed"), exportData.speedMeasurements)
-            }
-
-            workbook.setCompressionLevel(9)
-            workbook.finish()
-            stream.close()
+            exportRideToFastExcelStream(stream, exportData)
         }
         it.close()
     }
+}
+
+fun exportRideToFastExcelStream(
+    stream: FileOutputStream,
+    exportData: TripDetailsViewModel.ExportData
+) {
+    val workbook = Workbook(stream, "Cyclotrack", "${BuildConfig.VERSION_CODE}.0")
+
+    addDataToSheet(workbook.newWorksheet("summary"), exportData.summary!!)
+    addDataToSheet(workbook.newWorksheet("measurements"), exportData.measurements!!)
+    addDataToSheet(workbook.newWorksheet("timeStates"), exportData.timeStates!!)
+    addDataToSheet(workbook.newWorksheet("splits"), exportData.splits!!)
+    if (exportData.onboardSensors?.isNotEmpty() == true) {
+        addDataToSheet(workbook.newWorksheet("onboardSensors"), exportData.onboardSensors)
+    }
+    if (exportData.weather?.isNotEmpty() == true) {
+        addDataToSheet(workbook.newWorksheet("weather"), exportData.weather)
+    }
+    if (exportData.heartRateMeasurements?.isNotEmpty() == true) {
+        addDataToSheet(workbook.newWorksheet("heartRate"), exportData.heartRateMeasurements)
+    }
+    if (exportData.cadenceMeasurements?.isNotEmpty() == true) {
+        addDataToSheet(workbook.newWorksheet("cadence"), exportData.cadenceMeasurements)
+    }
+    if (exportData.speedMeasurements?.isNotEmpty() == true) {
+        addDataToSheet(workbook.newWorksheet("speed"), exportData.speedMeasurements)
+    }
+
+    workbook.setCompressionLevel(9)
+    workbook.finish()
+    stream.close()
 }
 
 fun exportRideToXlsx(

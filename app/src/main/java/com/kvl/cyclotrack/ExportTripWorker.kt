@@ -1,27 +1,45 @@
 package com.kvl.cyclotrack
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Build.VERSION_CODES
+import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.FileProvider
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.google.android.gms.common.util.concurrent.HandlerExecutor
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.io.File
+import java.util.concurrent.Executor
 import javax.inject.Inject
+
+fun Context.mainExecutor(): Executor {
+    return if (Build.VERSION.SDK_INT >= VERSION_CODES.P) {
+        mainExecutor
+    } else {
+        HandlerExecutor(mainLooper)
+    }
+}
 
 @HiltWorker
 class ExportTripWorker @AssistedInject constructor(
@@ -103,9 +121,23 @@ class ExportTripWorker @AssistedInject constructor(
         val inProgressId = getUriFilePart()?.toIntOrNull() ?: 0
         with(NotificationManagerCompat.from(appContext)) {
             Log.d(logTag, "notify in progress")
+            if (ActivityCompat.checkSelfPermission(
+                    appContext,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return
+            }
             notify(inProgressId, inProgressBuilder.build())
         }
-        appContext.mainExecutor.execute {
+        appContext.mainExecutor().execute {
             Toast.makeText(
                 appContext,
                 "You'll be notified when the export is complete.",
@@ -215,6 +247,20 @@ class ExportTripWorker @AssistedInject constructor(
                 with(NotificationManagerCompat.from(appContext)) {
                     Log.d(logTag, "notify export complete")
                     cancel(inProgressId)
+                    if (ActivityCompat.checkSelfPermission(
+                            appContext,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return
+                    }
                     notify(exportData.summary.id?.toInt() ?: 0, builder.build())
                 }
             } catch (e: RuntimeException) {
@@ -243,9 +289,66 @@ class ExportTripWorker @AssistedInject constructor(
         }
     }
 
+    @RequiresApi(VERSION_CODES.Q)
+    suspend fun exportFileQ(tripId: Long, fileName: String, fileType: String): Result {
+        val downloadsFolder =
+            MediaStore.Downloads.getContentUri(
+                MediaStore.VOLUME_EXTERNAL_PRIMARY
+            )
+        Log.d(logTag, "Export filename: $fileName")
+        Log.d(logTag, "Export to: ${downloadsFolder.path}")
+        val exportDetails = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+        }
+
+        appContext.contentResolver.query(
+            downloadsFolder,
+            arrayOf(MediaStore.Downloads.DISPLAY_NAME),
+            "${MediaStore.Downloads.DISPLAY_NAME} = ?",
+            arrayOf(fileName),
+            "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
+        ).use { cursor ->
+            if (cursor!!.count > 0) {
+                Log.d(
+                    logTag, "Removing previous export of $fileName"
+                )
+                appContext.contentResolver.delete(
+                    downloadsFolder,
+                    "${MediaStore.Downloads.DISPLAY_NAME} = ?",
+                    arrayOf(fileName)
+                )
+            }
+        }
+
+        appContext.contentResolver.insert(downloadsFolder, exportDetails)?.let { uri ->
+            try {
+                exportTripData(appContext.contentResolver, tripId, uri, fileType)
+            } catch (e: RuntimeException) {
+                return Result.failure()
+            }
+        } ?: return Result.failure()
+        return Result.success()
+    }
+
+    private suspend fun exportFile(tripId: Long, fileName: String, fileType: String): Result {
+        val downloadsPath =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val destinationPath = File(downloadsPath, fileName)
+        val uri = FileProvider.getUriForFile(
+            appContext,
+            BuildConfig.APPLICATION_ID + ".provider",
+            destinationPath
+        );
+        destinationPath.mkdirs()
+        destinationPath.delete()
+        exportTripData(appContext.contentResolver, tripId, uri, fileType)
+        return Result.success()
+    }
+
     override suspend fun doWork(): Result {
         Log.d(logTag, "starting ExportTripWorker")
         val fileType = inputData.getString("fileType") ?: "csv"
+        var result = Result.success()
         inputData.getLong("tripId", -1).takeIf { it >= 0 }?.let { tripId ->
             val prefix = when (FeatureFlags.devBuild) {
                 true -> "cyclotrack-dev"
@@ -256,46 +359,12 @@ class ExportTripWorker @AssistedInject constructor(
                 String.format("%06d", trip.id)
             }_${trip.name?.trim()?.replace(" ", "-") ?: "unknown"}.$fileType"
 
-            val downloadsFolder =
-                when (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    true -> MediaStore.Downloads.getContentUri(
-                        MediaStore.VOLUME_EXTERNAL_PRIMARY
-                    )
-                    else -> MediaStore.Downloads.EXTERNAL_CONTENT_URI
-                }
-            Log.d(logTag, "Export filename: $fileName")
-            Log.d(logTag, "Export to: ${downloadsFolder.path}")
-            val exportDetails = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            result = if (Build.VERSION.SDK_INT >= VERSION_CODES.Q) {
+                exportFileQ(tripId, fileName, fileType)
+            } else {
+                exportFile(tripId, fileName, fileType)
             }
-
-            appContext.contentResolver.query(
-                downloadsFolder,
-                arrayOf(MediaStore.Downloads.DISPLAY_NAME),
-                "${MediaStore.Downloads.DISPLAY_NAME} = ?",
-                arrayOf(fileName),
-                "${MediaStore.Video.Media.DISPLAY_NAME} ASC"
-            ).use { cursor ->
-                if (cursor!!.count > 0) {
-                    Log.d(
-                        logTag, "Removing previous export of ${fileName}"
-                    )
-                    appContext.contentResolver.delete(
-                        downloadsFolder,
-                        "${MediaStore.Downloads.DISPLAY_NAME} = ?",
-                        arrayOf(fileName)
-                    )
-                }
-            }
-
-            appContext.contentResolver.insert(downloadsFolder, exportDetails)?.let { uri ->
-                try {
-                    exportTripData(appContext.contentResolver, tripId, uri, fileType)
-                } catch (e: RuntimeException) {
-                    return Result.failure()
-                }
-            } ?: return Result.failure()
         }
-        return Result.success()
+        return result
     }
 }
