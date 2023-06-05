@@ -174,7 +174,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_calories" />
 
-            <com.github.mikephil.charting.charts.LineChart
+            <ImageView
                 android:id="@+id/trip_details_heart_rate_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
@@ -193,7 +193,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
 
-            <com.github.mikephil.charting.charts.LineChart
+            <ImageView
                 android:id="@+id/trip_details_cadence_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
