@@ -1,13 +1,14 @@
 package com.kvl.cyclotrack.util
 
 import android.content.Context
-import android.content.res.Resources
 import android.util.Log
-import androidx.core.content.res.ResourcesCompat
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineDataSet
-import com.kvl.cyclotrack.*
+import com.kvl.cyclotrack.Measurements
+import com.kvl.cyclotrack.Trip
+import com.kvl.cyclotrack.accumulateTime
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.getRpm
+import com.kvl.cyclotrack.getUserSpeed
+import com.kvl.cyclotrack.widgets.Entry
 
 private const val logTag = "TripDetailsUtilities"
 
@@ -34,7 +35,7 @@ fun useBleSpeedData(
     return true
 }
 
-fun formatRawTrendLineData(
+/*fun formatRawTrendLineData(
     resources: Resources,
     entries: ArrayList<Entry>,
     trend: ArrayList<Entry>
@@ -60,7 +61,7 @@ fun formatRawTrendLineData(
         )
     trendData.lineWidth = 3f
     return Pair(dataset, trendData)
-}
+}*/
 
 val getSpeedDataFromSensor: (
     context: Context,
@@ -68,11 +69,14 @@ val getSpeedDataFromSensor: (
     effectiveCircumference: Float?,
     measurementsList: Array<CadenceSpeedMeasurement>,
     intervals: Array<LongRange>,
+    avgSpeed: Float
 ) -> (
     entries: ArrayList<Entry>,
     trend: ArrayList<Entry>,
-) -> Unit = { context, overview, effectiveCircumference, measurementsList, intervals ->
-    { entries, trend ->
+    hi: ArrayList<Entry>,
+    lo: ArrayList<Entry>,
+) -> Unit = { context, overview, effectiveCircumference, measurementsList, intervals, avgSpeed ->
+    { entries, trend, hi, lo ->
         val circumference =
             effectiveCircumference ?: overview.autoWheelCircumference
             ?: overview.userWheelCircumference
@@ -85,8 +89,11 @@ val getSpeedDataFromSensor: (
                 context,
                 measurementsList[0].rpm?.times(circumference!!)?.div(60)?.toDouble() ?: 0.0
             )
+        var hiLast: Float? = null;
+        var loLast: Float? = null;
         var trendAlpha = 0.5f
         var lastMeasurement: CadenceSpeedMeasurement? = null
+
         measurementsList.forEach { measurements ->
             lastMeasurement
                 ?.let { last ->
@@ -99,25 +106,33 @@ val getSpeedDataFromSensor: (
                                 timeLast = last.lastEvent,
                                 delta = measurements.timestamp - last.timestamp
                             ).takeIf { it.isFinite() }
-                                ?.let { it * circumference!! / 60 }
+                                ?.let { getUserSpeed(context, it * circumference!! / 60) }
                                 ?.let { speed ->
                                     val timestamp =
                                         (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
-                                    entries.add(
-                                        Entry(
-                                            timestamp,
-                                            getUserSpeed(
-                                                context,
-                                                speed
-                                            )
-                                        )
-                                    )
-                                    trendLast =
-                                        (trendAlpha * getUserSpeed(
-                                            context,
-                                            speed
-                                        )) + ((1 - trendAlpha) * trendLast)
-                                    trend.add(Entry(timestamp, trendLast))
+                                    entries.add(Entry(timestamp, speed))
+                                    /*(trendLast =
+                                        (trendAlpha * speed) + ((1 - trendAlpha) * trendLast)
+                                    trend.add(Entry(timestamp, trendLast))*/
+                                    getTrendData(
+                                        speed,
+                                        trendAlpha,
+                                        avgSpeed,
+                                        trendLast,
+                                        hiLast,
+                                        loLast
+                                    ).let { (trendNew, hiNew, loNew) ->
+                                        trend.add(Entry(timestamp, trendNew))
+                                        trendLast = trendNew
+                                        hiNew?.let {
+                                            hi.add(Pair(timestamp, it))
+                                            hiLast = it
+                                        }
+                                        loNew?.let {
+                                            lo.add(Pair(timestamp, it))
+                                            loLast = it
+                                        }
+                                    }
                                     if (trendAlpha > 0.01f) trendAlpha -= 0.005f
                                     if (trendAlpha < 0.01f) trendAlpha = 0.01f
                                 }
@@ -138,33 +153,78 @@ val getSpeedDataFromGps: (
     context: Context,
     measurements: Array<Measurements>,
     intervals: Array<LongRange>,
+    avgSpeed: Float,
 ) -> (
     entries: ArrayList<Entry>,
     trend: ArrayList<Entry>,
-) -> Unit = { context, measurements, intervals ->
-    { entries, trend ->
+    hi: ArrayList<Entry>,
+    lo: ArrayList<Entry>,
+) -> Unit = { context, measurements, intervals, avgSpeed ->
+    { entries, trend, hi, lo ->
         Log.v(logTag, "getSpeedFromGps")
         val intervalStart = intervals.last().first
         val accumulatedTime = accumulateTime(intervals)
         var trendLast =
             getUserSpeed(context, measurements[0].speed.toDouble())
-        var trendAlpha = 0.01f
+        val trendAlpha = 0.01f
+        var hiLast: Float? = null
+        var loLast: Float? = null
+
         measurements.forEach {
             Log.v(logTag, "GPS speed: ${it.speed}")
-            val timestamp =
-                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
-            entries.add(
-                Entry(
-                    timestamp,
-                    getUserSpeed(context, it.speed.toDouble())
-                )
-            )
-            trendLast = (trendAlpha * getUserSpeed(
+            val speed = getUserSpeed(
                 context,
                 it.speed.toDouble()
-            )) + ((1 - trendAlpha) * trendLast)
-            trend.add(Entry(timestamp, trendLast))
-            if (trendAlpha > 0.01f) trendAlpha -= 0.01f
+            )
+            val timestamp =
+                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+            entries.add(Entry(timestamp, speed))
+            getTrendData(
+                speed,
+                trendAlpha,
+                avgSpeed,
+                trendLast,
+                hiLast,
+                loLast
+            ).let { (trendNew, hiNew, loNew) ->
+                trend.add(Entry(timestamp, trendNew))
+                trendLast = trendNew
+                hiNew?.let {
+                    hi.add(Pair(timestamp, it))
+                    hiLast = it
+                }
+                loNew?.let {
+                    lo.add(Pair(timestamp, it))
+                    loLast = it
+                }
+            }
         }
     }
+}
+
+fun getTrendData(
+    yValue: Float,
+    alpha: Float,
+    average: Float,
+    trendLast: Float?,
+    hiLast: Float?,
+    loLast: Float?
+): Triple<Float, Float?, Float?> {
+    var hi: Float? = null
+    var lo: Float? = null
+    val trend =
+        (alpha * yValue) + ((1 - alpha) * (trendLast
+            ?: yValue))
+    if (yValue >= average) {
+        hi = (alpha * yValue) + ((1 - alpha) * (hiLast
+            ?: yValue))
+    } else {
+        lo = (alpha * yValue) + ((1 - alpha) * (loLast
+            ?: yValue))
+    }
+    return Triple(
+        trend,
+        hi,
+        lo
+    )
 }

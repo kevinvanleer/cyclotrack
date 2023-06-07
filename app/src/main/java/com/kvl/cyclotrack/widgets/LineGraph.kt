@@ -7,6 +7,8 @@ import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 
+typealias Entry = Pair<Float, Float>
+
 data class LineGraphAreaDataset(
     val points1: List<Pair<Float, Float>>,
     val points2: List<Pair<Float, Float>>,
@@ -123,7 +125,7 @@ class LineGraph(
             LineGraphDataset(
                 dataset.points2.toMutableList().apply {
                     add(Pair(dataset.xRange!!.second, dataset.yRange!!.second))
-                    add(Pair(0f, dataset.yRange!!.second))
+                    add(Pair(0f, dataset.yRange.second))
                 },
                 dataset.xRange,
                 dataset.yRange,

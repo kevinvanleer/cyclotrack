@@ -41,12 +41,6 @@ import androidx.navigation.fragment.navArgs
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.github.mikephil.charting.charts.LineChart
-import com.github.mikephil.charting.components.AxisBase
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import com.github.mikephil.charting.formatter.ValueFormatter
 import com.google.android.gms.maps.CameraUpdate
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -61,13 +55,14 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.configureGoogleFit
-import com.kvl.cyclotrack.util.formatRawTrendLineData
 import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
 import com.kvl.cyclotrack.util.getDatasets
 import com.kvl.cyclotrack.util.getSpeedDataFromGps
 import com.kvl.cyclotrack.util.getSpeedDataFromSensor
 import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.getTrendData
 import com.kvl.cyclotrack.util.useBleSpeedData
+import com.kvl.cyclotrack.widgets.Entry
 import com.kvl.cyclotrack.widgets.HeadingView
 import com.kvl.cyclotrack.widgets.LineGraph
 import com.kvl.cyclotrack.widgets.LineGraphAreaDataset
@@ -420,8 +415,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val distanceHeadingView: HeadingView = view.findViewById(R.id.trip_details_distance)
         val durationHeadingView: HeadingView = view.findViewById(R.id.trip_details_time)
         val speedHeadingView: HeadingView = view.findViewById(R.id.trip_details_speed)
-        val speedChartView: LineChart = view.findViewById(R.id.trip_details_speed_chart)
-        val elevationChartView: LineChart = view.findViewById(R.id.trip_details_elevation_chart)
+        val speedChartView: ImageView = view.findViewById(R.id.trip_details_speed_chart)
+        val elevationChartView: ImageView = view.findViewById(R.id.trip_details_elevation_chart)
         val heartRateChartView: ImageView = view.findViewById(R.id.trip_details_heart_rate_chart)
         val heartRateHeadingView: HeadingView = view.findViewById(R.id.trip_details_heart_rate)
         val cadenceChartView: ImageView = view.findViewById(R.id.trip_details_cadence_chart)
@@ -479,7 +474,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             observeHeartRate(heartRateHeadingView, heartRateChartView, strokeStyle)
             observeCadence(cadenceHeadingView, cadenceChartView, strokeStyle, trendStyle)
 
-            observeSpeed(speedChartView)
+            observeSpeed(speedChartView, strokeStyle, trendStyle)
 
             viewModel.tripOverview.observe(viewLifecycleOwner) { overview ->
                 if (overview != null) {
@@ -569,7 +564,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 fun makeElevationDataset(
                     measurements: Array<Measurements>,
                     _totalDistance: Float,
-                ): LineDataSet {
+                ): ArrayList<Entry> {
                     val entries = ArrayList<Entry>()
                     var totalDistance = _totalDistance
                     var lastMeasurements: Measurements? = null
@@ -599,23 +594,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             )
                         )
                     }
-                    val dataset = LineDataSet(entries, "Elevation")
-                    dataset.setDrawCircles(false)
-                    dataset.setDrawValues(false)
-                    dataset.color =
-                        ResourcesCompat.getColor(
-                            resources,
-                            R.color.accentColor,
-                            null
-                        )
-                    dataset.lineWidth = 3f
-                    return dataset
+                    return entries
                 }
 
                 fun makeElevationLineChart(intervals: Array<LongRange>) {
-                    configureLineChart(elevationChartView)
+                    //configureLineChart(elevationChartView)
 
-                    elevationChartView.xAxis.valueFormatter = object : ValueFormatter() {
+                    /*elevationChartView.xAxis.valueFormatter = object : ValueFormatter() {
                         override fun getAxisLabel(value: Float, axis: AxisBase?): String {
                             return if (value == 0f) "" else "${
                                 getUserDistance(
@@ -624,24 +609,42 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 ).roundToInt()
                             } ${getUserDistanceUnitShort(requireContext())}"
                         }
-                    }
+                    }*/
 
                     val legs = getTripLegs(tripMeasurements, intervals)
-                    val data = LineData()
+                    val data = ArrayList<Entry>()
 
                     var totalDistance = 0f
                     legs.forEach { leg ->
                         if (leg.isNotEmpty()) {
                             makeElevationDataset(leg, totalDistance).let { dataset ->
-                                data.addDataSet(dataset)
-                                dataset.values.takeIf { it.isNotEmpty() }?.let {
-                                    totalDistance = it.last().x
+                                data.addAll(dataset)
+                                dataset.takeIf { it.isNotEmpty() }?.let {
+                                    totalDistance = it.last().first
                                 }
                             }
                         }
                     }
-                    elevationChartView.data = data
-                    elevationChartView.invalidate()
+
+                    val xMin = data.first().first
+                    val xMax = data.last().first
+                    val yMin = data.minBy { element -> element.second }.second - 20
+                    val yMax = data.maxBy { element -> element.second }.second + 20
+
+                    elevationChartView.setImageDrawable(
+                        LineGraph(
+                            datasets = listOf(
+                                LineGraphDataset(
+                                    points = data.toList(),
+                                    xRange = Pair(xMin, xMax),
+                                    yRange = Pair(yMin, yMax),
+                                    xAxisWidth = xMax - xMin,
+                                    yAxisHeight = yMax - yMin,
+                                    paint = strokeStyle
+                                )
+                            )
+                        )
+                    )
                 }
 
                 Log.d(
@@ -1237,62 +1240,70 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
     }
 
-    private fun observeSpeed(speedChartView: LineChart) {
+    private fun observeSpeed(speedChartView: ImageView, strokeStyle: Paint, trendStyle: Paint) {
         viewModel.speedLiveData().observe(
             viewLifecycleOwner
         ) { observed ->
             fun makeSpeedDataset(
-                getDataFunc: (ArrayList<Entry>, ArrayList<Entry>) -> Unit,
-            ): Pair<LineDataSet, LineDataSet> {
+                getDataFunc: (ArrayList<Entry>, ArrayList<Entry>, ArrayList<Entry>, ArrayList<Entry>) -> Unit,
+            ): LineChartDataset {
                 val entries = ArrayList<Entry>()
                 val trend = ArrayList<Entry>()
+                val hi = ArrayList<Entry>()
+                val lo = ArrayList<Entry>()
 
-                getDataFunc(entries, trend)
+                getDataFunc(entries, trend, hi, lo)
 
-                return formatRawTrendLineData(resources, entries, trend)
+                return LineChartDataset(entries = entries, trend = trend, hi = hi, lo = lo)
             }
 
             fun observeGpsSpeed(
                 timeStates: Array<TimeState>,
-                locationMeasurements: Array<Measurements>
-            ): LineData {
+                locationMeasurements: Array<Measurements>,
+                avgSpeed: Float
+            ): LineChartDataset {
                 Log.d(logTag, "observeGpsSpeed")
                 val intervals = getTripIntervals(timeStates, locationMeasurements)
                 val legs = getTripLegs(locationMeasurements, intervals)
 
-                val data = LineData()
-
+                val allData = LineChartDataset(
+                    ArrayList(),
+                    ArrayList(),
+                    ArrayList(),
+                    ArrayList(),
+                )
                 legs.forEachIndexed { idx, leg ->
-                    val (raw, trend) =
-                        when (leg.isNotEmpty()) {
-                            true -> makeSpeedDataset(
-                                getSpeedDataFromGps(
-                                    requireContext(), leg,
-                                    intervals.sliceArray(IntRange(0, idx))
-                                )
+                    when (leg.isNotEmpty()) {
+                        true -> makeSpeedDataset(
+                            getSpeedDataFromGps(
+                                requireContext(), leg,
+                                intervals.sliceArray(IntRange(0, idx)),
+                                avgSpeed
                             )
+                        )
 
-                            else -> Pair(
-                                LineDataSet(
-                                    emptyList(),
-                                    "Speed"
-                                ),
-                                LineDataSet(emptyList(), "Trend")
-                            )
-
-
-                        }
-                    data.addDataSet(raw)
-                    data.addDataSet(trend)
+                        else -> LineChartDataset(
+                            ArrayList(),
+                            ArrayList(),
+                            ArrayList(),
+                            ArrayList(),
+                        )
+                    }.let {
+                        allData.entries.addAll(it.entries)
+                        allData.trend.addAll(it.trend)
+                        allData.hi.addAll(it.hi)
+                        allData.lo.addAll(it.lo)
+                    }
                 }
-                return data
+                return allData;
             }
 
             fun observeBleSpeed(
                 overview: Trip,
                 timeStates: Array<TimeState>,
-                speedMeasurements: Array<CadenceSpeedMeasurement>
-            ): LineData {
+                speedMeasurements: Array<CadenceSpeedMeasurement>,
+                avgSpeed: Float
+            ): LineChartDataset {
                 val effectiveCircumference =
                     getEffectiveCircumference(overview, speedMeasurements)
                 val tripId = overview.id
@@ -1318,40 +1329,42 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     "User circumference trip $tripId: ${overview.userWheelCircumference}"
                 )
 
-                val data = LineData()
-
+                val allData = LineChartDataset(
+                    ArrayList(),
+                    ArrayList(),
+                    ArrayList(),
+                    ArrayList(),
+                )
                 legs.forEachIndexed { idx, leg ->
-                    val (raw, trend) =
-                        when (leg.isNotEmpty()) {
-                            true -> makeSpeedDataset(
-                                getSpeedDataFromSensor(
-                                    requireContext(),
-                                    observed.summary!!,
-                                    effectiveCircumference,
-                                    leg,
-                                    intervals.sliceArray(IntRange(0, idx))
-                                )
+                    when (leg.isNotEmpty()) {
+                        true -> makeSpeedDataset(
+                            getSpeedDataFromSensor(
+                                requireContext(),
+                                observed.summary!!,
+                                effectiveCircumference,
+                                leg,
+                                intervals.sliceArray(IntRange(0, idx)),
+                                avgSpeed
                             )
+                        )
 
-                            else -> Pair(
-                                LineDataSet(
-                                    emptyList(),
-                                    "Speed"
-                                ),
-                                LineDataSet(emptyList(), "Trend")
-                            )
-
-
-                        }
-                    data.addDataSet(raw)
-                    data.addDataSet(trend)
+                        else -> LineChartDataset(
+                            ArrayList(),
+                            ArrayList(),
+                            ArrayList(),
+                            ArrayList(),
+                        )
+                    }.let {
+                        allData.entries.addAll(it.entries)
+                        allData.trend.addAll(it.trend)
+                        allData.hi.addAll(it.hi)
+                        allData.lo.addAll(it.lo)
+                    }
                 }
-                return data
+                return allData
             }
 
-            fun makeSpeedLineChart() {
-                configureLineChart(speedChartView)
-
+            fun makeSpeedLineChart(avgSpeed: Float) {
                 val speedMeasurements = observed.speedMeasurements
 
                 if (observed.summary == null ||
@@ -1362,24 +1375,68 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val timeStates = observed.timeStates
                 val overview = observed.summary
 
-                speedChartView.data = when (useBleSpeedData(
+                when (useBleSpeedData(
                     observed.speedMeasurements,
                     observed.locationMeasurements
                 )) {
-                    true -> observeBleSpeed(overview, timeStates, observed.speedMeasurements)
+                    true -> observeBleSpeed(
+                        overview,
+                        timeStates,
+                        observed.speedMeasurements,
+                        avgSpeed
+                    )
+
                     else -> {
                         observeGpsSpeed(
                             timeStates,
-                            observed.locationMeasurements
+                            observed.locationMeasurements,
+                            avgSpeed
                         )
                     }
+                }.let { lineData ->
+                    val xMinRaw = lineData.entries.first().first
+                    val xMaxRaw = lineData.entries.last().first
+                    var yMinRaw = lineData.entries.minBy { element -> element.second }.second
+                    var yMaxRaw = lineData.entries.maxBy { element -> element.second }.second
+                    val yRangePadding = (yMaxRaw - yMinRaw) * 0.2f
+                    yMinRaw -= yRangePadding
+                    yMaxRaw += yRangePadding
+
+                    speedChartView.setImageDrawable(LineGraph(
+                        datasets = listOf(
+                            LineGraphDataset(
+                                points = lineData.trend.toList(),
+                                xRange = Pair(xMinRaw, xMaxRaw),
+                                yRange = Pair(yMinRaw, yMaxRaw),
+                                xAxisWidth = xMaxRaw - xMinRaw,
+                                yAxisHeight = yMaxRaw - yMinRaw,
+                                paint = strokeStyle
+                            ),
+                        ),
+                        areas = listOf(
+                            LineGraphAreaDataset(
+                                points1 = lineData.hi.toList(),
+                                points2 = lineData.lo.toList(),
+                                xRange = Pair(xMinRaw, xMaxRaw),
+                                yRange = Pair(yMinRaw, yMaxRaw),
+                                xAxisWidth = xMaxRaw - xMinRaw,
+                                yAxisHeight = yMaxRaw - yMinRaw,
+                                paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
+                            ),
+                        )
+                    ))
                 }
 
-                speedChartView.invalidate()
+                //speedChartView.invalidate()
             }
 
             if (observed != null) {
-                makeSpeedLineChart()
+                val avgSpeed = getUserSpeed(
+                    requireContext(),
+                    observed.summary?.distance ?: 0.0,
+                    observed.summary?.duration ?: 1.0
+                )
+                makeSpeedLineChart(avgSpeed)
             }
         }
     }
@@ -1412,49 +1469,42 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val accumulatedTime = accumulateTime(intervals)
 
-                var lastMeasurements: CadenceSpeedMeasurement? = null
                 measurementsList.forEach { measurements ->
-                    lastMeasurements
-                        ?.let { last ->
-                            if (validateCadence(measurements, last)) {
-                                try {
-                                    getRpm(
-                                        rev = measurements.revolutions,
-                                        revLast = last.revolutions,
-                                        time = measurements.lastEvent,
-                                        timeLast = last.lastEvent,
-                                        delta = measurements.timestamp - last.timestamp
-                                    ).takeIf { it.isFinite() }?.let { rpm ->
-                                        val timestamp =
-                                            (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
-                                        entries.add(Pair(timestamp, rpm))
-                                        trendLast =
-                                            (trendAlpha * rpm) + ((1 - trendAlpha) * (trendLast
-                                                ?: rpm))
-                                        trend.add(Pair(timestamp, trendLast!!))
-                                        if (trendAlpha > 0.01f) trendAlpha -= 0.005f
-                                        if (trendAlpha < 0.01f) trendAlpha = 0.01f
-                                        if (rpm >= avgCadence) {
-                                            hiLast =
-                                                (trendAlpha * rpm) + ((1 - trendAlpha) * (hiLast
-                                                    ?: rpm))
-                                            hi.add(Pair(timestamp, hiLast!!))
-                                        } else {
-                                            loLast =
-                                                (trendAlpha * rpm) + ((1 - trendAlpha) * (loLast
-                                                    ?: rpm))
-                                            lo.add(Pair(timestamp, loLast!!))
-                                        }
+                    try {
+                        measurements.rpm
+                            ?.takeIf { it.isFinite() }?.let { rpm ->
+                                val timestamp =
+                                    (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
+
+                                entries.add(Pair(timestamp, rpm))
+                                getTrendData(
+                                    rpm,
+                                    trendAlpha,
+                                    avgCadence,
+                                    trendLast,
+                                    hiLast,
+                                    loLast
+                                ).let { (trendNew, hiNew, loNew) ->
+                                    trend.add(Pair(timestamp, trendNew))
+                                    trendLast = trendNew
+                                    hiNew?.let {
+                                        hi.add(Pair(timestamp, it))
+                                        hiLast = it
                                     }
-                                } catch (e: Exception) {
-                                    Log.e(
-                                        logTag,
-                                        "Could not create rpm value for timestamp ${measurements.timestamp}"
-                                    )
+                                    loNew?.let {
+                                        lo.add(Pair(timestamp, it))
+                                        loLast = it
+                                    }
                                 }
+                                if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                if (trendAlpha < 0.01f) trendAlpha = 0.01f
                             }
-                        }
-                    lastMeasurements = measurements
+                    } catch (e: Exception) {
+                        Log.e(
+                            logTag,
+                            "Could not create rpm value for timestamp ${measurements.timestamp}"
+                        )
+                    }
                 }
 
                 return LineChartDataset(entries = entries, trend = trend, hi = hi, lo = lo)
@@ -1540,7 +1590,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         ) { pair ->
             val hrmData = pair.first
             val timeStates = pair.second
-            fun makeHeartRateDatasetKvl(
+            fun makeHeartRateDataset(
                 measurements: Array<HeartRateMeasurement>,
                 intervals: Array<LongRange>,
             ): ArrayList<Pair<Float, Float>> {
@@ -1565,7 +1615,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 legs.forEachIndexed { idx, leg ->
                     data.addAll(
-                        makeHeartRateDatasetKvl(
+                        makeHeartRateDataset(
                             leg,
                             intervals.sliceArray(IntRange(0, idx))
                         )

@@ -1029,23 +1029,8 @@ fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CadenceSpeedMeasuremen
 
 fun getAverageCadence(measurements: Array<CadenceSpeedMeasurement>): Float? =
     try {
-        val cadenceMeasurements = measurements.toList()
-            .sortedBy { it.timestamp }
-        var hardWay = false
-        var lastMeasurements: CadenceSpeedMeasurement? = null
-        cadenceMeasurements
-            .forEach { meas ->
-                lastMeasurements
-                    ?.let { last ->
-                        if (didDeviceFail(meas, last)) {
-                            hardWay = true
-                        }
-                    }
-                lastMeasurements = meas
-            }
-
-        if (hardWay) getAverageCadenceTheHardWay(cadenceMeasurements)
-        else getAverageCadenceTheEasyWay(cadenceMeasurements)
+        measurements.mapNotNull { it.rpm }
+            .average().toFloat()
     } catch (e: Exception) {
         null
     }
