@@ -59,8 +59,8 @@ import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
 import com.kvl.cyclotrack.util.getDatasets
 import com.kvl.cyclotrack.util.getSpeedDataFromGps
 import com.kvl.cyclotrack.util.getSpeedDataFromSensor
-import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.getTrendData
+import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.useBleSpeedData
 import com.kvl.cyclotrack.widgets.Entry
 import com.kvl.cyclotrack.widgets.HeadingView
@@ -1468,43 +1468,78 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 var loLast: Float? = null
 
                 val accumulatedTime = accumulateTime(intervals)
-
+                var lastMeasurements: CadenceSpeedMeasurement? = null
                 measurementsList.forEach { measurements ->
-                    try {
-                        measurements.rpm
-                            ?.takeIf { it.isFinite() }?.let { rpm ->
-                                val timestamp =
-                                    (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
+                    lastMeasurements
+                        ?.let { last ->
+                            if (validateCadence(measurements, last)) {
+                                try {
+                                    getRpm(
+                                        rev = measurements.revolutions,
+                                        revLast = last.revolutions,
+                                        time = measurements.lastEvent,
+                                        timeLast = last.lastEvent,
+                                        delta = measurements.timestamp - last.timestamp
+                                    )
+                                        .takeIf { it.isFinite() }
+                                        ?.let { rpm ->
+                                            val timestamp =
+                                                (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
 
-                                entries.add(Pair(timestamp, rpm))
-                                getTrendData(
-                                    rpm,
-                                    trendAlpha,
-                                    avgCadence,
-                                    trendLast,
-                                    hiLast,
-                                    loLast
-                                ).let { (trendNew, hiNew, loNew) ->
-                                    trend.add(Pair(timestamp, trendNew))
-                                    trendLast = trendNew
-                                    hiNew?.let {
-                                        hi.add(Pair(timestamp, it))
-                                        hiLast = it
-                                    }
-                                    loNew?.let {
-                                        lo.add(Pair(timestamp, it))
-                                        loLast = it
-                                    }
+                                            entries.add(
+                                                Pair(
+                                                    timestamp,
+                                                    rpm
+                                                )
+                                            )
+                                            getTrendData(
+                                                rpm,
+                                                trendAlpha,
+                                                avgCadence,
+                                                trendLast,
+                                                hiLast,
+                                                loLast
+                                            ).let { (trendNew, hiNew, loNew) ->
+                                                trend.add(
+                                                    Pair(
+                                                        timestamp,
+                                                        trendNew
+                                                    )
+                                                )
+                                                trendLast = trendNew
+                                                hiNew?.let {
+                                                    hi.add(
+                                                        Pair(
+                                                            timestamp,
+                                                            it
+                                                        )
+                                                    )
+                                                    hiLast = it
+                                                }
+                                                loNew?.let {
+                                                    lo.add(
+                                                        Pair(
+                                                            timestamp,
+                                                            it
+                                                        )
+                                                    )
+                                                    loLast = it
+                                                }
+                                            }
+                                            if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                            if (trendAlpha < 0.01f) trendAlpha =
+                                                0.01f
+                                        }
+
+                                } catch (e: Exception) {
+                                    Log.e(
+                                        logTag,
+                                        "Could not create rpm value for timestamp ${measurements.timestamp}"
+                                    )
                                 }
-                                if (trendAlpha > 0.01f) trendAlpha -= 0.005f
-                                if (trendAlpha < 0.01f) trendAlpha = 0.01f
                             }
-                    } catch (e: Exception) {
-                        Log.e(
-                            logTag,
-                            "Could not create rpm value for timestamp ${measurements.timestamp}"
-                        )
-                    }
+                        }
+                    lastMeasurements = measurements
                 }
 
                 return LineChartDataset(entries = entries, trend = trend, hi = hi, lo = lo)

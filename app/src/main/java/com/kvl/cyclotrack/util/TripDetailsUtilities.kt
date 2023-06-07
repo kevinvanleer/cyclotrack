@@ -17,6 +17,8 @@ fun useBleSpeedData(
     locationMeasurements: Array<Measurements>
 ): Boolean {
     Log.d(logTag, "useBleSpeedData")
+    if (speedMeasurements.isNotEmpty() && locationMeasurements.isEmpty()) return true
+
     if (speedMeasurements.isEmpty() || locationMeasurements.isEmpty()) return false
     Log.d(logTag, "Passed empty check")
 
