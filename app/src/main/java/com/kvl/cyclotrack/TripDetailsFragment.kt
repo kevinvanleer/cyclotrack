@@ -72,6 +72,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 data class LineChartDataset(
@@ -1399,7 +1400,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     var yMinRaw = lineData.entries.minBy { element -> element.second }.second
                     var yMaxRaw = lineData.entries.maxBy { element -> element.second }.second
                     val yRangePadding = (yMaxRaw - yMinRaw) * 0.2f
-                    yMinRaw -= yRangePadding
+                    yMinRaw = max(yMinRaw - yRangePadding, 0f)
                     yMaxRaw += yRangePadding
 
                     speedChartView.setImageDrawable(LineGraph(
@@ -1566,13 +1567,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     loData.addAll(results.lo)
                 }
 
-
                 val xMinRaw = rawData.first().first
                 val xMaxRaw = rawData.last().first
                 var yMinRaw = rawData.minBy { element -> element.second }.second
                 var yMaxRaw = rawData.maxBy { element -> element.second }.second
                 val yRangePadding = (yMaxRaw - yMinRaw) * 0.2f
-                yMinRaw -= yRangePadding
+                yMinRaw = max(yMinRaw - yRangePadding, 0f)
                 yMaxRaw += yRangePadding
 
                 cadenceChartView.setImageDrawable(
@@ -1659,8 +1659,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val xMin = data.first().first
                 val xMax = data.last().first
-                val yMin = data.minBy { element -> element.second }.second - 20
-                val yMax = data.maxBy { element -> element.second }.second + 20
+                var yMin = data.minBy { element -> element.second }.second
+                var yMax = data.maxBy { element -> element.second }.second
+                val yRangePadding = (yMax - yMin) * 0.2f
+                yMin = max(yMin - yRangePadding, 0f)
+                yMax += yRangePadding
 
 
                 heartRateChartView.setImageDrawable(

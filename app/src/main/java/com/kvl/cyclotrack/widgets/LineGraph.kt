@@ -5,6 +5,7 @@ import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 
 typealias Entry = Pair<Float, Float>
@@ -26,6 +27,7 @@ data class LineGraphDataset(
     val xAxisWidth: Float? = null,
     val yAxisHeight: Float? = null,
     val paint: Paint? = null,
+    val label: String? = null,
 )
 
 class LineGraph(
@@ -136,6 +138,41 @@ class LineGraph(
             strokeJoin = Paint.Join.ROUND
             setARGB(255, 255, 0, 0)
         }
+
+        val width: Int = bounds.width()
+        val height: Int = bounds.height()
+
+        val xScale = width / (dataset.xAxisWidth ?: 1f)
+        val yScale = height / (dataset.yAxisHeight ?: 1f)
+        canvas.drawPath(
+            getPath(height, dataset, yScale, xScale), dataset.paint ?: greenPaint
+        )
+        val textPaint = Paint().apply {
+            this.textAlign = Paint.Align.RIGHT
+            this.flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
+            this.textSize = 32f
+            this.typeface = Typeface.DEFAULT
+            setARGB(100, 255, 255, 255)
+        }
+        if (dataset.label != null) {
+            canvas.drawText(
+                dataset.label,
+                (dataset.points.last().first - 12) * xScale,
+                adjustCoordinateY(
+                    height,
+                    dataset.points.last().second,
+                    dataset.yRange?.first ?: 0f,
+                    yScale
+                ) - 14,
+                textPaint
+            )
+        }
+    }
+
+    private fun drawBorder(canvas: Canvas) {
+        val width: Int = bounds.width()
+        val height: Int = bounds.height()
+
         val borderPaint: Paint = Paint().apply {
             isAntiAlias = true
             isDither = true
@@ -143,26 +180,37 @@ class LineGraph(
             strokeWidth = 2F
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            setARGB(150, 0, 0, 0)
+            setARGB(150, 255, 255, 255)
         }
-        val width: Int = bounds.width()
-        val height: Int = bounds.height()
 
-        val xScale = width / (dataset.xAxisWidth ?: 1f)
-        val yScale = height / (dataset.yAxisHeight ?: 1f)
-        /*adjustCoordinateY(
-            height,
-            dataset.points.first().second,
-            dataset.yRange?.first ?: 0f,
-            yScale
-        )*/
         canvas.drawPath(
-            getPath(height, dataset, yScale, xScale), dataset.paint ?: greenPaint
+            Path().apply {
+                moveTo(
+                    0f,
+                    0f
+                )
+                lineTo(
+                    width.toFloat(),
+                    0f
+                )
+            }, borderPaint
+        )
+        canvas.drawPath(
+            Path().apply {
+                moveTo(
+                    0f,
+                    height.toFloat()
+                )
+                lineTo(
+                    width.toFloat(),
+                    height.toFloat()
+                )
+            }, borderPaint
         )
     }
 
     override fun draw(canvas: Canvas) {
-        //canvas.drawColor(Color.argb(25, 0, 0, 0))
+        //drawBorder(canvas)
         areas?.forEach { area ->
             drawArea(
                 canvas,
