@@ -973,7 +973,18 @@ fun degreesToCardinal(degrees: Float): String {
     }
 }
 
-fun didDeviceFail(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
+fun didSpeedDeviceFail(
+    current: CadenceSpeedMeasurement,
+    previous: CadenceSpeedMeasurement
+): Boolean {
+    //when device fails revolutions and lastEvent reset to zero
+    return (current.lastEvent < previous.lastEvent && current.revolutions < previous.revolutions)
+}
+
+fun didCadenceDeviceFail(
+    current: CadenceSpeedMeasurement,
+    previous: CadenceSpeedMeasurement
+): Boolean {
     val doubleRollover =
         (current.lastEvent < previous.lastEvent && current.revolutions < previous.revolutions)
     val prematureRollover =
@@ -985,9 +996,14 @@ fun didDeviceFail(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasur
     return deviceReset || veryPrematureRollover
 }
 
+fun validateSpeed(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
+    val didNotUpdate = current.lastEvent == previous.lastEvent
+    return !(didNotUpdate || didSpeedDeviceFail(current, previous))
+}
+
 fun validateCadence(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
     val didNotUpdate = current.lastEvent == previous.lastEvent
-    return !(didNotUpdate || didDeviceFail(current, previous))
+    return !(didNotUpdate || didCadenceDeviceFail(current, previous))
 }
 
 fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
@@ -998,7 +1014,7 @@ fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasuremen
     cadenceMeasurements.forEach { measurements ->
         lastMeasurement
             ?.let { last ->
-                if (!didDeviceFail(measurements, last)) {
+                if (!didCadenceDeviceFail(measurements, last)) {
                     totalRevs += getDifferenceRollover(
                         measurements.revolutions,
                         last.revolutions

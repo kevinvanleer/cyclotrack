@@ -8,6 +8,7 @@ import com.kvl.cyclotrack.accumulateTime
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.getRpm
 import com.kvl.cyclotrack.getUserSpeed
+import com.kvl.cyclotrack.validateSpeed
 import com.kvl.cyclotrack.widgets.Entry
 
 private const val logTag = "TripDetailsUtilities"
@@ -99,7 +100,7 @@ val getSpeedDataFromSensor: (
         measurementsList.forEach { measurements ->
             lastMeasurement
                 ?.let { last ->
-                    if (measurements.lastEvent != last.lastEvent) {
+                    if (validateSpeed(measurements, last)) {
                         try {
                             getRpm(
                                 rev = measurements.revolutions,
@@ -107,15 +108,12 @@ val getSpeedDataFromSensor: (
                                 time = measurements.lastEvent,
                                 timeLast = last.lastEvent,
                                 delta = measurements.timestamp - last.timestamp
-                            ).takeIf { it.isFinite() }
+                            ).takeIf { it.isFinite() && last.rpm != 0f }
                                 ?.let { getUserSpeed(context, it * circumference!! / 60) }
                                 ?.let { speed ->
                                     val timestamp =
                                         (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
                                     entries.add(Entry(timestamp, speed))
-                                    /*(trendLast =
-                                        (trendAlpha * speed) + ((1 - trendAlpha) * trendLast)
-                                    trend.add(Entry(timestamp, trendLast))*/
                                     getTrendData(
                                         speed,
                                         trendAlpha,
