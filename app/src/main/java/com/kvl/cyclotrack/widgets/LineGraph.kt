@@ -47,7 +47,6 @@ class LineGraph(
         xScale: Float
     ): Path = Path().apply {
         moveTo(
-            //(dataset.xRange?.first ?: 0f) * xScale,
             0f,
             adjustCoordinateY(
                 height,
@@ -55,12 +54,10 @@ class LineGraph(
                 dataset.yRange?.first ?: 0f,
                 yScale
             )
-            //height.toFloat()
         )
         dataset.points.forEach { point ->
             lineTo(
                 point.first * xScale,
-                //height - (point.second * yScale) + ((dataset.yRange?.first ?: 0f) * yScale)
                 adjustCoordinateY(
                     height,
                     point.second,
@@ -78,32 +75,17 @@ class LineGraph(
         val greenPaint: Paint = Paint().apply {
             isAntiAlias = true
             isDither = true
-            style = Paint.Style.STROKE
+            style = Paint.Style.FILL_AND_STROKE
             strokeWidth = 5F
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
             setARGB(255, 255, 0, 0)
-        }
-        val borderPaint: Paint = Paint().apply {
-            isAntiAlias = true
-            isDither = true
-            style = Paint.Style.STROKE
-            strokeWidth = 2F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            setARGB(150, 0, 0, 0)
         }
         val width: Int = bounds.width()
         val height: Int = bounds.height()
 
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
-        /*adjustCoordinateY(
-            height,
-            dataset.points1.first().second,
-            dataset.yRange?.first ?: 0f,
-            yScale
-        )*/
         val path1 = getPath(
             height,
             LineGraphDataset(
