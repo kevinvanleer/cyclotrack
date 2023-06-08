@@ -1006,8 +1006,7 @@ fun validateCadence(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeas
     return !(didNotUpdate || didCadenceDeviceFail(current, previous))
 }
 
-fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
-    Log.d("getAverageCadenceTheHardWay", "called")
+fun getAverageCadenceTheHardWay(cadenceMeasurements: Array<CadenceSpeedMeasurement>): Float {
     var totalTime = 0L
     var totalRevs = 0
     var lastMeasurement: CadenceSpeedMeasurement? = null
@@ -1030,8 +1029,7 @@ fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasuremen
     return totalRevs.toFloat() / totalTime * 1024f * 60f
 }
 
-fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
-    Log.d("getAverageCadenceTheEasyWay", "called")
+fun getAverageCadenceTheEasyWay(cadenceMeasurements: Array<CadenceSpeedMeasurement>): Float {
     val totalRevs =
         getDifferenceRollover(
             cadenceMeasurements.last().revolutions,
@@ -1043,13 +1041,16 @@ fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CadenceSpeedMeasuremen
     return totalRevs.toFloat().div(duration)
 }
 
-fun getAverageCadence(measurements: Array<CadenceSpeedMeasurement>): Float? =
+fun getAverageCadenceFromRpm(measurements: Array<CadenceSpeedMeasurement>): Float? =
     try {
         measurements.mapNotNull { it.rpm }
             .average().toFloat()
     } catch (e: Exception) {
         null
     }
+
+fun getAverageCadence(measurements: Array<CadenceSpeedMeasurement>): Float? =
+    getAverageCadenceTheHardWay(measurements)
 
 fun getAcceleration(
     durationDelta: Double,
