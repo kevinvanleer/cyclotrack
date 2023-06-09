@@ -1436,10 +1436,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         )
                     }
                 }.let { lineData ->
-                    val xMin = lineData.entries.first().first
-                    val xMax = lineData.entries.last().first
-                    val yMin = lineData.entries.minBy { element -> element.second }.second
-                    val yMax = lineData.entries.maxBy { element -> element.second }.second
+                    val xMin = lineData.trend.first().first
+                    val xMax = lineData.trend.last().first
+                    val yMin = lineData.trend.minBy { element -> element.second }.second
+                    val yMax = lineData.trend.maxBy { element -> element.second }.second
+                    val dataMax = lineData.entries.maxBy { element -> element.second }.second
                     val yRangePadding = (yMax - yMin) * 0.2f
                     val yViewMin = max(yMin - yRangePadding, 0f)
                     val yViewMax = yMax + yRangePadding
@@ -1449,6 +1450,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val yAreaRangePadding = (yAreaMax - yAreaMin) * 0.2f
                     val yAreaViewMin = max(yAreaMin - yAreaRangePadding, 0f)
                     val yAreaViewMax = yAreaMax + yAreaRangePadding
+                    val dataMaxPadding = (dataMax - yMin) * 0.2f
 
                     speedChartView.setImageDrawable(LineGraph(
                         datasets = listOf(
@@ -1461,12 +1463,29 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 paint = strokeStyle
                             ),
                             LineGraphDataset(
-                                points = listOf(Entry(xMin, yMax), Entry(xMax, yMax)),
-                                label = "${yMax.roundToInt()} ${
+                                points = listOf(Entry(xMin, dataMax), Entry(xMax, dataMax)),
+                                label = String.format(
+                                    "%.1f %s",
+                                    dataMax,
                                     getUserSpeedUnitShort(
                                         requireContext()
                                     )
-                                }",
+                                ),
+                                xRange = Pair(xMin, xMax),
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                xAxisWidth = xMax - xMin,
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
+                                paint = referenceLineStyle
+                            ),
+                            LineGraphDataset(
+                                points = listOf(Entry(xMin, avgSpeed), Entry(xMax, avgSpeed)),
+                                label = String.format(
+                                    "%.1f %s",
+                                    avgSpeed,
+                                    getUserSpeedUnitShort(
+                                        requireContext()
+                                    )
+                                ),
                                 xRange = Pair(xMin, xMax),
                                 yRange = Pair(yViewMin, yViewMax),
                                 xAxisWidth = xMax - xMin,
@@ -1642,6 +1661,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val yAreaRangePadding = (yAreaMax - yAreaMin) * 0.2f
                 val yAreaViewMin = max(yAreaMin - yAreaRangePadding, 0f)
                 val yAreaViewMax = yAreaMax + yAreaRangePadding
+                val dataMaxPadding = (dataMax - yMin) * 0.2f
 
                 Log.d(logTag, "max hiData: ${hiData.maxBy { e -> e.second }.second}")
                 cadenceChartView.setImageDrawable(
@@ -1656,8 +1676,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 paint = strokeStyle
                             ),
                             LineGraphDataset(
-                                points = listOf(Entry(xMin, yMax), Entry(xMax, yMax)),
+                                points = listOf(Entry(xMin, dataMax), Entry(xMax, dataMax)),
                                 label = "${dataMax.roundToInt()} rpm",
+                                xRange = Pair(xMin, xMax),
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                xAxisWidth = xMax - xMin,
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
+                                paint = referenceLineStyle
+                            ),
+                            LineGraphDataset(
+                                points = listOf(Entry(xMin, avgCadence), Entry(xMax, avgCadence)),
+                                label = "${avgCadence.roundToInt()} rpm",
                                 xRange = Pair(xMin, xMax),
                                 yRange = Pair(yViewMin, yViewMax),
                                 xAxisWidth = xMax - xMin,
@@ -1722,7 +1751,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 return entries
             }
 
-            fun makeHeartRateLineChart() {
+            fun makeHeartRateLineChart(avgHeartRate: Short) {
                 val intervals = getTripIntervals(timeStates, hrmData)
                 val legs = getTripLegs(hrmData, intervals)
                 val data = ArrayList<Pair<Float, Float>>()
@@ -1765,6 +1794,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yAxisHeight = yViewMax - yViewMin,
                                 paint = referenceLineStyle
                             ),
+                            LineGraphDataset(
+                                points = listOf(
+                                    Entry(xMin, avgHeartRate.toFloat()),
+                                    Entry(xMax, avgHeartRate.toFloat())
+                                ),
+                                label = "$avgHeartRate bpm",
+                                xRange = Pair(xMin, xMax),
+                                yRange = Pair(yViewMin, yViewMax),
+                                xAxisWidth = xMax - xMin,
+                                yAxisHeight = yViewMax - yViewMin,
+                                paint = referenceLineStyle
+                            ),
                         )
                     )
                 )
@@ -1775,7 +1816,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 heartRateView.visibility = View.VISIBLE
                 heartRateChartView.visibility = View.VISIBLE
                 heartRateView.value = "$avgHeartRate bpm (average)"
-                makeHeartRateLineChart()
+                makeHeartRateLineChart(avgHeartRate)
             }
         }
     }
