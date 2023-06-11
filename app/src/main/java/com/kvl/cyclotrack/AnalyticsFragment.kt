@@ -654,9 +654,11 @@ class AnalyticsFragment : Fragment() {
     private fun doPopularRides(view: View) {
         val conversionFactor = getUserDistance(requireContext(), 1.0)
         viewModel.popularDistances(
-            conversionFactor,
-            Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
-                .minus(90, ChronoUnit.DAYS).toInstant().toEpochMilli()
+            conversionFactor = conversionFactor,
+            timestamp = Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
+                .minus(90, ChronoUnit.DAYS).toInstant().toEpochMilli(),
+            bucketSize = 5,
+            limit = 3
         )
             .observe(viewLifecycleOwner) { buckets ->
                 buckets.forEach { distance ->

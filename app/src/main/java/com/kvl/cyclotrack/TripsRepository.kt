@@ -82,8 +82,21 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     suspend fun getStravaUnsynced() = tripDao.loadStravaUnsyncedTrips()
 
     fun longestTrips(limit: Int = 10) = tripDao.longestTrips(limit)
-    fun mostPopularDistances(conversionFactor: Double, timestamp: Long = 0, limit: Int = 3) =
-        tripDao.getMostPopularDistances(conversionFactor, timestamp, limit)
+    fun mostPopularDistances(
+        conversionFactor: Double,
+        timestamp: Long = 0,
+        bucketSize: Int = 1,
+        limit: Int = 3
+    ) =
+        tripDao.getMostPopularDistances(conversionFactor, timestamp, bucketSize, limit)
+
+    fun tripsOfDistance(
+        distance: Int,
+        conversionFactor: Double,
+        bucketSize: Int = 1,
+        limit: Int = 3
+    ) =
+        tripDao.getTripsOfDistance(distance, conversionFactor, bucketSize, limit)
 
     fun observeTripTotals(start: Long, end: Long) = tripDao.subscribeTotals(start, end)
     fun observeTripTotals() = tripDao.subscribeTotals()

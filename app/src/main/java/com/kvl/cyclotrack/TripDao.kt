@@ -183,15 +183,21 @@ interface TripDao {
 
     //increment buckets by 5 (5,10,15 mi)
     //select round(round(distance * 0.000621371 - 0.5) / 5 - 0.5) * 5 as bucket, count(*) as count from trip where bucket > 0 and timestamp > 1654949524000 group by bucket order by count desc, bucket desc limit 10
-    @Query("select round(distance * :bucketFactor - 0.5) as bucket, count(*) as count from trip where bucket > 0 and timestamp > :timestamp group by bucket order by count desc, bucket desc limit :limit")
+    @Query("select round(round(distance * :bucketFactor - 0.5) / :bucketSize - 0.5) * :bucketSize as bucket, count(*) as count from trip where bucket > 0 and timestamp > :timestamp group by bucket order by count desc, bucket desc limit :limit")
     fun getMostPopularDistances(
         bucketFactor: Double,
         timestamp: Long,
-        limit: Int
+        bucketSize: Int,
+        limit: Int,
     ): LiveData<Array<DataBucket>>
 
-    @Query("select * from trip where round(distance * :bucketFactor - 0.5) = :distance order by averageSpeed desc limit :limit")
-    fun getTripsOfDistance(distance: Int, bucketFactor: Double, limit: Int): LiveData<Array<Trip>>
+    @Query("select * from trip where round(round(distance * :bucketFactor - 0.5) / :bucketSize - 0.5) * :bucketSize = :distance order by averageSpeed desc limit :limit")
+    fun getTripsOfDistance(
+        distance: Int,
+        bucketFactor: Double,
+        bucketSize: Int,
+        limit: Int
+    ): LiveData<Array<Trip>>
 
     @Query("select total(distance) as distance, total(duration) as duration, count(*) as count, ifnull(bike.name, 'Bike ' || bike.id) name from trip LEFT OUTER JOIN bike on bike.id = bikeId group by bikeId order by distance desc")
     fun subscribeBikeTotals(): LiveData<Array<BikeTotals>>

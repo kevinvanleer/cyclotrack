@@ -26,8 +26,16 @@ class AnalyticsViewModel @Inject constructor(
     suspend fun getTripTimeStates(tripId: Long) = timeStateRepository.getTimeStates(tripId)
 
     val bikeTotals = tripsRepository.observeBikeTotals()
-    fun popularDistances(conversionFactor: Double, timestamp: Long = 0, limit: Int = 3) =
-        tripsRepository.mostPopularDistances(conversionFactor, timestamp, limit)
+    fun popularDistances(
+        conversionFactor: Double,
+        timestamp: Long = 0,
+        bucketSize: Int = 1,
+        limit: Int = 3
+    ) =
+        tripsRepository.mostPopularDistances(conversionFactor, timestamp, bucketSize, limit)
+
+    fun tripsOfDistance(distance: Int, conversionFactor: Double, bucketSize: Int, limit: Int) =
+        tripsRepository.tripsOfDistance(distance, conversionFactor, bucketSize, limit)
 
     fun fastestDistance(distance: Int, conversionFactor: Double, limit: Int = 3) =
         splitRepository.observeFastestDistance(distance, conversionFactor, limit)
