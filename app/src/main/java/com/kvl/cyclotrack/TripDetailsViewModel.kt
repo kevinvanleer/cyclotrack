@@ -3,7 +3,11 @@ package com.kvl.cyclotrack
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurement
@@ -69,7 +73,7 @@ class TripDetailsViewModel @Inject constructor(
         }
     }
 
-    fun clearSplits() =
+    private fun clearSplits() =
         viewModelScope.launch {
             splitRepository.removeTripSplits(tripId)
         }
@@ -152,6 +156,17 @@ class TripDetailsViewModel @Inject constructor(
                             "Inserting post-trip computed splits in database"
                         )
                         splitRepository.addSplits(tripSplits.toTypedArray())
+
+                        tripSplits.last().let { lastSplit ->
+                            tripsRepository.updateTripStats(
+                                TripStats(
+                                    id = tripId,
+                                    distance = lastSplit.totalDistance,
+                                    duration = lastSplit.totalDuration,
+                                    averageSpeed = (lastSplit.totalDistance / lastSplit.totalDuration).toFloat()
+                                )
+                            )
+                        }
                     }
                     combined.removeObserver(this)
                 }
