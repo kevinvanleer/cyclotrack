@@ -35,6 +35,13 @@ class LineGraph(
     private val areas: List<LineGraphAreaDataset>? = null,
 ) : Drawable() {
 
+    private fun adjustCoordinate(
+        size: Int,
+        point: Float,
+        offset: Float,
+        scale: Float
+    ) = size - (point * scale) + offset * scale
+
     private fun adjustCoordinateY(
         height: Int,
         point: Float,
@@ -152,18 +159,26 @@ class LineGraph(
             this.flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
             this.textSize = 32f
             this.typeface = Typeface.DEFAULT
-            setARGB(100, 255, 255, 255)
+            setARGB(200, 255, 255, 255)
         }
         if (dataset.label != null) {
+            /*val dataLabelX = adjustCoordinate(
+                width,
+                dataset.points.last().first,
+                dataset.xRange?.first ?: 0f,
+                xScale
+            ) - 12f*/
+            val dataLabelX = width - 12f
+            val dataLabelY = adjustCoordinateY(
+                height,
+                dataset.points.last().second,
+                dataset.yRange?.first ?: 0f,
+                yScale
+            ) - 14f
             canvas.drawText(
                 dataset.label,
-                (dataset.points.last().first - 12) * xScale,
-                adjustCoordinateY(
-                    height,
-                    dataset.points.last().second,
-                    dataset.yRange?.first ?: 0f,
-                    yScale
-                ) - 14,
+                dataLabelX,
+                dataLabelY,
                 textPaint
             )
         }
