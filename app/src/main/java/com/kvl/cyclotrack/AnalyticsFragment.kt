@@ -532,7 +532,8 @@ class AnalyticsFragment : Fragment() {
                 yAxisHeight = yAxisHeight,
                 label = "${getUserDistance(requireContext(), yRangeLast.second).roundToInt()}",
                 paint = Paint(strokeStyle).apply {
-                    color = requireContext().getColor(R.color.secondaryDarkColor)
+                    strokeWidth = 2F
+                    setARGB(100, 255, 255, 255)
                 }
             ),
         )

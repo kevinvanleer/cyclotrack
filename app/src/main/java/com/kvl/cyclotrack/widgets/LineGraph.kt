@@ -159,15 +159,9 @@ class LineGraph(
             this.flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
             this.textSize = 32f
             this.typeface = Typeface.DEFAULT
-            setARGB(200, 255, 255, 255)
+            setARGB(150, 255, 255, 255)
         }
         if (dataset.label != null) {
-            /*val dataLabelX = adjustCoordinate(
-                width,
-                dataset.points.last().first,
-                dataset.xRange?.first ?: 0f,
-                xScale
-            ) - 12f*/
             val dataLabelX = width - 12f
             val dataLabelY = adjustCoordinateY(
                 height,

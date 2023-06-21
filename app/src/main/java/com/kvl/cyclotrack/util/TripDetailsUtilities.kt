@@ -170,14 +170,14 @@ val getSpeedDataFromGps: (
         var hiLast: Float? = null
         var loLast: Float? = null
 
-        measurements.forEach {
-            Log.v(logTag, "GPS speed: ${it.speed}")
+        measurements.forEach { measurement ->
+            Log.v(logTag, "GPS speed: ${measurement.speed}")
             val speed = getUserSpeed(
                 context,
-                it.speed.toDouble()
+                measurement.speed.toDouble()
             )
             val timestamp =
-                (accumulatedTime + (it.time - intervalStart) / 1e3).toFloat()
+                (accumulatedTime + (measurement.time - intervalStart) / 1e3).toFloat()
             entries.add(Entry(timestamp, speed))
             getTrendData(
                 speed,
@@ -212,14 +212,25 @@ fun getTrendData(
 ): Triple<Float, Float?, Float?> {
     var hi: Float? = null
     var lo: Float? = null
+    val alpha2: Float
+    val alphaHi = 1f
+    val alphaLo = 0.02f
     val trend =
         (alpha * yValue) + ((1 - alpha) * (trendLast
             ?: yValue))
     if (yValue >= average) {
-        hi = (alpha * yValue) + ((1 - alpha) * (hiLast
+        alpha2 = when (yValue > (hiLast ?: average)) {
+            true -> alphaHi
+            else -> alphaLo
+        }
+        hi = (alpha2 * yValue) + ((1 - alpha2) * (hiLast
             ?: yValue))
     } else {
-        lo = (alpha * yValue) + ((1 - alpha) * (loLast
+        alpha2 = when (yValue < (loLast ?: average)) {
+            true -> alphaHi
+            else -> alphaLo
+        }
+        lo = (alpha2 * yValue) + ((1 - alpha2) * (loLast
             ?: yValue))
     }
     return Triple(

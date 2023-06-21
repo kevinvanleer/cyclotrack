@@ -423,19 +423,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val cadenceChartView: ImageView = view.findViewById(R.id.trip_details_cadence_chart)
         val cadenceHeadingView: HeadingView = view.findViewById(R.id.trip_details_cadence)
 
-        val trendStyle = Paint().apply {
-            isAntiAlias = true
-            isDither = true
-            style = Paint.Style.STROKE
-            strokeWidth = 5F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            color = ResourcesCompat.getColor(
-                resources,
-                R.color.secondaryGraphColor,
-                null
-            )
-        }
         val strokeStyle = Paint().apply {
             isAntiAlias = true
             isDither = true
@@ -449,14 +436,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 null
             )
         }
-
-        val referenceLineStyle = Paint().apply {
-            isAntiAlias = true
-            isDither = true
-            style = Paint.Style.STROKE
+        val trendStyle = Paint(strokeStyle).apply {
+            color = ResourcesCompat.getColor(
+                resources,
+                R.color.secondaryGraphColor,
+                null
+            )
+        }
+        val referenceLineStyle = Paint(strokeStyle).apply {
             strokeWidth = 2F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
             setARGB(100, 255, 255, 255)
         }
 
@@ -646,6 +634,20 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     elevationChartView.setImageDrawable(
                         LineGraph(
+                            areas = listOf(
+                                LineGraphAreaDataset(
+                                    points1 = data.toList(),
+                                    points2 = listOf(Entry(xMin, yViewMin), Entry(xMax, yViewMin)),
+                                    xRange = Pair(xMin, xMax),
+                                    yRange = Pair(yViewMin, yViewMax),
+                                    xAxisWidth = xMax - xMin,
+                                    yAxisHeight = yViewMax - yViewMin,
+                                    paint = Paint(strokeStyle).apply {
+                                        style = Paint.Style.FILL_AND_STROKE
+                                        alpha = 50
+                                    }
+                                )
+                            ),
                             datasets = listOf(
                                 LineGraphDataset(
                                     points = data.toList(),
@@ -1443,13 +1445,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     val dataMax = lineData.entries.maxBy { element -> element.second }.second
                     val yRangePadding = (yMax - yMin) * 0.2f
                     val yViewMin = max(yMin - yRangePadding, 0f)
-                    val yViewMax = yMax + yRangePadding
 
-                    val yAreaMin = lineData.lo.minBy { element -> element.second }.second
-                    val yAreaMax = lineData.hi.maxBy { element -> element.second }.second
-                    val yAreaRangePadding = (yAreaMax - yAreaMin) * 0.2f
-                    val yAreaViewMin = max(yAreaMin - yAreaRangePadding, 0f)
-                    val yAreaViewMax = yAreaMax + yAreaRangePadding
                     val dataMaxPadding = (dataMax - yMin) * 0.2f
 
                     speedChartView.setImageDrawable(LineGraph(
@@ -1457,9 +1453,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             LineGraphDataset(
                                 points = lineData.trend.toList(),
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
                                 xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = strokeStyle
                             ),
                             LineGraphDataset(
@@ -1472,8 +1468,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     )
                                 ),
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
                                 xAxisWidth = xMax - xMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = referenceLineStyle
                             ),
@@ -1487,9 +1483,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     )
                                 ),
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
                                 xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = referenceLineStyle
                             ),
                         ),
@@ -1498,16 +1494,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 points1 = lineData.hi.toList(),
                                 points2 = lineData.lo.toList(),
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yAreaViewMin, yAreaViewMax),
                                 xAxisWidth = xMax - xMin,
-                                yAxisHeight = yAreaViewMax - yAreaViewMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             ),
                         )
                     ))
                 }
-
-                //speedChartView.invalidate()
             }
 
             if (observed != null) {
@@ -1654,13 +1648,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val dataMax = rawData.maxBy { element -> element.second }.second
                 val yRangePadding = (yMax - yMin) * 0.2f
                 val yViewMin = max(yMin - yRangePadding, 0f)
-                val yViewMax = yMax + yRangePadding
 
-                val yAreaMin = loData.minBy { element -> element.second }.second
-                val yAreaMax = hiData.maxBy { element -> element.second }.second
-                val yAreaRangePadding = (yAreaMax - yAreaMin) * 0.2f
-                val yAreaViewMin = max(yAreaMin - yAreaRangePadding, 0f)
-                val yAreaViewMax = yAreaMax + yAreaRangePadding
                 val dataMaxPadding = (dataMax - yMin) * 0.2f
 
                 Log.d(logTag, "max hiData: ${hiData.maxBy { e -> e.second }.second}")
@@ -1670,17 +1658,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             LineGraphDataset(
                                 points = trendData.toList(),
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
                                 xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = strokeStyle
                             ),
                             LineGraphDataset(
                                 points = listOf(Entry(xMin, dataMax), Entry(xMax, dataMax)),
                                 label = "${dataMax.roundToInt()} rpm",
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
                                 xAxisWidth = xMax - xMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = referenceLineStyle
                             ),
@@ -1688,9 +1676,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 points = listOf(Entry(xMin, avgCadence), Entry(xMax, avgCadence)),
                                 label = "${avgCadence.roundToInt()} rpm",
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
                                 xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = referenceLineStyle
                             ),
                         ),
@@ -1699,9 +1687,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 points1 = hiData.toList(),
                                 points2 = loData.toList(),
                                 xRange = Pair(xMin, xMax),
-                                yRange = Pair(yAreaViewMin, yAreaViewMax),
                                 xAxisWidth = xMax - xMin,
-                                yAxisHeight = yAreaViewMax - yAreaViewMin,
+                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             ),
                         )
