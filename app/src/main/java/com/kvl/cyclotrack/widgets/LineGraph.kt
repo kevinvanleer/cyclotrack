@@ -70,7 +70,7 @@ class LineGraph(
     }
     private val textPaintStroke = Paint(textPaintFill).apply {
         style = Paint.Style.STROKE
-        strokeWidth = 12f
+        strokeWidth = 6f
     }
 
     private val gridPaint = Paint().apply {
