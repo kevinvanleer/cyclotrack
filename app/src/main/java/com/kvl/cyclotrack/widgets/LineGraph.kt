@@ -34,8 +34,15 @@ data class LineGraphDataset(
 data class AxisLabels(
     val labels: List<Pair<Float, String>>,
     val range: Pair<Float, Float>? = null,
-    val lines: Boolean = false
+    val lines: Boolean = false,
+    val orientation: AxisLabelOrientation = AxisLabelOrientation.INSIDE
 )
+
+enum class AxisLabelOrientation(val value: Int) {
+    INSIDE(0),
+    RIGHT(1),
+    LEFT(2)
+}
 
 class LineGraph(
     private val datasets: List<LineGraphDataset>,
@@ -45,15 +52,17 @@ class LineGraph(
 ) : Drawable() {
 
     private val textPaintFill = Paint().apply {
-        this.textAlign = Paint.Align.LEFT
-        this.flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
-        this.textSize = 32f
-        this.typeface = Typeface.DEFAULT
+        textAlign = Paint.Align.LEFT
+        flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
+        textSize = 32f
+        typeface = Typeface.DEFAULT
         setARGB(255, 200, 200, 200)
     }
     private val textPaintStroke = Paint(textPaintFill).apply {
+        isAntiAlias = true
+        isDither = true
         style = Paint.Style.STROKE
-        strokeWidth = 4F
+        strokeWidth = 12f
         setARGB(255, 0, 0, 0)
     }
 
@@ -253,7 +262,9 @@ class LineGraph(
     override fun draw(canvas: Canvas) {
         //drawBorder(canvas)
         val width: Int =
-            bounds.width() - if (yLabels != null) getYLabelWidth(yLabels.labels).toInt() else 0
+            bounds.width() - if (yLabels != null && yLabels.orientation != AxisLabelOrientation.INSIDE) getYLabelWidth(
+                yLabels.labels
+            ).toInt() else 0
         val height: Int = bounds.height() - if (xLabels != null) 200 else 0
 
         areas?.forEach { area ->
@@ -281,14 +292,22 @@ class LineGraph(
     private fun drawYLabels(canvas: Canvas, yLabels: AxisLabels, width: Int, height: Int) {
         val yScale = height / ((yLabels.range?.second ?: 0f) - (yLabels.range?.first ?: 0f))
         yLabels.labels.forEach { label ->
-            val dataLabelX = width + 16f
+            val dataLabelX = when (yLabels.orientation) {
+                AxisLabelOrientation.RIGHT -> width + 16f
+                else -> width - textPaintFill.measureText(label.second) - 16f
+            }
             val dataLabelY = adjustCoordinateY(
                 height,
                 label.first,
                 yLabels.range?.first ?: 0f,
                 yScale
-            ) - getTextMiddle(textPaintFill, label.second)
-            canvas.drawText(
+            ) - when (yLabels.orientation) {
+                AxisLabelOrientation.RIGHT ->
+                    getTextMiddle(textPaintFill, label.second)
+
+                else -> 14f
+            }
+            if (yLabels.orientation == AxisLabelOrientation.INSIDE) canvas.drawText(
                 label.second,
                 dataLabelX,
                 dataLabelY,
