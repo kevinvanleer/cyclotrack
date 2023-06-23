@@ -381,7 +381,6 @@ class AnalyticsFragment : Fragment() {
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
-            isDither = true
             style = Paint.Style.STROKE
             strokeWidth = 5F
             strokeCap = Paint.Cap.ROUND
@@ -502,7 +501,6 @@ class AnalyticsFragment : Fragment() {
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
-            isDither = true
             style = Paint.Style.STROKE
             strokeWidth = 5F
             strokeCap = Paint.Cap.ROUND

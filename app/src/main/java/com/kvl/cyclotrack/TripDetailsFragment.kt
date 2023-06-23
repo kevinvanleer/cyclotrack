@@ -431,7 +431,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
-            isDither = true
             style = Paint.Style.STROKE
             strokeWidth = 5F
             strokeCap = Paint.Cap.ROUND
