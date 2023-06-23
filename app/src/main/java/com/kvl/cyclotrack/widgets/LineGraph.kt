@@ -62,15 +62,13 @@ class LineGraph(
     }
 
     private val textPaintFill = Paint().apply {
+        isAntiAlias = true
         textAlign = Paint.Align.LEFT
-        flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
         textSize = 32f
         typeface = Typeface.DEFAULT
         setARGB(255, 200, 200, 200)
     }
     private val textPaintStroke = Paint(textPaintFill).apply {
-        isAntiAlias = true
-        isDither = true
         style = Paint.Style.STROKE
         strokeWidth = 12f
     }
