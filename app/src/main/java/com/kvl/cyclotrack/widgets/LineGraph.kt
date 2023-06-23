@@ -52,6 +52,14 @@ class LineGraph(
     private val xLabels: AxisLabels? = null,
     private val yLabels: AxisLabels? = null
 ) : Drawable() {
+    private val greenPaint: Paint = Paint().apply {
+        isAntiAlias = true
+        style = Paint.Style.STROKE
+        strokeWidth = 5F
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        setARGB(255, 255, 0, 0)
+    }
 
     private val textPaintFill = Paint().apply {
         textAlign = Paint.Align.LEFT
@@ -125,15 +133,6 @@ class LineGraph(
         width: Int,
         height: Int,
     ) {
-        val greenPaint: Paint = Paint().apply {
-            isAntiAlias = true
-            isDither = true
-            style = Paint.Style.FILL_AND_STROKE
-            strokeWidth = 5F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            setARGB(255, 255, 0, 0)
-        }
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
         val path1 = getPath(
@@ -170,7 +169,6 @@ class LineGraph(
         )
         path1.op(path2, Path.Op.INTERSECT)
         canvas.drawPath(path1, dataset.paint ?: greenPaint)
-
     }
 
     private fun drawPath(
@@ -179,16 +177,6 @@ class LineGraph(
         width: Int,
         height: Int,
     ) {
-        val greenPaint: Paint = Paint().apply {
-            isAntiAlias = true
-            isDither = true
-            style = Paint.Style.STROKE
-            strokeWidth = 5F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            setARGB(255, 255, 0, 0)
-        }
-
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
         canvas.drawPath(
