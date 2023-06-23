@@ -1469,14 +1469,16 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             labels = listOf(
                                 Pair(
                                     dataMax, String.format(
-                                        "%.1f",
-                                        dataMax
+                                        "%.1f %s",
+                                        dataMax,
+                                        getUserSpeedUnitShort(requireContext())
                                     )
                                 ),
                                 Pair(
                                     avgSpeed, String.format(
-                                        "%.1f",
-                                        avgSpeed
+                                        "%.1f %s",
+                                        avgSpeed,
+                                        getUserSpeedUnitShort(requireContext())
                                     )
                                 )
                             ),
@@ -1749,8 +1751,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         ),
                         yLabels = AxisLabels(
                             labels = listOf(
-                                Pair(yMax, "${yMax.roundToInt()}"),
-                                Pair(avgHeartRate.toFloat(), "$avgHeartRate")
+                                Pair(yMax, "${yMax.roundToInt()} bpm"),
+                                Pair(avgHeartRate.toFloat(), "$avgHeartRate bpm")
                             ),
                             range = Pair(yViewMin, yViewMax),
                             lines = true,
