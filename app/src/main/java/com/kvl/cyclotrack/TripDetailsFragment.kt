@@ -62,6 +62,7 @@ import com.kvl.cyclotrack.util.getSpeedDataFromSensor
 import com.kvl.cyclotrack.util.getTrendData
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.useBleSpeedData
+import com.kvl.cyclotrack.widgets.AxisLabelOrientation
 import com.kvl.cyclotrack.widgets.AxisLabels
 import com.kvl.cyclotrack.widgets.Entry
 import com.kvl.cyclotrack.widgets.HeadingView
@@ -444,11 +445,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 null
             )
         }
-        val referenceLineStyle = Paint(strokeStyle).apply {
-            strokeWidth = 2F
-            setARGB(100, 255, 255, 255)
-        }
-
 
         scrollView = view.findViewById(R.id.trip_details_scroll_view)
 
@@ -476,17 +472,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 heartRateHeadingView,
                 heartRateChartView,
                 strokeStyle,
-                referenceLineStyle
             )
             observeCadence(
                 cadenceHeadingView,
                 cadenceChartView,
                 strokeStyle,
                 trendStyle,
-                referenceLineStyle
             )
 
-            observeSpeed(speedChartView, strokeStyle, trendStyle, referenceLineStyle)
+            observeSpeed(speedChartView, strokeStyle, trendStyle)
 
             viewModel.tripOverview.observe(viewLifecycleOwner) { overview ->
                 if (overview != null) {
@@ -658,30 +652,27 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     yAxisHeight = yViewMax - yViewMin,
                                     paint = strokeStyle
                                 ),
-                                LineGraphDataset(
-                                    points = listOf(Entry(xMin, yMin), Entry(xMax, yMin)),
-                                    label = "${yMin.roundToInt()} ${
-                                        getUserAltitudeUnitShort(
-                                            requireContext()
-                                        )
-                                    }",
-                                    xRange = Pair(xMin, xMax),
-                                    yRange = Pair(yViewMin, yViewMax),
-                                    xAxisWidth = xMax - xMin,
-                                    yAxisHeight = yViewMax - yViewMin,
-                                    paint = referenceLineStyle
-                                ),
-                                LineGraphDataset(
-                                    points = listOf(Entry(xMin, yMax), Entry(xMax, yMax)),
-                                    label = yMax.roundToInt().toString() + getUserAltitudeUnitShort(
-                                        requireContext()
+                            ),
+                            yLabels = AxisLabels(
+                                labels = listOf(
+                                    Pair(
+                                        yMin, "${yMin.roundToInt()} ${
+                                            getUserAltitudeUnitShort(
+                                                requireContext()
+                                            )
+                                        }"
                                     ),
-                                    xRange = Pair(xMin, xMax),
-                                    yRange = Pair(yViewMin, yViewMax),
-                                    xAxisWidth = xMax - xMin,
-                                    yAxisHeight = yViewMax - yViewMin,
-                                    paint = referenceLineStyle
+                                    Pair(
+                                        yMax, "${yMax.roundToInt()} ${
+                                            getUserAltitudeUnitShort(
+                                                requireContext()
+                                            )
+                                        }"
+                                    )
                                 ),
+                                range = Pair(yViewMin, yViewMax),
+                                lines = true,
+                                orientation = AxisLabelOrientation.INSIDE
                             )
                         )
                     )
@@ -1284,7 +1275,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         speedChartView: ImageView,
         strokeStyle: Paint,
         trendStyle: Paint,
-        referenceLineStyle: Paint
     ) {
         viewModel.speedLiveData().observe(
             viewLifecycleOwner
@@ -1459,36 +1449,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = strokeStyle
                             ),
-                            /*LineGraphDataset(
-                                points = listOf(Entry(xMin, dataMax), Entry(xMax, dataMax)),
-                                label = String.format(
-                                    "%.1f %s",
-                                    dataMax,
-                                    getUserSpeedUnitShort(
-                                        requireContext()
-                                    )
-                                ),
-                                xRange = Pair(xMin, xMax),
-                                xAxisWidth = xMax - xMin,
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
-                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
-                                paint = referenceLineStyle
-                            ),
-                            LineGraphDataset(
-                                points = listOf(Entry(xMin, avgSpeed), Entry(xMax, avgSpeed)),
-                                label = String.format(
-                                    "%.1f %s",
-                                    avgSpeed,
-                                    getUserSpeedUnitShort(
-                                        requireContext()
-                                    )
-                                ),
-                                xRange = Pair(xMin, xMax),
-                                xAxisWidth = xMax - xMin,
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
-                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
-                                paint = referenceLineStyle
-                            ),*/
                         ),
                         areas = listOf(
                             LineGraphAreaDataset(
@@ -1539,7 +1499,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         cadenceChartView: ImageView,
         strokeStyle: Paint,
         trendStyle: Paint,
-        referenceLineStyle: Paint
     ) {
         zipLiveData(viewModel.cadenceMeasurements, viewModel.timeState).observe(
             viewLifecycleOwner
@@ -1682,24 +1641,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = strokeStyle
                             ),
-                            LineGraphDataset(
-                                points = listOf(Entry(xMin, dataMax), Entry(xMax, dataMax)),
-                                label = "${dataMax.roundToInt()} rpm",
-                                xRange = Pair(xMin, xMax),
-                                xAxisWidth = xMax - xMin,
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
-                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
-                                paint = referenceLineStyle
-                            ),
-                            LineGraphDataset(
-                                points = listOf(Entry(xMin, avgCadence), Entry(xMax, avgCadence)),
-                                label = "${avgCadence.roundToInt()} rpm",
-                                xRange = Pair(xMin, xMax),
-                                xAxisWidth = xMax - xMin,
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
-                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
-                                paint = referenceLineStyle
-                            ),
                         ),
                         areas = listOf(
                             LineGraphAreaDataset(
@@ -1711,6 +1652,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             ),
+                        ),
+                        yLabels = AxisLabels(
+                            labels = listOf(
+                                Pair(dataMax, "${dataMax.roundToInt()} rpm"),
+                                Pair(avgCadence, "${avgCadence.roundToInt()} rpm")
+                            ),
+                            range = Pair(yViewMin, dataMax + dataMaxPadding),
+                            lines = true,
+                            orientation = AxisLabelOrientation.INSIDE
                         )
                     )
                 )
@@ -1733,7 +1683,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         heartRateView: HeadingView,
         heartRateChartView: ImageView,
         strokeStyle: Paint,
-        referenceLineStyle: Paint
     ) {
         zipLiveData(viewModel.heartRateMeasurements, viewModel.timeState).observe(
             viewLifecycleOwner

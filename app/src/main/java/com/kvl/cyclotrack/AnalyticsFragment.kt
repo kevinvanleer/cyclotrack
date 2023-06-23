@@ -17,6 +17,7 @@ import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
 import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import com.kvl.cyclotrack.widgets.AnalyticsCard
+import com.kvl.cyclotrack.widgets.AxisLabelOrientation
 import com.kvl.cyclotrack.widgets.AxisLabels
 import com.kvl.cyclotrack.widgets.LineGraph
 import com.kvl.cyclotrack.widgets.LineGraphDataset
@@ -536,7 +537,8 @@ class AnalyticsFragment : Fragment() {
                     )
                 ),
                 range = Pair(0f, yAxisHeight),
-                lines = true
+                lines = true,
+                orientation = AxisLabelOrientation.INSIDE
             )
         )
     }
