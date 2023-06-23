@@ -274,7 +274,8 @@ class AnalyticsFragment : Fragment() {
                 thisPeriodStart,
                 thisPeriodEnd,
                 lastPeriodStart,
-                lastPeriodEnd
+                lastPeriodEnd,
+                card.cardBackgroundColor.defaultColor
             )
         )
     }
@@ -426,7 +427,8 @@ class AnalyticsFragment : Fragment() {
         thisMonthStart: ZonedDateTime,
         thisMonthEnd: ZonedDateTime,
         lastMonthStart: ZonedDateTime,
-        lastMonthEnd: ZonedDateTime
+        lastMonthEnd: ZonedDateTime,
+        backgroundColor: Int
     ) =
         ImageView(requireContext()).apply {
             layoutParams =
@@ -453,6 +455,7 @@ class AnalyticsFragment : Fragment() {
                     Pair(lastMonthStart, lastMonthEnd),
                     it.first,
                     it.second,
+                    backgroundColor
                 ).let { graph -> setImageDrawable(graph) }
             }
         }
@@ -461,7 +464,8 @@ class AnalyticsFragment : Fragment() {
         thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
         lastPeriod: Pair<ZonedDateTime, ZonedDateTime>,
         thisPeriodPoints: Array<Trip>,
-        lastPeriodPoints: Array<Trip>
+        lastPeriodPoints: Array<Trip>,
+        backgroundColor: Int
     ): LineGraph {
         val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
             thisPeriodPoints.plus(
@@ -538,7 +542,8 @@ class AnalyticsFragment : Fragment() {
                 ),
                 range = Pair(0f, yAxisHeight),
                 lines = true,
-                orientation = AxisLabelOrientation.INSIDE
+                orientation = AxisLabelOrientation.INSIDE,
+                background = backgroundColor
             )
         )
     }

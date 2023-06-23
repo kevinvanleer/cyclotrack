@@ -1,6 +1,7 @@
 package com.kvl.cyclotrack.widgets
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
@@ -35,7 +36,8 @@ data class AxisLabels(
     val labels: List<Pair<Float, String>>,
     val range: Pair<Float, Float>? = null,
     val lines: Boolean = false,
-    val orientation: AxisLabelOrientation = AxisLabelOrientation.INSIDE
+    val orientation: AxisLabelOrientation = AxisLabelOrientation.INSIDE,
+    val background: Int = Color.TRANSPARENT
 )
 
 enum class AxisLabelOrientation(val value: Int) {
@@ -63,7 +65,6 @@ class LineGraph(
         isDither = true
         style = Paint.Style.STROKE
         strokeWidth = 12f
-        setARGB(255, 0, 0, 0)
     }
 
     private val gridPaint = Paint().apply {
@@ -311,7 +312,7 @@ class LineGraph(
                 label.second,
                 dataLabelX,
                 dataLabelY,
-                textPaintStroke
+                Paint(textPaintStroke).apply { color = yLabels.background }
             )
             canvas.drawText(
                 label.second,

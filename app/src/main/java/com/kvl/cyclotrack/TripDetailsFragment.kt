@@ -361,20 +361,24 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             if (weathers.isNotEmpty()) {
                 temperatureIcon.visibility = View.VISIBLE
                 temperatureText.visibility = View.VISIBLE
-                temperatureText.text = "${
-                    getUserTemperature(
-                        requireContext(),
-                        weathers.map { it.temperature }.average()
-                    )
-                } ${getUserTemperatureUnit(requireContext())}"
+                temperatureText.text = String(
+                    "${
+                        getUserTemperature(
+                            requireContext(),
+                            weathers.map { it.temperature }.average()
+                        )
+                    } ${getUserTemperatureUnit(requireContext())}".toCharArray()
+                )
 
                 windIcon.visibility = View.VISIBLE
                 windText.visibility = View.VISIBLE
                 weathers.getAverageWind().let { wind ->
-                    windText.text = "%.1f %s %s".format(
-                        getUserSpeed(requireContext(), wind.first),
-                        getUserSpeedUnitShort(requireContext()),
-                        degreesToCardinal(wind.second.toFloat())
+                    windText.text = String(
+                        "%.1f %s %s".format(
+                            getUserSpeed(requireContext(), wind.first),
+                            getUserSpeedUnitShort(requireContext()),
+                            degreesToCardinal(wind.second.toFloat())
+                        ).toCharArray()
                     )
                 }
             }
@@ -672,6 +676,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 ),
                                 range = Pair(yViewMin, yViewMax),
                                 lines = true,
+                                background = Color.BLACK,
                                 orientation = AxisLabelOrientation.INSIDE
                             )
                         )
@@ -1330,7 +1335,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         allData.lo.addAll(it.lo)
                     }
                 }
-                return allData;
+                return allData
             }
 
             fun observeBleSpeed(
@@ -1477,7 +1482,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 )
                             ),
                             range = Pair(yViewMin, dataMax + dataMaxPadding),
-                            lines = true
+                            lines = true,
+                            background = Color.BLACK
                         )
                     ))
                 }
@@ -1660,6 +1666,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ),
                             range = Pair(yViewMin, dataMax + dataMaxPadding),
                             lines = true,
+                            background = Color.BLACK,
                             orientation = AxisLabelOrientation.INSIDE
                         )
                     )
@@ -1723,8 +1730,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val xMin = data.first().first
                 val xMax = data.last().first
-                var yMin = data.minBy { element -> element.second }.second
-                var yMax = data.maxBy { element -> element.second }.second
+                val yMin = data.minBy { element -> element.second }.second
+                val yMax = data.maxBy { element -> element.second }.second
                 val yRangePadding = (yMax - yMin) * 0.2f
                 val yViewMin = max(yMin - yRangePadding, 0f)
                 val yViewMax = yMax + yRangePadding
@@ -1747,7 +1754,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 Pair(avgHeartRate.toFloat(), "$avgHeartRate")
                             ),
                             range = Pair(yViewMin, yViewMax),
-                            lines = true
+                            lines = true,
+                            background = Color.BLACK
                         )
                     )
                 )
