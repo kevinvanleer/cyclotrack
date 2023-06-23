@@ -17,7 +17,7 @@ import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
 import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import com.kvl.cyclotrack.widgets.AnalyticsCard
-import com.kvl.cyclotrack.widgets.Entry
+import com.kvl.cyclotrack.widgets.AxisLabels
 import com.kvl.cyclotrack.widgets.LineGraph
 import com.kvl.cyclotrack.widgets.LineGraphDataset
 import com.kvl.cyclotrack.widgets.TableColumn
@@ -353,7 +353,13 @@ class AnalyticsFragment : Fragment() {
                     getSpeedGraphProps(
                         Pair(thisMonthStart, thisMonthEnd),
                         it,
-                    ).let { datasets -> setImageDrawable(LineGraph(listOf(datasets))) }
+                    ).let { datasets ->
+                        setImageDrawable(
+                            LineGraph(
+                                datasets = listOf(datasets),
+                            )
+                        )
+                    }
                 }
         }
 
@@ -441,21 +447,21 @@ class AnalyticsFragment : Fragment() {
                     lastMonthEnd.toInstant().toEpochMilli()
                 )
             ).observe(viewLifecycleOwner) {
-                getDistanceComparisonGraphProps(
+                getDistanceComparisonGraph(
                     Pair(thisMonthStart, thisMonthEnd),
                     Pair(lastMonthStart, lastMonthEnd),
                     it.first,
                     it.second,
-                ).let { datasets -> setImageDrawable(LineGraph(datasets)) }
+                ).let { graph -> setImageDrawable(graph) }
             }
         }
 
-    private fun getDistanceComparisonGraphProps(
+    private fun getDistanceComparisonGraph(
         thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
         lastPeriod: Pair<ZonedDateTime, ZonedDateTime>,
         thisPeriodPoints: Array<Trip>,
         lastPeriodPoints: Array<Trip>
-    ): List<LineGraphDataset> {
+    ): LineGraph {
         val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
             thisPeriodPoints.plus(
                 Trip(
@@ -497,7 +503,7 @@ class AnalyticsFragment : Fragment() {
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
         }
-        return listOf(
+        val datasets = listOf(
             LineGraphDataset(
                 points = lastPoints,
                 xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
@@ -518,24 +524,20 @@ class AnalyticsFragment : Fragment() {
                     color = requireContext().getColor(R.color.primaryDarkColor)
                 }
             ),
-            LineGraphDataset(
-                points = listOf(
-                    Entry(xRangeLast.first.toFloat(), yRangeLast.second.toFloat()),
-                    Entry(xRangeLast.second.toFloat(), yRangeLast.second.toFloat()),
+        )
+
+        return LineGraph(
+            datasets = datasets,
+            yLabels = AxisLabels(
+                labels = listOf(
+                    Pair(
+                        yRangeLast.second.toFloat(),
+                        "${getUserDistance(requireContext(), yRangeLast.second).roundToInt()}"
+                    )
                 ),
-                xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
-                yRange = Pair(
-                    yRangeThis.first.toFloat(),
-                    yRangeThis.second.toFloat()
-                ),
-                xAxisWidth = xAxisWidth,
-                yAxisHeight = yAxisHeight,
-                label = "${getUserDistance(requireContext(), yRangeLast.second).roundToInt()}",
-                paint = Paint(strokeStyle).apply {
-                    strokeWidth = 2F
-                    setARGB(100, 255, 255, 255)
-                }
-            ),
+                range = Pair(0f, yAxisHeight),
+                lines = true
+            )
         )
     }
 

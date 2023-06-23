@@ -5,6 +5,7 @@ import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 
@@ -30,10 +31,41 @@ data class LineGraphDataset(
     val label: String? = null,
 )
 
+data class AxisLabels(
+    val labels: List<Pair<Float, String>>,
+    val range: Pair<Float, Float>? = null,
+    val lines: Boolean = false
+)
+
 class LineGraph(
     private val datasets: List<LineGraphDataset>,
     private val areas: List<LineGraphAreaDataset>? = null,
+    private val xLabels: AxisLabels? = null,
+    private val yLabels: AxisLabels? = null
 ) : Drawable() {
+
+    private val textPaintFill = Paint().apply {
+        this.textAlign = Paint.Align.LEFT
+        this.flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
+        this.textSize = 32f
+        this.typeface = Typeface.DEFAULT
+        setARGB(255, 200, 200, 200)
+    }
+    private val textPaintStroke = Paint(textPaintFill).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 4F
+        setARGB(255, 0, 0, 0)
+    }
+
+    private val gridPaint = Paint().apply {
+        isAntiAlias = true
+        isDither = true
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+        strokeWidth = 2F
+        setARGB(100, 255, 255, 255)
+    }
 
     private fun adjustCoordinate(
         size: Int,
@@ -79,7 +111,9 @@ class LineGraph(
 
     private fun drawArea(
         canvas: Canvas,
-        dataset: LineGraphAreaDataset
+        dataset: LineGraphAreaDataset,
+        width: Int,
+        height: Int,
     ) {
         val greenPaint: Paint = Paint().apply {
             isAntiAlias = true
@@ -90,9 +124,6 @@ class LineGraph(
             strokeJoin = Paint.Join.ROUND
             setARGB(255, 255, 0, 0)
         }
-        val width: Int = bounds.width()
-        val height: Int = bounds.height()
-
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
         val path1 = getPath(
@@ -134,7 +165,9 @@ class LineGraph(
 
     private fun drawPath(
         canvas: Canvas,
-        dataset: LineGraphDataset
+        dataset: LineGraphDataset,
+        width: Int,
+        height: Int,
     ) {
         val greenPaint: Paint = Paint().apply {
             isAntiAlias = true
@@ -146,21 +179,14 @@ class LineGraph(
             setARGB(255, 255, 0, 0)
         }
 
-        val width: Int = bounds.width()
-        val height: Int = bounds.height()
-
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
         canvas.drawPath(
             getPath(height, dataset, yScale, xScale), dataset.paint ?: greenPaint
         )
-        val textPaint = Paint().apply {
-            this.textAlign = Paint.Align.RIGHT
-            this.flags = Paint.SUBPIXEL_TEXT_FLAG and Paint.LINEAR_TEXT_FLAG
-            this.textSize = 32f
-            this.typeface = Typeface.DEFAULT
-            setARGB(150, 255, 255, 255)
-        }
+
+        val fill = Paint(textPaintFill).apply { textAlign = Paint.Align.RIGHT }
+        val stroke = Paint(textPaintStroke).apply { textAlign = Paint.Align.RIGHT }
         if (dataset.label != null) {
             val dataLabelX = width - 12f
             val dataLabelY = adjustCoordinateY(
@@ -173,7 +199,13 @@ class LineGraph(
                 dataset.label,
                 dataLabelX,
                 dataLabelY,
-                textPaint
+                stroke
+            )
+            canvas.drawText(
+                dataset.label,
+                dataLabelX,
+                dataLabelY,
+                fill
             )
         }
     }
@@ -220,18 +252,85 @@ class LineGraph(
 
     override fun draw(canvas: Canvas) {
         //drawBorder(canvas)
+        val width: Int =
+            bounds.width() - if (yLabels != null) getYLabelWidth(yLabels.labels).toInt() else 0
+        val height: Int = bounds.height() - if (xLabels != null) 200 else 0
+
         areas?.forEach { area ->
             drawArea(
                 canvas,
-                area
+                area,
+                width,
+                height,
             )
         }
         datasets.forEach { dataset ->
             drawPath(
                 canvas,
-                dataset
+                dataset,
+                width,
+                height,
             )
         }
+        if (yLabels != null) drawYLabels(canvas, yLabels, width, height)
+    }
+
+    private fun getYLabelWidth(labels: List<Pair<Float, String>>): Float =
+        labels.map { it.second }.maxOf { textPaintFill.measureText(it) } + 24f
+
+    private fun drawYLabels(canvas: Canvas, yLabels: AxisLabels, width: Int, height: Int) {
+        val yScale = height / ((yLabels.range?.second ?: 0f) - (yLabels.range?.first ?: 0f))
+        yLabels.labels.forEach { label ->
+            val dataLabelX = width + 16f
+            val dataLabelY = adjustCoordinateY(
+                height,
+                label.first,
+                yLabels.range?.first ?: 0f,
+                yScale
+            ) - getTextMiddle(textPaintFill, label.second)
+            canvas.drawText(
+                label.second,
+                dataLabelX,
+                dataLabelY,
+                textPaintStroke
+            )
+            canvas.drawText(
+                label.second,
+                dataLabelX,
+                dataLabelY,
+                textPaintFill
+            )
+            if (yLabels.lines) {
+                canvas.drawPath(
+                    Path().apply {
+                        moveTo(
+                            0f,
+                            adjustCoordinateY(
+                                height,
+                                label.first,
+                                yLabels.range?.first ?: 0f,
+                                yScale
+                            )
+                        )
+                        lineTo(
+                            width.toFloat(),
+                            adjustCoordinateY(
+                                height,
+                                label.first,
+                                yLabels.range?.first ?: 0f,
+                                yScale
+                            )
+                        )
+                    }, gridPaint
+                )
+            }
+        }
+    }
+
+    private fun getTextMiddle(paint: Paint, text: String): Float {
+        val rect = Rect();
+        paint.getTextBounds(text, 0, text.length, rect)
+        return rect.exactCenterY();
     }
 
     override fun setAlpha(p0: Int) {

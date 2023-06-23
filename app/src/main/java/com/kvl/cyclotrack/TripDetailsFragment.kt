@@ -62,6 +62,7 @@ import com.kvl.cyclotrack.util.getSpeedDataFromSensor
 import com.kvl.cyclotrack.util.getTrendData
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.useBleSpeedData
+import com.kvl.cyclotrack.widgets.AxisLabels
 import com.kvl.cyclotrack.widgets.Entry
 import com.kvl.cyclotrack.widgets.HeadingView
 import com.kvl.cyclotrack.widgets.LineGraph
@@ -1458,7 +1459,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = strokeStyle
                             ),
-                            LineGraphDataset(
+                            /*LineGraphDataset(
                                 points = listOf(Entry(xMin, dataMax), Entry(xMax, dataMax)),
                                 label = String.format(
                                     "%.1f %s",
@@ -1487,7 +1488,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yRange = Pair(yViewMin, dataMax + dataMaxPadding),
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = referenceLineStyle
-                            ),
+                            ),*/
                         ),
                         areas = listOf(
                             LineGraphAreaDataset(
@@ -1499,6 +1500,24 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 yAxisHeight = dataMax + dataMaxPadding - yViewMin,
                                 paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             ),
+                        ),
+                        yLabels = AxisLabels(
+                            labels = listOf(
+                                Pair(
+                                    dataMax, String.format(
+                                        "%.1f",
+                                        dataMax
+                                    )
+                                ),
+                                Pair(
+                                    avgSpeed, String.format(
+                                        "%.1f",
+                                        avgSpeed
+                                    )
+                                )
+                            ),
+                            range = Pair(yViewMin, dataMax + dataMaxPadding),
+                            lines = true
                         )
                     ))
                 }
@@ -1761,7 +1780,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 val yViewMin = max(yMin - yRangePadding, 0f)
                 val yViewMax = yMax + yRangePadding
 
-
                 heartRateChartView.setImageDrawable(
                     LineGraph(
                         datasets = listOf(
@@ -1772,28 +1790,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 xAxisWidth = xMax - xMin,
                                 yAxisHeight = yViewMax - yViewMin,
                                 paint = strokeStyle
+                            )
+                        ),
+                        yLabels = AxisLabels(
+                            labels = listOf(
+                                Pair(yMax, "${yMax.roundToInt()}"),
+                                Pair(avgHeartRate.toFloat(), "$avgHeartRate")
                             ),
-                            LineGraphDataset(
-                                points = listOf(Entry(xMin, yMax), Entry(xMax, yMax)),
-                                label = "${yMax.roundToInt()} bpm",
-                                xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
-                                xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
-                                paint = referenceLineStyle
-                            ),
-                            LineGraphDataset(
-                                points = listOf(
-                                    Entry(xMin, avgHeartRate.toFloat()),
-                                    Entry(xMax, avgHeartRate.toFloat())
-                                ),
-                                label = "$avgHeartRate bpm",
-                                xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
-                                xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
-                                paint = referenceLineStyle
-                            ),
+                            range = Pair(yViewMin, yViewMax),
+                            lines = true
                         )
                     )
                 )
