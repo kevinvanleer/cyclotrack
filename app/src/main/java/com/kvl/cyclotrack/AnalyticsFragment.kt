@@ -19,6 +19,7 @@ import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import com.kvl.cyclotrack.widgets.AnalyticsCard
 import com.kvl.cyclotrack.widgets.AxisLabelOrientation
 import com.kvl.cyclotrack.widgets.AxisLabels
+import com.kvl.cyclotrack.widgets.BordersEnum
 import com.kvl.cyclotrack.widgets.LineGraph
 import com.kvl.cyclotrack.widgets.LineGraphDataset
 import com.kvl.cyclotrack.widgets.TableColumn
@@ -541,8 +542,9 @@ class AnalyticsFragment : Fragment() {
                 range = Pair(0f, yAxisHeight),
                 lines = true,
                 orientation = AxisLabelOrientation.INSIDE,
-                background = backgroundColor
-            )
+                background = backgroundColor,
+            ),
+            borders = BordersEnum.BOTTOM.value
         )
     }
 
