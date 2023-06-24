@@ -79,6 +79,8 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.roundToInt
 
+fun Float.precision(digits: Int) = "%.${digits}f".format(this)
+
 data class LineChartDataset(
     val entries: ArrayList<Pair<Float, Float>>,
     val trend: ArrayList<Pair<Float, Float>>,
@@ -1472,18 +1474,20 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         yLabels = AxisLabels(
                             labels = listOf(
                                 Pair(
-                                    dataMax, String.format(
-                                        "%.1f %s",
-                                        dataMax,
-                                        getUserSpeedUnitShort(requireContext())
-                                    )
+                                    yMin,
+                                    "${yMin.precision(1)} ${getUserSpeedUnitShort(requireContext())}"
                                 ),
                                 Pair(
-                                    avgSpeed, String.format(
-                                        "%.1f %s",
-                                        avgSpeed,
+                                    dataMax,
+                                    "${dataMax.precision(1)} ${
                                         getUserSpeedUnitShort(requireContext())
-                                    )
+                                    }"
+                                ),
+                                Pair(
+                                    avgSpeed,
+                                    "${avgSpeed.precision(1)} ${
+                                        getUserSpeedUnitShort(requireContext())
+                                    }"
                                 )
                             ),
                             range = Pair(yViewMin, dataMax + dataMaxPadding),
@@ -1668,7 +1672,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         yLabels = AxisLabels(
                             labels = listOf(
                                 Pair(dataMax, "${dataMax.roundToInt()} rpm"),
-                                Pair(avgCadence, "${avgCadence.roundToInt()} rpm")
+                                Pair(avgCadence, "${avgCadence.roundToInt()} rpm"),
+                                Pair(yMin, "${yMin.roundToInt()} rpm")
                             ),
                             range = Pair(yViewMin, dataMax + dataMaxPadding),
                             lines = true,
@@ -1757,6 +1762,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         borders = BordersEnum.BOTTOM.value,
                         yLabels = AxisLabels(
                             labels = listOf(
+                                Pair(yMin, "${yMin.roundToInt()} bpm"),
                                 Pair(yMax, "${yMax.roundToInt()} bpm"),
                                 Pair(avgHeartRate.toFloat(), "$avgHeartRate bpm")
                             ),
