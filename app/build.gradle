@@ -40,7 +40,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 33
         versionCode 58
-        versionName "Legacy export"
+        versionName "New graphs"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
