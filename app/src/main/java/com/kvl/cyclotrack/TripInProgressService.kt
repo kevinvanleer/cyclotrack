@@ -18,7 +18,12 @@ import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.kvl.cyclotrack.data.*
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.DerivedTripState
+import com.kvl.cyclotrack.data.HeartRateMeasurement
+import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
+import com.kvl.cyclotrack.data.SensorType
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
@@ -29,7 +34,11 @@ import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.IOException
@@ -262,6 +271,7 @@ class TripInProgressService @Inject constructor() :
             when (nextWeatherUpdate) {
                 0L -> nextWeatherUpdate =
                     currentTime + weatherUpdatePeriod
+
                 else -> while (nextWeatherUpdate < currentTime) {
                     nextWeatherUpdate += weatherUpdatePeriod
                 }
@@ -332,6 +342,7 @@ class TripInProgressService @Inject constructor() :
                                 setTripProgress(latest, newMeasurement, timeStates, tripId)
                             }
                     }
+
                     else -> setTripPaused(newMeasurement)
                 }
             }
@@ -542,6 +553,7 @@ class TripInProgressService @Inject constructor() :
                     tracking = accurateEnough
                 )
             }
+
             else ->
                 tripProgress?.copy(
                     accuracy = new.accuracy,
@@ -671,10 +683,6 @@ class TripInProgressService @Inject constructor() :
         Log.d(logTag, "bleService=$bleService")
         Log.d(logTag, "measurementsRepository=$measurementsRepository")
         Log.d(logTag, "tripsRepository=$tripsRepository")
-        /*lifecycleScope.launch(Dispatchers.IO) {
-            timeStateRepository.appendTimeState(TimeState(tripId, TimeStateEnum.RESUME))
-            Log.d(logTag, "restart trip with id ${tripId}")
-        }*/
 
         bleService.restore()
 
@@ -767,6 +775,7 @@ class TripInProgressService @Inject constructor() :
     private suspend fun end(tripId: Long) {
         Log.d(logTag, "Called end() with $tripId")
         var job: Job? = null
+
         tripId.takeIf { it >= 0 }?.let { id ->
             job = lifecycle.coroutineScope.launch {
                 timeStateRepository.appendTimeState(
@@ -780,7 +789,6 @@ class TripInProgressService @Inject constructor() :
         }
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
-
         if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
 
         running = false
@@ -801,6 +809,7 @@ class TripInProgressService @Inject constructor() :
                     logTag,
                     "Initialize trip service"
                 )
+
                 getString(R.string.action_start_trip_service) -> {
                     when (val tripId = it.getLongExtra("tripId", -1)) {
                         -1L -> lifecycleScope.launch { start() }
@@ -813,13 +822,17 @@ class TripInProgressService @Inject constructor() :
                         bleService.stopAllScans()
                     }
                 }
+
                 getString(R.string.action_pause_trip_service) ->
                     pause(it.getLongExtra("tripId", -1))
+
                 getString(R.string.action_resume_trip_service) ->
                     resume(it.getLongExtra("tripId", -1))
+
                 getString(R.string.action_stop_trip_service) -> lifecycleScope.launch {
                     end(it.getLongExtra("tripId", -1))
                 }
+
                 getString(R.string.action_shutdown_trip_service) -> shutdown()
                 else -> Log.d(logTag, "Received intent $intent")
             }
@@ -887,7 +900,6 @@ class TripInProgressService @Inject constructor() :
         super.onDestroy()
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
-
         if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
 
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
@@ -902,12 +914,16 @@ class TripInProgressService @Inject constructor() :
             when (key) {
                 getString(R.string.preference_key_autopause_enable) -> autopauseEnabled =
                     prefs.getBoolean(key, false) == true
+
                 getString(R.string.preference_key_autopause_manual_override) -> blockAutoResumeEnabled =
                     prefs.getBoolean(key, true) == true
+
                 getString(R.string.preference_key_autopause_pause_threshold) -> autopausePauseThreshold =
                     prefs.getInt(key, 5) * 1000.toLong()
+
                 getString(R.string.preference_key_autopause_resume_threshold) -> autopauseResumeThreshold =
                     prefs.getInt(key, 5) * 1000.toLong()
+
                 getString(R.string.preference_key_autopause_speed_threshold) -> autopauseRpmThreshold =
                     getAutoPauseRpmThreshold(key)
             }
