@@ -626,66 +626,74 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                     }
 
-                    val xMin = data.first().first
-                    val xMax = data.last().first
-                    val yMin = data.minBy { element -> element.second }.second
-                    val yMax = data.maxBy { element -> element.second }.second
-                    val yRangePadding = (yMax - yMin) * 0.2f
-                    val yViewMin = max(yMin - yRangePadding, 0f)
-                    val yViewMax = yMax + yRangePadding
+                    try {
+                        val xMin = data.first().first
+                        val xMax = data.last().first
+                        val yMin = data.minBy { element -> element.second }.second
+                        val yMax = data.maxBy { element -> element.second }.second
+                        val yRangePadding = (yMax - yMin) * 0.2f
+                        val yViewMin = max(yMin - yRangePadding, 0f)
+                        val yViewMax = yMax + yRangePadding
 
-                    elevationChartView.setImageDrawable(
-                        LineGraph(
-                            areas = listOf(
-                                LineGraphAreaDataset(
-                                    points1 = data.toList(),
-                                    points2 = listOf(Entry(xMin, yViewMin), Entry(xMax, yViewMin)),
-                                    xRange = Pair(xMin, xMax),
-                                    yRange = Pair(yViewMin, yViewMax),
-                                    xAxisWidth = xMax - xMin,
-                                    yAxisHeight = yViewMax - yViewMin,
-                                    paint = Paint(strokeStyle).apply {
-                                        style = Paint.Style.FILL_AND_STROKE
-                                        alpha = 50
-                                    }
-                                )
-                            ),
-                            datasets = listOf(
-                                LineGraphDataset(
-                                    points = data.toList(),
-                                    xRange = Pair(xMin, xMax),
-                                    yRange = Pair(yViewMin, yViewMax),
-                                    xAxisWidth = xMax - xMin,
-                                    yAxisHeight = yViewMax - yViewMin,
-                                    paint = strokeStyle
-                                ),
-                            ),
-                            borders = BordersEnum.BOTTOM.value,
-                            yLabels = AxisLabels(
-                                labels = listOf(
-                                    Pair(
-                                        yMin, "${yMin.roundToInt()} ${
-                                            getUserAltitudeUnitShort(
-                                                requireContext()
-                                            )
-                                        }"
-                                    ),
-                                    Pair(
-                                        yMax, "${yMax.roundToInt()} ${
-                                            getUserAltitudeUnitShort(
-                                                requireContext()
-                                            )
-                                        }"
+                        elevationChartView.setImageDrawable(
+                            LineGraph(
+                                areas = listOf(
+                                    LineGraphAreaDataset(
+                                        points1 = data.toList(),
+                                        points2 = listOf(
+                                            Entry(xMin, yViewMin),
+                                            Entry(xMax, yViewMin)
+                                        ),
+                                        xRange = Pair(xMin, xMax),
+                                        yRange = Pair(yViewMin, yViewMax),
+                                        xAxisWidth = xMax - xMin,
+                                        yAxisHeight = yViewMax - yViewMin,
+                                        paint = Paint(strokeStyle).apply {
+                                            style = Paint.Style.FILL_AND_STROKE
+                                            alpha = 50
+                                        }
                                     )
                                 ),
-                                range = Pair(yViewMin, yViewMax),
-                                lines = true,
-                                background = (scrollView.background as ColorDrawable).color,
-                                orientation = AxisLabelOrientation.INSIDE
+                                datasets = listOf(
+                                    LineGraphDataset(
+                                        points = data.toList(),
+                                        xRange = Pair(xMin, xMax),
+                                        yRange = Pair(yViewMin, yViewMax),
+                                        xAxisWidth = xMax - xMin,
+                                        yAxisHeight = yViewMax - yViewMin,
+                                        paint = strokeStyle
+                                    ),
+                                ),
+                                borders = BordersEnum.BOTTOM.value,
+                                yLabels = AxisLabels(
+                                    labels = listOf(
+                                        Pair(
+                                            yMin, "${yMin.roundToInt()} ${
+                                                getUserAltitudeUnitShort(
+                                                    requireContext()
+                                                )
+                                            }"
+                                        ),
+                                        Pair(
+                                            yMax, "${yMax.roundToInt()} ${
+                                                getUserAltitudeUnitShort(
+                                                    requireContext()
+                                                )
+                                            }"
+                                        )
+                                    ),
+                                    range = Pair(yViewMin, yViewMax),
+                                    lines = true,
+                                    background = (scrollView.background as ColorDrawable).color,
+                                    orientation = AxisLabelOrientation.INSIDE
+                                )
                             )
                         )
-                    )
+                    } catch (e: Exception) {
+                        Log.e(logTag, "Could not draw elevation chart", e)
+                    }
                 }
+
 
                 Log.d(
                     logTag,
@@ -1437,7 +1445,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             avgSpeed
                         )
                     }
-                }.let { lineData ->
+                }.takeIf { it.trend.size > 0 }?.let { lineData ->
                     val xMin = lineData.trend.first().first
                     val xMax = lineData.trend.last().first
                     val yMin = lineData.trend.minBy { element -> element.second }.second
@@ -1634,54 +1642,58 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     loData.addAll(results.lo)
                 }
 
-                val xMin = trendData.first().first
-                val xMax = trendData.last().first
-                val yMin = trendData.minBy { element -> element.second }.second
-                val yMax = trendData.maxBy { element -> element.second }.second
-                val dataMax = rawData.maxBy { element -> element.second }.second
-                val yRangePadding = (yMax - yMin) * 0.2f
-                val yViewMin = max(yMin - yRangePadding, 0f)
+                try {
+                    val xMin = trendData.first().first
+                    val xMax = trendData.last().first
+                    val yMin = trendData.minBy { element -> element.second }.second
+                    val yMax = trendData.maxBy { element -> element.second }.second
+                    val dataMax = rawData.maxBy { element -> element.second }.second
+                    val yRangePadding = (yMax - yMin) * 0.2f
+                    val yViewMin = max(yMin - yRangePadding, 0f)
 
-                val dataMaxPadding = (dataMax - yMin) * 0.2f
+                    val dataMaxPadding = (dataMax - yMin) * 0.2f
 
-                Log.d(logTag, "max hiData: ${hiData.maxBy { e -> e.second }.second}")
-                cadenceChartView.setImageDrawable(
-                    LineGraph(
-                        datasets = listOf(
-                            LineGraphDataset(
-                                points = trendData.toList(),
-                                xRange = Pair(xMin, xMax),
-                                xAxisWidth = xMax - xMin,
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
-                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
-                                paint = strokeStyle
+                    Log.d(logTag, "max hiData: ${hiData.maxBy { e -> e.second }.second}")
+                    cadenceChartView.setImageDrawable(
+                        LineGraph(
+                            datasets = listOf(
+                                LineGraphDataset(
+                                    points = trendData.toList(),
+                                    xRange = Pair(xMin, xMax),
+                                    xAxisWidth = xMax - xMin,
+                                    yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                    yAxisHeight = dataMax + dataMaxPadding - yViewMin,
+                                    paint = strokeStyle
+                                ),
                             ),
-                        ),
-                        areas = listOf(
-                            LineGraphAreaDataset(
-                                points1 = hiData.toList(),
-                                points2 = loData.toList(),
-                                xRange = Pair(xMin, xMax),
-                                xAxisWidth = xMax - xMin,
-                                yRange = Pair(yViewMin, dataMax + dataMaxPadding),
-                                yAxisHeight = dataMax + dataMaxPadding - yViewMin,
-                                paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
+                            areas = listOf(
+                                LineGraphAreaDataset(
+                                    points1 = hiData.toList(),
+                                    points2 = loData.toList(),
+                                    xRange = Pair(xMin, xMax),
+                                    xAxisWidth = xMax - xMin,
+                                    yRange = Pair(yViewMin, dataMax + dataMaxPadding),
+                                    yAxisHeight = dataMax + dataMaxPadding - yViewMin,
+                                    paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
+                                ),
                             ),
-                        ),
-                        borders = BordersEnum.BOTTOM.value,
-                        yLabels = AxisLabels(
-                            labels = listOf(
-                                Pair(dataMax, "${dataMax.roundToInt()} rpm"),
-                                Pair(avgCadence, "${avgCadence.roundToInt()} rpm"),
-                                Pair(yMin, "${yMin.roundToInt()} rpm")
-                            ),
-                            range = Pair(yViewMin, dataMax + dataMaxPadding),
-                            lines = true,
-                            background = (scrollView.background as ColorDrawable).color,
-                            orientation = AxisLabelOrientation.INSIDE
+                            borders = BordersEnum.BOTTOM.value,
+                            yLabels = AxisLabels(
+                                labels = listOf(
+                                    Pair(dataMax, "${dataMax.roundToInt()} rpm"),
+                                    Pair(avgCadence, "${avgCadence.roundToInt()} rpm"),
+                                    Pair(yMin, "${yMin.roundToInt()} rpm")
+                                ),
+                                range = Pair(yViewMin, dataMax + dataMaxPadding),
+                                lines = true,
+                                background = (scrollView.background as ColorDrawable).color,
+                                orientation = AxisLabelOrientation.INSIDE
+                            )
                         )
                     )
-                )
+                } catch (e: Exception) {
+                    Log.e(logTag, "Could not create cadence chart", e)
+                }
             }
 
             val avgCadence = getAverageCadence(measurements)
@@ -1739,39 +1751,43 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     )
                 }
 
-                val xMin = data.first().first
-                val xMax = data.last().first
-                val yMin = data.minBy { element -> element.second }.second
-                val yMax = data.maxBy { element -> element.second }.second
-                val yRangePadding = (yMax - yMin) * 0.2f
-                val yViewMin = max(yMin - yRangePadding, 0f)
-                val yViewMax = yMax + yRangePadding
+                try {
+                    val xMin = data.first().first
+                    val xMax = data.last().first
+                    val yMin = data.minBy { element -> element.second }.second
+                    val yMax = data.maxBy { element -> element.second }.second
+                    val yRangePadding = (yMax - yMin) * 0.2f
+                    val yViewMin = max(yMin - yRangePadding, 0f)
+                    val yViewMax = yMax + yRangePadding
 
-                heartRateChartView.setImageDrawable(
-                    LineGraph(
-                        datasets = listOf(
-                            LineGraphDataset(
-                                points = data.toList(),
-                                xRange = Pair(xMin, xMax),
-                                yRange = Pair(yViewMin, yViewMax),
-                                xAxisWidth = xMax - xMin,
-                                yAxisHeight = yViewMax - yViewMin,
-                                paint = strokeStyle
-                            )
-                        ),
-                        borders = BordersEnum.BOTTOM.value,
-                        yLabels = AxisLabels(
-                            labels = listOf(
-                                Pair(yMin, "${yMin.roundToInt()} bpm"),
-                                Pair(yMax, "${yMax.roundToInt()} bpm"),
-                                Pair(avgHeartRate.toFloat(), "$avgHeartRate bpm")
+                    heartRateChartView.setImageDrawable(
+                        LineGraph(
+                            datasets = listOf(
+                                LineGraphDataset(
+                                    points = data.toList(),
+                                    xRange = Pair(xMin, xMax),
+                                    yRange = Pair(yViewMin, yViewMax),
+                                    xAxisWidth = xMax - xMin,
+                                    yAxisHeight = yViewMax - yViewMin,
+                                    paint = strokeStyle
+                                )
                             ),
-                            range = Pair(yViewMin, yViewMax),
-                            lines = true,
-                            background = (scrollView.background as ColorDrawable).color,
+                            borders = BordersEnum.BOTTOM.value,
+                            yLabels = AxisLabels(
+                                labels = listOf(
+                                    Pair(yMin, "${yMin.roundToInt()} bpm"),
+                                    Pair(yMax, "${yMax.roundToInt()} bpm"),
+                                    Pair(avgHeartRate.toFloat(), "$avgHeartRate bpm")
+                                ),
+                                range = Pair(yViewMin, yViewMax),
+                                lines = true,
+                                background = (scrollView.background as ColorDrawable).color,
+                            )
                         )
                     )
-                )
+                } catch (e: Exception) {
+                    Log.e(logTag, "Could not draw heart rate chart", e)
+                }
             }
 
             val avgHeartRate = getAverageHeartRate(hrmData)

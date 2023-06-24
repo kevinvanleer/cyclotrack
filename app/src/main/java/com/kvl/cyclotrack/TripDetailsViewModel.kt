@@ -157,7 +157,7 @@ class TripDetailsViewModel @Inject constructor(
                         )
                         splitRepository.addSplits(tripSplits.toTypedArray())
 
-                        tripSplits.last().let { lastSplit ->
+                        tripSplits.lastOrNull()?.let { lastSplit ->
                             tripsRepository.updateTripStats(
                                 TripStats(
                                     id = tripId,
