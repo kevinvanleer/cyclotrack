@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.util.TypedValue
@@ -675,7 +676,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 ),
                                 range = Pair(yViewMin, yViewMax),
                                 lines = true,
-                                background = Color.BLACK,
+                                background = (scrollView.background as ColorDrawable).color,
                                 orientation = AxisLabelOrientation.INSIDE
                             )
                         )
@@ -1484,7 +1485,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ),
                             range = Pair(yViewMin, dataMax + dataMaxPadding),
                             lines = true,
-                            background = Color.BLACK
+                            background = (scrollView.background as ColorDrawable).color
                         )
                     ))
                 }
@@ -1667,7 +1668,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ),
                             range = Pair(yViewMin, dataMax + dataMaxPadding),
                             lines = true,
-                            background = Color.BLACK,
+                            background = (scrollView.background as ColorDrawable).color,
                             orientation = AxisLabelOrientation.INSIDE
                         )
                     )
@@ -1756,7 +1757,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ),
                             range = Pair(yViewMin, yViewMax),
                             lines = true,
-                            background = Color.BLACK
+                            background = (scrollView.background as ColorDrawable).color,
                         )
                     )
                 )
