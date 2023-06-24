@@ -43,14 +43,24 @@ data class AxisLabels(
 enum class AxisLabelOrientation(val value: Int) {
     INSIDE(0),
     RIGHT(1),
-    LEFT(2)
+    LEFT(2),
+    TOP(3),
+    BOTTOM(4)
+}
+
+enum class BordersEnum(val value: Int) {
+    TOP(1),
+    BOTTOM(2),
+    LEFT(4),
+    RIGHT(8)
 }
 
 class LineGraph(
     private val datasets: List<LineGraphDataset>,
     private val areas: List<LineGraphAreaDataset>? = null,
     private val xLabels: AxisLabels? = null,
-    private val yLabels: AxisLabels? = null
+    private val yLabels: AxisLabels? = null,
+    private val borders: Int? = null
 ) : Drawable() {
     private val greenPaint: Paint = Paint().apply {
         isAntiAlias = true
@@ -205,20 +215,17 @@ class LineGraph(
         }
     }
 
-    private fun drawBorder(canvas: Canvas) {
-        val width: Int = bounds.width()
-        val height: Int = bounds.height()
-
+    private fun drawBorders(canvas: Canvas, borders: Int, width: Int, height: Int) {
         val borderPaint: Paint = Paint().apply {
             isAntiAlias = true
             style = Paint.Style.STROKE
             strokeWidth = 2F
             strokeCap = Paint.Cap.ROUND
             strokeJoin = Paint.Join.ROUND
-            setARGB(150, 255, 255, 255)
+            setARGB(80, 255, 255, 255)
         }
 
-        canvas.drawPath(
+        if ((borders and BordersEnum.TOP.value) == BordersEnum.TOP.value) canvas.drawPath(
             Path().apply {
                 moveTo(
                     0f,
@@ -230,7 +237,34 @@ class LineGraph(
                 )
             }, borderPaint
         )
-        canvas.drawPath(
+
+        if ((borders and BordersEnum.LEFT.value) == BordersEnum.LEFT.value) canvas.drawPath(
+            Path().apply {
+                moveTo(
+                    0f,
+                    0f
+                )
+                lineTo(
+                    0f,
+                    height.toFloat()
+                )
+            }, borderPaint
+        )
+
+        if ((borders and BordersEnum.RIGHT.value) == BordersEnum.RIGHT.value) canvas.drawPath(
+            Path().apply {
+                moveTo(
+                    width.toFloat(),
+                    0f
+                )
+                lineTo(
+                    width.toFloat(),
+                    height.toFloat()
+                )
+            }, borderPaint
+        )
+
+        if ((borders and BordersEnum.BOTTOM.value) == BordersEnum.BOTTOM.value) canvas.drawPath(
             Path().apply {
                 moveTo(
                     0f,
@@ -245,7 +279,6 @@ class LineGraph(
     }
 
     override fun draw(canvas: Canvas) {
-        //drawBorder(canvas)
         val width: Int =
             bounds.width() - if (yLabels != null && yLabels.orientation != AxisLabelOrientation.INSIDE) getYLabelWidth(
                 yLabels.labels
@@ -269,6 +302,12 @@ class LineGraph(
             )
         }
         if (yLabels != null) drawYLabels(canvas, yLabels, width, height)
+        if (xLabels != null) drawXLabels(canvas, xLabels, width, height)
+        if (borders != null) drawBorders(canvas, borders, width, height)
+    }
+
+    private fun drawXLabels(canvas: Canvas, xLabels: AxisLabels, width: Int, height: Int) {
+
     }
 
     private fun getYLabelWidth(labels: List<Pair<Float, String>>): Float =
