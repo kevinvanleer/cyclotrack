@@ -65,6 +65,7 @@ import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.useBleSpeedData
 import com.kvl.cyclotrack.widgets.AxisLabelOrientation
 import com.kvl.cyclotrack.widgets.AxisLabels
+import com.kvl.cyclotrack.widgets.BordersEnum
 import com.kvl.cyclotrack.widgets.Entry
 import com.kvl.cyclotrack.widgets.HeadingView
 import com.kvl.cyclotrack.widgets.LineGraph
@@ -657,6 +658,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     paint = strokeStyle
                                 ),
                             ),
+                            borders = BordersEnum.BOTTOM.value,
                             yLabels = AxisLabels(
                                 labels = listOf(
                                     Pair(
@@ -1466,6 +1468,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             ),
                         ),
+                        borders = BordersEnum.BOTTOM.value,
                         yLabels = AxisLabels(
                             labels = listOf(
                                 Pair(
@@ -1661,6 +1664,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 paint = trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             ),
                         ),
+                        borders = BordersEnum.BOTTOM.value,
                         yLabels = AxisLabels(
                             labels = listOf(
                                 Pair(dataMax, "${dataMax.roundToInt()} rpm"),
@@ -1750,6 +1754,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 paint = strokeStyle
                             )
                         ),
+                        borders = BordersEnum.BOTTOM.value,
                         yLabels = AxisLabels(
                             labels = listOf(
                                 Pair(yMax, "${yMax.roundToInt()} bpm"),
