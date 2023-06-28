@@ -665,7 +665,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     ),
                                 ),
                                 borders = BordersEnum.BOTTOM.value,
-                                xLabels = getAxisLabelsDistanceX(xMin, xMax, 60f),
+                                xLabels = getAxisLabelsDistanceX(xMin, xMax),
                                 yLabels = AxisLabels(
                                     labels = listOf(
                                         Pair(
@@ -1289,7 +1289,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         }
     }
 
-    private fun getAxisLabelsX(
+    private fun getAxisLabelsTimeX(
         xMin: Float,
         xMax: Float,
         precision: Float
@@ -1322,13 +1322,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         ),
         range = Pair(xMin, xMax),
         ticks = true,
+        orientation = AxisLabelOrientation.BOTTOM,
         background = (scrollView.background as ColorDrawable).color,
     )
 
     private fun getAxisLabelsDistanceX(
         xMin: Float,
         xMax: Float,
-        precision: Float
     ) = AxisLabels(
         labels = listOf(
             (xMin + (xMax - xMin) * 0.25f).roundToInt().toFloat()
@@ -1370,6 +1370,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         ),
         range = Pair(xMin, xMax),
         ticks = true,
+        orientation = AxisLabelOrientation.BOTTOM,
         background = (scrollView.background as ColorDrawable).color,
     )
 
@@ -1564,7 +1565,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             ),
                         ),
                         borders = BordersEnum.BOTTOM.value,
-                        xLabels = getAxisLabelsX(xMin, xMax, 60f),
+                        xLabels = getAxisLabelsTimeX(xMin, xMax, 60f),
                         yLabels = AxisLabels(
                             labels = listOf(
                                 Pair(
@@ -1764,7 +1765,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 ),
                             ),
                             borders = BordersEnum.BOTTOM.value,
-                            xLabels = getAxisLabelsX(xMin, xMax, 60f),
+                            xLabels = getAxisLabelsTimeX(xMin, xMax, 60f),
                             yLabels = AxisLabels(
                                 labels = listOf(
                                     Pair(dataMax, "${dataMax.roundToInt()} rpm"),
@@ -1870,7 +1871,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 lines = true,
                                 background = (scrollView.background as ColorDrawable).color,
                             ),
-                            xLabels = getAxisLabelsX(xMin, xMax, 60f)
+                            xLabels = getAxisLabelsTimeX(xMin, xMax, 60f)
                         )
                     )
                 } catch (e: Exception) {
