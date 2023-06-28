@@ -9,6 +9,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.util.Log
 
 typealias Entry = Pair<Float, Float>
 
@@ -150,24 +151,28 @@ class LineGraph(
 
         val endPoint =
             dataset.xRange?.first?.plus(dataset.xAxisWidth ?: (width * xScale)) ?: (width * xScale)
-        canvas.drawPath(
-            getPath(
-                height,
-                LineGraphDataset(
-                    dataset.points1.plus(Pair(endPoint, dataset.points1.last().second)).plus(
-                        dataset.points2.plus(Pair(endPoint, dataset.points2.last().second))
-                            .reversed()
+        try {
+            canvas.drawPath(
+                getPath(
+                    height,
+                    LineGraphDataset(
+                        dataset.points1.plus(Pair(endPoint, dataset.points1.last().second)).plus(
+                            dataset.points2.plus(Pair(endPoint, dataset.points2.last().second))
+                                .reversed()
+                        ),
+                        dataset.xRange,
+                        dataset.yRange,
+                        dataset.xAxisWidth,
+                        dataset.yAxisHeight,
+                        dataset.paint
                     ),
-                    dataset.xRange,
-                    dataset.yRange,
-                    dataset.xAxisWidth,
-                    dataset.yAxisHeight,
-                    dataset.paint
-                ),
-                yScale,
-                xScale
-            ), dataset.paint ?: greenPaint
-        )
+                    yScale,
+                    xScale
+                ), dataset.paint ?: greenPaint
+            )
+        } catch (e: Exception) {
+            Log.e("LineGraph", "Could not draw area", e)
+        }
     }
 
     private fun drawPath(
