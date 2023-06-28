@@ -1,9 +1,11 @@
 package com.kvl.cyclotrack
 
+import android.graphics.Paint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
@@ -14,12 +16,24 @@ import androidx.navigation.navGraphViewModels
 import com.google.android.gms.maps.model.RoundCap
 import com.kvl.cyclotrack.data.DailySummary
 import com.kvl.cyclotrack.util.getSystemOfMeasurement
-import com.kvl.cyclotrack.widgets.*
+import com.kvl.cyclotrack.widgets.AnalyticsCard
+import com.kvl.cyclotrack.widgets.AxisLabelOrientation
+import com.kvl.cyclotrack.widgets.AxisLabels
+import com.kvl.cyclotrack.widgets.BordersEnum
+import com.kvl.cyclotrack.widgets.LineGraph
+import com.kvl.cyclotrack.widgets.LineGraphDataset
+import com.kvl.cyclotrack.widgets.TableColumn
+import com.kvl.cyclotrack.widgets.ThreeStat
+import com.kvl.cyclotrack.widgets.WeeklySummaryTable
+import com.kvl.cyclotrack.widgets.getTableFromSplits
+import com.kvl.cyclotrack.widgets.getThreeStatFromSplits
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.roundToInt
@@ -186,26 +200,66 @@ class AnalyticsFragment : Fragment() {
         }
     }
 
-    private fun doAnnualTotals(view: View) {
+    private fun buildPeriodTotalsAnalyticsCard(
+        card: AnalyticsCard,
+        title: String,
+        thisPeriodStart: ZonedDateTime,
+        thisPeriodEnd: ZonedDateTime,
+        lastPeriodStart: ZonedDateTime,
+        lastPeriodEnd: ZonedDateTime,
+        lastPeriodToday: ZonedDateTime
+    ) {
         viewModel.tripTotals(
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.firstDayOfYear()
-            ).truncatedTo(ChronoUnit.DAYS)
+            thisPeriodStart
                 .toInstant().toEpochMilli(),
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.lastDayOfYear()
-            ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+            thisPeriodEnd
                 .toInstant().toEpochMilli()
         ).observe(viewLifecycleOwner) {
-            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisYear).apply {
-                table.visibility = View.GONE
-                heading.text = "This year"
-                threeStat.populate(
+            card.table.visibility = View.GONE
+            card.heading.text = title
+            card.threeStat.populate(
+                arrayOf(
+                    Pair("RIDES", it.tripCount.toString()),
+                    Pair(
+                        getUserDistanceUnitShort(requireContext()).uppercase(),
+                        getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                            .toString()
+                    ),
+                    Pair(
+                        "HOURS",
+                        formatDurationHours(it.totalDuration)
+                    )
+                )
+            )
+        }
+        card.addView(TextView(requireContext()).apply {
+            layoutParams =
+                ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+
+                ).apply {
+                    setMargins(0, 0, 0, 20)
+                }
+            text =
+                lastPeriodToday.minusDays(1)
+                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG))
+        })
+        card.addView(ThreeStat(requireContext()).apply {
+            viewModel.tripTotals(
+                lastPeriodStart
+                    .toInstant().toEpochMilli(),
+                lastPeriodToday.toInstant().toEpochMilli()
+            ).observe(viewLifecycleOwner) {
+                populate(
                     arrayOf(
                         Pair("RIDES", it.tripCount.toString()),
                         Pair(
                             getUserDistanceUnitShort(requireContext()).uppercase(),
-                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
+                            getUserDistance(
+                                requireContext(),
+                                it.totalDistance
+                            ).roundToInt()
                                 .toString()
                         ),
                         Pair(
@@ -215,39 +269,313 @@ class AnalyticsFragment : Fragment() {
                     )
                 )
             }
-        }
+        })
+        card.addView(
+            drawDistanceComparison(
+                thisPeriodStart,
+                thisPeriodEnd,
+                lastPeriodStart,
+                lastPeriodEnd,
+                card.cardBackgroundColor.defaultColor
+            )
+        )
+    }
+
+    private fun doAnnualTotals(view: View) {
+        val now = Instant.now().atZone(ZoneId.systemDefault())
+        val thisYearStart = now.with(
+            TemporalAdjusters.firstDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS)
+        val thisYearEnd = now.with(
+            TemporalAdjusters.lastDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+
+        val lastYearStart = now.minusYears(1).with(
+            TemporalAdjusters.firstDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS)
+        val lastYearToday = now.minusYears(1)
+            .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        val lastYearEnd = lastYearToday.with(
+            TemporalAdjusters.lastDayOfYear()
+        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+
+        buildPeriodTotalsAnalyticsCard(
+            view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisYear),
+            "This year",
+            thisYearStart,
+            thisYearEnd,
+            lastYearStart,
+            lastYearEnd,
+            lastYearToday
+        )
     }
 
     private fun doMonthlyTotals(view: View) {
-        viewModel.tripTotals(
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.firstDayOfMonth()
-            ).truncatedTo(ChronoUnit.DAYS)
-                .toInstant().toEpochMilli(),
-            Instant.now().atZone(ZoneId.systemDefault()).with(
-                TemporalAdjusters.lastDayOfMonth()
-            ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
-                .toInstant().toEpochMilli()
-        ).observe(viewLifecycleOwner) {
-            view.findViewById<AnalyticsCard>(R.id.fragmentAnalytics_analyticsCard_thisMonth).apply {
-                table.visibility = View.GONE
-                heading.text = "This month"
-                threeStat.populate(
-                    arrayOf(
-                        Pair("RIDES", it.tripCount.toString()),
-                        Pair(
-                            getUserDistanceUnitShort(requireContext()).uppercase(),
-                            getUserDistance(requireContext(), it.totalDistance).roundToInt()
-                                .toString()
-                        ),
-                        Pair(
-                            "HOURS",
-                            formatDurationHours(it.totalDuration)
+        val now = Instant.now().atZone(ZoneId.systemDefault())
+        val thisMonthStart = now.with(
+            TemporalAdjusters.firstDayOfMonth()
+        ).truncatedTo(ChronoUnit.DAYS)
+        val thisMonthEnd = now.with(
+            TemporalAdjusters.lastDayOfMonth()
+        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
+
+        val lastMonthStart =
+            thisMonthStart.minusMonths(1)
+        val lastMonthToday =
+            now.minusMonths(1)
+                .truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        val lastMonthEnd = lastMonthStart.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
+
+        buildPeriodTotalsAnalyticsCard(
+            view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisMonth),
+            "This month",
+            thisMonthStart,
+            thisMonthEnd,
+            lastMonthStart,
+            lastMonthEnd,
+            lastMonthToday
+        )
+    }
+
+    private fun drawSpeedGraph(
+        thisMonthStart: ZonedDateTime,
+        thisMonthEnd: ZonedDateTime,
+    ) =
+        ImageView(requireContext()).apply {
+            layoutParams =
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            minimumHeight = 200
+            viewModel.recentTrips(
+                thisMonthStart.toInstant().toEpochMilli(),
+                thisMonthEnd.toInstant().toEpochMilli()
+            )
+                .observe(viewLifecycleOwner) {
+                    getSpeedGraphProps(
+                        Pair(thisMonthStart, thisMonthEnd),
+                        it,
+                    ).let { datasets ->
+                        setImageDrawable(
+                            LineGraph(
+                                datasets = listOf(datasets),
+                            )
                         )
-                    )
+                    }
+                }
+        }
+
+    private fun getSpeedGraphProps(
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
+        thisPeriodPoints: Array<Trip>,
+    ): LineGraphDataset {
+        val (xRange, yRange, points) = getSpeedGraphPoints(
+            thisPeriodPoints,
+            thisPeriod
+        )
+
+        val xAxisWidth =
+            (xRange.second - xRange.first
+                    ).toFloat()
+        val yAxisHeight = yRange.second - yRange.first
+
+        val strokeStyle = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeWidth = 5F
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+
+        return LineGraphDataset(
+            points = points,
+            xRange = Pair(xRange.first.toFloat(), xRange.second.toFloat()),
+            yRange = Pair(yRange.first, yRange.second),
+            xAxisWidth = xAxisWidth,
+            yAxisHeight = yAxisHeight,
+            paint = Paint(strokeStyle).apply {
+                color = requireContext().getColor(R.color.primaryDarkColor)
+            }
+        )
+    }
+
+    private fun getSpeedGraphPoints(
+        thisPeriodPoints: Array<Trip>,
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>
+    ): Triple<Pair<Long, Long>, Pair<Float, Float>, List<Pair<Float, Float>>> {
+        val durationStart =
+            thisPeriod.first.toInstant().toEpochMilli()
+        return Triple(
+            Pair(
+                durationStart,
+                thisPeriod.second.toInstant().toEpochMilli()
+            ),
+            Pair(
+                thisPeriodPoints.minOf { point -> point.averageSpeed ?: 0f },
+                thisPeriodPoints.maxOf { point -> point.averageSpeed ?: 0f }),
+            thisPeriodPoints.map { point ->
+                Pair(
+                    (point.timestamp - durationStart).toFloat(),
+                    (point.averageSpeed ?: 0.0).toFloat()
                 )
             }
+        )
+    }
+
+    private fun drawDistanceComparison(
+        thisMonthStart: ZonedDateTime,
+        thisMonthEnd: ZonedDateTime,
+        lastMonthStart: ZonedDateTime,
+        lastMonthEnd: ZonedDateTime,
+        backgroundColor: Int
+    ) =
+        ImageView(requireContext()).apply {
+            layoutParams =
+                ViewGroup.MarginLayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+
+                ).apply {
+                    setMargins(0, 50, 0, 50)
+                }
+            minimumHeight = 300
+            zipLiveData(
+                viewModel.recentTrips(
+                    thisMonthStart.toInstant().toEpochMilli(),
+                    thisMonthEnd.toInstant().toEpochMilli()
+                ),
+                viewModel.recentTrips(
+                    lastMonthStart.toInstant().toEpochMilli(),
+                    lastMonthEnd.toInstant().toEpochMilli()
+                )
+            ).observe(viewLifecycleOwner) {
+                getDistanceComparisonGraph(
+                    Pair(thisMonthStart, thisMonthEnd),
+                    Pair(lastMonthStart, lastMonthEnd),
+                    it.first,
+                    it.second,
+                    backgroundColor
+                ).let { graph -> setImageDrawable(graph) }
+            }
         }
+
+    private fun getDistanceComparisonGraph(
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>,
+        lastPeriod: Pair<ZonedDateTime, ZonedDateTime>,
+        thisPeriodPoints: Array<Trip>,
+        lastPeriodPoints: Array<Trip>,
+        backgroundColor: Int
+    ): LineGraph {
+        val (xRangeThis, yRangeThis, thisPoints) = getDistanceGraphPoints(
+            thisPeriodPoints.plus(
+                Trip(
+                    distance = 0.0,
+                    timestamp = Instant.now().toEpochMilli(),
+                    bikeId = -1L
+                )
+            ),
+            thisPeriod
+        )
+
+        val (xRangeLast, yRangeLast, lastPoints) = getDistanceGraphPoints(
+            lastPeriodPoints.plus(
+                Trip(
+                    distance = 0.0,
+                    timestamp = lastPeriod.second.toInstant().toEpochMilli(),
+                    bikeId = -1L
+                )
+            ),
+            lastPeriod
+        )
+
+        val xAxisWidth =
+            maxOf(
+                xRangeThis.second - xRangeThis.first,
+                xRangeLast.second - xRangeLast.first
+            ).toFloat()
+        val yAxisHeight =
+            maxOf(
+                yRangeThis.second - yRangeThis.first,
+                yRangeLast.second - yRangeLast.first
+            ).toFloat() * 1.2f
+
+        val strokeStyle = Paint().apply {
+            isAntiAlias = true
+            style = Paint.Style.STROKE
+            strokeWidth = 5F
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
+        }
+        val datasets = listOf(
+            LineGraphDataset(
+                points = lastPoints,
+                xRange = Pair(xRangeThis.first.toFloat(), xRangeThis.second.toFloat()),
+                yRange = Pair(yRangeThis.first.toFloat(), yRangeThis.second.toFloat()),
+                xAxisWidth = xAxisWidth,
+                yAxisHeight = yAxisHeight,
+                paint = Paint(strokeStyle).apply {
+                    color = requireContext().getColor(R.color.secondaryDarkColor)
+                }
+            ),
+            LineGraphDataset(
+                points = thisPoints,
+                xRange = Pair(xRangeLast.first.toFloat(), xRangeLast.second.toFloat()),
+                yRange = Pair(yRangeLast.first.toFloat(), yRangeLast.second.toFloat()),
+                xAxisWidth = xAxisWidth,
+                yAxisHeight = yAxisHeight,
+                paint = Paint(strokeStyle).apply {
+                    color = requireContext().getColor(R.color.primaryDarkColor)
+                }
+            ),
+        )
+
+        return LineGraph(
+            datasets = datasets,
+            yLabels = AxisLabels(
+                labels = listOf(
+                    Pair(
+                        yRangeLast.second.toFloat(),
+                        "${getUserDistance(requireContext(), yRangeLast.second).roundToInt()}"
+                    )
+                ),
+                range = Pair(0f, yAxisHeight),
+                lines = true,
+                orientation = AxisLabelOrientation.INSIDE,
+                background = backgroundColor,
+            ),
+            borders = BordersEnum.BOTTOM.value
+        )
+    }
+
+    private fun getDistanceGraphPoints(
+        thisPeriodPoints: Array<Trip>,
+        thisPeriod: Pair<ZonedDateTime, ZonedDateTime>
+    ): Triple<Pair<Long, Long>, Pair<Double, Double>, List<Pair<Float, Float>>> {
+        var accDistance = 0f
+        val durationStart =
+            thisPeriod.first.toInstant().toEpochMilli()
+        return Triple(
+            Pair(
+                durationStart,
+                thisPeriod.second.toInstant().toEpochMilli()
+            ),
+            Pair(0.0, thisPeriodPoints.sumOf { point -> point.distance ?: 0.0 }),
+
+            arrayOf(
+                Trip(
+                    distance = 0.0,
+                    timestamp = thisPeriod.first.toInstant().toEpochMilli(),
+                    bikeId = 0L
+                )
+            ).plus(thisPeriodPoints).map { point ->
+                accDistance += (point.distance ?: 0.0).toFloat()
+                Pair(
+                    (point.timestamp - durationStart).toFloat(),
+                    accDistance
+                )
+            }
+        )
     }
 
     private fun doTopWeeks(view: View) {
@@ -361,9 +689,11 @@ class AnalyticsFragment : Fragment() {
     private fun doPopularRides(view: View) {
         val conversionFactor = getUserDistance(requireContext(), 1.0)
         viewModel.popularDistances(
-            conversionFactor,
-            Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
-                .minus(90, ChronoUnit.DAYS).toInstant().toEpochMilli()
+            conversionFactor = conversionFactor,
+            timestamp = Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
+                .minus(90, ChronoUnit.DAYS).toInstant().toEpochMilli(),
+            bucketSize = 5,
+            limit = 3
         )
             .observe(viewLifecycleOwner) { buckets ->
                 buckets.forEach { distance ->

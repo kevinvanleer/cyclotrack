@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="accentColor">#ff88ff</color>
-    <color name="secondaryGraphColor">#331133</color>
-
+    <color name="secondaryGraphColor">#4E154E</color>
     <color name="secondaryColor">#a500a5</color>
     <color name="secondaryLightColor">#da4dd7</color>
     <color name="secondaryDarkColor">#720075</color>

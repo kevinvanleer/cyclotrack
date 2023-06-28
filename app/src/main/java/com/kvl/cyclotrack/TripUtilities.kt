@@ -119,6 +119,41 @@ fun formatDurationHours(value: Double): String =
     }
 
 
+fun formatDurationShort(value: Double): String =
+    when {
+        value < 1.0 -> {
+            "zero seconds"
+        }
+
+        value < 60 -> {
+            "${value.roundToInt()} sec"
+        }
+
+        value < 3600 -> {
+            val minutes = value / 60
+            val minutePart = minutes.toLong()
+            val seconds = (minutes - minutePart) * 60
+            when (val secondPart = seconds.roundToInt()) {
+                0 -> "${minutePart}m"
+                else -> "${minutePart}m ${secondPart}s"
+            }
+        }
+
+        else -> {
+            val hours = value / 3600
+            val hourPart = hours.toLong()
+            val minutes = (hours - hourPart) * 60
+            val minutePart = minutes.roundToInt()
+            val seconds = (minutes - minutePart) * 60
+            val secondPart = seconds.roundToInt()
+            when {
+                minutePart == 0 && secondPart == 0 -> "${hourPart}h"
+                secondPart == 0 -> "${hourPart}h ${minutePart}m"
+                else -> "${hourPart}h ${minutePart}m ${secondPart}s"
+            }
+        }
+    }
+
 fun formatDuration(value: Double): String =
     when {
         value < 1.0 -> {
@@ -973,7 +1008,18 @@ fun degreesToCardinal(degrees: Float): String {
     }
 }
 
-fun didDeviceFail(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
+fun didSpeedDeviceFail(
+    current: CadenceSpeedMeasurement,
+    previous: CadenceSpeedMeasurement
+): Boolean {
+    //when device fails revolutions and lastEvent reset to zero
+    return (current.lastEvent < previous.lastEvent && current.revolutions < previous.revolutions)
+}
+
+fun didCadenceDeviceFail(
+    current: CadenceSpeedMeasurement,
+    previous: CadenceSpeedMeasurement
+): Boolean {
     val doubleRollover =
         (current.lastEvent < previous.lastEvent && current.revolutions < previous.revolutions)
     val prematureRollover =
@@ -985,20 +1031,24 @@ fun didDeviceFail(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasur
     return deviceReset || veryPrematureRollover
 }
 
-fun validateCadence(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
+fun validateSpeed(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
     val didNotUpdate = current.lastEvent == previous.lastEvent
-    return !(didNotUpdate || didDeviceFail(current, previous))
+    return !(didNotUpdate || didSpeedDeviceFail(current, previous))
 }
 
-fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
-    Log.d("getAverageCadenceTheHardWay", "called")
+fun validateCadence(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeasurement): Boolean {
+    val didNotUpdate = current.lastEvent == previous.lastEvent
+    return !(didNotUpdate || didCadenceDeviceFail(current, previous))
+}
+
+fun getAverageCadenceTheHardWay(cadenceMeasurements: Array<CadenceSpeedMeasurement>): Float {
     var totalTime = 0L
     var totalRevs = 0
     var lastMeasurement: CadenceSpeedMeasurement? = null
     cadenceMeasurements.forEach { measurements ->
         lastMeasurement
             ?.let { last ->
-                if (!didDeviceFail(measurements, last)) {
+                if (!didCadenceDeviceFail(measurements, last)) {
                     totalRevs += getDifferenceRollover(
                         measurements.revolutions,
                         last.revolutions
@@ -1014,8 +1064,7 @@ fun getAverageCadenceTheHardWay(cadenceMeasurements: List<CadenceSpeedMeasuremen
     return totalRevs.toFloat() / totalTime * 1024f * 60f
 }
 
-fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CadenceSpeedMeasurement>): Float {
-    Log.d("getAverageCadenceTheEasyWay", "called")
+fun getAverageCadenceTheEasyWay(cadenceMeasurements: Array<CadenceSpeedMeasurement>): Float {
     val totalRevs =
         getDifferenceRollover(
             cadenceMeasurements.last().revolutions,
@@ -1027,28 +1076,16 @@ fun getAverageCadenceTheEasyWay(cadenceMeasurements: List<CadenceSpeedMeasuremen
     return totalRevs.toFloat().div(duration)
 }
 
-fun getAverageCadence(measurements: Array<CadenceSpeedMeasurement>): Float? =
+fun getAverageCadenceFromRpm(measurements: Array<CadenceSpeedMeasurement>): Float? =
     try {
-        val cadenceMeasurements = measurements.toList()
-            .sortedBy { it.timestamp }
-        var hardWay = false
-        var lastMeasurements: CadenceSpeedMeasurement? = null
-        cadenceMeasurements
-            .forEach { meas ->
-                lastMeasurements
-                    ?.let { last ->
-                        if (didDeviceFail(meas, last)) {
-                            hardWay = true
-                        }
-                    }
-                lastMeasurements = meas
-            }
-
-        if (hardWay) getAverageCadenceTheHardWay(cadenceMeasurements)
-        else getAverageCadenceTheEasyWay(cadenceMeasurements)
+        measurements.mapNotNull { it.rpm }
+            .average().toFloat()
     } catch (e: Exception) {
         null
     }
+
+fun getAverageCadence(measurements: Array<CadenceSpeedMeasurement>): Float? =
+    getAverageCadenceTheHardWay(measurements)
 
 fun getAcceleration(
     durationDelta: Double,

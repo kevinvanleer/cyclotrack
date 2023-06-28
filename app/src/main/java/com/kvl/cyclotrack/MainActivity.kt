@@ -93,6 +93,7 @@ class MainActivity : AppCompatActivity() {
                     }.create()
                 }.show()
             }
+
             else -> {
                 // You can directly ask for the permission.
                 // The registered ActivityResultCallback gets the result of this request.
@@ -114,6 +115,7 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ),
                 -> startTripHandler()
+
                 else -> initializeLocationService()
             }
         } catch (e: IllegalArgumentException) {
@@ -222,7 +224,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             commit()
                         }
-                    if (currentVersion < 55) {
+                    if (currentVersion < 59) {
                         showWhatsNewDialog()
                     }
                 }
@@ -238,6 +240,7 @@ class MainActivity : AppCompatActivity() {
             TripInProgressFragment.toString() -> {
 
             }
+
             else -> setContentView(R.layout.activity_main)
         }
         setSupportActionBar(findViewById(R.id.toolbar_main))

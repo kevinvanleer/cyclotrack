@@ -39,8 +39,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
         targetSdkVersion 33
-        versionCode 58
-        versionName "Legacy export"
+        versionCode 59
+        versionName "New graphs"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
@@ -180,8 +180,6 @@ dependencies {
     kapt 'androidx.hilt:hilt-compiler:1.0.0'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4'
-
-    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 
     implementation 'androidx.preference:preference-ktx:1.2.0'
     implementation 'com.google.code.gson:gson:2.9.0'
