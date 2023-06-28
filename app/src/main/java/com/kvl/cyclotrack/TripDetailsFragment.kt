@@ -1536,6 +1536,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         getSpeedCadenceLineGraph(
                             lineData,
                             avgSpeed,
+                            getUserSpeedUnitShort(requireContext()),
                             strokeStyle,
                             trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                         )
@@ -1557,6 +1558,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private fun getSpeedCadenceLineGraph(
         lineData: LineChartDataset,
         average: Float,
+        yUnits: String,
         strokeStyle: Paint,
         areaStyle: Paint
     ): LineGraph {
@@ -1598,23 +1600,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 labels = listOf(
                     Pair(
                         yTrendMin,
-                        "${yTrendMin.precision(1)} ${
-                            getUserSpeedUnitShort(
-                                requireContext()
-                            )
-                        }"
+                        "${yTrendMin.precision(1)} $yUnits"
                     ),
                     Pair(
                         dataMax,
-                        "${dataMax.precision(1)} ${
-                            getUserSpeedUnitShort(requireContext())
-                        }"
+                        "${dataMax.precision(1)} $yUnits"
                     ),
                     Pair(
                         average,
-                        "${average.precision(1)} ${
-                            getUserSpeedUnitShort(requireContext())
-                        }"
+                        "${average.precision(1)} $yUnits"
                     )
                 ),
                 range = Pair(yViewMin, dataMax + dataMaxPadding),
@@ -1756,6 +1750,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             getSpeedCadenceLineGraph(
                                 lineData,
                                 avgCadence,
+                                "rpm",
                                 strokeStyle,
                                 trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             )
