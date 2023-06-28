@@ -99,7 +99,6 @@ class LineGraph(
     private val borderPaint = Paint(gridPaint).apply { alpha = 80 }
 
     private fun adjustCoordinate(
-        size: Int,
         point: Float,
         offset: Float,
         scale: Float
@@ -148,40 +147,27 @@ class LineGraph(
     ) {
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
-        val path1 = getPath(
-            height,
-            LineGraphDataset(
-                dataset.points1.toMutableList().apply {
-                    add(Pair(dataset.xRange!!.second, 0f))
-                    add(Pair(0f, 0f))
-                },
-                dataset.xRange,
-                dataset.yRange,
-                dataset.xAxisWidth,
-                dataset.yAxisHeight,
-                dataset.paint
-            ),
-            yScale,
-            xScale
+
+        val endPoint =
+            dataset.xRange?.first?.plus(dataset.xAxisWidth ?: (width * xScale)) ?: (width * xScale)
+        canvas.drawPath(
+            getPath(
+                height,
+                LineGraphDataset(
+                    dataset.points1.plus(Pair(endPoint, dataset.points1.last().second)).plus(
+                        dataset.points2.plus(Pair(endPoint, dataset.points2.last().second))
+                            .reversed()
+                    ),
+                    dataset.xRange,
+                    dataset.yRange,
+                    dataset.xAxisWidth,
+                    dataset.yAxisHeight,
+                    dataset.paint
+                ),
+                yScale,
+                xScale
+            ), dataset.paint ?: greenPaint
         )
-        val path2 = getPath(
-            height,
-            LineGraphDataset(
-                dataset.points2.toMutableList().apply {
-                    add(Pair(dataset.xRange!!.second, dataset.yRange!!.second))
-                    add(Pair(0f, dataset.yRange.second))
-                },
-                dataset.xRange,
-                dataset.yRange,
-                dataset.xAxisWidth,
-                dataset.yAxisHeight,
-                dataset.paint
-            ),
-            yScale,
-            xScale
-        )
-        path1.op(path2, Path.Op.INTERSECT)
-        canvas.drawPath(path1, dataset.paint ?: greenPaint)
     }
 
     private fun drawPath(
@@ -320,7 +306,6 @@ class LineGraph(
         xLabels.labels.forEach { label ->
             val dataLabelY = height + getXLabelHeight(xLabels)
             val dataLabelX = adjustCoordinate(
-                width,
                 label.first,
                 xLabels.range?.first ?: 0f,
                 xScale
@@ -340,7 +325,6 @@ class LineGraph(
             )
             if (xLabels.ticks) {
                 val x = adjustCoordinate(
-                    width,
                     label.first,
                     xLabels.range?.first ?: 0f,
                     xScale
