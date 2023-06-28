@@ -489,13 +489,23 @@ fun getTripLegs(
     return getTripLegs(measurements, intervals)
 }
 
-fun getEffectiveCircumference(trip: Trip, measurements: Array<CadenceSpeedMeasurement>) =
-    measurements.firstOrNull()?.revolutions?.toDouble()?.let { firstRev ->
-        measurements.lastOrNull()?.revolutions
-            ?.minus(firstRev)?.let { totalRevs ->
-                trip.distance?.div(totalRevs)?.toFloat()
+fun accumulateRevolutions(measurements: Array<CadenceSpeedMeasurement>): Long {
+    var lastMeasurement: CadenceSpeedMeasurement? = null
+    var totalRevolutions = 0L;
+    measurements.forEach { measurements ->
+        lastMeasurement
+            ?.let { last ->
+                if (validateSpeed(measurements, last)) {
+                    totalRevolutions += measurements.revolutions - last.revolutions
+                }
             }
+        lastMeasurement = measurements
     }
+    return totalRevolutions
+}
+
+fun getEffectiveCircumference(trip: Trip, measurements: Array<CadenceSpeedMeasurement>) =
+    trip.distance?.div(accumulateRevolutions(measurements))?.toFloat()
 
 suspend fun plotPath(
     measurements: Array<Measurements>,
