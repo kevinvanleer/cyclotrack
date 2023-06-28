@@ -63,6 +63,10 @@ class LineGraph(
     private val yLabels: AxisLabels? = null,
     private val borders: Int? = null
 ) : Drawable() {
+
+    private val xLabelTextSize = 28f
+    private val yLabelTextSize = 32f
+
     private val greenPaint: Paint = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
@@ -75,9 +79,9 @@ class LineGraph(
     private val textPaintFill = Paint().apply {
         isAntiAlias = true
         textAlign = Paint.Align.LEFT
-        textSize = 32f
+        textSize = yLabelTextSize
         typeface = Typeface.DEFAULT
-        setARGB(255, 200, 200, 200)
+        setARGB(150, 255, 255, 255)
     }
     private val textPaintStroke = Paint(textPaintFill).apply {
         style = Paint.Style.STROKE
@@ -92,6 +96,7 @@ class LineGraph(
         strokeWidth = 2F
         setARGB(100, 255, 255, 255)
     }
+    private val borderPaint = Paint(gridPaint).apply { alpha = 80 }
 
     private fun adjustCoordinate(
         size: Int,
@@ -217,14 +222,6 @@ class LineGraph(
     }
 
     private fun drawBorders(canvas: Canvas, borders: Int, width: Int, height: Int) {
-        val borderPaint: Paint = Paint().apply {
-            isAntiAlias = true
-            style = Paint.Style.STROKE
-            strokeWidth = 2F
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            setARGB(80, 255, 255, 255)
-        }
 
         if ((borders and BordersEnum.TOP.value) == BordersEnum.TOP.value) canvas.drawPath(
             Path().apply {
@@ -284,7 +281,8 @@ class LineGraph(
             bounds.width() - if (yLabels != null && yLabels.orientation != AxisLabelOrientation.INSIDE) getYLabelWidth(
                 yLabels.labels
             ).toInt() else 0
-        val height: Int = bounds.height() - if (xLabels != null) 32 + 18 else 0
+        val height: Int =
+            bounds.height() - if (xLabels != null) getXLabelHeight(xLabels).toInt() + 2 else 0
 
         areas?.forEach { area ->
             drawArea(
@@ -307,15 +305,20 @@ class LineGraph(
         if (borders != null) drawBorders(canvas, borders, width, height)
     }
 
+    private val xLabelTickSize = 16f
+
     private fun drawXLabels(canvas: Canvas, xLabels: AxisLabels, width: Int, height: Int) {
-        val xLabelFillPaint = Paint(textPaintFill).apply { textAlign = Paint.Align.CENTER }
-        val xLabelStrokePaint = Paint(textPaintStroke).apply { textAlign = Paint.Align.CENTER }
+        val xLabelFillPaint = Paint(textPaintFill).apply {
+            textAlign = Paint.Align.CENTER
+            textSize = xLabelTextSize
+        }
+        val xLabelStrokePaint = Paint(textPaintStroke).apply {
+            textAlign = Paint.Align.CENTER
+            textSize = xLabelTextSize
+        }
         val xScale = width / ((xLabels.range?.second ?: 0f) - (xLabels.range?.first ?: 0f))
         xLabels.labels.forEach { label ->
-            val dataLabelY = when (xLabels.orientation) {
-                AxisLabelOrientation.BOTTOM -> height + 16f
-                else -> height + 32f + 18f
-            }
+            val dataLabelY = height + getXLabelHeight(xLabels)
             val dataLabelX = adjustCoordinate(
                 width,
                 label.first,
@@ -350,9 +353,9 @@ class LineGraph(
                         )
                         lineTo(
                             x,
-                            height + 16f
+                            height + xLabelTickSize
                         )
-                    }, Paint(gridPaint).apply { strokeJoin = Paint.Join.BEVEL }
+                    }, Paint(borderPaint).apply { strokeJoin = Paint.Join.BEVEL }
                 )
             }
             if (xLabels.lines) {
@@ -371,6 +374,12 @@ class LineGraph(
             }
         }
     }
+
+    private fun getXLabelHeight(xLabels: AxisLabels) =
+        when (xLabels.orientation) {
+            AxisLabelOrientation.BOTTOM -> xLabelTextSize + xLabelTickSize + 4f
+            else -> xLabelTextSize + xLabelTickSize + 4f
+        }
 
     private fun getYLabelWidth(labels: List<Pair<Float, String>>): Float =
         labels.map { it.second }.maxOf { textPaintFill.measureText(it) } + 24f
