@@ -119,6 +119,41 @@ fun formatDurationHours(value: Double): String =
     }
 
 
+fun formatDurationShort(value: Double): String =
+    when {
+        value < 1.0 -> {
+            "zero seconds"
+        }
+
+        value < 60 -> {
+            "${value.roundToInt()} sec"
+        }
+
+        value < 3600 -> {
+            val minutes = value / 60
+            val minutePart = minutes.toLong()
+            val seconds = (minutes - minutePart) * 60
+            when (val secondPart = seconds.roundToInt()) {
+                0 -> "${minutePart}m"
+                else -> "${minutePart}m ${secondPart}s"
+            }
+        }
+
+        else -> {
+            val hours = value / 3600
+            val hourPart = hours.toLong()
+            val minutes = (hours - hourPart) * 60
+            val minutePart = minutes.roundToInt()
+            val seconds = (minutes - minutePart) * 60
+            val secondPart = seconds.roundToInt()
+            when {
+                minutePart == 0 && secondPart == 0 -> "${hourPart}h"
+                secondPart == 0 -> "${hourPart}h ${minutePart}m"
+                else -> "${hourPart}h ${minutePart}m ${secondPart}s"
+            }
+        }
+    }
+
 fun formatDuration(value: Double): String =
     when {
         value < 1.0 -> {
