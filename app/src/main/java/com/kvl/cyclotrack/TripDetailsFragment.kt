@@ -1442,17 +1442,18 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 speedMeasurements: Array<CadenceSpeedMeasurement>,
                 avgSpeed: Float
             ): LineChartDataset {
-                val effectiveCircumference =
-                    getEffectiveCircumference(overview, speedMeasurements)
                 val tripId = overview.id
 
                 val intervals = getTripIntervals(timeStates, speedMeasurements)
                 val legs = getTripLegs(speedMeasurements, intervals)
-                Log.d(logTag, "Effective circumference trip $tripId: $effectiveCircumference")
                 Log.d(
                     logTag,
                     "Auto circumference trip $tripId: ${overview.autoWheelCircumference}"
                 )
+
+                val effectiveCircumference =
+                    getEffectiveCircumference(overview, legs.flatten().toTypedArray())
+                Log.d(logTag, "Effective circumference trip $tripId: $effectiveCircumference")
 
                 effectiveCircumference?.let { e ->
                     overview.autoWheelCircumference?.let { a ->
@@ -1629,6 +1630,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         ) { pair ->
             val measurements = pair.first
             val timeStates = pair.second
+            val intervals = getTripIntervals(timeStates, measurements)
+            val legs = getTripLegs(measurements, intervals)
+
             fun makeCadenceDataset(
                 measurementsList: Array<CadenceSpeedMeasurement>,
                 intervals: Array<LongRange>,
@@ -1722,10 +1726,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 return LineChartDataset(entries = entries, trend = trend, hi = hi, lo = lo)
             }
 
-            fun makeCadenceLineChart(avgCadence: Float) {
-                val intervals = getTripIntervals(timeStates, measurements)
-                val legs = getTripLegs(measurements, intervals)
-
+            fun makeCadenceLineChart(
+                intervals: Array<LongRange>,
+                legs: Array<Array<CadenceSpeedMeasurement>>,
+                avgCadence: Float
+            ) {
                 val allData = LineChartDataset(
                     ArrayList(),
                     ArrayList(),
@@ -1761,7 +1766,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
             }
 
-            val avgCadence = getAverageCadence(measurements)
+            val avgCadence = getAverageCadence(legs.flatten().toTypedArray())
             if (avgCadence != null) {
                 cadenceHeadingView.visibility = View.VISIBLE
                 cadenceChartView.visibility = View.VISIBLE
@@ -1769,7 +1774,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     "${
                         avgCadence.takeIf { it.isFinite() }?.roundToInt() ?: 0
                     } rpm (average)"
-                makeCadenceLineChart(avgCadence)
+                makeCadenceLineChart(intervals, legs, avgCadence)
             }
         }
     }
