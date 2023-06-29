@@ -1537,7 +1537,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         getSpeedCadenceLineGraph(
                             lineData,
                             avgSpeed,
-                            getUserSpeedUnitShort(requireContext()),
+                            { value -> "${value.precision(1)} ${getUserSpeedUnitShort(requireContext())}" },
                             strokeStyle,
                             trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                         )
@@ -1559,7 +1559,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private fun getSpeedCadenceLineGraph(
         lineData: LineChartDataset,
         average: Float,
-        yUnits: String,
+        labelTemplate: (Float) -> String,
         strokeStyle: Paint,
         areaStyle: Paint
     ): LineGraph {
@@ -1601,15 +1601,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 labels = listOf(
                     Pair(
                         yTrendMin,
-                        "${yTrendMin.precision(1)} $yUnits"
+                        labelTemplate(yTrendMin)
                     ),
                     Pair(
                         dataMax,
-                        "${dataMax.precision(1)} $yUnits"
+                        labelTemplate(dataMax)
                     ),
                     Pair(
                         average,
-                        "${average.precision(1)} $yUnits"
+                        labelTemplate(average)
                     )
                 ),
                 range = Pair(yViewMin, dataMax + dataMaxPadding),
@@ -1755,7 +1755,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             getSpeedCadenceLineGraph(
                                 lineData,
                                 avgCadence,
-                                "rpm",
+                                { value: Float -> "${value.roundToInt()} rpm" },
                                 strokeStyle,
                                 trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
                             )
