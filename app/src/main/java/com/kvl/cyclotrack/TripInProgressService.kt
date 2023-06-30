@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.database.sqlite.SQLiteConstraintException
 import android.graphics.Color
 import android.location.Location
 import android.os.Bundle
@@ -123,15 +124,20 @@ class TripInProgressService @Inject constructor() :
         { event ->
             event.bpm?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    heartRateMeasurementRepository.save(
-                        HeartRateMeasurement(
-                            tripId = tripId,
-                            heartRate = event.bpm,
-                            energyExpended = event.energyExpended,
-                            rrIntervals = event.rrIntervals,
-                            timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                    try {
+                        heartRateMeasurementRepository.save(
+                            HeartRateMeasurement(
+                                tripId = tripId,
+                                heartRate = event.bpm,
+                                energyExpended = event.energyExpended,
+                                rrIntervals = event.rrIntervals,
+                                timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                            )
                         )
-                    )
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to add heart rate measurement", e)
+                        handleSqliteConstraintException(e)
+                    }
                 }
             }
         }
@@ -148,16 +154,21 @@ class TripInProgressService @Inject constructor() :
         { event ->
             event.revolutionCount?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    cadenceSpeedMeasurementRepository.save(
-                        CadenceSpeedMeasurement(
-                            tripId = tripId,
-                            revolutions = event.revolutionCount,
-                            lastEvent = event.lastEvent!!,
-                            rpm = event.rpm,
-                            sensorType = SensorType.CADENCE,
-                            timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                    try {
+                        cadenceSpeedMeasurementRepository.save(
+                            CadenceSpeedMeasurement(
+                                tripId = tripId,
+                                revolutions = event.revolutionCount,
+                                lastEvent = event.lastEvent!!,
+                                rpm = event.rpm,
+                                sensorType = SensorType.CADENCE,
+                                timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                            )
                         )
-                    )
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to add cadence measurement", e)
+                        handleSqliteConstraintException(e)
+                    }
                 }
             }
         }
@@ -174,16 +185,21 @@ class TripInProgressService @Inject constructor() :
         { event ->
             event.revolutionCount?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
-                    cadenceSpeedMeasurementRepository.save(
-                        CadenceSpeedMeasurement(
-                            tripId = tripId,
-                            revolutions = event.revolutionCount,
-                            lastEvent = event.lastEvent!!,
-                            rpm = event.rpm,
-                            sensorType = SensorType.SPEED,
-                            timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                    try {
+                        cadenceSpeedMeasurementRepository.save(
+                            CadenceSpeedMeasurement(
+                                tripId = tripId,
+                                revolutions = event.revolutionCount,
+                                lastEvent = event.lastEvent!!,
+                                rpm = event.rpm,
+                                sensorType = SensorType.SPEED,
+                                timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                            )
                         )
-                    )
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to add speed measurements", e)
+                        handleSqliteConstraintException(e)
+                    }
 
                     if (autopauseEnabled) {
                         handleAutoPause(tripId)
@@ -218,14 +234,19 @@ class TripInProgressService @Inject constructor() :
         if (newAutoTimeState != autoTimeState) {
             autoTimeState = newAutoTimeState
             if (!blockAutoResume && autoTimeState != currentTimeState.state) {
-                timeStateRepository.appendTimeState(
-                    TimeState(
-                        tripId = tripId,
-                        state = autoTimeState,
-                        timestamp = currentAutoTimeState!!.timestamp,
-                        auto = true
+                try {
+                    timeStateRepository.appendTimeState(
+                        TimeState(
+                            tripId = tripId,
+                            state = autoTimeState,
+                            timestamp = currentAutoTimeState!!.timestamp,
+                            auto = true
+                        )
                     )
-                )
+                } catch (e: SQLiteConstraintException) {
+                    Log.e(logTag, "Failed to add auto-pause time state", e)
+                    handleSqliteConstraintException(e)
+                }
             }
         }
     }
@@ -251,14 +272,19 @@ class TripInProgressService @Inject constructor() :
             lifecycle.coroutineScope.launch {
                 tripsRepository.getNewest()?.let { trip ->
                     if (trip.inProgress && trip.id != null && trip.bikeId != bikeId) {
-                        tripsRepository.updateBikeId(trip.id, bikeId)
-                        tripsRepository.updateWheelCircumference(
-                            TripWheelCircumference(
-                                id = trip.id,
-                                userWheelCircumference = userCircumferenceToMeters(newBike.wheelCircumference),
-                                autoWheelCircumference = autoCircumference
+                        try {
+                            tripsRepository.updateBikeId(trip.id, bikeId)
+                            tripsRepository.updateWheelCircumference(
+                                TripWheelCircumference(
+                                    id = trip.id,
+                                    userWheelCircumference = userCircumferenceToMeters(newBike.wheelCircumference),
+                                    autoWheelCircumference = autoCircumference
+                                )
                             )
-                        )
+                        } catch (e: SQLiteConstraintException) {
+                            Log.e(logTag, "Failed to update bike for trip", e)
+                            handleSqliteConstraintException(e)
+                        }
                     }
                 }
             }
@@ -305,6 +331,9 @@ class TripInProgressService @Inject constructor() :
                                         } catch (e: JsonDataException) {
                                             Log.w(logTag, "Failed to parse response", e)
                                             FirebaseCrashlytics.getInstance().recordException(e)
+                                        } catch (e: SQLiteConstraintException) {
+                                            Log.e(logTag, "Failed to add weather measurements", e)
+                                            handleSqliteConstraintException(e)
                                         }
                                     } else {
                                         nextWeatherUpdate = 0
@@ -347,8 +376,19 @@ class TripInProgressService @Inject constructor() :
                 }
             }
             if (tripId >= 0)
-                measurementsRepository.insertMeasurements(newMeasurement)
+                try {
+                    measurementsRepository.insertMeasurements(newMeasurement)
+                } catch (e: SQLiteConstraintException) {
+                    Log.e(logTag, "Failed to add gps measurements", e)
+                    handleSqliteConstraintException(e)
+                }
         }
+    }
+
+    private fun handleSqliteConstraintException(e: SQLiteConstraintException) {
+        FirebaseCrashlytics.getInstance().recordException(e)
+        Log.i(logTag, "Terminating after SQLiteConstraintException...")
+        onDestroy()
     }
 
     private fun updateDerivedTripState(
@@ -443,42 +483,52 @@ class TripInProgressService @Inject constructor() :
                         )
                 }
 
-            tripsRepository.updateTripStats(
-                TripStats(
-                    id = tripId,
-                    distance = totalDistance,
-                    duration = duration,
-                    averageSpeed = (totalDistance / duration).toFloat()
+            try {
+                tripsRepository.updateTripStats(
+                    TripStats(
+                        id = tripId,
+                        distance = totalDistance,
+                        duration = duration,
+                        averageSpeed = (totalDistance / duration).toFloat()
+                    )
                 )
-            )
 
+            } catch (e: SQLiteConstraintException) {
+                Log.e(logTag, "Failed to update trip stats", e)
+                handleSqliteConstraintException(e)
+            }
             if (crossedSplitThreshold(
                     sharedPreferences,
                     totalDistance,
                     trip.distance ?: Double.MAX_VALUE
                 )
             ) {
-                splitRepository.getTripSplits(tripId).lastOrNull()?.let { lastSplit ->
-                    splitRepository.addSplit(
+                try {
+                    splitRepository.getTripSplits(tripId).lastOrNull()?.let { lastSplit ->
+                        splitRepository.addSplit(
+                            Split(
+                                timestamp = SystemUtils.currentTimeMillis(),
+                                duration = duration - lastSplit.totalDuration,
+                                distance = totalDistance - lastSplit.totalDistance,
+                                totalDuration = duration,
+                                totalDistance = totalDistance,
+                                tripId = tripId
+                            )
+                        )
+                    } ?: splitRepository.addSplit(
                         Split(
                             timestamp = SystemUtils.currentTimeMillis(),
-                            duration = duration - lastSplit.totalDuration,
-                            distance = totalDistance - lastSplit.totalDistance,
+                            duration = duration,
+                            distance = totalDistance,
                             totalDuration = duration,
                             totalDistance = totalDistance,
                             tripId = tripId
                         )
                     )
-                } ?: splitRepository.addSplit(
-                    Split(
-                        timestamp = SystemUtils.currentTimeMillis(),
-                        duration = duration,
-                        distance = totalDistance,
-                        totalDuration = duration,
-                        totalDistance = totalDistance,
-                        tripId = tripId
-                    )
-                )
+                } catch (e: SQLiteConstraintException) {
+                    Log.e(logTag, "Failed to add split", e)
+                    handleSqliteConstraintException(e)
+                }
             }
 
             val newSlope = calculateSlope(derivedTripState.takeLast(20))
@@ -524,13 +574,18 @@ class TripInProgressService @Inject constructor() :
         sharedPreferences.edit {
             this.putFloat("auto_circumference", circumference)
         }
-        tripsRepository.updateWheelCircumference(
-            TripWheelCircumference(
-                id = tripId,
-                userWheelCircumference = userCircumference,
-                autoWheelCircumference = circumference
+        try {
+            tripsRepository.updateWheelCircumference(
+                TripWheelCircumference(
+                    id = tripId,
+                    userWheelCircumference = userCircumference,
+                    autoWheelCircumference = circumference
+                )
             )
-        )
+        } catch (e: SQLiteConstraintException) {
+            Log.e(logTag, "Failed to update wheel circumference", e)
+            handleSqliteConstraintException(e)
+        }
         EventBus.getDefault().post(WheelCircumferenceEvent(circumference))
     }
 
@@ -580,7 +635,12 @@ class TripInProgressService @Inject constructor() :
 
     private fun sensorObserver(tripId: Long): Observer<SensorModel> = Observer { newData ->
         lifecycleScope.launch {
-            sensorsRepository.insertMeasurements(tripId, newData)
+            try {
+                sensorsRepository.insertMeasurements(tripId, newData)
+            } catch (e: SQLiteConstraintException) {
+                Log.e(logTag, "Failed to add sensor measurements", e)
+                handleSqliteConstraintException(e)
+            }
         }
     }
 
@@ -663,16 +723,21 @@ class TripInProgressService @Inject constructor() :
         startForegroundCompat(tripId)
 
         lifecycleScope.launch(Dispatchers.IO) {
-            tripsRepository.updateWheelCircumference(
-                TripWheelCircumference(
-                    id = tripId,
-                    userWheelCircumference = userCircumference,
-                    autoWheelCircumference = autoCircumference
+            try {
+                tripsRepository.updateWheelCircumference(
+                    TripWheelCircumference(
+                        id = tripId,
+                        userWheelCircumference = userCircumference,
+                        autoWheelCircumference = autoCircumference
+                    )
                 )
-            )
-            tripsRepository.updateBiometrics(
-                getCombinedBiometrics(tripId)
-            )
+                tripsRepository.updateBiometrics(
+                    getCombinedBiometrics(tripId)
+                )
+            } catch (e: SQLiteConstraintException) {
+                Log.e(logTag, "Failed to add sensor measurements", e)
+                handleSqliteConstraintException(e)
+            }
         }
     }
 
@@ -743,12 +808,17 @@ class TripInProgressService @Inject constructor() :
     private fun pause(tripId: Long) {
         Log.d(logTag, "Called pause()")
         lifecycle.coroutineScope.launch {
-            timeStateRepository.appendTimeState(
-                TimeState(
-                    tripId = tripId,
-                    state = TimeStateEnum.PAUSE
+            try {
+                timeStateRepository.appendTimeState(
+                    TimeState(
+                        tripId = tripId,
+                        state = TimeStateEnum.PAUSE
+                    )
                 )
-            )
+            } catch (e: SQLiteConstraintException) {
+                Log.e(logTag, "Failed to add pause time state", e)
+                handleSqliteConstraintException(e)
+            }
         }
     }
 
@@ -756,12 +826,17 @@ class TripInProgressService @Inject constructor() :
         Log.d(logTag, "Called resume()")
         bleService.restore()
         lifecycle.coroutineScope.launch {
-            timeStateRepository.appendTimeState(
-                TimeState(
-                    tripId = tripId,
-                    state = TimeStateEnum.RESUME
+            try {
+                timeStateRepository.appendTimeState(
+                    TimeState(
+                        tripId = tripId,
+                        state = TimeStateEnum.RESUME
+                    )
                 )
-            )
+            } catch (e: SQLiteConstraintException) {
+                Log.e(logTag, "Failed to add resume time state", e)
+                handleSqliteConstraintException(e)
+            }
         }
         startObserving(tripId)
     }
@@ -778,13 +853,23 @@ class TripInProgressService @Inject constructor() :
 
         tripId.takeIf { it >= 0 }?.let { id ->
             job = lifecycle.coroutineScope.launch {
-                timeStateRepository.appendTimeState(
-                    TimeState(
-                        tripId = id,
-                        state = TimeStateEnum.STOP
+                try {
+                    timeStateRepository.appendTimeState(
+                        TimeState(
+                            tripId = id,
+                            state = TimeStateEnum.STOP
+                        )
                     )
-                )
-                tripsRepository.endTrip(id)
+                } catch (e: SQLiteConstraintException) {
+                    Log.e(logTag, "Failed to add stop time state", e)
+                    handleSqliteConstraintException(e)
+                }
+                try {
+                    tripsRepository.endTrip(id)
+                } catch (e: SQLiteConstraintException) {
+                    Log.e(logTag, "Failed to end trip", e)
+                    handleSqliteConstraintException(e)
+                }
             }
         }
 
