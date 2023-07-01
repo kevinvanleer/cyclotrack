@@ -152,7 +152,7 @@ class TripDetailsViewModel @Inject constructor(
                         calculateSplits(tripId, measurements, timeStates, sharedPreferences)
                     viewModelScope.launch {
                         Log.d(
-                            "TRIP_DETAILS_VIEW_MODEL",
+                            logTag,
                             "Inserting post-trip computed splits in database"
                         )
                         splitRepository.addSplits(tripSplits.toTypedArray())
