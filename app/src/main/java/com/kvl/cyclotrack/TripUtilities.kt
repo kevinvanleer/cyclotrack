@@ -492,14 +492,14 @@ fun getTripLegs(
 fun accumulateRevolutions(measurements: Array<CadenceSpeedMeasurement>): Long {
     var lastMeasurement: CadenceSpeedMeasurement? = null
     var totalRevolutions = 0L;
-    measurements.forEach { measurements ->
+    measurements.forEach { measurement ->
         lastMeasurement
             ?.let { last ->
-                if (validateSpeed(measurements, last)) {
-                    totalRevolutions += measurements.revolutions - last.revolutions
+                if (validateSpeed(measurement, last)) {
+                    totalRevolutions += measurement.revolutions - last.revolutions
                 }
             }
-        lastMeasurement = measurements
+        lastMeasurement = measurement
     }
     return totalRevolutions
 }

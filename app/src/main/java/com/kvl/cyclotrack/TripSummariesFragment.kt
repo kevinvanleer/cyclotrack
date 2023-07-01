@@ -1,6 +1,5 @@
 package com.kvl.cyclotrack
 
-import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -46,16 +45,16 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         }
     }
 
-    @SuppressLint("NewApi")
-    @SuppressWarnings("deprecation")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         addMenuProvider()
         val viewManager = LinearLayoutManager(activity)
         val listState: Parcelable? =
-            when (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                true -> savedInstanceState?.getParcelable("MY_KEY", Bundle::class.java)
-                else -> savedInstanceState?.getParcelable("MY_KEY")
+            when {
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ->
+                    savedInstanceState?.getParcelable("MY_KEY", Bundle::class.java)
+
+                else -> @Suppress("DEPRECATION") savedInstanceState?.getParcelable("MY_KEY")
             }
         if (listState != null) viewManager.onRestoreInstanceState(listState)
 
@@ -242,22 +241,24 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         )
     }
 
-    @SuppressWarnings("deprecation")
     override fun onResume() {
         super.onResume()
         if (this::tripListView.isInitialized) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                tripListView.layoutManager?.onRestoreInstanceState(
-                    viewModel.tripListState.getParcelable(
-                        "MY_KEY", Bundle::class.java
+            when {
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ->
+                    tripListView.layoutManager?.onRestoreInstanceState(
+                        viewModel.tripListState.getParcelable(
+                            "MY_KEY", Bundle::class.java
+                        )
                     )
-                )
-            } else {
-                tripListView.layoutManager?.onRestoreInstanceState(
-                    viewModel.tripListState.getParcelable(
-                        "MY_KEY"
+
+                else ->
+                    @Suppress("DEPRECATION")
+                    tripListView.layoutManager?.onRestoreInstanceState(
+                        viewModel.tripListState.getParcelable(
+                            "MY_KEY"
+                        )
                     )
-                )
             }
         }
     }
