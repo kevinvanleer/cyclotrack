@@ -1,6 +1,11 @@
 package com.kvl.cyclotrack
 
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.IntentSender
+import android.content.SharedPreferences
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
@@ -10,7 +15,11 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.*
+import android.view.View.GONE
+import android.view.View.INVISIBLE
+import android.view.View.OnClickListener
+import android.view.View.OnTouchListener
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
@@ -41,7 +50,8 @@ import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -234,11 +244,6 @@ class TripInProgressFragment :
 
         when (tripId >= 0) {
             true -> {
-                Log.d(
-                    "backStack", "${
-                        findNavController().backQueue.map { it.destination.label }
-                    }"
-                )
                 requireActivity().finish()
                 findNavController().navigate(
                     TripInProgressFragmentDirections.actionFinishTrip(
@@ -246,6 +251,7 @@ class TripInProgressFragment :
                     )
                 )
             }
+
             else -> findNavController()
                 .navigate(R.id.action_back_to_summaries)
         }
@@ -265,6 +271,7 @@ class TripInProgressFragment :
                         view?.doOnPreDraw { hidePause() }
                         pauseButton.text = getString(R.string.pause_label)
                     }
+
                     TimeStateEnum.PAUSE -> {
                         view?.doOnPreDraw { hidePause() }
                         autoPauseChip.visibility = when (currentState.auto) {
@@ -273,6 +280,7 @@ class TripInProgressFragment :
                         }
                         slideInResumeStop()
                     }
+
                     else -> {
                         pauseButton.setOnClickListener(startTripListener)
                         pauseButton.text = getString(R.string.start_label)
@@ -362,11 +370,6 @@ class TripInProgressFragment :
         }
 
         Log.d(logTag, "TripInProgressFragment::onViewCreated")
-        Log.d(
-            "backStack", "${
-                findNavController().backQueue.map { it.destination.label }
-            }"
-        )
         FirebaseAnalytics.getInstance(requireContext()).logEvent("EnterDashboard") {}
 
         savedInstanceState?.getLong("tripId", -1)
@@ -529,6 +532,7 @@ class TripInProgressFragment :
                             speed.rpm / 60 * circumference!!
                         )
                     )
+
                     else -> topRightView.value
                 }
             }
@@ -554,6 +558,7 @@ class TripInProgressFragment :
                         windDirectionArrow.alpha = 0.3f
                         windIcon.alpha = 0.3f
                     }
+
                     else -> {
                         temperatureTextView.alpha = 1f
                         footerRightView.alpha = 1f
@@ -583,6 +588,7 @@ class TripInProgressFragment :
                         )
                         windDirectionArrow.setImageResource(R.drawable.ic_circle)
                     }
+
                     else -> {
                         windDirectionArrow.setPadding(0)
                         windDirectionArrow.setImageResource(R.drawable.ic_long_arrow_up)
@@ -672,6 +678,7 @@ class TripInProgressFragment :
                     true -> (location.speedAccuracyMetersPerSecond.coerceAtMost(
                         10f
                     ) / 10.0 - 1).pow(8)
+
                     else -> 0.0
                 }
             (averageSpeed
@@ -718,6 +725,7 @@ class TripInProgressFragment :
                 ).apply {
                     this.action = getString(R.string.action_initialize_trip_service)
                 })
+
                 else -> {
                     Log.d(logTag, "Received trip ID argument $tripId")
                     Log.d(logTag, "Resuming trip $tripId")
@@ -741,6 +749,7 @@ class TripInProgressFragment :
                     FirebaseCrashlytics.getInstance().recordException(e)
                     endTrip(-1)
                 }
+
                 else -> throw e
             }
         }
@@ -803,6 +812,7 @@ class TripInProgressFragment :
                 v?.performClick()
                 true
             } else false
+
             MotionEvent.ACTION_DOWN -> true
             else -> false
         }

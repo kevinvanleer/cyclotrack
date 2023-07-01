@@ -392,11 +392,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         activity?.title = ""
-        Log.d(
-            "backStack", "${
-                findNavController().backQueue.map { it.destination.label }
-            }"
-        )
 
         addMenuProvider()
 
@@ -1117,22 +1112,11 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(logTag, "CREATING TRIP DETAILS FRAGMENT")
-        Log.d(
-            "backStack", "${
-                findNavController().backQueue.map { it.destination.label }
-            }"
-        )
         if (this::mapView.isInitialized) mapView.onCreate(savedInstanceState)
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d(
-            "backStack", "${
-                findNavController().backQueue.map { it.destination.label }
-            }"
-        )
         if (this::mapView.isInitialized) mapView.onResume()
     }
 
