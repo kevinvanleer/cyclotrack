@@ -900,7 +900,7 @@ class TripInProgressService @Inject constructor() :
                         -1L -> lifecycleScope.launch { start() }
                         else -> restart(tripId)
                     }
-                    lifecycleScope.launchWhenCreated {
+                    lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
                             delay(5L * 60 * 1000)
                         }
