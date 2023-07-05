@@ -469,7 +469,7 @@ class TripInProgressFragment :
                 )
             viewLifecycleOwner.lifecycleScope.launch {
                 viewModel.getFastestDistance(
-                    split.totalDistance.roundToInt(),
+                    getUserDistance(requireContext(), split.totalDistance).roundToInt(),
                     getUserDistance(requireContext(), 1.0),
                     3
                 ).let {
@@ -480,7 +480,7 @@ class TripInProgressFragment :
                     }
                 }
                 viewModel.getFastestSplit(
-                    split.totalDistance.roundToInt(),
+                    getUserDistance(requireContext(), split.totalDistance).roundToInt(),
                     getUserDistance(requireContext(), 1.0),
                     3
                 ).let {
