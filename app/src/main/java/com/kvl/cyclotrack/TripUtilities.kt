@@ -1051,7 +1051,9 @@ fun validateCadence(current: CadenceSpeedMeasurement, previous: CadenceSpeedMeas
     return !(didNotUpdate || didCadenceDeviceFail(current, previous))
 }
 
-fun getAverageCadenceTheHardWay(cadenceMeasurements: Array<CadenceSpeedMeasurement>): Float {
+fun getAverageCadenceTheHardWay(cadenceMeasurements: Array<CadenceSpeedMeasurement>): Float? {
+    if (cadenceMeasurements.isNullOrEmpty()) return null
+
     var totalTime = 0L
     var totalRevs = 0
     var lastMeasurement: CadenceSpeedMeasurement? = null
