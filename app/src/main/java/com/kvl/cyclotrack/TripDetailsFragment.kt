@@ -393,8 +393,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         super.onViewCreated(view, savedInstanceState)
         activity?.title = ""
 
-        addMenuProvider()
-
         constraintLayout = view.findViewById(R.id.TripDetailsFragment)
         maxGuide = view.findViewById(R.id.trip_details_max_map_guide)
         minGuide = view.findViewById(R.id.trip_details_min_map_guide)
@@ -465,6 +463,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             if (args.tripId == -1L) throw IllegalArgumentException()
             Log.d(logTag, String.format("Displaying details for trip %d", tripId))
             viewModel.tripId = tripId
+
+            addMenuProvider()
 
             observeWeather(view)
             viewModel.updateSplits()
