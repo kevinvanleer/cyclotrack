@@ -79,6 +79,8 @@ class TripSummariesAdapter(
                     }
                 } catch (e: IllegalArgumentException) {
                     Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
+                } catch (e: IllegalStateException) {
+                    Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
                 }
             }
         }
