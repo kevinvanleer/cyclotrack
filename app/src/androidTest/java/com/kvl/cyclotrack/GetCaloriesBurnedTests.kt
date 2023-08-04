@@ -4,6 +4,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
+import com.kvl.cyclotrack.util.getCaloriesBurned
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,7 +13,8 @@ import org.junit.runner.RunWith
 class GetCaloriesBurnedTests {
     @Test
     fun getCaloriesBurned_success() {
-        val testBiometrics = Biometrics(userSex = UserSexEnum.MALE,
+        val testBiometrics = Biometrics(
+            userSex = UserSexEnum.MALE,
             id = 0,
             userAge = 40f,
             userWeight = 86f,
@@ -25,7 +27,8 @@ class GetCaloriesBurnedTests {
             userWeight = 86f,
             userHeight = 1.82f,
             userVo2max = 51f,
-            duration = 1800.0
+            duration = 1800.0,
+            bikeId = 1
         )
         val heartRate = 160.toShort()
         val context = getInstrumentation().targetContext
@@ -75,7 +78,8 @@ class GetCaloriesBurnedTests {
             userWeight = 86f,
             userHeight = 1.82f,
             userVo2max = 51f,
-            duration = 1800.0
+            duration = 1800.0,
+            bikeId = 1
         )
         val heartRate = 160.toShort()
         val context = getInstrumentation().targetContext

@@ -76,7 +76,16 @@ fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE `TimeState` (`tripId` INTEGER NOT NULL, `state` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        database.execSQL(
+            """CREATE TABLE 
+            |`TimeState` (
+            |`tripId` INTEGER NOT NULL,
+            |`state` INTEGER NOT NULL,
+            |`timestamp` INTEGER NOT NULL,
+            |`id` INTEGER PRIMARY KEY,
+            |FOREIGN KEY(`tripId`) REFERENCES Trip(`id`
+            |) ON DELETE CASCADE)""".trimMargin()
+        )
         database.execSQL("CREATE INDEX index_TimeState_tripId on TimeState(`tripId`)")
     }
 }

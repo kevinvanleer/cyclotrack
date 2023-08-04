@@ -18,7 +18,6 @@ import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.time.Clock
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -30,24 +29,11 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+const val LOCATION_ACCURACY_THRESHOLD = 7.5f
+
 fun getDistance(
     curr: Measurements,
     prev: Measurements,
-): Float {
-    val distanceArray = floatArrayOf(0f)
-    Location.distanceBetween(
-        curr.latitude,
-        curr.longitude,
-        prev.latitude,
-        prev.longitude,
-        distanceArray
-    )
-    return distanceArray[0]
-}
-
-fun getDistance(
-    curr: CriticalMeasurements,
-    prev: CriticalMeasurements,
 ): Float {
     val distanceArray = floatArrayOf(0f)
     Location.distanceBetween(
@@ -240,65 +226,40 @@ fun accumulatedTime(timeStates: Array<TimeState>?): Double {
 
 fun getTripInProgressIntervals(
     timeStates: Array<TimeState>?,
-    clock: Clock = Clock.systemUTC()
-): Array<LongRange> {
-    val intervals = ArrayList<LongRange>()
-    var intervalStart = -1L
-    timeStates?.forEach { timeState ->
-        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
-            timeState.timestamp
-        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
-            intervals.add(LongRange(intervalStart, timeState.timestamp))
-            intervalStart = -1L
-        }
-    }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state)) {
-        intervals.add(LongRange(timeStates.last().timestamp, SystemUtils.currentTimeMillis(clock)))
-    }
-    return intervals.toTypedArray()
-}
+    currentTimeMillis: Long = SystemUtils.currentTimeMillis()
+): Array<LongRange> = getTripIntervals(timeStates, null, currentTimeMillis)
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
     measurements: Array<HeartRateMeasurement>? = null,
-): Array<LongRange> =
-    when (measurements.isNullOrEmpty()) {
-        true -> getTripIntervals(timeStates)
-        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
-    }
+): Array<LongRange> = getTripIntervals(
+    timeStates,
+    measurements?.firstOrNull()?.timestamp,
+    measurements?.lastOrNull()?.timestamp
+)
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
     measurements: Array<CadenceSpeedMeasurement>? = null,
-): Array<LongRange> =
-    when (measurements.isNullOrEmpty()) {
-        true -> getTripIntervals(timeStates)
-        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
-    }
-
-fun getTripIntervals(
-    timeStates: Array<TimeState>?,
-    measurements: Array<CriticalMeasurements>? = null,
-): Array<LongRange> =
-    when (measurements.isNullOrEmpty()) {
-        true -> getTripIntervals(timeStates)
-        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
-    }
+): Array<LongRange> = getTripIntervals(
+    timeStates,
+    measurements?.firstOrNull()?.timestamp,
+    measurements?.lastOrNull()?.timestamp
+)
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
     measurements: Array<Measurements>? = null,
-): Array<LongRange> =
-    when (measurements.isNullOrEmpty()) {
-        true -> getTripIntervals(timeStates)
-        false -> getTripIntervals(timeStates, measurements.first(), measurements.last())
-    }
-
+): Array<LongRange> = getTripIntervals(
+    timeStates,
+    measurements?.firstOrNull()?.time,
+    measurements?.lastOrNull()?.time
+)
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
-    firstMeasurement: CadenceSpeedMeasurement? = null,
-    lastMeasurement: CadenceSpeedMeasurement? = null,
+    firstMeasurementTime: Long? = null,
+    lastMeasurementTime: Long? = null,
 ): Array<LongRange> {
     val intervals = ArrayList<LongRange>()
     var intervalStart = -1L
@@ -306,112 +267,17 @@ fun getTripIntervals(
         if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
             timeState.timestamp
         if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
-            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervals.add((intervalStart until timeState.timestamp))
             intervalStart = -1L
         }
     }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
-        if (timeStates.last().timestamp < lastMeasurement.timestamp) {
-            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.timestamp))
+    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurementTime != null) {
+        if (timeStates.last().timestamp < lastMeasurementTime) {
+            intervals.add((intervalStart..lastMeasurementTime))
         }
     }
-    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
-        arrayOf(
-            LongRange(
-                firstMeasurement.timestamp,
-                lastMeasurement.timestamp
-            )
-        )
-    } else intervals.toTypedArray()
-}
-
-fun getTripIntervals(
-    timeStates: Array<TimeState>?,
-    firstMeasurement: HeartRateMeasurement? = null,
-    lastMeasurement: HeartRateMeasurement? = null,
-): Array<LongRange> {
-    val intervals = ArrayList<LongRange>()
-    var intervalStart = -1L
-    timeStates?.forEach { timeState ->
-        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
-            timeState.timestamp
-        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
-            intervals.add(LongRange(intervalStart, timeState.timestamp))
-            intervalStart = -1L
-        }
-    }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
-        if (timeStates.last().timestamp < lastMeasurement.timestamp) {
-            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.timestamp))
-        }
-    }
-    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
-        arrayOf(
-            LongRange(
-                firstMeasurement.timestamp,
-                lastMeasurement.timestamp
-            )
-        )
-    } else intervals.toTypedArray()
-}
-
-fun getTripIntervals(
-    timeStates: Array<TimeState>?,
-    firstMeasurement: CriticalMeasurements? = null,
-    lastMeasurement: CriticalMeasurements? = null,
-): Array<LongRange> {
-    val intervals = ArrayList<LongRange>()
-    var intervalStart = -1L
-    timeStates?.forEach { timeState ->
-        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
-            timeState.timestamp
-        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
-            intervals.add(LongRange(intervalStart, timeState.timestamp))
-            intervalStart = -1L
-        }
-    }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
-        if (timeStates.last().timestamp < lastMeasurement.time) {
-            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.time))
-        }
-    }
-    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
-        arrayOf(
-            LongRange(
-                firstMeasurement.time,
-                lastMeasurement.time
-            )
-        )
-    } else intervals.toTypedArray()
-}
-
-fun getTripIntervals(
-    timeStates: Array<TimeState>?,
-    firstMeasurement: Measurements? = null,
-    lastMeasurement: Measurements? = null,
-): Array<LongRange> {
-    val intervals = ArrayList<LongRange>()
-    var intervalStart = -1L
-    timeStates?.forEach { timeState ->
-        if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
-            timeState.timestamp
-        if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
-            intervals.add(LongRange(intervalStart, timeState.timestamp))
-            intervalStart = -1L
-        }
-    }
-    if (!timeStates.isNullOrEmpty() && isTripInProgress(timeStates.last().state) && lastMeasurement != null) {
-        if (timeStates.last().timestamp < lastMeasurement.time) {
-            intervals.add(LongRange(timeStates.last().timestamp, lastMeasurement.time))
-        }
-    }
-    return if (intervals.isEmpty() && firstMeasurement != null && lastMeasurement != null) {
-        arrayOf(
-            LongRange(
-                firstMeasurement.time,
-                lastMeasurement.time
-            )
-        )
+    return if (intervals.isEmpty() && firstMeasurementTime != null && lastMeasurementTime != null) {
+        arrayOf(firstMeasurementTime..lastMeasurementTime)
     } else intervals.toTypedArray()
 }
 
@@ -424,7 +290,7 @@ fun getTripIntervals(
         if (isTripInProgress(timeState.state) && intervalStart < 0) intervalStart =
             timeState.timestamp
         if (intervalStart >= 0 && !isTripInProgress(timeState.state)) {
-            intervals.add(LongRange(intervalStart, timeState.timestamp))
+            intervals.add((intervalStart until timeState.timestamp))
             intervalStart = -1L
         }
     }
@@ -468,25 +334,6 @@ fun getTripLegs(
         legs.add(measurements.filter { interval.contains(it.timestamp) }.toTypedArray())
     }
     return legs.toTypedArray()
-}
-
-fun getTripLegs(
-    measurements: Array<CriticalMeasurements>,
-    intervals: Array<LongRange>,
-): Array<Array<CriticalMeasurements>> {
-    val legs = ArrayList<Array<CriticalMeasurements>>()
-    intervals.forEach { interval ->
-        legs.add(measurements.filter { interval.contains(it.time) }.toTypedArray())
-    }
-    return legs.toTypedArray()
-}
-
-fun getTripLegs(
-    measurements: Array<CriticalMeasurements>,
-    timeStates: Array<TimeState>?,
-): Array<Array<CriticalMeasurements>> {
-    val intervals = getTripIntervals(timeStates, measurements)
-    return getTripLegs(measurements, intervals)
 }
 
 fun accumulateRevolutions(measurements: Array<CadenceSpeedMeasurement>): Long {
@@ -836,19 +683,38 @@ fun getSplitThreshold(
     return getSplitThreshold(prefs.getString("display_units", "1"))
 }
 
+fun incrementSplit(
+    split: Split,
+    durationDelta: Double,
+    distanceDelta: Float,
+): Split =
+    split.copy(
+        timestamp = SystemUtils.currentTimeMillis(),
+        duration = split.duration + durationDelta,
+        totalDuration = split.totalDuration + durationDelta,
+        distance = split.distance + distanceDelta,
+        totalDistance = split.totalDistance + distanceDelta,
+    )
+
+fun crossedSplitThreshold(
+    unitConversionFactor: Double,
+    newDistance: Double,
+    oldDistance: Double,
+): Boolean =
+    newDistance > oldDistance && floor(newDistance * unitConversionFactor) > floor(oldDistance * unitConversionFactor)
+
 fun crossedSplitThreshold(
     prefs: SharedPreferences,
     newDistance: Double,
     oldDistance: Double,
-): Boolean {
-    val userConversionFactor =
-        when (prefs.getString("display_units", "1")) {
-            "1" -> METERS_TO_FEET * FEET_TO_MILES
-            "2" -> METERS_TO_KM
-            else -> 1.0
-        }
-    return floor(newDistance * userConversionFactor) > floor(oldDistance * userConversionFactor)
-}
+): Boolean =
+    when (prefs.getString("display_units", "1")) {
+        "1" -> METERS_TO_FEET * FEET_TO_MILES
+        "2" -> METERS_TO_KM
+        else -> 1.0
+    }.let {
+        crossedSplitThreshold(it, newDistance, oldDistance)
+    }
 
 fun crossedSplitThreshold(context: Context, newDistance: Double, oldDistance: Double): Boolean {
     return crossedSplitThreshold(
@@ -863,6 +729,19 @@ fun calculateSplits(
     measurements: Array<Measurements>,
     timeStates: Array<TimeState>?,
     sharedPreferences: SharedPreferences,
+) = when (sharedPreferences.getString("display_units", "1")) {
+    "1" -> METERS_TO_FEET * FEET_TO_MILES
+    "2" -> METERS_TO_KM
+    else -> 1.0
+}.let {
+    calculateSplits(tripId, measurements, timeStates, it)
+}
+
+fun calculateSplits(
+    tripId: Long,
+    measurements: Array<Measurements>,
+    timeStates: Array<TimeState>?,
+    unitConversionFactor: Double,
 ): ArrayList<Split> {
     val tripSplits = arrayListOf<Split>()
     var totalDistance = 0.0
@@ -883,7 +762,11 @@ fun calculateSplits(
         for (measurementIdx in 1 until leg.size) {
             val lastSplit = getLastSplit(tripSplits)
             val curr = leg[measurementIdx]
+            if (curr.hasAccuracy() && curr.accuracy > LOCATION_ACCURACY_THRESHOLD) continue;
 
+            if (totalDistance == 0.0) {
+                Log.v("calculateSplits", "first measurement:${prev.id}:${curr.id}")
+            }
             totalDistance += getDistance(curr, prev)
             totalActiveTime =
                 ((curr.time - (intervals[legIdx].first)) / 1e3) + accumulateTripTime(
@@ -894,7 +777,7 @@ fun calculateSplits(
             timestamp = curr.time
 
             if (crossedSplitThreshold(
-                    sharedPreferences,
+                    unitConversionFactor,
                     totalDistance,
                     lastSplit.totalDistance
                 )

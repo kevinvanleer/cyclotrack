@@ -8,11 +8,18 @@ class SplitRepository @Inject constructor(private val splitDao: SplitDao) {
 
     fun observeLastSplit(tripId: Long): LiveData<Split> = splitDao.subscribeLast(tripId)
 
+    fun observeLastCompleteSplit(tripId: Long): LiveData<Split> =
+        splitDao.subscribeLastComplete(tripId)
+
     suspend fun getTripSplits(tripId: Long): Array<Split> = splitDao.load(tripId)
 
     suspend fun addSplit(split: Split) = splitDao.add(split)
 
     suspend fun addSplits(splits: Array<Split>) = splitDao.add(splits)
+
+    suspend fun updateSplit(split: Split) = splitDao.update(split)
+
+    suspend fun updateSplits(splits: Array<Split>) = splitDao.update(splits)
 
     suspend fun removeTripSplits(tripId: Long) = splitDao.removeTripSplits(tripId)
 

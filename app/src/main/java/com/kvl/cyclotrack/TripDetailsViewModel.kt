@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
@@ -15,7 +14,6 @@ import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.abs
 
 @HiltViewModel
 class TripDetailsViewModel @Inject constructor(
@@ -62,14 +60,27 @@ class TripDetailsViewModel @Inject constructor(
 
     fun updateSplits() = viewModelScope.launch {
         val splits = splitRepository.getTripSplits(tripId)
-        var areSplitsInSystem = false
-        if (splits.isNotEmpty()) areSplitsInSystem =
-            abs(getSplitThreshold(sharedPreferences) - splits[0].totalDistance) > 50.0
-        if (true || splits.isEmpty() || !areSplitsInSystem) {
-            // Force true. TripInProgressService doesn't add the last partial split
+        val calculatedSplits = calculateSplits(
+            tripId = tripId,
+            measurements = measurementsRepository.get(tripId),
+            timeStates = timeStateRepository.getTimeStates(tripId),
+            sharedPreferences = sharedPreferences
+        )
+        if (splits.isEmpty() || !doSplitsMatch(splits, calculatedSplits.toTypedArray())) {
             Log.d(logTag, "Recomputing splits")
             clearSplits()
-            addSplits()
+            splitRepository.addSplits(calculatedSplits.toTypedArray())
+
+            calculatedSplits.lastOrNull()?.let { lastSplit ->
+                tripsRepository.updateTripStats(
+                    TripStats(
+                        id = tripId,
+                        distance = lastSplit.totalDistance,
+                        duration = lastSplit.totalDuration,
+                        averageSpeed = (lastSplit.totalDistance / lastSplit.totalDuration).toFloat()
+                    )
+                )
+            }
         }
     }
 
@@ -139,38 +150,17 @@ class TripDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun addSplits() {
-        val combined = zipLiveData(locationMeasurements, timeState)
-        combined.observeForever(object :
-            Observer<Pair<Array<Measurements>, Array<TimeState>>> {
-            override fun onChanged(value: Pair<Array<Measurements>, Array<TimeState>>) {
-                val measurements = value.first
-                val timeStates = value.second
-
-                if (measurements.isNotEmpty()) {
-                    val tripSplits =
-                        calculateSplits(tripId, measurements, timeStates, sharedPreferences)
-                    viewModelScope.launch {
-                        Log.d(
-                            logTag,
-                            "Inserting post-trip computed splits in database"
-                        )
-                        splitRepository.addSplits(tripSplits.toTypedArray())
-
-                        tripSplits.lastOrNull()?.let { lastSplit ->
-                            tripsRepository.updateTripStats(
-                                TripStats(
-                                    id = tripId,
-                                    distance = lastSplit.totalDistance,
-                                    duration = lastSplit.totalDuration,
-                                    averageSpeed = (lastSplit.totalDistance / lastSplit.totalDuration).toFloat()
-                                )
-                            )
-                        }
-                    }
-                    combined.removeObserver(this)
-                }
+    private fun doSplitsMatch(old: Array<Split>, new: Array<Split>): Boolean {
+        if (old.size != new.size) return false
+        val newSorted = new.sortedBy { it.totalDistance }
+        val oldSorted = old.sortedBy { it.totalDistance }
+        for (i in newSorted.indices) {
+            Log.v(logTag, "${newSorted.getOrNull(i)}")
+            Log.v(logTag, "${oldSorted.getOrNull(i)}")
+            if (newSorted.getOrNull(i) != oldSorted.getOrNull(i)) {
+                return false
             }
-        })
+        }
+        return true
     }
 }

@@ -5,6 +5,7 @@ apply plugin: 'dagger.hilt.android.plugin'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 import org.ajoberstar.grgit.Grgit
 
@@ -39,8 +40,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdkVersion 26
         targetSdkVersion 33
-        versionCode 60
-        versionName "New graphs"
+        versionCode 61
+        versionName "Splits on-the-fly"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
@@ -98,7 +99,7 @@ android {
 
     configurations.all {
         resolutionStrategy {
-            force 'androidx.test:monitor:1.4.0'
+            force 'androidx.test:monitor:1.6.0'
         }
     }
 
@@ -159,12 +160,16 @@ dependencies {
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation 'androidx.hilt:hilt-work:1.0.0'
     implementation files('libs/fit-21.84.00.jar')
+    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
     androidTestImplementation "androidx.work:work-testing:$work_version"
 
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     implementation("com.google.android.gms:play-services-fitness:21.1.0")
     implementation 'com.google.android.gms:play-services-location:21.0.1'
-    implementation("com.google.android.gms:play-services-auth:20.5.0")
+    implementation("com.google.android.gms:play-services-auth:20.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.4")
 
     implementation "androidx.room:room-runtime:$room_version"
@@ -209,6 +214,8 @@ dependencies {
     kaptAndroidTest "com.google.dagger:hilt-android-compiler:$dagger_version"
 
     androidTestImplementation 'org.mockito:mockito-android:3.7.7'
+    androidTestImplementation "androidx.test:monitor:1.6.1",
+            "com.opencsv:opencsv:4.6"
 
     testImplementation 'junit:junit:4.13.1',
             "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.4.2",
@@ -218,5 +225,7 @@ dependencies {
             "org.powermock:powermock-core:$powermock_version",
             "org.powermock:powermock-module-junit4:$powermock_version",
             "org.powermock:powermock-api-mockito2:$powermock_version",
-            "com.opencsv:opencsv:4.6"
+            "com.opencsv:opencsv:4.6",
+            "org.hamcrest:hamcrest-library:1.3"
+
 }

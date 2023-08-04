@@ -13,7 +13,7 @@ class GetAverageCadenceTest {
         CSVReader(
             FileReader(
                 File(
-                    AccumulateAscentDescentTest::class.java.getResource(
+                    GetAverageCadenceTest::class.java.getResource(
                         filename
                     )!!.toURI()
                 )
@@ -47,7 +47,7 @@ class GetAverageCadenceTest {
         var last: CadenceSpeedMeasurement? = null
         var count = 0
         measurements.forEach {
-            if (last != null) if (!didDeviceFail(it, last!!)) ++count
+            if (last != null) if (!didCadenceDeviceFail(it, last!!)) ++count
             last = it
         }
 
@@ -55,11 +55,11 @@ class GetAverageCadenceTest {
 
         Assert.assertEquals(
             76.5f,
-            getAverageCadenceTheEasyWay(measurements), 1e-1f
+            getAverageCadenceTheEasyWay(measurements.toTypedArray()), 1e-1f
         )
         Assert.assertEquals(
             78f,
-            getAverageCadenceTheHardWay(measurements), 1e-1f
+            getAverageCadenceTheHardWay(measurements.toTypedArray()) ?: -999f, 1e-1f
         )
     }
 
@@ -73,18 +73,18 @@ class GetAverageCadenceTest {
         var last: CadenceSpeedMeasurement? = null
         var count = 0
         measurements.forEach {
-            if (last != null) if (!didDeviceFail(it, last!!)) ++count
+            if (last != null) if (!didCadenceDeviceFail(it, last!!)) ++count
             last = it
         }
 
         Assert.assertEquals(measurements.size - 144, count)
 
         Assert.assertEquals(
-            20.9f, getAverageCadenceTheEasyWay(measurements), 1e-1f
+            20.9f, getAverageCadenceTheEasyWay(measurements.toTypedArray()), 1e-1f
         )
         Assert.assertEquals(
             78.8f,
-            getAverageCadenceTheHardWay(measurements), 1e-1f
+            getAverageCadenceTheHardWay(measurements.toTypedArray()) ?: -999f, 1e-1f
         )
     }
 
@@ -96,7 +96,7 @@ class GetAverageCadenceTest {
             .filter { it.revolutions != null }
             .sortedBy { it.timestamp }
         Assert.assertEquals(
-            getAverageCadenceTheHardWay(cleanedMeasurements),
+            getAverageCadenceTheHardWay(cleanedMeasurements.toTypedArray()),
             getAverageCadence(measurements.toTypedArray())
         )
     }
@@ -109,7 +109,7 @@ class GetAverageCadenceTest {
             .filter { it.revolutions != null }
             .sortedBy { it.timestamp }
         Assert.assertEquals(
-            getAverageCadenceTheEasyWay(cleanedMeasurements),
+            getAverageCadenceTheHardWay(cleanedMeasurements.toTypedArray()),
             getAverageCadence(measurements.toTypedArray())
         )
     }

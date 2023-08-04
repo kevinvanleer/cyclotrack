@@ -3,7 +3,6 @@ package com.kvl.cyclotrack
 import android.content.SharedPreferences
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import androidx.annotation.Nullable
-import java.util.*
 
 /**
  * Mock implementation of shared preference, which just saves data in memory using map.
@@ -24,22 +23,27 @@ class MockSharedPreference : SharedPreferences {
 
     @Nullable
     override fun getStringSet(s: String, @Nullable set: Set<String>?): Set<String>? {
+        if (!preferenceMap.containsKey(s)) return set
         return preferenceMap[s] as Set<String>?
     }
 
     override fun getInt(s: String, i: Int): Int {
+        if (!preferenceMap.containsKey(s)) return i
         return preferenceMap[s] as Int
     }
 
     override fun getLong(s: String, l: Long): Long {
+        if (!preferenceMap.containsKey(s)) return l
         return preferenceMap[s] as Long
     }
 
     override fun getFloat(s: String, v: Float): Float {
+        if (!preferenceMap.containsKey(s)) return v
         return preferenceMap[s] as Float
     }
 
     override fun getBoolean(s: String, b: Boolean): Boolean {
+        if (!preferenceMap.containsKey(s)) return b
         return preferenceMap[s] as Boolean
     }
 

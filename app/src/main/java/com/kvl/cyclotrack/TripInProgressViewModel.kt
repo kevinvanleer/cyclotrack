@@ -28,7 +28,7 @@ class TripInProgressViewModel @Inject constructor(
     private val timeStateRepository: TimeStateRepository,
     private val splitRepository: SplitRepository,
     private val gpsService: GpsService,
-    private val weatherRepository: WeatherRepository
+    weatherRepository: WeatherRepository
 ) : ViewModel() {
     private val logTag = "TripInProgressViewModel"
 
@@ -47,7 +47,7 @@ class TripInProgressViewModel @Inject constructor(
 
     private var accumulatedDuration = 0.0
     private var startTime = Double.NaN
-    private var _lastSplitLive = MutableLiveData<Split>()
+    private var _lastCompleteSplitLive = MutableLiveData<Split>()
     private val clockTick = Timer()
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
@@ -105,8 +105,8 @@ class TripInProgressViewModel @Inject constructor(
     val currentTime: LiveData<Double>
         get() = _currentTime
 
-    val lastSplit: LiveData<Split>
-        get() = _lastSplitLive
+    val lastCompleteSplit: LiveData<Split>
+        get() = _lastCompleteSplitLive
 
     var tripId: Long? = null
 
@@ -126,8 +126,8 @@ class TripInProgressViewModel @Inject constructor(
     private val accumulateDurationObserver: Observer<Array<TimeState>> =
         Observer { accumulateDuration(it) }
 
-    private val lastSplitObserver: Observer<Split?> = Observer { newSplit ->
-        newSplit?.let { n -> _lastSplitLive.value = n };
+    private val lastCompleteSplitObserver: Observer<Split?> = Observer { newSplit ->
+        newSplit?.let { n -> _lastCompleteSplitLive.value = n };
     }
 
 
@@ -148,7 +148,8 @@ class TripInProgressViewModel @Inject constructor(
             .observe(lifecycleOwner, currentTimeStateObserver)
         timeStateRepository.observeTimeStates(tripId)
             .observe(lifecycleOwner, accumulateDurationObserver)
-        splitRepository.observeLastSplit(tripId).observe(lifecycleOwner, lastSplitObserver)
+        splitRepository.observeLastCompleteSplit(tripId)
+            .observe(lifecycleOwner, lastCompleteSplitObserver)
     }
 
     fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {

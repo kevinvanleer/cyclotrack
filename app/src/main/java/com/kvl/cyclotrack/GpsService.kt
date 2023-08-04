@@ -89,12 +89,24 @@ class GpsService @Inject constructor(context: Application) : LiveData<Location>(
             return
         }
 
-        //This can safely be called multiple times, will only be registered once
-        locationManager.requestLocationUpdates(
-            LocationManager.GPS_PROVIDER,
-            1000L,
-            1f,
-            locationListener
-        )
+        if (BuildConfig.BUILD_TYPE == "debug") {
+            Log.d(logTag, "Registering fake location provider")
+            locationManager.requestLocationUpdates(
+                "fakeLocationProvider",
+                1000L,
+                1f,
+                locationListener
+            )
+        } else {
+            Log.d(logTag, "Registering GPS location provider")
+            //This can safely be called multiple times, will only be registered once
+            locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                1000L,
+                1f,
+                locationListener
+            )
+
+        }
     }
 }

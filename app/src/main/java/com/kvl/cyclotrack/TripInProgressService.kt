@@ -48,6 +48,42 @@ import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
 import kotlin.math.max
 
+fun Array<Split>.lastTwo(tripId: Long): Pair<Split, Split> {
+    val lastTwo = this.drop(max(this.size - 2, 0))
+    val secondLast = when (lastTwo.size) {
+        2 -> lastTwo[0]
+        else -> Split(tripId = tripId)
+    }
+    val last = when (lastTwo.size) {
+        2 -> lastTwo[1]
+        1 -> lastTwo[0]
+        else -> Split(tripId = tripId)
+    }
+    return Pair(secondLast, last)
+}
+
+fun doSplitStuff(
+    lastSplit: Split,
+    durationDelta: Double,
+    distanceDelta: Float,
+    priorSplitDistance: Double,
+    distanceConversionFactor: Double,
+): Split = incrementSplit(
+    when (crossedSplitThreshold(
+        distanceConversionFactor,
+        lastSplit.totalDistance,
+        priorSplitDistance
+    )) {
+        true -> Split(
+            totalDuration = lastSplit.totalDuration,
+            totalDistance = lastSplit.totalDistance,
+            tripId = lastSplit.tripId
+        )
+
+        else -> lastSplit
+    }, durationDelta, distanceDelta
+)
+
 @AndroidEntryPoint
 class TripInProgressService @Inject constructor() :
     LifecycleService(), SharedPreferences.OnSharedPreferenceChangeListener {
@@ -58,7 +94,7 @@ class TripInProgressService @Inject constructor() :
     private var autopauseRpmThreshold: Float = 50f
     private var autoTimeState = TimeStateEnum.RESUME
     private val logTag = "TripInProgressService"
-    private val accuracyThreshold = 7.5f
+    private val accuracyThreshold = LOCATION_ACCURACY_THRESHOLD
     private val speedThreshold = 0.5f
     private var nextWeatherUpdate = 0L
     private val weatherUpdatePeriod = 5 * 60000
@@ -353,7 +389,7 @@ class TripInProgressService @Inject constructor() :
         }
     }
 
-    private fun gpsObserver(tripId: Long): Observer<Location> = Observer<Location> { newLocation ->
+    private fun gpsObserver(tripId: Long): Observer<Location> = Observer { newLocation ->
         Log.d(logTag, "onChanged gps observer")
         val newMeasurement = Measurements(
             tripId,
@@ -361,27 +397,39 @@ class TripInProgressService @Inject constructor() :
         )
         getWeather(LocationData(newLocation), tripId)
         lifecycleScope.launch {
-            timeStateRepository.getTimeStates(tripId).let { timeStates ->
-                when (timeStates.lastOrNull()?.let { currentTimeState ->
-                    (currentTimeState.state == TimeStateEnum.RESUME || currentTimeState.state == TimeStateEnum.START)
-                } ?: false) {
-                    true -> {
-                        measurementsRepository.getLatestAccurate(tripId, accuracyThreshold)
-                            ?.let { latest ->
-                                setTripProgress(latest, newMeasurement, timeStates, tripId)
-                            }
-                    }
-
-                    else -> setTripPaused(newMeasurement)
-                }
-            }
-            if (tripId >= 0)
+            if (tripId >= 0) {
                 try {
                     measurementsRepository.insertMeasurements(newMeasurement)
                 } catch (e: SQLiteConstraintException) {
                     Log.e(logTag, "Failed to add gps measurements", e)
                     handleSqliteConstraintException(e)
                 }
+            }
+            try {
+                timeStateRepository.getTimeStates(tripId).let { timeStates ->
+                    timeStates.lastOrNull().let { currentTimeState ->
+                        when (
+                            currentTimeState?.state == TimeStateEnum.RESUME || currentTimeState?.state == TimeStateEnum.START
+                        ) {
+                            true -> {
+                                measurementsRepository.getLatestAccurate(
+                                    tripId = tripId,
+                                    accuracyThreshold = accuracyThreshold,
+                                    minTime = currentTimeState?.timestamp ?: 0L,
+                                    maxTime = newMeasurement.time
+                                )
+                                    ?.let { latest ->
+                                        setTripProgress(latest, newMeasurement, timeStates, tripId)
+                                    }
+                            }
+
+                            else -> setTripPaused(newMeasurement)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(logTag, "Failed to set trip progress", e)
+            }
         }
     }
 
@@ -433,141 +481,130 @@ class TripInProgressService @Inject constructor() :
         timeStates: Array<TimeState>,
         tripId: Long,
     ) {
+        Log.v(logTag, "setTripProgress")
         val accurateEnough = new.hasAccuracy() && new.accuracy < accuracyThreshold
-        val intervals = getTripInProgressIntervals(timeStates)
-        val duration = accumulateTripTime(intervals)
-        val trip = tripsRepository.get(tripId)
 
-        if (accurateEnough) {
-            val distanceDelta = getDistance(new, old)
-            val durationDelta = duration - (trip.duration ?: 0.0)
-            val newSpeed = getSpeed(new, speedThreshold)
-            val totalDistance = when (newSpeed > speedThreshold) {
-                true -> (trip.distance ?: 0.0) + distanceDelta
-                else -> trip.distance ?: 0.0
-            }
-
-            val sampleSize = 100
-            val varianceThreshold = 1e-6
-            derivedTripState.add(
-                updateDerivedTripState(
-                    tripId = tripId,
-                    totalDistance = totalDistance,
-                    distanceDelta = distanceDelta.toDouble(),
-                    totalDuration = duration,
-                    durationDelta = durationDelta,
-                    newMeasurements = new,
-                    derivedTripState = derivedTripState
-                )
-            )
-
-            if (autoCircumference == null) calculateWheelCircumference(
-                derivedTripState.toTypedArray(),
-                sampleSize,
-                varianceThreshold
-            )?.let { circumference ->
-                autoCircumference = circumference
-                autoCircumference?.let { newCircumference ->
-                    updateAutoCircumference(tripId, newCircumference)
-                }
-            }
-
-            if (FeatureFlags.devBuild) derivedTripState.filter { it.circumference.isFinite() }
-                .takeLast(sampleSize).takeIf { it.isNotEmpty() }?.map { it.circumference }?.let {
-                    EventBus.getDefault()
-                        .post(
-                            WheelCircumferenceEvent(
-                                circumference = it.average().toFloat(),
-                                variance = it.sampleVariance()
-                            )
-                        )
-                }
-
-            try {
-                tripsRepository.updateTripStats(
-                    TripStats(
-                        id = tripId,
-                        distance = totalDistance,
-                        duration = duration,
-                        averageSpeed = (totalDistance / duration).toFloat()
+        splitRepository.getTripSplits(tripId).lastTwo(tripId)
+            .let { (secondLast, lastSplit) ->
+                val totalDuration = accumulateTripTime(
+                    getTripInProgressIntervals(
+                        timeStates
                     )
                 )
+                if (accurateEnough) {
+                    val distanceDelta = getDistance(new, old)
+                    val durationDelta = totalDuration - lastSplit.totalDuration
+                    val newSpeed = getSpeed(new, speedThreshold)
+                    val totalDistance = lastSplit.totalDistance + distanceDelta
 
-            } catch (e: SQLiteConstraintException) {
-                Log.e(logTag, "Failed to update trip stats", e)
-                handleSqliteConstraintException(e)
-            }
-            if (crossedSplitThreshold(
-                    sharedPreferences,
-                    totalDistance,
-                    trip.distance ?: Double.MAX_VALUE
-                )
-            ) {
-                try {
-                    splitRepository.getTripSplits(tripId).lastOrNull()?.let { lastSplit ->
-                        splitRepository.addSplit(
-                            Split(
-                                timestamp = SystemUtils.currentTimeMillis(),
-                                duration = duration - lastSplit.totalDuration,
-                                distance = totalDistance - lastSplit.totalDistance,
-                                totalDuration = duration,
-                                totalDistance = totalDistance,
-                                tripId = tripId
-                            )
-                        )
-                    } ?: splitRepository.addSplit(
-                        Split(
-                            timestamp = SystemUtils.currentTimeMillis(),
-                            duration = duration,
-                            distance = totalDistance,
-                            totalDuration = duration,
+                    val sampleSize = 100
+                    val varianceThreshold = 1e-6
+                    derivedTripState.add(
+                        updateDerivedTripState(
+                            tripId = tripId,
                             totalDistance = totalDistance,
-                            tripId = tripId
+                            distanceDelta = distanceDelta.toDouble(),
+                            totalDuration = totalDuration,
+                            durationDelta = durationDelta,
+                            newMeasurements = new,
+                            derivedTripState = derivedTripState
                         )
                     )
-                } catch (e: SQLiteConstraintException) {
-                    Log.e(logTag, "Failed to add split", e)
-                    handleSqliteConstraintException(e)
+
+                    if (autoCircumference == null) calculateWheelCircumference(
+                        derivedTripState.toTypedArray(),
+                        sampleSize,
+                        varianceThreshold
+                    )?.let { circumference ->
+                        autoCircumference = circumference
+                        autoCircumference?.let { newCircumference ->
+                            updateAutoCircumference(tripId, newCircumference)
+                        }
+                    }
+
+                    if (FeatureFlags.devBuild) derivedTripState.filter { it.circumference.isFinite() }
+                        .takeLast(sampleSize).takeIf { it.isNotEmpty() }?.map { it.circumference }
+                        ?.let {
+                            EventBus.getDefault()
+                                .post(
+                                    WheelCircumferenceEvent(
+                                        circumference = it.average().toFloat(),
+                                        variance = it.sampleVariance()
+                                    )
+                                )
+                        }
+
+                    try {
+                        tripsRepository.updateTripStats(
+                            TripStats(
+                                id = tripId,
+                                distance = totalDistance,
+                                duration = totalDuration,
+                                averageSpeed = (totalDistance / totalDuration).toFloat()
+                            )
+                        )
+
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to update trip stats", e)
+                        handleSqliteConstraintException(e)
+                    }
+                    try {
+                        if (lastSplit.totalDistance == secondLast.totalDistance) {
+                            Log.v(logTag, "new split equals old split")
+                        }
+
+                        splitRepository.updateSplit(
+                            doSplitStuff(
+                                lastSplit,
+                                durationDelta,
+                                distanceDelta,
+                                secondLast.totalDistance,
+                                getUserDistance(applicationContext, 1.0)
+                            )
+                        )
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to update splits", e)
+                        handleSqliteConstraintException(e)
+                    }
+
+                    val newSlope = calculateSlope(derivedTripState.takeLast(20))
+
+                    TripProgress(
+                        measurements = new,
+                        speed = newSpeed,
+                        maxSpeed = max(
+                            if (newSpeed.isFinite()) newSpeed else 0f,
+                            tripProgress?.maxSpeed ?: 0f
+                        ),
+                        distance = totalDistance,
+                        slope = newSlope,
+                        duration = totalDuration,
+                        accuracy = new.accuracy,
+                        bearing = new.bearing,
+                        tracking = true
+                    )
+                } else {
+                    (tripProgress?.copy(
+                        duration = totalDuration,
+                        accuracy = new.accuracy,
+                        tracking = false
+                    )
+                        ?: TripProgress(
+                            duration = totalDuration,
+                            speed = 0f,
+                            maxSpeed = 0f,
+                            distance = 0.0,
+                            slope = 0.0,
+                            measurements = null,
+                            accuracy = new.accuracy,
+                            bearing = new.bearing,
+                            tracking = false
+                        ))
                 }
+            }.let {
+                EventBus.getDefault().post(TripProgressEvent(it))
+                tripProgress = it
             }
-
-            val newSlope = calculateSlope(derivedTripState.takeLast(20))
-
-            TripProgress(
-                measurements = new,
-                speed = newSpeed,
-                maxSpeed = max(
-                    if (newSpeed.isFinite()) newSpeed else 0f,
-                    tripProgress?.maxSpeed ?: 0f
-                ),
-                distance = totalDistance,
-                slope = newSlope,
-                duration = duration,
-                accuracy = new.accuracy,
-                bearing = new.bearing,
-                tracking = true
-            )
-        } else {
-            (tripProgress?.copy(
-                duration = duration,
-                accuracy = new.accuracy,
-                tracking = false
-            )
-                ?: TripProgress(
-                    duration = duration,
-                    speed = 0f,
-                    maxSpeed = 0f,
-                    distance = 0.0,
-                    slope = 0.0,
-                    measurements = null,
-                    accuracy = new.accuracy,
-                    bearing = new.bearing,
-                    tracking = false
-                ))
-        }.let {
-            EventBus.getDefault().post(TripProgressEvent(it))
-            tripProgress = it
-        }
     }
 
     private suspend fun updateAutoCircumference(tripId: Long, circumference: Float) {

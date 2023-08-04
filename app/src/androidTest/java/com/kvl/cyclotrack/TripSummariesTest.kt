@@ -4,7 +4,6 @@ import android.os.SystemClock
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.*
@@ -27,7 +26,7 @@ import javax.inject.Inject
 @RunWith(AndroidJUnit4::class)
 @HiltAndroidTest
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-class TripSummariesTest {
+class TripSummariesTest() {
     @get:Rule(order = 0)
     var hiltRule = HiltAndroidRule(this)
 
@@ -52,21 +51,30 @@ class TripSummariesTest {
     @Inject
     lateinit var tripsDao: TripDao
 
+    @Inject
+    lateinit var timeStateDao: TimeStateDao
+
     @Before
     fun init() {
         hiltRule.inject()
         tripsDao.wipe()
 
+        val context = getInstrumentation().targetContext.applicationContext
         PreferenceManager.getDefaultSharedPreferences(getInstrumentation().targetContext.applicationContext)
             .edit {
                 putBoolean(
-                    getInstrumentation().targetContext.applicationContext.getString(
+                    context.getString(
                         R.string.preference_key_analytics_opt_in_presented
                     ), true
                 )
                 putBoolean(
-                    getInstrumentation().targetContext.applicationContext.getString(
+                    context.getString(
                         R.string.preferences_key_enable_analytics
+                    ), false
+                )
+                putBoolean(
+                    context.getString(
+                        R.string.preference_key_autopause_enable
                     ), false
                 )
             }
@@ -150,17 +158,11 @@ class TripSummariesTest {
     fun test04_fiveSecondTripTrip() {
         onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(click())
         //assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
-
-        openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
-        //onView(withId(R.id.menu_item_show_details)).check(matches(isDisplayed())).perform(click())
-        onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-        //assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
-        //SystemClock.sleep(1000)
-        onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
-
         onView(withText("START")).check(matches(isDisplayed())).perform(click())
+
         //Wait for notification to disappear
-        SystemClock.sleep(5000)
+        SystemClock.sleep(2000)
+
         onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.measurement_bottomRight)).check(matches(not("00:00")))
@@ -171,22 +173,60 @@ class TripSummariesTest {
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
 
-        //SystemClock.sleep(1000)
-        openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
-        //SystemClock.sleep(1000)
+        onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.stop_button)).check(matches(isDisplayed()))
+        onView(withId(R.id.resume_button)).check(matches(isDisplayed())).perform(click())
+
+        SystemClock.sleep(1000)
+
+        onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
+
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
+        onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
+
+        SystemClock.sleep(1000)
+
+        onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.resume_button)).check(matches(isDisplayed()))
+        onView(withId(R.id.stop_button)).check(matches(isDisplayed())).perform(click())
+    }
+
+    /*
+    @Test
+    fun test04_allDataViewPauseTrip() {
+        assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
+
+        Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
         onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-        //SystemClock.sleep(1000)
-        //assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
+        assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
+        SystemClock.sleep(1000)
+        onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
+
+        onView(withText("START")).check(matches(isDisplayed())).perform(click())
+        onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
+
+        onView(withId(R.id.measurement_middleLeft)).perform(click())
+        onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
+        onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
+
+        Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
+        onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
+        assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
         onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
 
         onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.stop_button)).check(matches(isDisplayed()))
         onView(withId(R.id.resume_button)).check(matches(isDisplayed())).perform(click())
 
-        openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
+        Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
         onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-        SystemClock.sleep(1000)
-        //assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
+        assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
         onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
 
         onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
@@ -198,90 +238,36 @@ class TripSummariesTest {
         onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
 
-        openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
+        Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
         onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-        SystemClock.sleep(1000)
-        //assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
+        assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
         onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
+
 
         onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
         onView(withId(R.id.resume_button)).check(matches(isDisplayed()))
-        onView(withId(R.id.stop_button)).check(matches(isDisplayed())).perform(click())
+        onView(withText(R.id.stop_button)).check(matches(isDisplayed()))
     }
 
-/*
-@Test
-fun test04_allDataViewPauseTrip() {
-    assertThat(navController.currentDestination?.id, IsEqual(R.id.TripInProgressFragment))
-
-    Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
-    onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-    assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
-    SystemClock.sleep(1000)
-    onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
-
-    onView(withText("START")).check(matches(isDisplayed())).perform(click())
-    onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
-
-    onView(withId(R.id.measurement_middleLeft)).perform(click())
-    onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
-
-    Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
-    onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-    assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
-    onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
-
-    onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.stop_button)).check(matches(isDisplayed()))
-    onView(withId(R.id.resume_button)).check(matches(isDisplayed())).perform(click())
-
-    Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
-    onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-    assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
-    onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
-
-    onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
-
-    onView(withId(R.id.measurement_middleLeft)).perform(click())
-    onView(withId(R.id.resume_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.stop_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.pause_button)).check(matches(isDisplayed())).perform(click())
-
-    Espresso.openActionBarOverflowOrOptionsMenu(getInstrumentation().targetContext)
-    onView(withText("Debug")).check(matches(isDisplayed())).perform(click())
-    assertThat(navController.currentDestination?.id, IsEqual(R.id.AllDataFragment))
-    onView(withText("DASHBOARD")).check(matches(isDisplayed())).perform(click())
-
-
-    onView(withId(R.id.pause_button)).check(matches(not(isDisplayed())))
-    onView(withId(R.id.resume_button)).check(matches(isDisplayed()))
-    onView(withText(R.id.stop_button)).check(matches(isDisplayed()))
-}
-
-@Test
-fun locationPermissionDeny() {
-    onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(ViewActions.click())
-    onView(withText("New rides disabled")).inRoot(RootMatchers.isDialog())
-        .check(matches(isDisplayed()))
-    onView(withText("OK")).perform(ViewActions.click())
-    onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(ViewActions.click())
-    onView(withText("Grant Location Access")).inRoot(RootMatchers.isDialog())
-        .check(matches(isDisplayed()))
-    onView(withText("DENY")).check(matches(isDisplayed())).perform(ViewActions.click())
-    onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(ViewActions.click())
-    onView(withText("Grant Location Access")).inRoot(RootMatchers.isDialog())
-        .check(matches(isDisplayed()))
-    onView(withText("PROCEED")).check(matches(isDisplayed())).perform(ViewActions.click())
-    onView(withText("Allow Cyclotrack to access this device's location")).inRoot(
-        RootMatchers.isDialog()).check(matches(isDisplayed()))
-    onView(withText("ALLOW ONLY WHILE USING THE APP")).check(matches(isDisplayed()))
-        .perform(ViewActions.click())
-    onView(withId(R.id.TripInProgressFragment)).check(matches(isDisplayed()))
-}
- */
+    @Test
+    fun locationPermissionDeny() {
+        onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(ViewActions.click())
+        onView(withText("New rides disabled")).inRoot(RootMatchers.isDialog())
+            .check(matches(isDisplayed()))
+        onView(withText("OK")).perform(ViewActions.click())
+        onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(ViewActions.click())
+        onView(withText("Grant Location Access")).inRoot(RootMatchers.isDialog())
+            .check(matches(isDisplayed()))
+        onView(withText("DENY")).check(matches(isDisplayed())).perform(ViewActions.click())
+        onView(withId(R.id.fab)).check(matches(isDisplayed())).perform(ViewActions.click())
+        onView(withText("Grant Location Access")).inRoot(RootMatchers.isDialog())
+            .check(matches(isDisplayed()))
+        onView(withText("PROCEED")).check(matches(isDisplayed())).perform(ViewActions.click())
+        onView(withText("Allow Cyclotrack to access this device's location")).inRoot(
+            RootMatchers.isDialog()).check(matches(isDisplayed()))
+        onView(withText("ALLOW ONLY WHILE USING THE APP")).check(matches(isDisplayed()))
+            .perform(ViewActions.click())
+        onView(withId(R.id.TripInProgressFragment)).check(matches(isDisplayed()))
+    }
+     */
 }

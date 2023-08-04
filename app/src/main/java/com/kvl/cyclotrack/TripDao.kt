@@ -122,7 +122,7 @@ interface TripDao {
     fun subscribeAll(): LiveData<Array<Trip>>
 
     @Query("SELECT * from trip ORDER BY id DESC")
-    suspend fun loadAll(): Array<Trip>
+    fun loadAll(): Array<Trip>
 
     @Query("SELECT * FROM trip WHERE id > :tripId ORDER BY id DESC")
     suspend fun loadAfter(tripId: Long): Array<Trip>

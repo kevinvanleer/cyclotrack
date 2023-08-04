@@ -19,11 +19,21 @@ import com.kvl.cyclotrack.util.SystemUtils
 @Keep
 data class Split(
     val tripId: Long,
-    val duration: Double,
-    val totalDuration: Double,
-    val distance: Double,
-    val totalDistance: Double,
+    val duration: Double = 0.0,
+    val totalDuration: Double = 0.0,
+    val distance: Double = 0.0,
+    val totalDistance: Double = 0.0,
     val timestamp: Long = SystemUtils.currentTimeMillis(),
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other !is Split) return false
+        return this.duration == other.duration &&
+                this.distance == other.distance &&
+                this.totalDuration == other.totalDuration &&
+                this.totalDistance == other.totalDistance &&
+                this.timestamp == other.timestamp &&
+                this.tripId == other.tripId
+    }
+}

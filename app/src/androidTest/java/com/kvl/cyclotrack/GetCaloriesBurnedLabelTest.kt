@@ -4,6 +4,7 @@ import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,7 +24,8 @@ class GetCaloriesBurnedLabelTest {
         val testTrip = Trip(
             userWeight = 83f,
             distance = 30000.0,
-            duration = 3600.0
+            duration = 3600.0,
+            bikeId = 1
         )
         Assert.assertEquals("Calories (12 METs)", getCaloriesBurnedLabel(context, testTrip, 168))
     }
@@ -75,7 +77,8 @@ class GetCaloriesBurnedLabelTest {
             userRestingHeartRate = 50,
             userMaxHeartRate = 200,
             distance = 30000.0,
-            duration = 3600.0
+            duration = 3600.0,
+            bikeId = 1,
         )
         Assert.assertEquals("Calories (net)", getCaloriesBurnedLabel(context, testTrip, 168))
     }
@@ -126,7 +129,8 @@ class GetCaloriesBurnedLabelTest {
             userRestingHeartRate = 50,
             userMaxHeartRate = 200,
             distance = 30000.0,
-            duration = 3600.0
+            duration = 3600.0,
+            bikeId = 1
         )
         Assert.assertEquals("Calories (gross)", getCaloriesBurnedLabel(context, testTrip, 168))
     }
@@ -177,7 +181,8 @@ class GetCaloriesBurnedLabelTest {
             userRestingHeartRate = 50,
             userMaxHeartRate = 200,
             distance = 30000.0,
-            duration = 3600.0
+            duration = 3600.0,
+            bikeId = 1
         )
         Assert.assertEquals("Calories (net)", getCaloriesBurnedLabel(context, testTrip, 168))
     }

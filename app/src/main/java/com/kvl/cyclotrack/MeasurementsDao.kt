@@ -20,8 +20,13 @@ interface MeasurementsDao {
     @Query("SELECT * FROM measurements WHERE time = (SELECT max(time) FROM Measurements WHERE tripId = :tripId)")
     suspend fun loadLatest(tripId: Long): Measurements?
 
-    @Query("SELECT * FROM measurements WHERE time = (SELECT max(time) FROM Measurements WHERE tripId = :tripId and accuracy < :accuracyThreshold)")
-    suspend fun loadLatestAccurate(tripId: Long, accuracyThreshold: Float): Measurements?
+    @Query("SELECT * FROM measurements WHERE time = (SELECT max(time) FROM Measurements WHERE tripId = :tripId and accuracy < :accuracyThreshold and time >= :minTime and time < :maxTime)")
+    suspend fun loadLatestAccurate(
+        tripId: Long,
+        accuracyThreshold: Float,
+        minTime: Long,
+        maxTime: Long
+    ): Measurements?
 
     @Query("SELECT * FROM measurements WHERE tripId = :tripId ORDER BY time ASC")
     fun subscribe(tripId: Long): LiveData<Array<Measurements>>

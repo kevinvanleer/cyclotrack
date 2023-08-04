@@ -5,6 +5,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 
 @Dao
 interface SplitDao {
@@ -14,6 +15,12 @@ interface SplitDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun add(splits: Array<Split>)
 
+    @Upsert()
+    suspend fun update(split: Split)
+
+    @Upsert()
+    suspend fun update(splits: Array<Split>)
+
     @Query("SELECT * FROM split WHERE tripId = :tripId ORDER BY timestamp ASC")
     suspend fun load(tripId: Long): Array<Split>
 
@@ -22,6 +29,9 @@ interface SplitDao {
 
     @Query("SELECT * FROM split WHERE timestamp = (SELECT max(timestamp) FROM split WHERE tripId = :tripId)")
     fun subscribeLast(tripId: Long): LiveData<Split>
+
+    @Query("SELECT * FROM split WHERE timestamp = (SELECT max(timestamp) FROM split WHERE timestamp NOT IN (SELECT max(timestamp) FROM split WHERE tripId = :tripId) and tripId = :tripId) and tripId = :tripId")
+    fun subscribeLastComplete(tripId: Long): LiveData<Split>
 
     @Query("select * from split where totalDistance >= :distanceLowerBound and totalDistance < :distanceUpperBound order by totalDuration asc limit :limit")
     fun fastestDistances(

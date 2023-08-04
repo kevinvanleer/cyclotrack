@@ -457,7 +457,7 @@ class TripInProgressFragment :
             bottomLeftView.value = DateUtils.formatElapsedTime((it).toLong())
         }
 
-        viewModel.lastSplit.observe(viewLifecycleOwner) { split ->
+        viewModel.lastCompleteSplit.observe(viewLifecycleOwner) { split ->
             Log.d(logTag, "Observed last split change")
             middleRightView.value =
                 String.format(
