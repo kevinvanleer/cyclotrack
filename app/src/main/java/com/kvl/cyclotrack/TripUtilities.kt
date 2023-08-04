@@ -29,7 +29,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-const val LOCATION_ACCURACY_THRESHOLD = 7.5f
+const val LOCATION_ACCURACY_THRESHOLD = 20f
 
 fun getDistance(
     curr: Measurements,
