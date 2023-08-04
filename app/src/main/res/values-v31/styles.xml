@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="AppTheme" parent="AppThemeCommon">
+        <item name="android:windowSplashScreenBackground">#669e58</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/cyclotrack_splash_icon</item>
+    </style>
+</resources>
