@@ -17,6 +17,8 @@ class TripSummariesViewModel @Inject constructor(
     val tripListState = Bundle()
     val allTrips = tripsRepository.observeAll()
 
+    var searchText = ""
+
     suspend fun getMeasurements(tripId: Long) =
         measurementsRepository.get(tripId)
 
