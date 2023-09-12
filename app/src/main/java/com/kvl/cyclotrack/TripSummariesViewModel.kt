@@ -43,7 +43,7 @@ class TripSummariesViewModel @Inject constructor(
     var searchText = ""
         set(newValue) {
             field = newValue
-            filterTrips()
+            if (newValue == "") filterTrips()
         }
 
     suspend fun getMeasurements(tripId: Long) =

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.EditorInfo
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -67,38 +68,11 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         searchTextLayout = binding.tripSummarySearchTextLayout
 
-        /*binding.tripSummarySearchTextInput.setOnEditorActionListener { v, actionId, event ->
+        binding.tripSummarySearchTextInput.setOnEditorActionListener { v, actionId, event ->
             when (actionId) {
                 EditorInfo.IME_ACTION_SEARCH -> {
                     Log.d(logTag, "Clicked search icon: ${viewModel.searchText}")
-                    val searchParams = viewModel.searchText.split(":")
-
-                    val milesToMeters = 1 / (METERS_TO_FEET * FEET_TO_MILES)
-                    val delta = milesToMeters / 2
-                    val targetDistance = searchParams[1]?.toDouble()?.times(milesToMeters)
-                    if (targetDistance != null) {
-                        val filteredTrips = viewModel.allTrips.value?.filter {
-                            it.distance?.let { distance ->
-                                targetDistance - delta <= distance && targetDistance + delta > distance
-                            } ?: false
-                        }
-                        filteredTrips?.toTypedArray()?.let { it1 ->
-                            val viewAdapter =
-                                TripSummariesAdapter(
-                                    it1,
-                                    viewModel,
-                                    viewLifecycleOwner,
-                                    requireContext(),
-                                    enableMultiSelectControls,
-                                    savedInstanceState
-                                )
-                            tripListView.apply {
-                                setHasFixedSize(true)
-                                layoutManager = viewManager
-                                adapter = viewAdapter
-                            }
-                        }
-                    }
+                    viewModel.filterTrips()
                 }
 
                 else -> {
@@ -106,7 +80,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                 }
             }
             return@setOnEditorActionListener true
-        }*/
+        }
 
         viewModel.allTrips.observe(viewLifecycleOwner) {
             viewModel.filterTrips()
