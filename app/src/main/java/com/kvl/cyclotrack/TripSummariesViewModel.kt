@@ -2,6 +2,7 @@ package com.kvl.cyclotrack
 
 import android.os.Bundle
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,8 +17,34 @@ class TripSummariesViewModel @Inject constructor(
 ) : ViewModel() {
     val tripListState = Bundle()
     val allTrips = tripsRepository.observeAll()
+    val filteredTrips = MutableLiveData<Array<Trip>>(allTrips.value)
+
+    fun filterTrips() {
+        val searchParams = searchText.split(":")
+        if (searchParams.size <= 1) {
+            filteredTrips.value = allTrips.value
+            return
+        }
+
+        val milesToMeters = 1 / (METERS_TO_FEET * FEET_TO_MILES)
+        val delta = milesToMeters / 2
+        val targetDistance = searchParams[1].toDoubleOrNull()?.times(milesToMeters)
+        if (targetDistance != null) {
+            filteredTrips.value = allTrips.value?.filter {
+                it.distance?.let { distance ->
+                    ((targetDistance - delta) <= distance) && ((targetDistance + delta) > distance)
+                } ?: false
+            }?.toTypedArray()
+        } else {
+            //filteredTrips.value = allTrips.value
+        }
+    }
 
     var searchText = ""
+        set(newValue) {
+            field = newValue
+            filterTrips()
+        }
 
     suspend fun getMeasurements(tripId: Long) =
         measurementsRepository.get(tripId)
