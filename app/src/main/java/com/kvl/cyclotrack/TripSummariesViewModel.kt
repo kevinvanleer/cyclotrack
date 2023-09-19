@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kvl.cyclotrack.data.parseSearchString
+import com.kvl.cyclotrack.data.tripPassesExpression
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -20,23 +22,18 @@ class TripSummariesViewModel @Inject constructor(
     val filteredTrips = MutableLiveData<Array<Trip>>(allTrips.value)
 
     fun filterTrips() {
-        val searchParams = searchText.split(":")
-        if (searchParams.size <= 1) {
-            filteredTrips.value = allTrips.value
-            return
-        }
+        try {
+            val searchExpression = parseSearchString(searchText)
+            if (searchExpression.isNullOrEmpty()) {
+                filteredTrips.value = allTrips.value
+                return
+            }
 
-        val milesToMeters = 1 / (METERS_TO_FEET * FEET_TO_MILES)
-        val delta = milesToMeters / 2
-        val targetDistance = searchParams[1].toDoubleOrNull()?.times(milesToMeters)
-        if (targetDistance != null) {
             filteredTrips.value = allTrips.value?.filter {
-                it.distance?.let { distance ->
-                    ((targetDistance - delta) <= distance) && ((targetDistance + delta) > distance)
-                } ?: false
+                tripPassesExpression(it, searchExpression)
             }?.toTypedArray()
-        } else {
-            //filteredTrips.value = allTrips.value
+        } catch (e: Exception) {
+            filteredTrips.value = allTrips.value
         }
     }
 
