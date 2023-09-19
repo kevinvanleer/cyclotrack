@@ -1,92 +1,59 @@
 package com.kvl.cyclotrack
 
+import com.kvl.cyclotrack.data.SearchExpression
+import com.kvl.cyclotrack.data.applyNegation
+import com.kvl.cyclotrack.data.compareDistanceExpression
+import com.kvl.cyclotrack.data.expressionRegex
+import com.kvl.cyclotrack.data.tripPassesExpression
 import org.junit.Assert
 import org.junit.Test
 import java.time.LocalDate
 
-val expressionRegex =
-    Regex("""(?<negation>not)?\s?(?<lvalue>distance|date|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[0-9]+ (and|or) [0-9]+|\S+)\s?(?<junction>and|or)?\s?""")
-
-data class Expression(
-    val negation: Boolean = true,
-    val lvalue: String,
-    val operator: String,
-    val rvalue: Any,
-    val junction: String? = null
-) {
-    constructor(regexMatchGroups: MatchGroupCollection) : this(
-        !regexMatchGroups["negation"]?.value.isNullOrEmpty(),
-        regexMatchGroups["lvalue"]!!.value,
-        regexMatchGroups["operator"]!!.value,
-        when (regexMatchGroups["operator"]!!.value) {
-            "between" -> Regex("""(?<lower>[0-9]+) and (?<upper>[0-9]+)""")
-                .find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
-                    arrayOf(it["lower"]!!.value, it["upper"]!!.value)
-                }
-
-            else -> Regex("""^['"]?(?<string>.*?)['"]?$""").find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
-                arrayOf(it["string"]!!.value)
-            }
-        }!!.map { rvalue ->
-            when (regexMatchGroups["lvalue"]!!.value) {
-                "distance" -> rvalue.toInt()
-                "date" -> LocalDate.parse(rvalue)
-                else -> rvalue
-            }
-        }.let { typedArray ->
-            when (typedArray.size) {
-                1 -> typedArray[0]
-                else -> typedArray
-            }
-        },
-        regexMatchGroups["junction"]?.value,
-    )
-}
 
 class SearchRegexTest {
     @Test
-    fun simpleDistanceExpression() {
+    fun simpleDistanceSearchExpression() {
         Assert.assertEquals(
             listOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 14,
+                    rvalue = 14.0,
                     junction = null
                 )
             ),
             expressionRegex.findAll("distance is 14")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList()
         )
     }
 
     @Test
-    fun simpleGreaterThanExpression() {
+    fun simpleGreaterThanSearchExpression() {
         Assert.assertEquals(
             listOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "greater than",
-                    rvalue = 50,
+                    rvalue = 50.0,
                     junction = null
                 )
             ),
             expressionRegex.findAll("distance greater than 50")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList()
         )
     }
 
     @Test
-    fun simpleDateExpression() {
+    fun simpleDateSearchExpression() {
         Assert.assertEquals(
             listOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "date",
                     operator = "before",
@@ -96,35 +63,35 @@ class SearchRegexTest {
             ),
             expressionRegex.findAll("date before 2023-09-18")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList()
         )
     }
 
     @Test
-    fun simpleRangeExpression() {
+    fun simpleRangeSearchExpression() {
         Assert.assertEquals(
             listOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "between",
-                    rvalue = listOf(14, 20),
+                    rvalue = listOf(14.0, 20.0),
                     junction = null
                 )
             ),
             expressionRegex.findAll("distance between 14 and 20")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList()
         )
     }
 
     @Test
-    fun simpleTextExpression() {
+    fun simpleTextSearchExpression() {
         Assert.assertEquals(
             listOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "text",
                     operator = "contains",
@@ -134,67 +101,357 @@ class SearchRegexTest {
             ),
             expressionRegex.findAll("text contains \"flat tire\"")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList()
         )
     }
 
     @Test
-    fun compoundExpression() {
+    fun compoundSearchExpression() {
         Assert.assertArrayEquals(
             arrayOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 14,
-                    junction = "and"
+                    rvalue = 14.0,
+                    junction = null
                 ),
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "date",
                     operator = "after",
                     rvalue = LocalDate.of(2023, 8, 4),
-                    junction = null
+                    junction = "and"
                 )
             ),
             expressionRegex.findAll("distance is 14 and date after 2023-08-04")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList().toTypedArray()
         )
     }
 
     @Test
-    fun tripleCompoundExpression() {
+    fun tripleCompoundSearchExpression() {
         Assert.assertArrayEquals(
             arrayOf(
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 14,
-                    junction = "and"
+                    rvalue = 14.0,
+                    junction = null
                 ),
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "date",
                     operator = "after",
                     rvalue = LocalDate.of(2023, 8, 4),
                     junction = "and"
                 ),
-                Expression(
+                SearchExpression(
                     negation = false,
                     lvalue = "text",
                     operator = "contains",
                     rvalue = "flat tire",
-                    junction = null
+                    junction = "and"
                 )
             ),
             expressionRegex.findAll("distance is 14 and date after 2023-08-04 and text contains \"flat tire\"")
                 .map {
-                    Expression(it.groups)
+                    SearchExpression(it.groups)
                 }.toList().toTypedArray()
+        )
+    }
+
+    @Test
+    fun compareDistanceExpressionTest() {
+        Assert.assertEquals(
+            true, compareDistanceExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
+                SearchExpression(
+                    lvalue = "distance",
+                    operator = "is",
+                    rvalue = 20.0
+                )
+            )
+        )
+    }
+
+    @Test
+    fun applyNegationTest() {
+        Assert.assertEquals(
+            true, applyNegation(
+                value = true,
+                negation = false
+            )
+        )
+        Assert.assertEquals(
+            true, applyNegation(
+                value = false,
+                negation = true
+            )
+        )
+        Assert.assertEquals(
+            false, applyNegation(
+                value = false,
+                negation = false
+            )
+        )
+        Assert.assertEquals(
+            false, applyNegation(
+                value = true,
+                negation = true
+            )
+        )
+    }
+
+    @Test
+    fun simpleTripExpressionTest() {
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "is",
+                        rvalue = 20.0
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        negation = true,
+                        lvalue = "distance",
+                        operator = "is",
+                        rvalue = 20.0
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 19.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "is",
+                        rvalue = 20.0
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "is",
+                        rvalue = 20.0
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 19.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "less than",
+                        rvalue = 20.0
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "greater than",
+                        rvalue = 20.0
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "between",
+                        rvalue = listOf(20.9, 21.1)
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "text",
+                        operator = "contains",
+                        rvalue = "Test trip"
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "text",
+                        operator = "contains",
+                        rvalue = "flat tire"
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "flat tire",
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "text",
+                        operator = "contains",
+                        rvalue = "flat tire"
+                    )
+                )
+            )
+        )
+    }
+
+    @Test
+    fun compoundTripExpressionTrueTest() {
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "is",
+                        rvalue = 20.0
+                    ),
+                    SearchExpression(
+                        lvalue = "text",
+                        operator = "contains",
+                        rvalue = "Test",
+                        junction = "and"
+                    )
+                )
+            )
+        )
+    }
+
+    @Test
+    fun compoundTripExpressionFalseTest() {
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "distance",
+                        operator = "is",
+                        rvalue = 20.0
+                    ),
+                    SearchExpression(
+                        junction = "and",
+                        lvalue = "text",
+                        operator = "contains",
+                        rvalue = "flat tire"
+                    )
+                )
+            )
         )
     }
 }
