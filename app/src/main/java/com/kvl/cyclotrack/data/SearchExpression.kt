@@ -3,7 +3,9 @@ package com.kvl.cyclotrack.data
 import com.kvl.cyclotrack.FEET_TO_MILES
 import com.kvl.cyclotrack.METERS_TO_FEET
 import com.kvl.cyclotrack.Trip
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 
 val expressionRegex =
     Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[0-9]+ (and|or) [0-9]+|\S+)\s?""")
@@ -29,11 +31,6 @@ fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>):
         }.let {
             applyNegation(it, expression.negation)
         }.let {
-            println(result)
-            println(it)
-            println(expression.lvalue)
-            println(expression.operator)
-            println(expression.junction)
             when (expression.junction?.lowercase()) {
                 "and" -> it && result
                 else -> it || result
@@ -51,19 +48,19 @@ fun compareDateExpression(
     expression: SearchExpression,
 ): Boolean =
     when (expression.operator) {
-        "is", "equals" -> LocalDate.ofEpochDay(trip.timestamp) == expression.rvalue
-        "greater than", "after" -> LocalDate.ofEpochDay(trip.timestamp)
-            .isAfter(expression.rvalue as LocalDate)
+        "is", "equals" -> Instant.ofEpochMilli(trip.timestamp) == expression.rvalue
+        "greater than", "after" -> Instant.ofEpochMilli(trip.timestamp)
+            .isAfter(expression.rvalue as Instant)
 
-        "less than", "before" -> LocalDate.ofEpochDay(trip.timestamp)
-            .isBefore(expression.rvalue as LocalDate)
+        "less than", "before" -> Instant.ofEpochMilli(trip.timestamp)
+            .isBefore(expression.rvalue as Instant)
 
-        "between" -> LocalDate.ofEpochDay(trip.timestamp)
-            .isBefore((expression.rvalue as List<*>)[0] as LocalDate)
-                && LocalDate.ofEpochDay(trip.timestamp)
-            .isBefore((expression.rvalue)[1] as LocalDate)
+        "between" -> Instant.ofEpochMilli(trip.timestamp)
+            .isAfter((expression.rvalue as List<*>)[0] as Instant)
+                && Instant.ofEpochMilli(trip.timestamp)
+            .isBefore((expression.rvalue)[1] as Instant)
 
-        else -> LocalDate.ofEpochDay(trip.timestamp) == expression.rvalue
+        else -> Instant.ofEpochMilli(trip.timestamp) == expression.rvalue
     }
 
 fun compareDistanceExpression(
@@ -112,7 +109,10 @@ data class SearchExpression(
         }!!.map { rvalue ->
             when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
                 "distance" -> rvalue.toDouble()
-                "date" -> LocalDate.parse(rvalue)
+                "date" -> LocalDate.parse(rvalue).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+
                 else -> rvalue
             }
         }.let { typedArray ->

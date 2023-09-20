@@ -8,6 +8,7 @@ import com.kvl.cyclotrack.data.tripPassesExpression
 import org.junit.Assert
 import org.junit.Test
 import java.time.LocalDate
+import java.time.ZoneId
 
 
 class SearchRegexTest {
@@ -57,7 +58,8 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "date",
                     operator = "before",
-                    rvalue = LocalDate.of(2023, 9, 18),
+                    rvalue = LocalDate.of(2023, 9, 18).atStartOfDay(ZoneId.systemDefault())
+                        .toInstant(),
                     junction = null
                 )
             ),
@@ -121,7 +123,8 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "date",
                     operator = "after",
-                    rvalue = LocalDate.of(2023, 8, 4),
+                    rvalue = LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
+                        .toInstant(),
                     junction = "and"
                 )
             ),
@@ -147,7 +150,8 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "date",
                     operator = "after",
-                    rvalue = LocalDate.of(2023, 8, 4),
+                    rvalue = LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
+                        .toInstant(),
                     junction = "and"
                 ),
                 SearchExpression(
@@ -450,6 +454,224 @@ class SearchRegexTest {
                         operator = "contains",
                         rvalue = "flat tire"
                     )
+                )
+            )
+        )
+    }
+
+    @Test
+    fun dateTests() {
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
+                        .toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "is",
+                        rvalue = LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant()
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "is",
+                        rvalue = LocalDate.of(2023, 8, 19)
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "before",
+                        rvalue = LocalDate.of(2023, 9, 20).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant()
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "before",
+                        rvalue = LocalDate.of(2023, 8, 18).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant()
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "after",
+                        rvalue = LocalDate.of(2023, 10, 19).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant()
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "after",
+                        rvalue = LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant()
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "between",
+                        rvalue = listOf(
+                            LocalDate.of(2023, 8, 19).atStartOfDay(
+                                ZoneId.systemDefault()
+                            ).toInstant(),
+                            LocalDate.of(2023, 10, 19).atStartOfDay(
+                                ZoneId.systemDefault()
+                            ).toInstant()
+                        )
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 7, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "between",
+                        rvalue = listOf(
+                            LocalDate.of(2023, 8, 19).atStartOfDay(
+                                ZoneId.systemDefault()
+                            ).toInstant(),
+                            LocalDate.of(2023, 10, 19).atStartOfDay(
+                                ZoneId.systemDefault()
+                            ).toInstant()
+                        )
+                    ),
+                )
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ), listOf(
+                    SearchExpression(
+                        lvalue = "date",
+                        operator = "between",
+                        rvalue = listOf(
+                            LocalDate.of(2022, 8, 1).atStartOfDay(
+                                ZoneId.systemDefault()
+                            ).toInstant(),
+                            LocalDate.of(2022, 10, 30).atStartOfDay(
+                                ZoneId.systemDefault()
+                            ).toInstant()
+                        )
+                    ),
                 )
             )
         )
