@@ -8,7 +8,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 val expressionRegex =
-    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[0-9]+ (and|or) [0-9]+|\S+)\s?""")
+    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
 fun parseSearchString(searchString: String) =
     expressionRegex.findAll(searchString)
@@ -37,6 +37,9 @@ fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>):
             }
         }
     }
+
+fun tripPassesExpressionString(searchString: String, trip: Trip) =
+    tripPassesExpression(trip, parseSearchString(searchString))
 
 fun applyNegation(value: Boolean, negation: Boolean) = when (negation) {
     true -> !value
@@ -85,6 +88,51 @@ fun compareDistanceExpression(
     }
 }
 
+fun parseDate(rvalue: String): Instant {
+    return LocalDate.parse(rvalue).atStartOfDay(
+        ZoneId.systemDefault()
+    ).toInstant()
+
+    /*val dateFormats = listOf(
+        dateFormatPattenDob,
+        "M yyyy",
+        "M-yyyy",
+        "M/yyyy",
+        "MMM yyyy",
+        "MMMM yyyy",
+        "yyyy M",
+        "yyyy-M",
+        "yyyy/M",
+        "yyyy MMM"
+    )
+    SimpleDateFormat(dateFormatPattenDob, Locale.US).parse(rvalue)*/
+}
+
+fun parseRvalue(regexMatchGroups: MatchGroupCollection): Any =
+    when (regexMatchGroups["operator"]!!.value.lowercase()) {
+        "between" -> Regex("""(?<lower>\S+) and (?<upper>\S+)""")
+            .find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
+                arrayOf(it["lower"]!!.value, it["upper"]!!.value)
+            }
+
+        else -> Regex("""^['"]?(?<string>.*?)['"]?$""")
+            .find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
+                arrayOf(it["string"]!!.value)
+            }
+    }!!.map { rvalue ->
+        when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
+            "distance" -> rvalue.toDouble()
+            "date" -> parseDate(rvalue)
+
+            else -> rvalue
+        }
+    }.let { typedArray ->
+        when (typedArray.size) {
+            1 -> typedArray[0]
+            else -> typedArray
+        }
+    }
+
 data class SearchExpression(
     val negation: Boolean = false,
     val lvalue: String,
@@ -96,31 +144,7 @@ data class SearchExpression(
         !regexMatchGroups["negation"]?.value.isNullOrEmpty(),
         regexMatchGroups["lvalue"]!!.value,
         regexMatchGroups["operator"]!!.value,
-        when (regexMatchGroups["operator"]!!.value.lowercase()) {
-            "between" -> Regex("""(?<lower>[0-9]+) and (?<upper>[0-9]+)""")
-                .find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
-                    arrayOf(it["lower"]!!.value, it["upper"]!!.value)
-                }
-
-            else -> Regex("""^['"]?(?<string>.*?)['"]?$""")
-                .find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
-                    arrayOf(it["string"]!!.value)
-                }
-        }!!.map { rvalue ->
-            when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
-                "distance" -> rvalue.toDouble()
-                "date" -> LocalDate.parse(rvalue).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
-
-                else -> rvalue
-            }
-        }.let { typedArray ->
-            when (typedArray.size) {
-                1 -> typedArray[0]
-                else -> typedArray
-            }
-        },
+        parseRvalue(regexMatchGroups),
         regexMatchGroups["junction"]?.value,
     )
 }
