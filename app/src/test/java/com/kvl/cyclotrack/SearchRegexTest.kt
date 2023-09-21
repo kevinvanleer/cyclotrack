@@ -4,12 +4,15 @@ import com.kvl.cyclotrack.data.SearchExpression
 import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
 import com.kvl.cyclotrack.data.expressionRegex
+import com.kvl.cyclotrack.data.parseDate
 import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
 import org.junit.Assert
 import org.junit.Test
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 
 class SearchRegexTest {
@@ -59,8 +62,12 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "date",
                     operator = "before",
-                    rvalue = LocalDate.of(2023, 9, 18).atStartOfDay(ZoneId.systemDefault())
-                        .toInstant(),
+                    rvalue = listOf(
+                        LocalDate.of(2023, 9, 18).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant(),
+                        LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant(),
+                    ),
                     junction = null
                 )
             ),
@@ -124,8 +131,12 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "date",
                     operator = "after",
-                    rvalue = LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
-                        .toInstant(),
+                    rvalue = listOf(
+                        LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant(),
+                        LocalDate.of(2023, 8, 5).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant(),
+                    ),
                     junction = "and"
                 )
             ),
@@ -151,8 +162,12 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "date",
                     operator = "after",
-                    rvalue = LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
-                        .toInstant(),
+                    rvalue = listOf(
+                        LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant(),
+                        LocalDate.of(2023, 8, 5).atStartOfDay(ZoneId.systemDefault())
+                            .toInstant(),
+                    ),
                     junction = "and"
                 ),
                 SearchExpression(
@@ -468,8 +483,8 @@ class SearchRegexTest {
                     name = "Test trip",
                     distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
                     duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
-                        .toInstant().toEpochMilli(),
+                    timestamp = LocalDateTime.of(2023, 9, 19, 12, 30)
+                        .toInstant(ZoneOffset.UTC).toEpochMilli(),
                     averageSpeed = 20.0f,
                     inProgress = false,
                     bikeId = 0,
@@ -477,8 +492,12 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "date",
                         operator = "is",
-                        rvalue = LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant()
+                        rvalue = listOf(
+                            LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
+                                .toInstant(),
+                            LocalDate.of(2023, 9, 20).atStartOfDay(ZoneId.systemDefault())
+                                .toInstant()
+                        )
                     ),
                 )
             )
@@ -489,9 +508,8 @@ class SearchRegexTest {
                     name = "Test trip",
                     distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
                     duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
+                    timestamp = LocalDateTime.of(2023, 9, 19, 12, 30)
+                        .toInstant(ZoneOffset.UTC).toEpochMilli(),
                     averageSpeed = 20.0f,
                     inProgress = false,
                     bikeId = 0,
@@ -499,7 +517,12 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "date",
                         operator = "is",
-                        rvalue = LocalDate.of(2023, 8, 19)
+                        rvalue = listOf(
+                            LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
+                                .toInstant(),
+                            LocalDate.of(2023, 8, 20).atStartOfDay(ZoneId.systemDefault())
+                                .toInstant()
+                        )
                     ),
                 )
             )
@@ -609,12 +632,18 @@ class SearchRegexTest {
                         lvalue = "date",
                         operator = "between",
                         rvalue = listOf(
-                            LocalDate.of(2023, 8, 19).atStartOfDay(
-                                ZoneId.systemDefault()
-                            ).toInstant(),
-                            LocalDate.of(2023, 10, 19).atStartOfDay(
-                                ZoneId.systemDefault()
-                            ).toInstant()
+                            listOf(
+                                LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant(),
+                                LocalDate.of(2023, 8, 20).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant()
+                            ),
+                            listOf(
+                                LocalDate.of(2023, 10, 19).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant(),
+                                LocalDate.of(2023, 10, 20).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant()
+                            ),
                         )
                     ),
                 )
@@ -637,12 +666,18 @@ class SearchRegexTest {
                         lvalue = "date",
                         operator = "between",
                         rvalue = listOf(
-                            LocalDate.of(2023, 8, 19).atStartOfDay(
-                                ZoneId.systemDefault()
-                            ).toInstant(),
-                            LocalDate.of(2023, 10, 19).atStartOfDay(
-                                ZoneId.systemDefault()
-                            ).toInstant()
+                            listOf(
+                                LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant(),
+                                LocalDate.of(2023, 8, 20).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant()
+                            ),
+                            listOf(
+                                LocalDate.of(2023, 10, 19).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant(),
+                                LocalDate.of(2023, 10, 20).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant()
+                            ),
                         )
                     ),
                 )
@@ -665,12 +700,18 @@ class SearchRegexTest {
                         lvalue = "date",
                         operator = "between",
                         rvalue = listOf(
-                            LocalDate.of(2022, 8, 1).atStartOfDay(
-                                ZoneId.systemDefault()
-                            ).toInstant(),
-                            LocalDate.of(2022, 10, 30).atStartOfDay(
-                                ZoneId.systemDefault()
-                            ).toInstant()
+                            listOf(
+                                LocalDate.of(2022, 8, 1).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant(),
+                                LocalDate.of(2022, 8, 2).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant()
+                            ),
+                            listOf(
+                                LocalDate.of(2022, 10, 30).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant(),
+                                LocalDate.of(2022, 11, 1).atStartOfDay(ZoneId.systemDefault())
+                                    .toInstant()
+                            ),
                         )
                     ),
                 )
@@ -687,6 +728,25 @@ class SearchRegexTest {
                     name = "Test trip",
                     distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
                     duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
+            )
+        )
+    }
+
+    @Test
+    fun tripPassesExpressionStringDateEqualsTest() {
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "date is 2023-09-09",
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    timestamp = LocalDateTime.of(2023, 9, 9, 7, 5)
+                        .toInstant(ZoneOffset.UTC).toEpochMilli(),
                     averageSpeed = 20.0f,
                     inProgress = false,
                     bikeId = 0,
@@ -730,7 +790,23 @@ class SearchRegexTest {
             )
         )
         Assert.assertEquals(
-            false, tripPassesExpressionString(
+            true, tripPassesExpressionString(
+                "date is Sep-2022",
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
                 "date is Sep 2022",
                 Trip(
                     name = "Test trip",
@@ -744,6 +820,98 @@ class SearchRegexTest {
                     bikeId = 0,
                 ),
             )
+        )
+    }
+
+    @Test
+    fun parseDateTest() {
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 1, 1).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 1, 2).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+            ),
+            parseDate("2022-01-01")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 9, 19).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 9, 20).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+            ),
+            parseDate("2022-09-19")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 1, 1).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 1, 2).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+            ),
+            parseDate("Jan 1 2022")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 9, 19).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 9, 20).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+            ),
+            parseDate("Sep 19 2022")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 9, 1).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 9, 30).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+            ),
+            parseDate("9 2022")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 9, 1).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 9, 30).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+            ),
+            parseDate("Sep 2022")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2022, 1, 1).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2022, 12, 31).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+            ),
+            parseDate("2022")
+        )
+        Assert.assertEquals(
+            listOf(
+                LocalDate.of(2023, 9, 1).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant(),
+                LocalDate.of(2023, 9, 30).atStartOfDay(
+                    ZoneId.systemDefault()
+                ).toInstant()
+            ),
+            parseDate("Sep")
         )
     }
 }
