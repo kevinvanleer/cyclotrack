@@ -5,6 +5,7 @@ import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
 import com.kvl.cyclotrack.data.expressionRegex
 import com.kvl.cyclotrack.data.tripPassesExpression
+import com.kvl.cyclotrack.data.tripPassesExpressionString
 import org.junit.Assert
 import org.junit.Test
 import java.time.LocalDate
@@ -673,6 +674,75 @@ class SearchRegexTest {
                         )
                     ),
                 )
+            )
+        )
+    }
+
+    @Test
+    fun tripPassesExpressionStringTest() {
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "distance is 20",
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
+            )
+        )
+    }
+
+    @Test
+    fun tripPassesExpressionStringDateRangeTest() {
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "date between 2022-09-01 and 2022-09-30",
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "date between 2023-09-01 and 2023-09-30",
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "date is Sep 2022",
+                Trip(
+                    name = "Test trip",
+                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
+                        ZoneId.systemDefault()
+                    ).toInstant().toEpochMilli(),
+                    duration = 3600.0,
+                    averageSpeed = 20.0f,
+                    inProgress = false,
+                    bikeId = 0,
+                ),
             )
         )
     }
