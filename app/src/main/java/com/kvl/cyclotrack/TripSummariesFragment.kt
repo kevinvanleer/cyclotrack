@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -91,11 +92,18 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             viewModel.filterTrips()
         }
         viewModel.filteredTrips.observe(viewLifecycleOwner) { trips ->
-            if (trips.isNullOrEmpty()) return@observe
+            if (trips == null) return@observe
             Log.d(
                 logTag,
                 "There were ${trips.size} trips returned from the database"
             )
+            when (trips.isEmpty()) {
+                true -> view.findViewById<TextView>(R.id.trip_summaries_empty_search_view)
+                    .apply { visibility = View.VISIBLE }
+
+                else -> view.findViewById<TextView>(R.id.trip_summaries_empty_search_view)
+                    .apply { visibility = View.GONE }
+            }
             val viewAdapter =
                 TripSummariesAdapter(
                     trips,

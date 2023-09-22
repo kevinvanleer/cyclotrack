@@ -174,4 +174,5 @@
     <string name="preference_title_dashboard_safe_zone_summary">Ensure that your phone mount does not block information while you ride.</string>
     <string name="preferences_dashboard_safe_zone_left_margin">preferences_dashboard_safe_zone_left_margin</string>
     <string name="preferences_dashboard_safe_zone_right_margin">preferences_dashboard_safe_zone_right_margin</string>
+    <string name="empty_search_result_message">Sorry, couldn\'t find anything...</string>
 </resources>
