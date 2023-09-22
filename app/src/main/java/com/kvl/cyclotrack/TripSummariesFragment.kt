@@ -1,11 +1,13 @@
 package com.kvl.cyclotrack
 
+import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
 import android.view.*
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
@@ -20,6 +22,7 @@ import com.google.android.material.textfield.TextInputLayout
 import com.kvl.cyclotrack.databinding.FragmentTripSummariesBinding
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+
 
 @AndroidEntryPoint
 class TripSummariesFragment @Inject constructor() : Fragment() {
@@ -68,7 +71,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         searchTextLayout = binding.tripSummarySearchTextLayout
 
-        binding.tripSummarySearchTextInput.setOnEditorActionListener { v, actionId, event ->
+        binding.tripSummarySearchTextInput.setOnEditorActionListener { v, actionId, _ ->
             when (actionId) {
                 EditorInfo.IME_ACTION_SEARCH -> {
                     Log.d(logTag, "Clicked search icon: ${viewModel.searchText}")
@@ -79,6 +82,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                     Log.d(logTag, "unhandle action")
                 }
             }
+            val imm = requireContext().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(v.windowToken, 0)
             return@setOnEditorActionListener true
         }
 
