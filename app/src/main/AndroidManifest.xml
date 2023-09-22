@@ -97,6 +97,7 @@ provider
         </activity>
         <activity
             android:name=".PreferencesActivity"
+            android:windowSoftInputMode="adjustPan"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -118,6 +119,7 @@ provider
             android:exported="true" />
         <activity
             android:name=".MainActivity"
+            android:windowSoftInputMode="adjustPan"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
