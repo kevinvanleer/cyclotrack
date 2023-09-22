@@ -3,23 +3,57 @@ package com.kvl.cyclotrack
 import com.kvl.cyclotrack.data.SearchExpression
 import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
-import com.kvl.cyclotrack.data.expressionRegex
 import com.kvl.cyclotrack.data.parseDate
+import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
 import org.junit.Assert
 import org.junit.Test
-import java.time.LocalDate
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 
 class SearchRegexTest {
+
+    private fun dateTimeToInstant(
+        year: Int,
+        month: Int,
+        dayOfMonth: Int,
+        hour: Int = 0,
+        minute: Int = 0,
+        seconds: Int = 0
+    ): Instant =
+        LocalDateTime.of(year, month, dayOfMonth, hour, minute, seconds)
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+
+    private fun dateToInstant(year: Int, month: Int, dayOfMonth: Int): Instant =
+        dateTimeToInstant(year, month, dayOfMonth)
+
+
+    private val sep192023 = dateTimeToInstant(2023, 9, 19)
+    private val sep192022 = dateTimeToInstant(2022, 9, 19)
+
+    private val tripTest20miles = Trip(
+        name = "Test trip",
+        distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+        duration = 3600.0,
+        averageSpeed = 20.0f,
+        inProgress = false,
+        bikeId = 0,
+    )
+    private val trip19Sep2022 = tripTest20miles.copy(
+        timestamp = sep192022.toEpochMilli()
+    )
+    private val trip19Sep2023 = tripTest20miles.copy(
+        timestamp = sep192023.toEpochMilli()
+    )
+
     @Test
     fun simpleDistanceSearchExpression() {
-        Assert.assertEquals(
-            listOf(
+        Assert.assertArrayEquals(
+            arrayOf(
                 SearchExpression(
                     negation = false,
                     lvalue = "distance",
@@ -28,17 +62,15 @@ class SearchRegexTest {
                     junction = null
                 )
             ),
-            expressionRegex.findAll("distance is 14")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList()
+            parseSearchString("distance is 14")
+                .toTypedArray()
         )
     }
 
     @Test
     fun simpleGreaterThanSearchExpression() {
-        Assert.assertEquals(
-            listOf(
+        Assert.assertArrayEquals(
+            arrayOf(
                 SearchExpression(
                     negation = false,
                     lvalue = "distance",
@@ -47,41 +79,35 @@ class SearchRegexTest {
                     junction = null
                 )
             ),
-            expressionRegex.findAll("distance greater than 50")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList()
+            parseSearchString("distance greater than 50")
+                .toTypedArray()
         )
     }
 
     @Test
     fun simpleDateSearchExpression() {
-        Assert.assertEquals(
-            listOf(
+        Assert.assertArrayEquals(
+            arrayOf(
                 SearchExpression(
                     negation = false,
                     lvalue = "date",
                     operator = "before",
                     rvalue = listOf(
-                        LocalDate.of(2023, 9, 18).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant(),
-                        LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant(),
+                        dateToInstant(2023, 9, 18),
+                        sep192023
                     ),
                     junction = null
                 )
             ),
-            expressionRegex.findAll("date before 2023-09-18")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList()
+            parseSearchString("date before 2023-09-18")
+                .toTypedArray()
         )
     }
 
     @Test
     fun simpleRangeSearchExpression() {
-        Assert.assertEquals(
-            listOf(
+        Assert.assertArrayEquals(
+            arrayOf(
                 SearchExpression(
                     negation = false,
                     lvalue = "distance",
@@ -90,17 +116,15 @@ class SearchRegexTest {
                     junction = null
                 )
             ),
-            expressionRegex.findAll("distance between 14 and 20")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList()
+            parseSearchString("distance between 14 and 20")
+                .toTypedArray()
         )
     }
 
     @Test
     fun simpleTextSearchExpression() {
-        Assert.assertEquals(
-            listOf(
+        Assert.assertArrayEquals(
+            arrayOf(
                 SearchExpression(
                     negation = false,
                     lvalue = "text",
@@ -109,10 +133,8 @@ class SearchRegexTest {
                     junction = null
                 )
             ),
-            expressionRegex.findAll("text contains \"flat tire\"")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList()
+            parseSearchString("text contains \"flat tire\"")
+                .toTypedArray()
         )
     }
 
@@ -132,18 +154,46 @@ class SearchRegexTest {
                     lvalue = "date",
                     operator = "after",
                     rvalue = listOf(
-                        LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant(),
-                        LocalDate.of(2023, 8, 5).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant(),
+                        dateToInstant(2023, 8, 4),
+                        dateToInstant(2023, 8, 5)
                     ),
                     junction = "and"
                 )
             ),
-            expressionRegex.findAll("distance is 14 and date after 2023-08-04")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList().toTypedArray()
+            parseSearchString("distance is 14 and date after 2023-08-04")
+                .toTypedArray()
+        )
+    }
+
+    @Test
+    fun tripleCompoundRangeSearchExpression() {
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "distance",
+                    operator = "between",
+                    rvalue = listOf(10.0, 20.0),
+                    junction = null
+                ),
+                SearchExpression(
+                    negation = false,
+                    lvalue = "distance",
+                    operator = "between",
+                    rvalue = listOf(15.0, 17.0),
+                    junction = "and"
+                ),
+                SearchExpression(
+                    negation = false,
+                    lvalue = "distance",
+                    operator = "between",
+                    rvalue = listOf(13.0, 18.0),
+                    junction = "and"
+                ),
+            ),
+
+            parseSearchString("distance between 10 and 20 and distance between 15 and 17 and distance between 13 and 18")
+                .toTypedArray()
         )
     }
 
@@ -163,10 +213,8 @@ class SearchRegexTest {
                     lvalue = "date",
                     operator = "after",
                     rvalue = listOf(
-                        LocalDate.of(2023, 8, 4).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant(),
-                        LocalDate.of(2023, 8, 5).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant(),
+                        dateToInstant(2023, 8, 4),
+                        dateToInstant(2023, 8, 5)
                     ),
                     junction = "and"
                 ),
@@ -178,10 +226,8 @@ class SearchRegexTest {
                     junction = "and"
                 )
             ),
-            expressionRegex.findAll("distance is 14 and date after 2023-08-04 and text contains \"flat tire\"")
-                .map {
-                    SearchExpression(it.groups)
-                }.toList().toTypedArray()
+            parseSearchString("distance is 14 and date after 2023-08-04 and text contains \"flat tire\"")
+                .toTypedArray()
         )
     }
 
@@ -189,14 +235,7 @@ class SearchRegexTest {
     fun compareDistanceExpressionTest() {
         Assert.assertEquals(
             true, compareDistanceExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ),
+                tripTest20miles,
                 SearchExpression(
                     lvalue = "distance",
                     operator = "is",
@@ -238,14 +277,7 @@ class SearchRegexTest {
     fun simpleTripExpressionTest() {
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                tripTest20miles, listOf(
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
@@ -256,14 +288,7 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                tripTest20miles, listOf(
                     SearchExpression(
                         negation = true,
                         lvalue = "distance",
@@ -275,13 +300,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 19.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    distance = 19.0 / (METERS_TO_FEET * FEET_TO_MILES)
                 ), listOf(
                     SearchExpression(
                         lvalue = "distance",
@@ -293,13 +313,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES)
                 ), listOf(
                     SearchExpression(
                         lvalue = "distance",
@@ -311,14 +326,7 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 19.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                tripTest20miles.copy(distance = 19.0 / (METERS_TO_FEET * FEET_TO_MILES)), listOf(
                     SearchExpression(
                         lvalue = "distance",
                         operator = "less than",
@@ -329,13 +337,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
+                tripTest20miles.copy(
                     distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
                 ), listOf(
                     SearchExpression(
                         lvalue = "distance",
@@ -347,13 +350,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
+                tripTest20miles.copy(
                     distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
                 ), listOf(
                     SearchExpression(
                         lvalue = "distance",
@@ -365,13 +363,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
+                tripTest20miles.copy(
                     distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
                 ), listOf(
                     SearchExpression(
                         lvalue = "text",
@@ -383,14 +376,7 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                tripTest20miles, listOf(
                     SearchExpression(
                         lvalue = "text",
                         operator = "contains",
@@ -401,13 +387,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "flat tire",
-                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    name = "flat tire"
                 ), listOf(
                     SearchExpression(
                         lvalue = "text",
@@ -423,14 +404,7 @@ class SearchRegexTest {
     fun compoundTripExpressionTrueTest() {
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                tripTest20miles, listOf(
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
@@ -451,14 +425,7 @@ class SearchRegexTest {
     fun compoundTripExpressionFalseTest() {
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                tripTest20miles, listOf(
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
@@ -479,24 +446,16 @@ class SearchRegexTest {
     fun dateTests() {
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDateTime.of(2023, 9, 19, 12, 30)
-                        .toInstant(ZoneOffset.UTC).toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                trip19Sep2023.copy(
+                    timestamp = dateTimeToInstant(2023, 9, 19, 12, 30)
+                        .toEpochMilli(),
                 ), listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "is",
                         rvalue = listOf(
-                            LocalDate.of(2023, 9, 19).atStartOfDay(ZoneId.systemDefault())
-                                .toInstant(),
-                            LocalDate.of(2023, 9, 20).atStartOfDay(ZoneId.systemDefault())
-                                .toInstant()
+                            dateToInstant(2023, 9, 19),
+                            dateToInstant(2023, 9, 20)
                         )
                     ),
                 )
@@ -504,24 +463,16 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDateTime.of(2023, 9, 19, 12, 30)
-                        .toInstant(ZoneOffset.UTC).toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    timestamp = dateTimeToInstant(2023, 9, 19, 12, 30)
+                        .toEpochMilli(),
                 ), listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "is",
                         rvalue = listOf(
-                            LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
-                                .toInstant(),
-                            LocalDate.of(2023, 8, 20).atStartOfDay(ZoneId.systemDefault())
-                                .toInstant()
+                            dateToInstant(2023, 8, 19),
+                            dateToInstant(2023, 8, 20)
                         )
                     ),
                 )
@@ -529,120 +480,62 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                trip19Sep2023, listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "before",
-                        rvalue = LocalDate.of(2023, 9, 20).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant()
+                        rvalue = dateToInstant(2023, 9, 20)
                     ),
                 )
             )
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                trip19Sep2023, listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "before",
-                        rvalue = LocalDate.of(2023, 8, 18).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant()
+                        rvalue = dateToInstant(2023, 8, 18)
                     ),
                 )
             )
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                trip19Sep2023, listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "after",
-                        rvalue = LocalDate.of(2023, 10, 19).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant()
+                        rvalue = dateToInstant(2023, 10, 19)
                     ),
                 )
             )
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                trip19Sep2023, listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "after",
-                        rvalue = LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
-                            .toInstant()
+                        rvalue = dateToInstant(2023, 8, 19)
                     ),
                 )
             )
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ), listOf(
+                trip19Sep2023, listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "between",
                         rvalue = listOf(
                             listOf(
-                                LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant(),
-                                LocalDate.of(2023, 8, 20).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant()
+                                dateToInstant(2023, 8, 19),
+                                dateToInstant(2023, 8, 20)
                             ),
                             listOf(
-                                LocalDate.of(2023, 10, 19).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant(),
-                                LocalDate.of(2023, 10, 20).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant()
+                                dateToInstant(2023, 10, 19),
+                                dateToInstant(2023, 10, 20)
                             ),
                         )
                     ),
@@ -651,32 +544,20 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 7, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    timestamp = dateToInstant(2023, 7, 19).toEpochMilli()
                 ), listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "between",
                         rvalue = listOf(
                             listOf(
-                                LocalDate.of(2023, 8, 19).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant(),
-                                LocalDate.of(2023, 8, 20).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant()
+                                dateToInstant(2023, 8, 19),
+                                dateToInstant(2023, 8, 20)
                             ),
                             listOf(
-                                LocalDate.of(2023, 10, 19).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant(),
-                                LocalDate.of(2023, 10, 20).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant()
+                                dateToInstant(2023, 10, 19),
+                                dateToInstant(2023, 10, 20)
                             ),
                         )
                     ),
@@ -685,32 +566,20 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             false, tripPassesExpression(
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDate.of(2023, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    timestamp = sep192023.toEpochMilli(),
                 ), listOf(
                     SearchExpression(
                         lvalue = "date",
                         operator = "between",
                         rvalue = listOf(
                             listOf(
-                                LocalDate.of(2022, 8, 1).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant(),
-                                LocalDate.of(2022, 8, 2).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant()
+                                dateToInstant(2022, 8, 1),
+                                dateToInstant(2022, 8, 2)
                             ),
                             listOf(
-                                LocalDate.of(2022, 10, 30).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant(),
-                                LocalDate.of(2022, 11, 1).atStartOfDay(ZoneId.systemDefault())
-                                    .toInstant()
+                                dateToInstant(2022, 10, 30),
+                                dateToInstant(2022, 11, 1)
                             ),
                         )
                     ),
@@ -724,14 +593,7 @@ class SearchRegexTest {
         Assert.assertEquals(
             true, tripPassesExpressionString(
                 "distance is 20",
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ),
+                tripTest20miles,
             )
         )
     }
@@ -741,15 +603,9 @@ class SearchRegexTest {
         Assert.assertEquals(
             true, tripPassesExpressionString(
                 "date is 2023-09-09",
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    duration = 3600.0,
-                    timestamp = LocalDateTime.of(2023, 9, 9, 7, 5)
-                        .toInstant(ZoneOffset.UTC).toEpochMilli(),
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
+                tripTest20miles.copy(
+                    timestamp = dateTimeToInstant(2023, 9, 9, 7, 5)
+                        .toEpochMilli(),
                 ),
             )
         )
@@ -760,65 +616,43 @@ class SearchRegexTest {
         Assert.assertEquals(
             true, tripPassesExpressionString(
                 "date between 2022-09-01 and 2022-09-30",
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ),
+                trip19Sep2022,
             )
         )
         Assert.assertEquals(
             false, tripPassesExpressionString(
                 "date between 2023-09-01 and 2023-09-30",
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ),
+                trip19Sep2022,
             )
         )
         Assert.assertEquals(
             true, tripPassesExpressionString(
                 "date is Sep-2022",
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ),
+                trip19Sep2022,
             )
         )
         Assert.assertEquals(
             true, tripPassesExpressionString(
-                "date is Sep 2022",
-                Trip(
-                    name = "Test trip",
-                    distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                    timestamp = LocalDate.of(2022, 9, 19).atStartOfDay(
-                        ZoneId.systemDefault()
-                    ).toInstant().toEpochMilli(),
-                    duration = 3600.0,
-                    averageSpeed = 20.0f,
-                    inProgress = false,
-                    bikeId = 0,
-                ),
+                "date is 9/2022",
+                trip19Sep2022,
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "date is 9-2022",
+                trip19Sep2022,
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "date is 'Aug 2022'",
+                trip19Sep2022,
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "date is 'Sep 2022'",
+                trip19Sep2022,
             )
         )
     }
@@ -827,89 +661,57 @@ class SearchRegexTest {
     fun parseDateTest() {
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 1, 1).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 1, 2).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
+                dateToInstant(2022, 1, 1),
+                dateToInstant(2022, 1, 2)
             ),
             parseDate("2022-01-01")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 9, 19).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 9, 20).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
+                sep192022,
+                dateToInstant(2022, 9, 20)
             ),
             parseDate("2022-09-19")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 1, 1).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 1, 2).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
+                dateToInstant(2022, 1, 1),
+                dateToInstant(2022, 1, 2),
             ),
             parseDate("Jan 1 2022")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 9, 19).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 9, 20).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
+                dateToInstant(2022, 9, 19),
+                dateToInstant(2022, 9, 20)
             ),
             parseDate("Sep 19 2022")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 9, 1).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 9, 30).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
+                dateToInstant(2022, 9, 1),
+                dateToInstant(2022, 9, 30)
             ),
             parseDate("9 2022")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 9, 1).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 9, 30).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
+                dateToInstant(2022, 9, 1),
+                dateToInstant(2022, 9, 30)
             ),
             parseDate("Sep 2022")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2022, 1, 1).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2022, 12, 31).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
+                dateToInstant(2022, 1, 1),
+                dateToInstant(2022, 12, 31)
             ),
             parseDate("2022")
         )
         Assert.assertEquals(
             listOf(
-                LocalDate.of(2023, 9, 1).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant(),
-                LocalDate.of(2023, 9, 30).atStartOfDay(
-                    ZoneId.systemDefault()
-                ).toInstant()
+                dateToInstant(2023, 9, 1),
+                dateToInstant(2023, 9, 30)
             ),
             parseDate("Sep")
         )
