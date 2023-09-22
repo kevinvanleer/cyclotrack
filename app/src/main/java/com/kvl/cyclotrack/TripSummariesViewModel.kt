@@ -23,9 +23,14 @@ class TripSummariesViewModel @Inject constructor(
 
     fun filterTrips() {
         try {
+            if (searchText.isNullOrEmpty()) {
+                filteredTrips.value = allTrips.value
+                return
+            }
+
             val searchExpression = parseSearchString(searchText)
             if (searchExpression.isNullOrEmpty()) {
-                filteredTrips.value = allTrips.value
+                filteredTrips.value = emptyArray()
                 return
             }
 
@@ -33,7 +38,8 @@ class TripSummariesViewModel @Inject constructor(
                 tripPassesExpression(it, searchExpression)
             }?.toTypedArray()
         } catch (e: Exception) {
-            filteredTrips.value = allTrips.value
+            //filteredTrips.value = allTrips.value
+            filteredTrips.value = emptyArray()
         }
     }
 
