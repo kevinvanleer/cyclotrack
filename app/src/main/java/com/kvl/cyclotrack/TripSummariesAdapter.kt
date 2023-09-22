@@ -42,11 +42,12 @@ class TripSummariesAdapter(
         RecyclerView.ViewHolder(tripSummaryView)
 
     //TODO: Instantiate TripSummaryCard without inflating layout
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder =
-        TripSummaryViewHolder(
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder {
+        return TripSummaryViewHolder(
             LayoutInflater.from(parent.context)
                 .inflate(R.layout.view_trip_summary_card_wrapper, parent, false) as TripSummaryCard
         )
+    }
 
     override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
         val tripId = trips[position].id ?: 0L
