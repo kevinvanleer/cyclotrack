@@ -41,7 +41,7 @@ android {
         minSdkVersion 26
         targetSdkVersion 33
         versionCode 61
-        versionName "Splits on-the-fly"
+        versionName "Search rides"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
