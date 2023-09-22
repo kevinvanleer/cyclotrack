@@ -3,26 +3,100 @@ package com.kvl.cyclotrack.data
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.FEET_TO_MILES
+import com.kvl.cyclotrack.FeatureFlags.Companion.devBuild
 import com.kvl.cyclotrack.METERS_TO_FEET
 import com.kvl.cyclotrack.Trip
 import com.kvl.cyclotrack.util.dateFormatPattenDob
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
+val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
     Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
-fun parseSearchString(searchString: String) =
-    expressionRegex.findAll(searchString)
-        .map {
-            SearchExpression(it.groups)
-        }.toList()
+fun unitsToSystem(units: String?): String {
+    return when (units) {
+        "kilometers", "km", "cm", "C", "km/h" -> "2"
+        "miles", "mile", "mi", "F", "mph", "m/h", "in", "inch", "inches", "ft", "feet" -> "1"
+        else -> "0"
+    }
+}
+
+fun distanceToMeters(distance: Double, measurementSystem: String) =
+    when (measurementSystem) {
+        "miles", "mile", "mi", "1" -> distance / (METERS_TO_FEET * FEET_TO_MILES)
+        "kilometers", "km", "2" -> distance * 1000
+        else -> distance
+    }
+
+fun parseSearchString(
+    searchString: String,
+    measurementSystem: String = "1"
+): List<SearchExpression> {
+    try {
+        return listOf(
+            SearchExpression(
+                lvalue = "date",
+                operator = "is",
+                rvalue = parseDate(searchString)
+            )
+        )
+    } catch (_: Exception) {
+
+    }
+    try {
+        numberStringRegex.find(searchString)?.let {
+            return listOf(
+                SearchExpression(
+                    lvalue = "distance",
+                    operator = "is",
+                    rvalue = distanceToMeters(
+                        it.groups["value"]!!.value.toDouble(),
+                        it.groups["units"]?.value ?: measurementSystem
+                    )
+                )
+            )
+        }
+    } catch (_: Exception) {
+
+    }
+    try {
+        return listOf(
+            SearchExpression(
+                lvalue = "distance",
+                operator = "is",
+                rvalue = searchString.toDouble()
+            )
+        )
+    } catch (_: Exception) {
+
+    }
+
+    try {
+        return expressionRegex.findAll(searchString)
+            .map {
+                SearchExpression(it.groups)
+            }.toList()
+    } catch (_: Exception) {
+
+    }
+
+    return listOf(
+        SearchExpression(
+            lvalue = "text",
+            operator = "contains",
+            rvalue = searchString
+        )
+    )
+}
 
 fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>): Boolean =
     searchExpressions.fold(false) { result, expression ->
@@ -60,15 +134,17 @@ fun compareDateExpression(
 ): Boolean =
     when (expression.operator) {
         "greater than", "after" -> Instant.ofEpochMilli(trip.timestamp)
-            .isAfter(expression.rvalue as Instant)
+            .isAfter((expression.rvalue as List<*>)[1] as Instant)
 
         "less than", "before" -> Instant.ofEpochMilli(trip.timestamp)
-            .isBefore(expression.rvalue as Instant)
+            .isBefore((expression.rvalue as List<*>)[0] as Instant)
 
-        "is" -> Instant.ofEpochMilli(trip.timestamp)
-            .isAfter((expression.rvalue as List<*>)[0] as Instant)
-                && Instant.ofEpochMilli(trip.timestamp)
-            .isBefore((expression.rvalue)[1] as Instant)
+        "is" -> Instant.ofEpochMilli(trip.timestamp).let { ts ->
+            (expression.rvalue as List<*>).let { rvalue ->
+                ts.isAfter(rvalue[0] as Instant) &&
+                        ts.isBefore(rvalue[1] as Instant)
+            }
+        }
 
         "between" -> (expression.rvalue as List<*>).let { range ->
             Instant.ofEpochMilli(trip.timestamp).let { ts ->
@@ -85,17 +161,18 @@ fun compareDistanceExpression(
     trip: Trip,
     expression: SearchExpression,
 ): Boolean {
-    val milesToMeters = 1 / (METERS_TO_FEET * FEET_TO_MILES)
-    val delta = milesToMeters / 2
-    fun targetDistance(dist: Any) = dist.toString().toDouble().times(milesToMeters)
+    fun targetDistance(dist: Double) = dist
     return when (expression.operator.lowercase()) {
-        "is", "equals" ->
-            ((targetDistance(expression.rvalue) - delta) <= trip.distance!!) && ((targetDistance(
+        "is", "equals" -> {
+            val milesToMeters = 1 / (METERS_TO_FEET * FEET_TO_MILES)
+            val delta = milesToMeters / 2
+            ((targetDistance(expression.rvalue as Double) - delta) <= trip.distance!!) && ((targetDistance(
                 expression.rvalue
             ) + delta) > trip.distance)
+        }
 
-        "greater than" -> trip.distance!! > targetDistance(expression.rvalue)
-        "less than" -> trip.distance!! < targetDistance(expression.rvalue)
+        "greater than" -> trip.distance!! > expression.rvalue as Double
+        "less than" -> trip.distance!! < expression.rvalue as Double
         "between" -> trip.distance!! >= targetDistance((expression.rvalue as List<*>)[0] as Double) &&
                 trip.distance <= targetDistance(expression.rvalue[1] as Double)
 
@@ -188,7 +265,12 @@ fun parseDate(rvalue: String): Any {
     }
     yearFormats.forEach {
         try {
-            val start = SimpleDateFormat(it, Locale.US).parse(rvalue)!!.toInstant()
+            val start = SimpleDateFormat(it, Locale.US).parse(rvalue)!!
+                .toInstant()
+            if (start.isBefore(
+                    LocalDate.of(1970, 1, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
+                )
+            ) throw DateTimeParseException("Year before 1970", rvalue, 0)
             return listOf(
                 start.atZone(ZoneId.systemDefault()).truncatedTo(
                     ChronoUnit.DAYS
@@ -204,8 +286,10 @@ fun parseDate(rvalue: String): Any {
             Log.d("parseDate", "$rvalue could not be parsed as date")
         }
     }
-    FirebaseCrashlytics.getInstance()
-        .recordException(ParseException("$rvalue is not a recognized date string", 0))
+    if (!devBuild) {
+        FirebaseCrashlytics.getInstance()
+            .recordException(ParseException("$rvalue is not a recognized date string", 0))
+    }
     throw ParseException("$rvalue is not a recognized date string", 0)
 }
 
@@ -222,7 +306,7 @@ fun parseRvalue(regexMatchGroups: MatchGroupCollection): Any =
             }
     }!!.map { rvalue ->
         when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
-            "distance" -> rvalue.toDouble()
+            "distance" -> distanceToMeters(rvalue.toDouble(), "1")
             "date" -> parseDate(rvalue)
 
             else -> rvalue
