@@ -175,4 +175,5 @@
     <string name="preferences_dashboard_safe_zone_left_margin">preferences_dashboard_safe_zone_left_margin</string>
     <string name="preferences_dashboard_safe_zone_right_margin">preferences_dashboard_safe_zone_right_margin</string>
     <string name="preference_key_burn_in_reduction">preference_burn_in_reduction</string>
+    <string name="empty_search_result_message">Sorry, couldn\'t find anything...</string>
 </resources>
