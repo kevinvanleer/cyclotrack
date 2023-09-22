@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import com.kvl.cyclotrack.data.SearchExpression
 import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
+import com.kvl.cyclotrack.data.distanceToMeters
 import com.kvl.cyclotrack.data.parseDate
 import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
@@ -12,6 +13,8 @@ import org.junit.Test
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoField
 
 
 class SearchRegexTest {
@@ -37,7 +40,7 @@ class SearchRegexTest {
 
     private val tripTest20miles = Trip(
         name = "Test trip",
-        distance = 20.0 / (METERS_TO_FEET * FEET_TO_MILES),
+        distance = distanceToMeters(20.0, "1"),
         duration = 3600.0,
         averageSpeed = 20.0f,
         inProgress = false,
@@ -58,7 +61,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 14.0,
+                    rvalue = distanceToMeters(14.0, "1"),
                     junction = null
                 )
             ),
@@ -75,7 +78,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "greater than",
-                    rvalue = 50.0,
+                    rvalue = distanceToMeters(50.0, "1"),
                     junction = null
                 )
             ),
@@ -112,7 +115,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "between",
-                    rvalue = listOf(14.0, 20.0),
+                    rvalue = listOf(distanceToMeters(14.0, "1"), distanceToMeters(20.0, "1")),
                     junction = null
                 )
             ),
@@ -146,7 +149,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 14.0,
+                    rvalue = distanceToMeters(14.0, "1"),
                     junction = null
                 ),
                 SearchExpression(
@@ -166,6 +169,302 @@ class SearchRegexTest {
     }
 
     @Test
+    fun dateBefore() {
+        val expressions = parseSearchString("date before 2023-08-04")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "before",
+                    rvalue = listOf(
+                        dateToInstant(2023, 8, 4),
+                        dateToInstant(2023, 8, 5)
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2023,
+                expressions
+            )
+        )
+    }
+
+    @Test
+    fun dateAfter() {
+        val expressions = parseSearchString("date after 2023-08-04")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "after",
+                    rvalue = listOf(
+                        dateToInstant(2023, 8, 4),
+                        dateToInstant(2023, 8, 5)
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                trip19Sep2023,
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }
+
+    @Test
+    fun dateBetween() {
+        val expressions = parseSearchString("date between 2023-08-04 and 2023-10-04")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "between",
+                    rvalue = listOf(
+                        listOf(
+                            dateToInstant(2023, 8, 4),
+                            dateToInstant(2023, 8, 5)
+                        ),
+                        listOf(
+                            dateToInstant(2023, 10, 4),
+                            dateToInstant(2023, 10, 5)
+                        ),
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                trip19Sep2023,
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }
+
+    @Test
+    fun dateBetweenMonthsNumeric() {
+        val expressions = parseSearchString("date between 8-2023 and 10-2023")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "between",
+                    rvalue = listOf(
+                        listOf(
+                            dateToInstant(2023, 8, 1),
+                            dateToInstant(2023, 8, 31)
+                        ),
+                        listOf(
+                            dateToInstant(2023, 10, 1),
+                            dateToInstant(2023, 10, 31)
+                        ),
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                trip19Sep2023,
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }
+
+    /*@Test
+    fun dateBetweenMonthsText() {
+        val expressions = parseSearchString("date between Aug-2023 and Oct-2023")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "between",
+                    rvalue = listOf(
+                        listOf(
+                            dateToInstant(2023, 8, 1),
+                            dateToInstant(2023, 8, 31)
+                        ),
+                        listOf(
+                            dateToInstant(2023, 10, 1),
+                            dateToInstant(2023, 10, 31)
+                        ),
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                trip19Sep2023,
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }*/
+
+    @Test
+    fun justDate() {
+        val expressions = parseSearchString("2023-08-04")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "is",
+                    rvalue = listOf(
+                        dateToInstant(2023, 8, 4),
+                        dateToInstant(2023, 8, 5)
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                tripTest20miles.copy(
+                    timestamp = dateTimeToInstant(
+                        2023,
+                        8,
+                        4,
+                        hour = 12
+                    ).toEpochMilli()
+                ),
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }
+
+    @Test
+    fun justMonthYear() {
+        val expressions = parseSearchString("September 2023")
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "is",
+                    rvalue = listOf(
+                        dateToInstant(2023, 9, 1),
+                        dateToInstant(2023, 9, 30)
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                trip19Sep2023,
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }
+
+    @Test
+    fun justMonth() {
+        val expressions = parseSearchString("September")
+        val currentYear = ZonedDateTime.now().get(ChronoField.YEAR)
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "date",
+                    operator = "is",
+                    rvalue = listOf(
+                        dateToInstant(currentYear, 9, 1),
+                        dateToInstant(currentYear, 9, 30)
+                    ),
+                )
+            ),
+            expressions.toTypedArray()
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                tripTest20miles.copy(timestamp = dateToInstant(currentYear, 9, 9).toEpochMilli()),
+                expressions
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpression(
+                trip19Sep2022,
+                expressions
+            )
+        )
+    }
+
+    @Test
+    fun justNumber() {
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "distance",
+                    operator = "is",
+                    rvalue = distanceToMeters(20.0, "miles")
+                )
+            ), parseSearchString("20").toTypedArray()
+        )
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "distance",
+                    operator = "is",
+                    rvalue = distanceToMeters(20.1, "miles")
+                )
+            ), parseSearchString("20.1 miles").toTypedArray()
+        )
+    }
+
+    @Test
     fun tripleCompoundRangeSearchExpression() {
         Assert.assertArrayEquals(
             arrayOf(
@@ -173,21 +472,30 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "between",
-                    rvalue = listOf(10.0, 20.0),
+                    rvalue = listOf(
+                        distanceToMeters(10.0, "1"),
+                        distanceToMeters(20.0, "1")
+                    ),
                     junction = null
                 ),
                 SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "between",
-                    rvalue = listOf(15.0, 17.0),
+                    rvalue = listOf(
+                        distanceToMeters(15.0, "1"),
+                        distanceToMeters(17.0, "1")
+                    ),
                     junction = "and"
                 ),
                 SearchExpression(
                     negation = false,
                     lvalue = "distance",
                     operator = "between",
-                    rvalue = listOf(13.0, 18.0),
+                    rvalue = listOf(
+                        distanceToMeters(13.0, "1"),
+                        distanceToMeters(18.0, "1")
+                    ),
                     junction = "and"
                 ),
             ),
@@ -205,7 +513,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 14.0,
+                    rvalue = distanceToMeters(14.0, "1"),
                     junction = null
                 ),
                 SearchExpression(
@@ -239,7 +547,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = 20.0
+                    rvalue = distanceToMeters(20.0, "1")
                 )
             )
         )
@@ -281,7 +589,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = 20.0
+                        rvalue = distanceToMeters(20.0, "1")
                     )
                 )
             )
@@ -293,7 +601,7 @@ class SearchRegexTest {
                         negation = true,
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = 20.0
+                        rvalue = distanceToMeters(20.0, "1")
                     )
                 )
             )
@@ -306,7 +614,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = 20.0
+                        rvalue = distanceToMeters(20.0, "1")
                     )
                 )
             )
@@ -319,7 +627,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = 20.0
+                        rvalue = distanceToMeters(20.0, "1")
                     )
                 )
             )
@@ -330,7 +638,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "less than",
-                        rvalue = 20.0
+                        rvalue = 20.0 / (METERS_TO_FEET * FEET_TO_MILES)
                     )
                 )
             )
@@ -356,7 +664,10 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "between",
-                        rvalue = listOf(20.9, 21.1)
+                        rvalue = listOf(
+                            distanceToMeters(20.9, "1"),
+                            distanceToMeters(21.1, "1")
+                        )
                     )
                 )
             )
@@ -408,7 +719,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = 20.0
+                        rvalue = distanceToMeters(20.0, "1")
                     ),
                     SearchExpression(
                         lvalue = "text",
@@ -484,7 +795,10 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "date",
                         operator = "before",
-                        rvalue = dateToInstant(2023, 9, 20)
+                        rvalue = listOf(
+                            dateToInstant(2023, 9, 20),
+                            dateToInstant(2023, 9, 21),
+                        )
                     ),
                 )
             )
@@ -495,7 +809,10 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "date",
                         operator = "before",
-                        rvalue = dateToInstant(2023, 8, 18)
+                        rvalue = listOf(
+                            dateToInstant(2023, 8, 18),
+                            dateToInstant(2023, 8, 19)
+                        )
                     ),
                 )
             )
@@ -506,7 +823,10 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "date",
                         operator = "after",
-                        rvalue = dateToInstant(2023, 10, 19)
+                        rvalue = listOf(
+                            dateToInstant(2023, 10, 19),
+                            dateToInstant(2023, 10, 20)
+                        )
                     ),
                 )
             )
@@ -517,7 +837,10 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "date",
                         operator = "after",
-                        rvalue = dateToInstant(2023, 8, 19)
+                        rvalue = listOf(
+                            dateToInstant(2023, 8, 19),
+                            dateToInstant(2023, 8, 20),
+                        )
                     ),
                 )
             )
@@ -589,10 +912,16 @@ class SearchRegexTest {
     }
 
     @Test
-    fun tripPassesExpressionStringTest() {
+    fun tripPassesExpressionStringDistanceTest() {
         Assert.assertEquals(
             true, tripPassesExpressionString(
                 "distance is 20",
+                tripTest20miles,
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "20 miles",
                 tripTest20miles,
             )
         )
@@ -715,5 +1044,66 @@ class SearchRegexTest {
             ),
             parseDate("Sep")
         )
+    }
+
+    @Test
+    fun numberStringRegex() {
+        var result = com.kvl.cyclotrack.data.numberStringRegex.find("20")
+        Assert.assertEquals("20", result!!.groups["value"]!!.value)
+
+        result = com.kvl.cyclotrack.data.numberStringRegex.find("20 miles")
+        Assert.assertEquals("20", result!!.groups["value"]!!.value)
+        Assert.assertEquals("miles", result.groups["units"]!!.value)
+
+        result = com.kvl.cyclotrack.data.numberStringRegex.find("20.1 miles")
+        Assert.assertEquals("20.1", result!!.groups["value"]!!.value)
+        Assert.assertEquals("miles", result.groups["units"]!!.value)
+
+        result = com.kvl.cyclotrack.data.numberStringRegex.find("20.1 km")
+        Assert.assertEquals("20.1", result!!.groups["value"]!!.value)
+        Assert.assertEquals("km", result.groups["units"]!!.value)
+    }
+
+    @Test
+    fun badQueries() {
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "date falalal werwoij",
+                trip19Sep2022,
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "asdfawe falalal werwoij",
+                trip19Sep2022,
+            )
+        )
+        /*
+        Assert.assertThrows(
+            ParseException::class.java
+        ) {
+            tripPassesExpressionString(
+                "date is candy",
+                trip19Sep2022,
+            )
+        }
+        Assert.assertThrows(NumberFormatException::class.java) {
+            tripPassesExpressionString(
+                "distance is candy",
+                trip19Sep2022,
+            )
+        }
+        Assert.assertThrows(NumberFormatException::class.java) {
+            tripPassesExpressionString(
+                "distance is 1 and 2",
+                trip19Sep2022,
+            )
+        }
+        Assert.assertThrows(NumberFormatException::class.java) {
+            tripPassesExpressionString(
+                "text is foo",
+                trip19Sep2022,
+            )
+        }*/
     }
 }
