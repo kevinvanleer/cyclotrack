@@ -14,6 +14,7 @@
             android:layout_width="wrap_content"
             android:layout_height="260dp"
             android:contentDescription="@string/trip_summary_image_description"
+            app:backgroundColor="#000000"
             app:layout_constraintBottom_toTopOf="@id/trip_summary_details"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
