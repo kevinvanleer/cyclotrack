@@ -10,6 +10,7 @@ import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
 import org.junit.Assert
 import org.junit.Test
+import java.text.ParseException
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -461,6 +462,19 @@ class SearchRegexTest {
                     rvalue = distanceToMeters(20.1, "miles")
                 )
             ), parseSearchString("20.1 miles").toTypedArray()
+        )
+    }
+
+    @Test
+    fun justText() {
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "text",
+                    operator = "contains",
+                    rvalue = "evening"
+                )
+            ), parseSearchString("evening").toTypedArray()
         )
     }
 
@@ -1044,6 +1058,9 @@ class SearchRegexTest {
             ),
             parseDate("Sep")
         )
+        Assert.assertThrows(ParseException::class.java) {
+            parseDate("evening")
+        }
     }
 
     @Test
