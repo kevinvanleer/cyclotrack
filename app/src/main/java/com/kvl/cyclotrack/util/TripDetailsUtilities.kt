@@ -78,76 +78,77 @@ val getSpeedDataFromSensor: (
     trend: ArrayList<Entry>,
     hi: ArrayList<Entry>,
     lo: ArrayList<Entry>,
-) -> Unit = { context, overview, effectiveCircumference, measurementsList, intervals, avgSpeed ->
-    { entries, trend, hi, lo ->
-        val circumference =
-            effectiveCircumference ?: overview.autoWheelCircumference
-            ?: overview.userWheelCircumference
-        Log.d(logTag, "Using circumference: $circumference")
+) -> kotlin.Unit =
+    { context, overview, effectiveCircumference, measurementsList, intervals, avgSpeed ->
+        { entries, trend, hi, lo ->
+            val circumference =
+                effectiveCircumference ?: overview.autoWheelCircumference
+                ?: overview.userWheelCircumference
+            Log.d(logTag, "Using circumference: $circumference")
 
-        val intervalStart = intervals.last().first
-        val accumulatedTime = accumulateTime(intervals)
-        var trendLast =
-            getUserSpeed(
-                context,
-                measurementsList[0].rpm?.times(circumference!!)?.div(60)?.toDouble() ?: 0.0
-            )
-        var hiLast: Float? = null;
-        var loLast: Float? = null;
-        var trendAlpha = 0.5f
-        var lastMeasurement: CadenceSpeedMeasurement? = null
+            val intervalStart = intervals.last().first
+            val accumulatedTime = accumulateTime(intervals)
+            var trendLast =
+                getUserSpeed(
+                    context,
+                    measurementsList[0].rpm?.times(circumference!!)?.div(60)?.toDouble() ?: 0.0
+                )
+            var hiLast: Float? = null;
+            var loLast: Float? = null;
+            var trendAlpha = 0.5f
+            var lastMeasurement: CadenceSpeedMeasurement? = null
 
-        measurementsList.forEach { measurements ->
-            lastMeasurement
-                ?.let { last ->
-                    if (validateSpeed(measurements, last)) {
-                        try {
-                            getRpm(
-                                rev = measurements.revolutions,
-                                revLast = last.revolutions,
-                                time = measurements.lastEvent,
-                                timeLast = last.lastEvent,
-                                delta = measurements.timestamp - last.timestamp
-                            ).takeIf { it.isFinite() && last.rpm != 0f }
-                                ?.let { getUserSpeed(context, it * circumference!! / 60) }
-                                ?.let { speed ->
-                                    val timestamp =
-                                        (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
-                                    entries.add(Entry(timestamp, speed))
-                                    getTrendData(
-                                        speed,
-                                        trendAlpha,
-                                        avgSpeed,
-                                        trendLast,
-                                        hiLast,
-                                        loLast
-                                    ).let { (trendNew, hiNew, loNew) ->
-                                        trend.add(Entry(timestamp, trendNew))
-                                        trendLast = trendNew
-                                        hiNew?.let {
-                                            hi.add(Pair(timestamp, it))
-                                            hiLast = it
+            measurementsList.forEach { measurements ->
+                lastMeasurement
+                    ?.let { last ->
+                        if (validateSpeed(measurements, last)) {
+                            try {
+                                getRpm(
+                                    rev = measurements.revolutions,
+                                    revLast = last.revolutions,
+                                    time = measurements.lastEvent,
+                                    timeLast = last.lastEvent,
+                                    delta = measurements.timestamp - last.timestamp
+                                ).takeIf { it.isFinite() && last.rpm != 0f }
+                                    ?.let { getUserSpeed(context, it * circumference!! / 60) }
+                                    ?.let { speed ->
+                                        val timestamp =
+                                            (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
+                                        entries.add(Entry(timestamp, speed))
+                                        getTrendData(
+                                            speed,
+                                            trendAlpha,
+                                            avgSpeed,
+                                            trendLast,
+                                            hiLast,
+                                            loLast
+                                        ).let { (trendNew, hiNew, loNew) ->
+                                            trend.add(Entry(timestamp, trendNew))
+                                            trendLast = trendNew
+                                            hiNew?.let {
+                                                hi.add(Pair(timestamp, it))
+                                                hiLast = it
+                                            }
+                                            loNew?.let {
+                                                lo.add(Pair(timestamp, it))
+                                                loLast = it
+                                            }
                                         }
-                                        loNew?.let {
-                                            lo.add(Pair(timestamp, it))
-                                            loLast = it
-                                        }
+                                        if (trendAlpha > 0.01f) trendAlpha -= 0.005f
+                                        if (trendAlpha < 0.01f) trendAlpha = 0.01f
                                     }
-                                    if (trendAlpha > 0.01f) trendAlpha -= 0.005f
-                                    if (trendAlpha < 0.01f) trendAlpha = 0.01f
-                                }
-                        } catch (e: Exception) {
-                            Log.e(
-                                logTag,
-                                "Could not calculate speed for time ${measurements.timestamp}"
-                            )
+                            } catch (e: Exception) {
+                                Log.e(
+                                    logTag,
+                                    "Could not calculate speed for time ${measurements.timestamp}"
+                                )
+                            }
                         }
                     }
-                }
-            lastMeasurement = measurements
+                lastMeasurement = measurements
+            }
         }
     }
-}
 
 val getSpeedDataFromGps: (
     context: Context,
@@ -159,7 +160,7 @@ val getSpeedDataFromGps: (
     trend: ArrayList<Entry>,
     hi: ArrayList<Entry>,
     lo: ArrayList<Entry>,
-) -> Unit = { context, measurements, intervals, avgSpeed ->
+) -> kotlin.Unit = { context, measurements, intervals, avgSpeed ->
     { entries, trend, hi, lo ->
         Log.v(logTag, "getSpeedFromGps")
         val intervalStart = intervals.last().first
