@@ -1,13 +1,9 @@
 package com.kvl.cyclotrack
 
 import androidx.annotation.Keep
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.Index
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverter
+import androidx.room.*
 import com.kvl.cyclotrack.util.SystemUtils
-import java.util.Calendar
+import java.util.*
 
 enum class GoogleFitSyncStatusEnum(val value: Int) {
     NOT_SYNCED(0),
@@ -82,15 +78,15 @@ fun getDefaultTripName(): String {
 )
 @Keep
 data class Trip(
-    val name: String = getDefaultTripName(),
-    val distance: Double = 0.0,
-    val duration: Double = 0.0,
-    val averageSpeed: Float = 0f,
+    val name: String? = getDefaultTripName(),
+    val distance: Double? = 0.0,
+    val duration: Double? = null,
+    val averageSpeed: Float? = null,
     val timestamp: Long = SystemUtils.currentTimeMillis(),
     val inProgress: Boolean = true,
     val bikeId: Long,
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    val id: Long? = null,
     val notes: String? = null,
     val userWheelCircumference: Float? = null,
     val autoWheelCircumference: Float? = null,
