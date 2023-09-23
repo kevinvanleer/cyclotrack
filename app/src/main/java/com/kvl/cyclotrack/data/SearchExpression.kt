@@ -80,16 +80,10 @@ fun parseSearchString(
 
     }
 
-    try {
-        return expressionRegex.findAll(searchString)
-            .map {
-                SearchExpression(it.groups)
-            }.toList()
-    } catch (_: Exception) {
-
-    }
-
-    return listOf(
+    return expressionRegex.findAll(searchString)
+        .map {
+            SearchExpression(it.groups)
+        }.toList().takeUnless { it.isNullOrEmpty() } ?: listOf(
         SearchExpression(
             lvalue = "text",
             operator = "contains",
@@ -105,9 +99,13 @@ fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>):
                 compareDistanceExpression(trip, expression)
 
             "date" -> compareDateExpression(trip, expression)
-            "text" -> trip.name?.contains(expression.rvalue.toString()) == true || trip.notes?.contains(
-                expression.rvalue.toString()
-            ) == true
+            "text" -> trip.name?.lowercase()
+                ?.contains(
+                    expression.rvalue.toString().lowercase()
+                ) == true || trip.notes?.lowercase()
+                ?.contains(
+                    expression.rvalue.toString().lowercase()
+                ) == true
 
             else -> false
         }.let {
