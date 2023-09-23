@@ -2,11 +2,14 @@ package com.kvl.cyclotrack.data
 
 import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.kvl.cyclotrack.FEET_TO_MILES
 import com.kvl.cyclotrack.FeatureFlags.Companion.devBuild
-import com.kvl.cyclotrack.METERS_TO_FEET
 import com.kvl.cyclotrack.Trip
+import com.kvl.cyclotrack.util.FEET_TO_MILES
+import com.kvl.cyclotrack.util.HOURS_TO_SECONDS
+import com.kvl.cyclotrack.util.METERS_TO_FEET
+import com.kvl.cyclotrack.util.MILES_TO_METERS
 import com.kvl.cyclotrack.util.dateFormatPattenDob
+import com.kvl.cyclotrack.util.distanceToMeters
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -20,22 +23,8 @@ import java.util.Locale
 
 val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
-    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
+    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
-fun unitsToSystem(units: String?): String {
-    return when (units) {
-        "kilometers", "km", "cm", "C", "km/h" -> "2"
-        "miles", "mile", "mi", "F", "mph", "m/h", "in", "inch", "inches", "ft", "feet" -> "1"
-        else -> "0"
-    }
-}
-
-fun distanceToMeters(distance: Double, measurementSystem: String) =
-    when (measurementSystem) {
-        "miles", "mile", "mi", "1" -> distance / (METERS_TO_FEET * FEET_TO_MILES)
-        "kilometers", "km", "2" -> distance * 1000
-        else -> distance
-    }
 
 fun parseSearchString(
     searchString: String,
@@ -97,6 +86,8 @@ fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>):
         when (expression.lvalue.lowercase()) {
             "distance" ->
                 compareDistanceExpression(trip, expression)
+
+            "speed" -> compareSpeedExpression(trip, expression)
 
             "date" -> compareDateExpression(trip, expression)
             "text" -> trip.name?.lowercase()
@@ -173,6 +164,30 @@ fun compareDistanceExpression(
         "less than" -> trip.distance!! < expression.rvalue as Double
         "between" -> trip.distance!! >= targetDistance((expression.rvalue as List<*>)[0] as Double) &&
                 trip.distance <= targetDistance(expression.rvalue[1] as Double)
+
+        else -> false
+    }
+}
+
+fun compareSpeedExpression(
+    trip: Trip,
+    expression: SearchExpression,
+): Boolean {
+    fun targetDistance(dist: Double) = dist
+    return when (expression.operator.lowercase()) {
+        "is", "equals" -> {
+            //val conversionFactor = 1 / (METERS_TO_FEET * FEET_TO_MILES)
+            val conversionFactor = MILES_TO_METERS * HOURS_TO_SECONDS
+            val delta = conversionFactor / 2
+            ((targetDistance(expression.rvalue as Double) - delta) <= trip.averageSpeed!!) && ((targetDistance(
+                expression.rvalue
+            ) + delta) > trip.averageSpeed)
+        }
+
+        "greater than" -> trip.averageSpeed!! > expression.rvalue as Double
+        "less than" -> trip.averageSpeed!! < expression.rvalue as Double
+        "between" -> trip.averageSpeed!! >= targetDistance((expression.rvalue as List<*>)[0] as Double) &&
+                trip.averageSpeed <= targetDistance(expression.rvalue[1] as Double)
 
         else -> false
     }

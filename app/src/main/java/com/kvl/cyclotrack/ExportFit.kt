@@ -24,6 +24,7 @@ import com.garmin.fit.SessionMesg
 import com.garmin.fit.Sport
 import com.garmin.fit.SubSport
 import com.kvl.cyclotrack.util.getFileName
+import com.kvl.cyclotrack.util.kelvinToCelsius
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Date

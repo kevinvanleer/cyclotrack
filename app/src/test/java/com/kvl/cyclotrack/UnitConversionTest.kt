@@ -1,5 +1,7 @@
 package com.kvl.cyclotrack
 
+import com.kvl.cyclotrack.util.kelvinToCelsius
+import com.kvl.cyclotrack.util.kelvinToFahrenheit
 import org.junit.Assert
 import org.junit.Test
 

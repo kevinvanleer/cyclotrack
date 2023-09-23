@@ -3,11 +3,13 @@ package com.kvl.cyclotrack
 import com.kvl.cyclotrack.data.SearchExpression
 import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
-import com.kvl.cyclotrack.data.distanceToMeters
 import com.kvl.cyclotrack.data.parseDate
 import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
+import com.kvl.cyclotrack.util.FEET_TO_MILES
+import com.kvl.cyclotrack.util.METERS_TO_FEET
+import com.kvl.cyclotrack.util.distanceToMeters
 import org.junit.Assert
 import org.junit.Test
 import java.text.ParseException

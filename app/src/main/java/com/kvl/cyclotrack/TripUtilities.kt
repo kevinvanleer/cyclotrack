@@ -12,10 +12,20 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.data.HeartRateMeasurement
+import com.kvl.cyclotrack.util.FEET_TO_INCHES
+import com.kvl.cyclotrack.util.FEET_TO_METERS
+import com.kvl.cyclotrack.util.FEET_TO_MILES
+import com.kvl.cyclotrack.util.INCHES_TO_FEET
+import com.kvl.cyclotrack.util.METERS_TO_FEET
+import com.kvl.cyclotrack.util.METERS_TO_KM
+import com.kvl.cyclotrack.util.METERS_TO_MM
+import com.kvl.cyclotrack.util.SECONDS_TO_HOURS
 import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
+import com.kvl.cyclotrack.util.kelvinToCelsius
+import com.kvl.cyclotrack.util.kelvinToFahrenheit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.PI
@@ -441,19 +451,6 @@ suspend fun plotPath(
         }
         MapPath(paths.toTypedArray(), bounds)
     }
-
-const val METERS_TO_FEET = 3.28084
-const val FEET_TO_METERS = 1 / METERS_TO_FEET
-const val METERS_TO_KM = 0.001
-const val METERS_TO_MM = 1000.0
-const val FEET_TO_MILES = 1.0 / 5280
-const val SECONDS_TO_HOURS = 1.0 / 3600
-const val INCHES_TO_FEET = 1 / 12.0
-const val FEET_TO_INCHES = 12.0
-const val KELVIN_TO_CELSIUS = 273.15
-
-fun kelvinToCelsius(kelvin: Double) = kelvin - KELVIN_TO_CELSIUS
-fun kelvinToFahrenheit(kelvin: Double) = kelvinToCelsius(kelvin) * 9.0 / 5.0 + 32.0
 
 fun getUserTemperature(context: Context, temperature: Double): Int = getUserTemperature(
     getSystemOfMeasurement(context), temperature
