@@ -368,6 +368,7 @@ class UnitsTest {
         Assert.assertTrue(Mile is Length)
         Assert.assertTrue(Inch is Length)
         Assert.assertTrue(Kilo(Meter).baseUnit is Length)
+        Assert.assertTrue(Kilometer.baseUnit is Length)
         Assert.assertTrue(Kilo(Meter).baseUnit is Meter)
         Assert.assertFalse(Kilo(Meter).baseUnit is Time)
     }

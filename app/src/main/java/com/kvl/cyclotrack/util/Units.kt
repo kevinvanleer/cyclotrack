@@ -54,13 +54,6 @@ open class Speed(override val numerator: Unit, override val denominator: Unit) :
     override val baseUnit: Rate
         get() = Speed(numerator.baseUnit, denominator.baseUnit)
 
-    override val pseudonyms: Map<Unit, Array<String>>
-        get() = mapOf(
-            Pair(MilesPerHour, arrayOf("miles per hour", "mph", "mi/hr", "mi/h")),
-            Pair(KilometersPerHour, arrayOf("kilometers per hour", "kph", "km/h", "km/hr")),
-            Pair(MetersPerSecond, arrayOf("meters per second", "m/s", "m/sec"))
-        )
-
     companion object {
         fun fromMeasurementSystem(measurementSystem: String) =
             when (measurementSystem) {
@@ -146,8 +139,8 @@ open class Centi(val base: Unit) : Unit {
     override val baseUnit: Unit
         get() = base.baseUnit
 
-    override val pseudonyms: Map<Unit, Array<String>>
-        get() = base.pseudonyms.mapValues { (_, v) -> v.map { "centi$it" }.toTypedArray() }
+    val pseudonyms: Map<Unit, Array<String>>
+        get() = Unit.pseudonyms.mapValues { (_, v) -> v.map { "centi$it" }.toTypedArray() }
 }
 
 open class Kilo(val base: Unit) : Unit {
@@ -156,8 +149,8 @@ open class Kilo(val base: Unit) : Unit {
     override val baseUnit: Unit
         get() = base.baseUnit
 
-    override val pseudonyms: Map<Unit, Array<String>>
-        get() = base.pseudonyms.mapValues { (_, v) -> v.map { "kilo$it" }.toTypedArray() }
+    val pseudonyms: Map<Unit, Array<String>>
+        get() = Unit.pseudonyms.mapValues { (_, v) -> v.map { "kilo$it" }.toTypedArray() }
 }
 
 object Kilometer : Kilo(Meter)
@@ -190,15 +183,6 @@ abstract class Length : Unit {
     override val conversionFactor: Double = 1.0
     override val baseUnit: Unit = Meter
 
-    override val pseudonyms: Map<Unit, Array<String>>
-        get() = mapOf(
-            Pair(Mile, arrayOf("mile", "miles", "mi")),
-            Pair(Foot, arrayOf("foot", "feet", "ft")),
-            Pair(Inch, arrayOf("inch", "inches", "in")),
-            Pair(Kilometer, arrayOf("kilometer", "kilometers", "km")),
-            Pair(Meter, arrayOf("meter", "meters", "m"))
-        )
-
     companion object {
         fun fromMeasurementSystem(measurementSystem: String) =
             when (measurementSystem) {
@@ -207,18 +191,7 @@ abstract class Length : Unit {
                 else -> Meter
             }
 
-        private val pseudonyms: Map<Unit, Array<String>>
-            get() = mapOf(
-                Pair(Mile, arrayOf("mile", "miles", "mi")),
-                Pair(Foot, arrayOf("foot", "feet", "ft")),
-                Pair(Inch, arrayOf("inch", "inches", "in")),
-                Pair(Kilometer, arrayOf("kilometer", "kilometers", "km")),
-                Pair(Meter, arrayOf("meter", "meters", "m"))
-            )
-
-        fun fromString(value: String): Unit? = pseudonyms.toList().find { pair ->
-            pair.second.any { it == value }
-        }?.first
+        fun fromString(value: String) = Unit.fromString(value)
     }
 }
 
@@ -240,28 +213,39 @@ object Hour : Time() {
 
 object Minute : Time() {
     override val conversionFactor: Double = TimeConversions.MINUTE
-    //override fun toString(): String = "minutes"
 }
 
 object Second : Time() {
     override val conversionFactor: Double = TimeConversions.SECOND
     override val baseUnit: Unit = Second
-    //override fun toString(): String = "second"
 }
 
 abstract class Time : Unit {
     override val baseUnit: Unit = Second
-
-    //abstract override fun toString(): String
-    override val pseudonyms: Map<Unit, Array<String>>
-        get() = emptyMap()
 }
 
 interface Unit {
     val conversionFactor: Double
     val baseUnit: Unit
-    val pseudonyms: Map<Unit, Array<String>>
-    //override fun toString(): String
+
+    companion object {
+        val pseudonyms: Map<Unit, Array<String>>
+            get() = mapOf(
+                Pair(Mile, arrayOf("mile", "miles", "mi")),
+                Pair(Foot, arrayOf("foot", "feet", "ft")),
+                Pair(Inch, arrayOf("inch", "inches", "in")),
+                Pair(Kilometer, arrayOf("kilometer", "kilometers", "km")),
+                Pair(Meter, arrayOf("meter", "meters", "m")),
+                Pair(MilesPerHour, arrayOf("miles per hour", "mph", "mi/hr", "mi/h")),
+                Pair(KilometersPerHour, arrayOf("kilometers per hour", "kph", "km/h", "km/hr")),
+                Pair(MetersPerSecond, arrayOf("meters per second", "m/s", "m/sec"))
+            )
+
+        fun fromString(value: String): Unit? = pseudonyms.toList().find { pair ->
+            pair.second.any { it == value }
+        }?.first
+    }
+    //override fun toString(): String = pseudonyms[this]!!.get(0)!!
 }
 
 object TimeConversions {
