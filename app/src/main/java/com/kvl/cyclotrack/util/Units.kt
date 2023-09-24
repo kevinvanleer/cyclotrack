@@ -72,6 +72,10 @@ interface Rate : Unit {
 class Quantity(private val quantity: Double, private val units: Unit) {
     val value
         get() = quantity
+    val float
+        get() = quantity.toFloat()
+    val int
+        get() = quantity.toInt()
     val unit
         get() = units
 
@@ -224,6 +228,34 @@ abstract class Time : Unit {
     override val baseUnit: Unit = Second
 }
 
+object Kilogram : Kilo(Gram)
+
+object Pound : Mass() {
+    override val conversionFactor: Double = 453.59237
+}
+
+object Ounce : Mass() {
+    override val conversionFactor: Double = 28.349523125
+}
+
+object Gram : Mass() {
+    override val conversionFactor: Double = 1.0
+    override val baseUnit: Unit = Gram
+}
+
+abstract class Mass : Unit {
+    override val baseUnit: Unit = Gram
+
+    companion object {
+        fun fromMeasurementSystem(measurementSystem: String) =
+            when (measurementSystem) {
+                "1" -> Pound
+                "2" -> Kilogram
+                else -> Gram
+            }
+    }
+}
+
 interface Unit {
     val conversionFactor: Double
     val baseUnit: Unit
@@ -238,7 +270,12 @@ interface Unit {
                 Pair(Meter, arrayOf("meter", "meters", "m")),
                 Pair(MilesPerHour, arrayOf("miles per hour", "mph", "mi/hr", "mi/h")),
                 Pair(KilometersPerHour, arrayOf("kilometers per hour", "kph", "km/h", "km/hr")),
-                Pair(MetersPerSecond, arrayOf("meters per second", "m/s", "m/sec"))
+                Pair(Pound, arrayOf("meters per second", "m/s", "m/sec")),
+                Pair(MetersPerSecond, arrayOf("meters per second", "m/s", "m/sec")),
+                Pair(Ounce, arrayOf("ounce", "ounces", "oz")),
+                Pair(Pound, arrayOf("pound", "pounds", "lb", "lbs")),
+                Pair(Kilogram, arrayOf("kilogram", "kilograms", "kg")),
+                Pair(Gram, arrayOf("gram", "grams", "g")),
             )
 
         fun fromString(value: String): Unit? = pseudonyms.toList().find { pair ->

@@ -4,11 +4,14 @@ import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.FeatureFlags.Companion.devBuild
 import com.kvl.cyclotrack.Trip
+import com.kvl.cyclotrack.util.Kilogram
 import com.kvl.cyclotrack.util.Length
+import com.kvl.cyclotrack.util.Mass
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
 import com.kvl.cyclotrack.util.MilesPerHour
+import com.kvl.cyclotrack.util.Pound
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.Speed
 import com.kvl.cyclotrack.util.dateFormatPattenDob
@@ -50,34 +53,26 @@ fun parseSearchString(
             return listOf(
                 it.groups["units"]?.value?.takeUnless { s -> s.isEmpty() }?.let { unitString ->
                     Units.fromString(unitString)?.let { detectedUnit ->
-                        when (detectedUnit.baseUnit) {
-                            is Speed -> SearchExpression(
-                                lvalue = "speed",
-                                operator = "is",
-                                rvalue = Quantity(
-                                    it.groups["value"]!!.value.toDouble(),
-                                    detectedUnit
-                                ).normalize().value
-                            )
+                        SearchExpression(
+                            lvalue = when (detectedUnit.baseUnit) {
+                                is Speed ->
+                                    "speed"
 
-                            is Length -> SearchExpression(
-                                lvalue = "distance",
-                                operator = "is",
-                                rvalue = normalizeDistance(
-                                    it.groups["value"]!!.value.toDouble(),
-                                    it.groups["units"]?.value ?: measurementSystem
-                                )
-                            )
+                                is Mass ->
+                                    "mass"
 
-                            else -> SearchExpression(
-                                lvalue = "distance",
-                                operator = "is",
-                                rvalue = normalizeDistance(
-                                    it.groups["value"]!!.value.toDouble(),
-                                    unitString
-                                )
-                            )
-                        }
+                                is Length ->
+                                    "distance"
+
+                                else ->
+                                    "text"
+                            },
+                            operator = "is",
+                            rvalue = Quantity(
+                                it.groups["value"]!!.value.toDouble(),
+                                detectedUnit
+                            ).normalize().value
+                        )
                     }
                 } ?: SearchExpression(
                     lvalue = "distance",
@@ -136,6 +131,8 @@ fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>):
                 compareDistanceExpression(trip, expression)
 
             "speed" -> compareSpeedExpression(trip, expression)
+
+            "mass", "weight" -> compareMassExpression(trip, expression)
 
             "date" -> compareDateExpression(trip, expression)
             "text" -> compareTextExpression(trip, expression)
@@ -208,6 +205,29 @@ fun compareDistanceExpression(
         else -> false
     }
 }
+
+fun compareMassExpression(
+    trip: Trip,
+    expression: SearchExpression,
+): Boolean = trip.userWeight?.let { userWeight ->
+    Quantity(userWeight.toDouble(), Kilogram).normalize().value.let { mass ->
+        when (expression.operator.lowercase()) {
+            "is", "equals" -> {
+                val delta = Quantity(0.5, Pound).normalize().value
+                (((expression.rvalue as Double) - delta) <= mass) && (((
+                        expression.rvalue
+                        ) + delta) > mass)
+            }
+
+            "greater than" -> mass > expression.rvalue as Double
+            "less than" -> mass < expression.rvalue as Double
+            "between" -> mass >= ((expression.rvalue as List<*>)[0] as Double) &&
+                    mass <= (expression.rvalue[1] as Double)
+
+            else -> false
+        }
+    }
+} ?: false
 
 fun compareSpeedExpression(
     trip: Trip,
@@ -364,8 +384,14 @@ fun parseRvalue(regexMatchGroups: MatchGroupCollection, measurementSystem: Strin
                 Speed.fromMeasurementSystem(measurementSystem)
             ).convertTo(MetersPerSecond).value
 
-            "weight", "mass" -> throw NotImplementedError()
+            "weight", "mass" -> Quantity(
+                rvalue.toDouble(),
+                Mass.fromMeasurementSystem(measurementSystem)
+            ).normalize().value
+
             "date" -> parseDate(rvalue)
+
+            "bike" -> NotImplementedError()
 
             else -> rvalue
         }
