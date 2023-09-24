@@ -22,6 +22,7 @@ import com.kvl.cyclotrack.util.Yard
 import com.kvl.cyclotrack.util.Year
 import org.junit.Assert
 import org.junit.Test
+import com.kvl.cyclotrack.util.Unit as Units
 
 class UnitsTest {
     @Test
@@ -343,15 +344,15 @@ class UnitsTest {
 
     @Test
     fun unitsFromString() {
-        Assert.assertEquals(Mile, Length.fromString("miles"))
-        Assert.assertEquals(Mile, Length.fromString("mile"))
-        Assert.assertEquals(Mile, Length.fromString("mi"))
-        Assert.assertNotEquals(Mile, Length.fromString("m"))
-        Assert.assertEquals(Meter, Length.fromString("m"))
-        Assert.assertEquals(Kilometer, Length.fromString("km"))
-        Assert.assertEquals(Inch, Length.fromString("in"))
-        Assert.assertEquals(Foot, Length.fromString("ft"))
-        Assert.assertNotEquals(Foot, Length.fromString("f"))
+        Assert.assertEquals(Mile, Units.fromString("miles"))
+        Assert.assertEquals(Mile, Units.fromString("mile"))
+        Assert.assertEquals(Mile, Units.fromString("mi"))
+        Assert.assertNotEquals(Mile, Units.fromString("m"))
+        Assert.assertEquals(Meter, Units.fromString("m"))
+        Assert.assertEquals(Kilometer, Units.fromString("km"))
+        Assert.assertEquals(Inch, Units.fromString("in"))
+        Assert.assertEquals(Foot, Units.fromString("ft"))
+        Assert.assertNotEquals(Foot, Units.fromString("f"))
     }
 
     @Test

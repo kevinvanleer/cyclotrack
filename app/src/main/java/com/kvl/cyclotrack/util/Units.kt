@@ -190,8 +190,6 @@ abstract class Length : Unit {
                 "2" -> Kilometer
                 else -> Meter
             }
-
-        fun fromString(value: String) = Unit.fromString(value)
     }
 }
 
@@ -246,6 +244,7 @@ interface Unit {
         }?.first
     }
     //override fun toString(): String = pseudonyms[this]!!.get(0)!!
+
 }
 
 object TimeConversions {
