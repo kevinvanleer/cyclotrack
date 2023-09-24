@@ -6,7 +6,9 @@ import com.kvl.cyclotrack.util.Foot
 import com.kvl.cyclotrack.util.Hour
 import com.kvl.cyclotrack.util.Inch
 import com.kvl.cyclotrack.util.Kilo
+import com.kvl.cyclotrack.util.Kilometer
 import com.kvl.cyclotrack.util.KilometersPerHour
+import com.kvl.cyclotrack.util.Length
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
@@ -14,6 +16,7 @@ import com.kvl.cyclotrack.util.MilesPerHour
 import com.kvl.cyclotrack.util.Minute
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.Second
+import com.kvl.cyclotrack.util.Time
 import com.kvl.cyclotrack.util.Week
 import com.kvl.cyclotrack.util.Yard
 import com.kvl.cyclotrack.util.Year
@@ -336,5 +339,36 @@ class UnitsTest {
             Quantity(5.5555556, MetersPerSecond).convertTo(KilometersPerHour).value,
             1e-6
         )
+    }
+
+    @Test
+    fun unitsFromString() {
+        Assert.assertEquals(Mile, Length.fromString("miles"))
+        Assert.assertEquals(Mile, Length.fromString("mile"))
+        Assert.assertEquals(Mile, Length.fromString("mi"))
+        Assert.assertNotEquals(Mile, Length.fromString("m"))
+        Assert.assertEquals(Meter, Length.fromString("m"))
+        Assert.assertEquals(Kilometer, Length.fromString("km"))
+        Assert.assertEquals(Inch, Length.fromString("in"))
+        Assert.assertEquals(Foot, Length.fromString("ft"))
+        Assert.assertNotEquals(Foot, Length.fromString("f"))
+    }
+
+    @Test
+    fun unitsFromMeasurementSystem() {
+        Assert.assertEquals(Mile, Length.fromMeasurementSystem("1"))
+        Assert.assertEquals(Kilometer, Length.fromMeasurementSystem("2"))
+        Assert.assertEquals(Meter, Length.fromMeasurementSystem("0"))
+    }
+
+    @Suppress("USELESS_IS_CHECK")
+    @Test
+    fun unitTypeChecks() {
+        Assert.assertEquals(Mile, Mile)
+        Assert.assertTrue(Mile is Length)
+        Assert.assertTrue(Inch is Length)
+        Assert.assertTrue(Kilo(Meter).baseUnit is Length)
+        Assert.assertTrue(Kilo(Meter).baseUnit is Meter)
+        Assert.assertFalse(Kilo(Meter).baseUnit is Time)
     }
 }

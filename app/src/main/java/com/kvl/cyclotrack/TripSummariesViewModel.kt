@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
@@ -7,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
+import com.kvl.cyclotrack.util.getSystemOfMeasurement
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,6 +18,7 @@ class TripSummariesViewModel @Inject constructor(
     private val tripsRepository: TripsRepository,
     private val measurementsRepository: MeasurementsRepository,
     private val timeStateRepository: TimeStateRepository,
+    private val context: Application,
 ) : ViewModel() {
     val tripListState = Bundle()
     val allTrips = tripsRepository.observeAll()
@@ -28,7 +31,8 @@ class TripSummariesViewModel @Inject constructor(
                 return
             }
 
-            val searchExpression = parseSearchString(searchText)
+            val searchExpression =
+                parseSearchString(searchText, getSystemOfMeasurement(context) ?: "1")
             if (searchExpression.isNullOrEmpty()) {
                 filteredTrips.value = emptyArray()
                 return

@@ -9,8 +9,9 @@ import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
 import com.kvl.cyclotrack.util.MilesPerHour
 import com.kvl.cyclotrack.util.Quantity
+import com.kvl.cyclotrack.util.Speed
 import com.kvl.cyclotrack.util.dateFormatPattenDob
-import com.kvl.cyclotrack.util.distanceToMeters
+import com.kvl.cyclotrack.util.normalizeDistance
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -48,7 +49,7 @@ fun parseSearchString(
                 SearchExpression(
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = distanceToMeters(
+                    rvalue = normalizeDistance(
                         it.groups["value"]!!.value.toDouble(),
                         it.groups["units"]?.value ?: measurementSystem
                     )
@@ -324,8 +325,12 @@ fun parseRvalue(regexMatchGroups: MatchGroupCollection, measurementSystem: Strin
             }
     }!!.map { rvalue ->
         when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
-            "distance" -> distanceToMeters(rvalue.toDouble(), "1")
-            "speed" -> Quantity(rvalue.toDouble(), MilesPerHour).convertTo(MetersPerSecond).value
+            "distance" -> normalizeDistance(rvalue.toDouble(), measurementSystem)
+            "speed" -> Quantity(
+                rvalue.toDouble(),
+                Speed.fromMeasurementSystem(measurementSystem)
+            ).convertTo(MetersPerSecond).value
+
             "weight", "mass" -> throw NotImplementedError()
             "date" -> parseDate(rvalue)
 
