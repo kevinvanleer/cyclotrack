@@ -166,7 +166,7 @@ object Inch : Length() {
         LengthConversions.INCH
 }
 
-open class Length : Unit {
+abstract class Length : Unit {
     override val conversionFactor: Double = 1.0
     override val baseUnit: Unit = Meter
 }
@@ -189,22 +189,24 @@ object Hour : Time() {
 
 object Minute : Time() {
     override val conversionFactor: Double = TimeConversions.MINUTE
-    override fun toString(): String = "minutes"
+    //override fun toString(): String = "minutes"
 }
 
 object Second : Time() {
-    override val baseUnit: Unit = Second
-    override fun toString(): String = "second"
-}
-
-open class Time : Unit {
     override val conversionFactor: Double = TimeConversions.SECOND
     override val baseUnit: Unit = Second
+    //override fun toString(): String = "second"
+}
+
+abstract class Time : Unit {
+    override val baseUnit: Unit = Second
+    //abstract override fun toString(): String
 }
 
 interface Unit {
     val conversionFactor: Double
     val baseUnit: Unit
+    //override fun toString(): String
 }
 
 object TimeConversions {
@@ -221,15 +223,15 @@ fun kelvinToFahrenheit(kelvin: Double) = kelvinToCelsius(kelvin) * 9.0 / 5.0 + 3
 
 fun unitsToSystem(units: String?): String {
     return when (units) {
-        "kilometers", "km", "cm", "C", "km/h" -> "2"
-        "miles", "mile", "mi", "F", "mph", "m/h", "in", "inch", "inches", "ft", "feet" -> "1"
+        "2", "kilometers", "km", "cm", "C", "km/h" -> "2"
+        "1", "miles", "mile", "mi", "F", "mph", "m/h", "in", "inch", "inches", "ft", "feet" -> "1"
         else -> "0"
     }
 }
 
 fun distanceToMeters(distance: Double, measurementSystem: String) =
-    when (measurementSystem) {
-        "miles", "mile", "mi", "1" -> Quantity(distance, Mile).convertTo(Meter).value
-        "kilometers", "km", "2" -> Quantity(distance, Kilometer).convertTo(Meter).value
+    when (unitsToSystem(measurementSystem)) {
+        "1" -> Quantity(distance, Mile).convertTo(Meter).value
+        "2" -> Quantity(distance, Kilometer).convertTo(Meter).value
         else -> distance
     }
