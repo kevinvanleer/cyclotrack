@@ -3,18 +3,21 @@ package com.kvl.cyclotrack
 import com.kvl.cyclotrack.data.SearchExpression
 import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
+import com.kvl.cyclotrack.data.compareMassExpression
 import com.kvl.cyclotrack.data.compareSpeedExpression
 import com.kvl.cyclotrack.data.parseDate
 import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
 import com.kvl.cyclotrack.util.FEET_TO_MILES
+import com.kvl.cyclotrack.util.Kilogram
 import com.kvl.cyclotrack.util.KilometersPerHour
 import com.kvl.cyclotrack.util.METERS_TO_FEET
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
 import com.kvl.cyclotrack.util.MilesPerHour
+import com.kvl.cyclotrack.util.Pound
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.normalizeDistance
 import org.junit.Assert
@@ -52,9 +55,10 @@ class SearchRegexTest {
         name = "Test trip",
         distance = normalizeDistance(20.0, "1"),
         duration = 3600.0,
-        averageSpeed = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).value.toFloat(),
+        averageSpeed = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).float,
         inProgress = false,
         bikeId = 0,
+        userWeight = Quantity(20.0, Pound).convertTo(Kilogram).float
     )
     private val trip19Sep2022 = tripTest20miles.copy(
         timestamp = sep192022.toEpochMilli()
@@ -76,6 +80,36 @@ class SearchRegexTest {
                 )
             ),
             parseSearchString("distance is 14")
+                .toTypedArray()
+        )
+    }
+
+    @Test
+    fun simpleMassSearchExpression() {
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "mass",
+                    operator = "is",
+                    rvalue = Quantity(170.0, Pound).normalize().value,
+                    junction = null
+                )
+            ),
+            parseSearchString("mass is 170")
+                .toTypedArray()
+        )
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    negation = false,
+                    lvalue = "weight",
+                    operator = "is",
+                    rvalue = Quantity(170.0, Pound).normalize().value,
+                    junction = null
+                )
+            ),
+            parseSearchString("weight is 170")
                 .toTypedArray()
         )
     }
@@ -499,6 +533,15 @@ class SearchRegexTest {
                 )
             ), parseSearchString("20.1 km/h").toTypedArray()
         )
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "mass",
+                    operator = "is",
+                    rvalue = Quantity(170.0, Pound).normalize().value
+                )
+            ), parseSearchString("170 pounds").toTypedArray()
+        )
     }
 
     @Test
@@ -598,6 +641,25 @@ class SearchRegexTest {
                     lvalue = "distance",
                     operator = "is",
                     rvalue = normalizeDistance(20.0, "1")
+                )
+            )
+        )
+    }
+
+    @Test
+    fun compareMassExpressionTest() {
+        Assert.assertEquals(
+            true, compareMassExpression(
+                tripTest20miles.copy(
+                    userWeight = Quantity(
+                        20.0,
+                        Pound
+                    ).convertTo(Kilogram).float
+                ),
+                SearchExpression(
+                    lvalue = "mass",
+                    operator = "is",
+                    rvalue = Quantity(20.0, Pound).normalize().value
                 )
             )
         )
@@ -1039,7 +1101,7 @@ class SearchRegexTest {
                     averageSpeed = Quantity(
                         20.09,
                         MilesPerHour
-                    ).convertTo(Meter).value.toFloat()
+                    ).convertTo(Meter).float
                 ),
             )
         )
@@ -1050,7 +1112,7 @@ class SearchRegexTest {
                     averageSpeed = Quantity(
                         19.91,
                         MilesPerHour
-                    ).convertTo(Meter).value.toFloat()
+                    ).convertTo(Meter).float
                 ),
             )
         )
@@ -1061,7 +1123,7 @@ class SearchRegexTest {
                     averageSpeed = Quantity(
                         20.6,
                         MilesPerHour
-                    ).convertTo(Meter).value.toFloat()
+                    ).convertTo(Meter).float
                 ),
             )
         )
@@ -1072,7 +1134,67 @@ class SearchRegexTest {
                     averageSpeed = Quantity(
                         19.4,
                         MilesPerHour
-                    ).convertTo(Meter).value.toFloat()
+                    ).convertTo(Meter).float
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "20 miles",
+                tripTest20miles,
+            )
+        )
+    }
+
+    @Test
+    fun tripPassesExpressionStringMassTest() {
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "mass is 20",
+                tripTest20miles,
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "mass is 20",
+                tripTest20miles.copy(
+                    userWeight = Quantity(
+                        20.09,
+                        Pound
+                    ).convertTo(Kilogram).float
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "mass is 20",
+                tripTest20miles.copy(
+                    userWeight = Quantity(
+                        19.91,
+                        Pound
+                    ).convertTo(Kilogram).float
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "mass is 20",
+                tripTest20miles.copy(
+                    userWeight = Quantity(
+                        20.6,
+                        Pound
+                    ).convertTo(Kilogram).float
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "mass is 20",
+                tripTest20miles.copy(
+                    userWeight = Quantity(
+                        19.4,
+                        Pound
+                    ).convertTo(Kilogram).float
                 ),
             )
         )
