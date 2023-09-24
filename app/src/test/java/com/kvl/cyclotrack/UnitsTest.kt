@@ -344,6 +344,7 @@ class UnitsTest {
 
     @Test
     fun unitsFromString() {
+        Assert.assertEquals(null, Units.fromString(""))
         Assert.assertEquals(Mile, Units.fromString("miles"))
         Assert.assertEquals(Mile, Units.fromString("mile"))
         Assert.assertEquals(Mile, Units.fromString("mi"))

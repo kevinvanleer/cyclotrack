@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.FeatureFlags.Companion.devBuild
 import com.kvl.cyclotrack.Trip
+import com.kvl.cyclotrack.util.Length
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
@@ -22,6 +23,7 @@ import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import com.kvl.cyclotrack.util.Unit as Units
 
 val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
@@ -46,7 +48,38 @@ fun parseSearchString(
     try {
         numberStringRegex.find(searchString)?.let {
             return listOf(
-                SearchExpression(
+                it.groups["units"]?.value?.takeUnless { s -> s.isEmpty() }?.let { unitString ->
+                    Units.fromString(unitString)?.let { detectedUnit ->
+                        when (detectedUnit.baseUnit) {
+                            is Speed -> SearchExpression(
+                                lvalue = "speed",
+                                operator = "is",
+                                rvalue = Quantity(
+                                    it.groups["value"]!!.value.toDouble(),
+                                    detectedUnit
+                                ).normalize().value
+                            )
+
+                            is Length -> SearchExpression(
+                                lvalue = "distance",
+                                operator = "is",
+                                rvalue = normalizeDistance(
+                                    it.groups["value"]!!.value.toDouble(),
+                                    it.groups["units"]?.value ?: measurementSystem
+                                )
+                            )
+
+                            else -> SearchExpression(
+                                lvalue = "distance",
+                                operator = "is",
+                                rvalue = normalizeDistance(
+                                    it.groups["value"]!!.value.toDouble(),
+                                    unitString
+                                )
+                            )
+                        }
+                    }
+                } ?: SearchExpression(
                     lvalue = "distance",
                     operator = "is",
                     rvalue = normalizeDistance(

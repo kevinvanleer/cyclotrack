@@ -9,6 +9,7 @@ import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
 import com.kvl.cyclotrack.util.FEET_TO_MILES
+import com.kvl.cyclotrack.util.KilometersPerHour
 import com.kvl.cyclotrack.util.METERS_TO_FEET
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
@@ -470,6 +471,33 @@ class SearchRegexTest {
                     rvalue = normalizeDistance(20.1, "miles")
                 )
             ), parseSearchString("20.1 miles").toTypedArray()
+        )
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "speed",
+                    operator = "is",
+                    rvalue = Quantity(20.1, MilesPerHour).normalize().value
+                )
+            ), parseSearchString("20.1 mph").toTypedArray()
+        )
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "speed",
+                    operator = "is",
+                    rvalue = Quantity(20.1, KilometersPerHour).normalize().value
+                )
+            ), parseSearchString("20.1 kph").toTypedArray()
+        )
+        Assert.assertArrayEquals(
+            arrayOf(
+                SearchExpression(
+                    lvalue = "speed",
+                    operator = "is",
+                    rvalue = Quantity(20.1, KilometersPerHour).normalize().value
+                )
+            ), parseSearchString("20.1 km/h").toTypedArray()
         )
     }
 
