@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import com.kvl.cyclotrack.data.SearchExpression
 import com.kvl.cyclotrack.data.applyNegation
 import com.kvl.cyclotrack.data.compareDistanceExpression
+import com.kvl.cyclotrack.data.compareSpeedExpression
 import com.kvl.cyclotrack.data.parseDate
 import com.kvl.cyclotrack.data.parseSearchString
 import com.kvl.cyclotrack.data.tripPassesExpression
@@ -10,7 +11,9 @@ import com.kvl.cyclotrack.data.tripPassesExpressionString
 import com.kvl.cyclotrack.util.FEET_TO_MILES
 import com.kvl.cyclotrack.util.METERS_TO_FEET
 import com.kvl.cyclotrack.util.Meter
+import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
+import com.kvl.cyclotrack.util.MilesPerHour
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.distanceToMeters
 import org.junit.Assert
@@ -48,7 +51,7 @@ class SearchRegexTest {
         name = "Test trip",
         distance = distanceToMeters(20.0, "1"),
         duration = 3600.0,
-        averageSpeed = 20.0f,
+        averageSpeed = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).value.toFloat(),
         inProgress = false,
         bikeId = 0,
     )
@@ -573,6 +576,20 @@ class SearchRegexTest {
     }
 
     @Test
+    fun compareSpeedExpressionTest() {
+        Assert.assertEquals(
+            true, compareSpeedExpression(
+                tripTest20miles,
+                SearchExpression(
+                    lvalue = "speed",
+                    operator = "is",
+                    rvalue = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).value
+                )
+            )
+        )
+    }
+
+    @Test
     fun applyNegationTest() {
         Assert.assertEquals(
             true, applyNegation(
@@ -693,9 +710,18 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             true, tripPassesExpression(
-                tripTest20miles.copy(
-                    distance = 21.0 / (METERS_TO_FEET * FEET_TO_MILES),
-                ), listOf(
+                tripTest20miles, listOf(
+                    SearchExpression(
+                        lvalue = "speed",
+                        operator = "is",
+                        rvalue = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).value
+                    )
+                )
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpression(
+                tripTest20miles, listOf(
                     SearchExpression(
                         lvalue = "text",
                         operator = "contains",
@@ -971,6 +997,66 @@ class SearchRegexTest {
     }
 
     @Test
+    fun tripPassesExpressionStringSpeedTest() {
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "speed is 20",
+                tripTest20miles,
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "speed is 20",
+                tripTest20miles.copy(
+                    averageSpeed = Quantity(
+                        20.09,
+                        MilesPerHour
+                    ).convertTo(Meter).value.toFloat()
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "speed is 20",
+                tripTest20miles.copy(
+                    averageSpeed = Quantity(
+                        19.91,
+                        MilesPerHour
+                    ).convertTo(Meter).value.toFloat()
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "speed is 20",
+                tripTest20miles.copy(
+                    averageSpeed = Quantity(
+                        20.6,
+                        MilesPerHour
+                    ).convertTo(Meter).value.toFloat()
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "speed is 20",
+                tripTest20miles.copy(
+                    averageSpeed = Quantity(
+                        19.4,
+                        MilesPerHour
+                    ).convertTo(Meter).value.toFloat()
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "20 miles",
+                tripTest20miles,
+            )
+        )
+    }
+
+    @Test
     fun tripPassesExpressionStringDateEqualsTest() {
         Assert.assertEquals(
             true, tripPassesExpressionString(
@@ -1124,7 +1210,6 @@ class SearchRegexTest {
                 trip19Sep2022,
             )
         )
-        /*
         Assert.assertThrows(
             ParseException::class.java
         ) {
@@ -1145,11 +1230,11 @@ class SearchRegexTest {
                 trip19Sep2022,
             )
         }
-        Assert.assertThrows(NumberFormatException::class.java) {
+        Assert.assertThrows(ParseException::class.java) {
             tripPassesExpressionString(
                 "text is foo",
                 trip19Sep2022,
             )
-        }*/
+        }
     }
 }

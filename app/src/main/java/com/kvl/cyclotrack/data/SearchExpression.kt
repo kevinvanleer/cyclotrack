@@ -24,7 +24,7 @@ import java.util.Locale
 
 val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
-    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
+    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|bike|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
 
 fun parseSearchString(
@@ -72,7 +72,7 @@ fun parseSearchString(
 
     return expressionRegex.findAll(searchString)
         .map {
-            SearchExpression(it.groups)
+            SearchExpression(it.groups, measurementSystem)
         }.toList().takeUnless { it.isNullOrEmpty() } ?: listOf(
         SearchExpression(
             lvalue = "text",
@@ -81,6 +81,19 @@ fun parseSearchString(
         )
     )
 }
+
+fun compareTextExpression(trip: Trip, expression: SearchExpression): Boolean =
+    when (expression.operator) {
+        "contains" -> trip.name?.lowercase()
+            ?.contains(
+                expression.rvalue.toString().lowercase()
+            ) == true || trip.notes?.lowercase()
+            ?.contains(
+                expression.rvalue.toString().lowercase()
+            ) == true
+
+        else -> throw ParseException("Invalid text search operator", 6)
+    }
 
 fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>): Boolean =
     searchExpressions.fold(false) { result, expression ->
@@ -91,13 +104,7 @@ fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>):
             "speed" -> compareSpeedExpression(trip, expression)
 
             "date" -> compareDateExpression(trip, expression)
-            "text" -> trip.name?.lowercase()
-                ?.contains(
-                    expression.rvalue.toString().lowercase()
-                ) == true || trip.notes?.lowercase()
-                ?.contains(
-                    expression.rvalue.toString().lowercase()
-                ) == true
+            "text" -> compareTextExpression(trip, expression)
 
             else -> false
         }.let {
@@ -151,19 +158,18 @@ fun compareDistanceExpression(
     trip: Trip,
     expression: SearchExpression,
 ): Boolean {
-    fun targetDistance(dist: Double) = dist
     return when (expression.operator.lowercase()) {
         "is", "equals" -> {
             val delta = Quantity(0.5, Mile).convertTo(Meter).value
-            ((targetDistance(expression.rvalue as Double) - delta) <= trip.distance!!) && ((targetDistance(
-                expression.rvalue
-            ) + delta) > trip.distance)
+            (((expression.rvalue as Double) - delta) <= trip.distance!!) && (((
+                    expression.rvalue
+                    ) + delta) > trip.distance)
         }
 
         "greater than" -> trip.distance!! > expression.rvalue as Double
         "less than" -> trip.distance!! < expression.rvalue as Double
-        "between" -> trip.distance!! >= targetDistance((expression.rvalue as List<*>)[0] as Double) &&
-                trip.distance <= targetDistance(expression.rvalue[1] as Double)
+        "between" -> trip.distance!! >= ((expression.rvalue as List<*>)[0] as Double) &&
+                trip.distance <= (expression.rvalue[1] as Double)
 
         else -> false
     }
@@ -173,22 +179,23 @@ fun compareSpeedExpression(
     trip: Trip,
     expression: SearchExpression,
 ): Boolean {
-    fun targetDistance(dist: Double) = dist
-    return when (expression.operator.lowercase()) {
-        "is", "equals" -> {
-            val delta = Quantity(0.5, MilesPerHour).convertTo(MetersPerSecond).value
-            (((expression.rvalue as Double) - delta) <= trip.averageSpeed!!) && (((
-                    expression.rvalue
-                    ) + delta) > trip.averageSpeed)
+    return trip.averageSpeed?.toDouble()?.let { speed ->
+        when (expression.operator.lowercase()) {
+            "is", "equals" -> {
+                val delta = Quantity(0.1, MilesPerHour).convertTo(MetersPerSecond).value
+                (((expression.rvalue as Double) - delta) <= speed) && (((
+                        expression.rvalue
+                        ) + delta) > speed)
+            }
+
+            "greater than" -> speed > expression.rvalue as Double
+            "less than" -> speed < expression.rvalue as Double
+            "between" -> speed >= ((expression.rvalue as List<*>)[0] as Double) &&
+                    speed <= (expression.rvalue[1] as Double)
+
+            else -> false
         }
-
-        "greater than" -> trip.averageSpeed!! > expression.rvalue as Double
-        "less than" -> trip.averageSpeed!! < expression.rvalue as Double
-        "between" -> trip.averageSpeed!! >= targetDistance((expression.rvalue as List<*>)[0] as Double) &&
-                trip.averageSpeed <= targetDistance(expression.rvalue[1] as Double)
-
-        else -> false
-    }
+    } ?: false
 }
 
 fun parseDate(rvalue: String): Any {
@@ -304,7 +311,7 @@ fun parseDate(rvalue: String): Any {
     throw ParseException("$rvalue is not a recognized date string", 0)
 }
 
-fun parseRvalue(regexMatchGroups: MatchGroupCollection): Any =
+fun parseRvalue(regexMatchGroups: MatchGroupCollection, measurementSystem: String = "0"): Any =
     when (regexMatchGroups["operator"]!!.value.lowercase()) {
         "between" -> Regex("""(?<lower>\S+) and (?<upper>\S+)""")
             .find(regexMatchGroups["rvalue"]!!.value)?.groups?.let {
@@ -318,6 +325,8 @@ fun parseRvalue(regexMatchGroups: MatchGroupCollection): Any =
     }!!.map { rvalue ->
         when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
             "distance" -> distanceToMeters(rvalue.toDouble(), "1")
+            "speed" -> Quantity(rvalue.toDouble(), MilesPerHour).convertTo(MetersPerSecond).value
+            "weight", "mass" -> throw NotImplementedError()
             "date" -> parseDate(rvalue)
 
             else -> rvalue
@@ -341,6 +350,14 @@ data class SearchExpression(
         regexMatchGroups["lvalue"]!!.value,
         regexMatchGroups["operator"]!!.value,
         parseRvalue(regexMatchGroups),
+        regexMatchGroups["junction"]?.value,
+    )
+
+    constructor(regexMatchGroups: MatchGroupCollection, measurementSystem: String) : this(
+        !regexMatchGroups["negation"]?.value.isNullOrEmpty(),
+        regexMatchGroups["lvalue"]!!.value,
+        regexMatchGroups["operator"]!!.value,
+        parseRvalue(regexMatchGroups, measurementSystem),
         regexMatchGroups["junction"]?.value,
     )
 }
