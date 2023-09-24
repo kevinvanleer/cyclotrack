@@ -18,10 +18,10 @@ fun useBleSpeedData(
     locationMeasurements: Array<Measurements>
 ): Boolean {
     Log.d(logTag, "useBleSpeedData")
-    if (speedMeasurements.isNotEmpty() && locationMeasurements.isEmpty()) return true
 
-    if (speedMeasurements.isEmpty() || locationMeasurements.isEmpty()) return false
-    Log.d(logTag, "Passed empty check")
+    if (speedMeasurements.isEmpty()) return false
+    if (locationMeasurements.isEmpty()) return true
+    Log.d(logTag, "Passed empty checks")
 
     val bleDuration = speedMeasurements.last().timestamp - speedMeasurements.first().timestamp
     Log.d(logTag, "size check ${speedMeasurements.size.toFloat() / bleDuration}")
@@ -93,8 +93,8 @@ val getSpeedDataFromSensor: (
                     context,
                     measurementsList[0].rpm?.times(circumference!!)?.div(60)?.toDouble() ?: 0.0
                 )
-            var hiLast: Float? = null;
-            var loLast: Float? = null;
+            var hiLast: Float? = null
+            var loLast: Float? = null
             var trendAlpha = 0.5f
             var lastMeasurement: CadenceSpeedMeasurement? = null
 
