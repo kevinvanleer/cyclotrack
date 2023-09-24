@@ -4,10 +4,11 @@ import android.util.Log
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.FeatureFlags.Companion.devBuild
 import com.kvl.cyclotrack.Trip
-import com.kvl.cyclotrack.util.FEET_TO_MILES
-import com.kvl.cyclotrack.util.HOURS_TO_SECONDS
-import com.kvl.cyclotrack.util.METERS_TO_FEET
-import com.kvl.cyclotrack.util.MILES_TO_METERS
+import com.kvl.cyclotrack.util.Meter
+import com.kvl.cyclotrack.util.MetersPerSecond
+import com.kvl.cyclotrack.util.Mile
+import com.kvl.cyclotrack.util.MilesPerHour
+import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.dateFormatPattenDob
 import com.kvl.cyclotrack.util.distanceToMeters
 import java.text.ParseException
@@ -23,7 +24,7 @@ import java.util.Locale
 
 val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
-    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
+    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
 
 fun parseSearchString(
@@ -153,8 +154,7 @@ fun compareDistanceExpression(
     fun targetDistance(dist: Double) = dist
     return when (expression.operator.lowercase()) {
         "is", "equals" -> {
-            val milesToMeters = 1 / (METERS_TO_FEET * FEET_TO_MILES)
-            val delta = milesToMeters / 2
+            val delta = Quantity(0.5, Mile).convertTo(Meter).value
             ((targetDistance(expression.rvalue as Double) - delta) <= trip.distance!!) && ((targetDistance(
                 expression.rvalue
             ) + delta) > trip.distance)
@@ -176,12 +176,10 @@ fun compareSpeedExpression(
     fun targetDistance(dist: Double) = dist
     return when (expression.operator.lowercase()) {
         "is", "equals" -> {
-            //val conversionFactor = 1 / (METERS_TO_FEET * FEET_TO_MILES)
-            val conversionFactor = MILES_TO_METERS * HOURS_TO_SECONDS
-            val delta = conversionFactor / 2
-            ((targetDistance(expression.rvalue as Double) - delta) <= trip.averageSpeed!!) && ((targetDistance(
-                expression.rvalue
-            ) + delta) > trip.averageSpeed)
+            val delta = Quantity(0.5, MilesPerHour).convertTo(MetersPerSecond).value
+            (((expression.rvalue as Double) - delta) <= trip.averageSpeed!!) && (((
+                    expression.rvalue
+                    ) + delta) > trip.averageSpeed)
         }
 
         "greater than" -> trip.averageSpeed!! > expression.rvalue as Double
