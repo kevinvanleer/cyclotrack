@@ -6,14 +6,17 @@ import com.kvl.cyclotrack.util.Foot
 import com.kvl.cyclotrack.util.Hour
 import com.kvl.cyclotrack.util.Inch
 import com.kvl.cyclotrack.util.Kilo
+import com.kvl.cyclotrack.util.Kilogram
 import com.kvl.cyclotrack.util.Kilometer
 import com.kvl.cyclotrack.util.KilometersPerHour
 import com.kvl.cyclotrack.util.Length
+import com.kvl.cyclotrack.util.Mass
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
 import com.kvl.cyclotrack.util.MilesPerHour
 import com.kvl.cyclotrack.util.Minute
+import com.kvl.cyclotrack.util.Pound
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.Second
 import com.kvl.cyclotrack.util.Time
@@ -354,6 +357,11 @@ class UnitsTest {
         Assert.assertEquals(Inch, Units.fromString("in"))
         Assert.assertEquals(Foot, Units.fromString("ft"))
         Assert.assertNotEquals(Foot, Units.fromString("f"))
+        Assert.assertEquals(MetersPerSecond, Units.fromString("m/s"))
+        Assert.assertEquals(Kilogram, Units.fromString("kg"))
+        Assert.assertEquals(Pound, Units.fromString("pound"))
+        Assert.assertEquals(Pound, Units.fromString("pounds"))
+        Assert.assertEquals(Pound, Units.fromString("lb"))
     }
 
     @Test
@@ -373,5 +381,7 @@ class UnitsTest {
         Assert.assertTrue(Kilometer.baseUnit is Length)
         Assert.assertTrue(Kilo(Meter).baseUnit is Meter)
         Assert.assertFalse(Kilo(Meter).baseUnit is Time)
+        Assert.assertTrue(Pound is Mass)
+        Assert.assertTrue(Pound.baseUnit is Mass)
     }
 }
