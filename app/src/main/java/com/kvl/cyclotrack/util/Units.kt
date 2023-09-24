@@ -1,5 +1,7 @@
 package com.kvl.cyclotrack.util
 
+import kotlin.math.abs
+
 const val METERS_TO_FEET = 3.28084
 const val FEET_TO_METERS = 1 / METERS_TO_FEET
 const val METERS_TO_KM = 0.001
@@ -61,12 +63,65 @@ interface Rate : Unit {
 class Quantity(private val quantity: Double, private val units: Unit) {
     val value
         get() = quantity
+    val unit
+        get() = units
 
     fun convertTo(destUnits: Unit) =
         Quantity(
             quantity * units.conversionFactor / destUnits.conversionFactor,
             destUnits
         )
+
+    operator fun plus(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception()
+        }
+        return Quantity(quantity + other.convertTo(units).value, units)
+    }
+
+    operator fun minus(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception()
+        }
+        return Quantity(quantity - other.convertTo(units).value, units)
+    }
+
+    operator fun times(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception()
+        }
+        return Quantity(quantity * other.convertTo(units).value, units)
+    }
+
+    operator fun div(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception()
+        }
+        return Quantity(quantity / other.convertTo(units).value, units)
+    }
+
+    override operator fun equals(other: Any?): Boolean {
+        if (other !is Quantity || units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception()
+        }
+        return abs(this.minus(other).value) < 1e-12
+    }
+
+    operator fun compareTo(other: Quantity): Int {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception()
+        }
+        return when (abs(this.minus(other).value) < 1e-12) {
+            true -> 0
+            else -> quantity.compareTo(other.convertTo(units).value)
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = quantity.hashCode()
+        result = 31 * result + units.hashCode()
+        return result
+    }
 }
 
 open class Centi(val base: Unit) : Unit {
@@ -87,7 +142,9 @@ open class Kilo(val base: Unit) : Unit {
 
 object Kilometer : Kilo(Meter)
 object Centimeter : Centi(Meter)
-object Meter : Length()
+object Meter : Length() {
+    override val baseUnit: Unit = Meter
+}
 
 object Yard : Length() {
     override val conversionFactor: Double =
@@ -132,9 +189,13 @@ object Hour : Time() {
 
 object Minute : Time() {
     override val conversionFactor: Double = TimeConversions.MINUTE
+    override fun toString(): String = "minutes"
 }
 
-object Second : Time()
+object Second : Time() {
+    override val baseUnit: Unit = Second
+    override fun toString(): String = "second"
+}
 
 open class Time : Unit {
     override val conversionFactor: Double = TimeConversions.SECOND
@@ -147,12 +208,12 @@ interface Unit {
 }
 
 object TimeConversions {
-    val SECOND: Double = 1.0
-    val MINUTE: Double = 60.0
-    val HOUR: Double = 3600.0
-    val DAY: Double = HOUR * 24
-    val WEEK: Double = DAY * 7.0
-    val YEAR: Double = DAY * 365.25
+    const val SECOND: Double = 1.0
+    const val MINUTE: Double = 60.0
+    const val HOUR: Double = 3600.0
+    const val DAY: Double = HOUR * 24.0
+    const val WEEK: Double = DAY * 7.0
+    const val YEAR: Double = DAY * 365.25
 }
 
 fun kelvinToCelsius(kelvin: Double) = kelvin - KELVIN_TO_CELSIUS

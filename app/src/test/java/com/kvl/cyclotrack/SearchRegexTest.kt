@@ -9,6 +9,9 @@ import com.kvl.cyclotrack.data.tripPassesExpression
 import com.kvl.cyclotrack.data.tripPassesExpressionString
 import com.kvl.cyclotrack.util.FEET_TO_MILES
 import com.kvl.cyclotrack.util.METERS_TO_FEET
+import com.kvl.cyclotrack.util.Meter
+import com.kvl.cyclotrack.util.Mile
+import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.distanceToMeters
 import org.junit.Assert
 import org.junit.Test
@@ -933,6 +936,30 @@ class SearchRegexTest {
             true, tripPassesExpressionString(
                 "distance is 20",
                 tripTest20miles,
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "distance is 20",
+                tripTest20miles.copy(distance = Quantity(20.4, Mile).convertTo(Meter).value),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "distance is 20",
+                tripTest20miles.copy(distance = Quantity(19.6, Mile).convertTo(Meter).value),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "distance is 20",
+                tripTest20miles.copy(distance = Quantity(20.6, Mile).convertTo(Meter).value),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "distance is 20",
+                tripTest20miles.copy(distance = Quantity(19.4, Mile).convertTo(Meter).value),
             )
         )
         Assert.assertEquals(
