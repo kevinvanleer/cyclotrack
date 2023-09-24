@@ -81,6 +81,8 @@ class Quantity(private val quantity: Double, private val units: Unit) {
             destUnits
         )
 
+    fun normalize() = convertTo(units.baseUnit)
+
     operator fun plus(other: Quantity): Quantity {
         if (units.baseUnit::class != other.units.baseUnit::class) {
             throw Exception()
