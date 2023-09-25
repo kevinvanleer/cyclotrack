@@ -1267,6 +1267,87 @@ class SearchRegexTest {
     }
 
     @Test
+    fun tripPassesExpressionStringTextTest() {
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "details contains extra",
+                tripTest20miles.copy(
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "description contains extra",
+                tripTest20miles.copy(
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "notes contains extra",
+                tripTest20miles.copy(
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "text contains extra",
+                tripTest20miles.copy(
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "title contains extra",
+                tripTest20miles.copy(
+                    name = "brakes tires shifters seat",
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "name contains shifters",
+                tripTest20miles.copy(
+                    name = "brakes tires shifters seat",
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "title contains brakes",
+                tripTest20miles.copy(
+                    name = "brakes tires shifters seat",
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            true, tripPassesExpressionString(
+                "text contains tires",
+                tripTest20miles.copy(
+                    name = "brakes tires shifters seat",
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+        Assert.assertEquals(
+            false, tripPassesExpressionString(
+                "text contains everything",
+                tripTest20miles.copy(
+                    name = "brakes tires shifters seat",
+                    notes = "This ride was extra"
+                ),
+            )
+        )
+    }
+
+    @Test
     fun parseDateTest() {
         Assert.assertEquals(
             listOf(
