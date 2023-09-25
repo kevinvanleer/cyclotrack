@@ -20,6 +20,7 @@ import com.kvl.cyclotrack.util.MilesPerHour
 import com.kvl.cyclotrack.util.Pound
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.normalizeDistance
+import com.kvl.cyclotrack.util.quantifyDistance
 import org.junit.Assert
 import org.junit.Test
 import java.text.ParseException
@@ -75,7 +76,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(14.0, "1"),
+                    rvalue = quantifyDistance(14.0, "1"),
                     junction = null
                 )
             ),
@@ -92,7 +93,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "mass",
                     operator = "is",
-                    rvalue = Quantity(170.0, Pound).normalize().value,
+                    rvalue = Quantity(170.0, Pound),
                     junction = null
                 )
             ),
@@ -105,7 +106,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "weight",
                     operator = "is",
-                    rvalue = Quantity(170.0, Pound).normalize().value,
+                    rvalue = Quantity(170.0, Pound),
                     junction = null
                 )
             ),
@@ -122,7 +123,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "greater than",
-                    rvalue = normalizeDistance(50.0, "1"),
+                    rvalue = quantifyDistance(50.0, "1"),
                     junction = null
                 )
             ),
@@ -159,7 +160,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "between",
-                    rvalue = listOf(normalizeDistance(14.0, "1"), normalizeDistance(20.0, "1")),
+                    rvalue = listOf(quantifyDistance(14.0, "1"), quantifyDistance(20.0, "1")),
                     junction = null
                 )
             ),
@@ -193,7 +194,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(14.0, "1"),
+                    rvalue = quantifyDistance(14.0, "1"),
                     junction = null
                 ),
                 SearchExpression(
@@ -493,7 +494,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(20.0, "miles")
+                    rvalue = quantifyDistance(20.0, "miles")
                 )
             ), parseSearchString("20").toTypedArray()
         )
@@ -502,7 +503,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(20.1, "miles")
+                    rvalue = quantifyDistance(20.1, "miles")
                 )
             ), parseSearchString("20.1 miles").toTypedArray()
         )
@@ -511,7 +512,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "speed",
                     operator = "is",
-                    rvalue = Quantity(20.1, MilesPerHour).normalize().value
+                    rvalue = Quantity(20.1, MilesPerHour)
                 )
             ), parseSearchString("20.1 mph").toTypedArray()
         )
@@ -520,7 +521,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "speed",
                     operator = "is",
-                    rvalue = Quantity(20.1, KilometersPerHour).normalize().value
+                    rvalue = Quantity(20.1, KilometersPerHour)
                 )
             ), parseSearchString("20.1 kph").toTypedArray()
         )
@@ -529,7 +530,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "speed",
                     operator = "is",
-                    rvalue = Quantity(20.1, KilometersPerHour).normalize().value
+                    rvalue = Quantity(20.1, KilometersPerHour)
                 )
             ), parseSearchString("20.1 km/h").toTypedArray()
         )
@@ -538,7 +539,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "mass",
                     operator = "is",
-                    rvalue = Quantity(170.0, Pound).normalize().value
+                    rvalue = Quantity(170.0, Pound)
                 )
             ), parseSearchString("170 pounds").toTypedArray()
         )
@@ -566,8 +567,8 @@ class SearchRegexTest {
                     lvalue = "distance",
                     operator = "between",
                     rvalue = listOf(
-                        normalizeDistance(10.0, "1"),
-                        normalizeDistance(20.0, "1")
+                        quantifyDistance(10.0, "1"),
+                        quantifyDistance(20.0, "1")
                     ),
                     junction = null
                 ),
@@ -576,8 +577,8 @@ class SearchRegexTest {
                     lvalue = "distance",
                     operator = "between",
                     rvalue = listOf(
-                        normalizeDistance(15.0, "1"),
-                        normalizeDistance(17.0, "1")
+                        quantifyDistance(15.0, "1"),
+                        quantifyDistance(17.0, "1")
                     ),
                     junction = "and"
                 ),
@@ -586,8 +587,8 @@ class SearchRegexTest {
                     lvalue = "distance",
                     operator = "between",
                     rvalue = listOf(
-                        normalizeDistance(13.0, "1"),
-                        normalizeDistance(18.0, "1")
+                        quantifyDistance(13.0, "1"),
+                        quantifyDistance(18.0, "1")
                     ),
                     junction = "and"
                 ),
@@ -606,7 +607,7 @@ class SearchRegexTest {
                     negation = false,
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(14.0, "1"),
+                    rvalue = quantifyDistance(14.0, "1"),
                     junction = null
                 ),
                 SearchExpression(
@@ -640,7 +641,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(20.0, "1")
+                    rvalue = quantifyDistance(20.0, "1")
                 )
             )
         )
@@ -659,7 +660,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "mass",
                     operator = "is",
-                    rvalue = Quantity(20.0, Pound).normalize().value
+                    rvalue = Quantity(20.0, Pound)
                 )
             )
         )
@@ -673,7 +674,7 @@ class SearchRegexTest {
                 SearchExpression(
                     lvalue = "speed",
                     operator = "is",
-                    rvalue = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).value
+                    rvalue = Quantity(20.0, MilesPerHour)
                 )
             )
         )
@@ -715,7 +716,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = normalizeDistance(20.0, "1")
+                        rvalue = quantifyDistance(20.0, "1")
                     )
                 )
             )
@@ -727,7 +728,7 @@ class SearchRegexTest {
                         negation = true,
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = normalizeDistance(20.0, "1")
+                        rvalue = quantifyDistance(20.0, "1")
                     )
                 )
             )
@@ -740,7 +741,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = normalizeDistance(20.0, "1")
+                        rvalue = quantifyDistance(20.0, "1")
                     )
                 )
             )
@@ -753,7 +754,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = normalizeDistance(20.0, "1")
+                        rvalue = quantifyDistance(20.0, "1")
                     )
                 )
             )
@@ -764,7 +765,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "less than",
-                        rvalue = 20.0 / (METERS_TO_FEET * FEET_TO_MILES)
+                        rvalue = Quantity(20.0, Mile)
                     )
                 )
             )
@@ -777,7 +778,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "greater than",
-                        rvalue = 20.0
+                        rvalue = Quantity(20.0, Mile)
                     )
                 )
             )
@@ -791,8 +792,8 @@ class SearchRegexTest {
                         lvalue = "distance",
                         operator = "between",
                         rvalue = listOf(
-                            normalizeDistance(20.9, "1"),
-                            normalizeDistance(21.1, "1")
+                            quantifyDistance(20.9, "1"),
+                            quantifyDistance(21.1, "1")
                         )
                     )
                 )
@@ -804,7 +805,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "speed",
                         operator = "is",
-                        rvalue = Quantity(20.0, MilesPerHour).convertTo(MetersPerSecond).value
+                        rvalue = Quantity(20.0, MilesPerHour)
                     )
                 )
             )
@@ -854,7 +855,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = normalizeDistance(20.0, "1")
+                        rvalue = quantifyDistance(20.0, "1")
                     ),
                     SearchExpression(
                         lvalue = "text",
@@ -875,7 +876,7 @@ class SearchRegexTest {
                     SearchExpression(
                         lvalue = "distance",
                         operator = "is",
-                        rvalue = 20.0
+                        rvalue = Quantity(20.0, Mile)
                     ),
                     SearchExpression(
                         junction = "and",
