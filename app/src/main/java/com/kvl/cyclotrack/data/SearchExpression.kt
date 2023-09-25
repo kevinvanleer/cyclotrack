@@ -9,7 +9,6 @@ import com.kvl.cyclotrack.util.Length
 import com.kvl.cyclotrack.util.Mass
 import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
-import com.kvl.cyclotrack.util.Mile
 import com.kvl.cyclotrack.util.MilesPerHour
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.Speed
@@ -29,7 +28,7 @@ import com.kvl.cyclotrack.util.Unit as Units
 
 val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
-    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|bike|text) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
+    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|bike|text|title|name|notes|description|details) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
 
 fun parseSearchString(
@@ -110,31 +109,45 @@ fun parseSearchString(
     )
 }
 
-fun compareTextExpression(trip: Trip, expression: SearchExpression): Boolean =
-    when (expression.operator) {
-        "contains" -> trip.name?.lowercase()
-            ?.contains(
-                expression.rvalue.toString().lowercase()
-            ) == true || trip.notes?.lowercase()
-            ?.contains(
-                expression.rvalue.toString().lowercase()
-            ) == true
+fun compareTextExpression(fields: Array<String?>, expression: SearchExpression): Boolean =
+    fields.map { it?.lowercase() }.fold(false) { result, field ->
+        result || when (expression.operator) {
+            "contains" -> field
+                ?.contains(
+                    expression.rvalue.toString().lowercase()
+                ) == true
 
-        else -> throw ParseException("Invalid text search operator", 6)
+            else -> throw ParseException("Invalid text search operator", 6)
+        }
     }
 
 fun tripPassesExpression(trip: Trip, searchExpressions: List<SearchExpression>): Boolean =
     searchExpressions.fold(false) { result, expression ->
         when (expression.lvalue.lowercase()) {
             "distance" ->
-                compareDistanceExpression(trip, expression)
+                compareQuantityField(trip.distance?.let { Quantity(it, Meter) }, 0.5, expression)
 
-            "speed" -> compareSpeedExpression(trip, expression)
+            "speed" -> compareQuantityField(trip.averageSpeed?.let {
+                Quantity(
+                    it.toDouble(),
+                    MetersPerSecond
+                )
+            }, 0.1, expression)
 
-            "mass", "weight" -> compareMassExpression(trip, expression)
+            "mass", "weight" -> compareQuantityField(trip.userWeight?.let {
+                Quantity(
+                    it.toDouble(),
+                    Kilogram
+                )
+            }, 0.5, expression)
 
             "date" -> compareDateExpression(trip, expression)
-            "text" -> compareTextExpression(trip, expression)
+            "text" -> compareTextExpression(arrayOf(trip.name, trip.notes), expression)
+            "title", "name" -> compareTextExpression(arrayOf(trip.name), expression)
+            "notes", "details", "description" -> compareTextExpression(
+                arrayOf(trip.notes),
+                expression
+            )
 
             else -> false
         }.let {
@@ -184,26 +197,25 @@ fun compareDateExpression(
         else -> Instant.ofEpochMilli(trip.timestamp) == expression.rvalue
     }
 
-fun compareDistanceExpressionOld(
-    trip: Trip,
+fun compareQuantityField(
+    field: Quantity?,
+    deltaMagnitude: Double,
     expression: SearchExpression,
-): Boolean {
-    return when (expression.operator.lowercase()) {
+): Boolean = field?.let { quantity ->
+    when (expression.operator.lowercase()) {
         "is", "equals" -> {
-            val delta = Quantity(0.5, Mile).convertTo(Meter).value
-            (((expression.rvalue as Double) - delta) <= trip.distance!!) && (((
-                    expression.rvalue
-                    ) + delta) > trip.distance)
+            val delta = Quantity(deltaMagnitude, (expression.rvalue as Quantity).unit)
+            ((expression.rvalue - delta) <= quantity) && ((expression.rvalue + delta) > quantity)
         }
 
-        "greater than" -> trip.distance!! > expression.rvalue as Double
-        "less than" -> trip.distance!! < expression.rvalue as Double
-        "between" -> trip.distance!! >= ((expression.rvalue as List<*>)[0] as Double) &&
-                trip.distance <= (expression.rvalue[1] as Double)
+        "greater than" -> quantity > expression.rvalue as Quantity
+        "less than" -> quantity < expression.rvalue as Quantity
+        "between" -> quantity >= ((expression.rvalue as List<*>)[0] as Quantity) &&
+                quantity <= (expression.rvalue[1] as Quantity)
 
         else -> false
     }
-}
+} ?: false
 
 fun compareDistanceExpression(
     trip: Trip,
