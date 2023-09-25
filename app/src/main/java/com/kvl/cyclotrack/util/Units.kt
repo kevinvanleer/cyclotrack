@@ -89,42 +89,42 @@ class Quantity(private val quantity: Double, private val units: Unit) {
 
     operator fun plus(other: Quantity): Quantity {
         if (units.baseUnit::class != other.units.baseUnit::class) {
-            throw Exception()
+            throw Exception("Quantities $units and ${other.units} cannot be added")
         }
         return Quantity(quantity + other.convertTo(units).value, units)
     }
 
     operator fun minus(other: Quantity): Quantity {
         if (units.baseUnit::class != other.units.baseUnit::class) {
-            throw Exception()
+            throw Exception("Quantities $units and ${other.units} cannot be subtracted")
         }
         return Quantity(quantity - other.convertTo(units).value, units)
     }
 
     operator fun times(other: Quantity): Quantity {
         if (units.baseUnit::class != other.units.baseUnit::class) {
-            throw Exception()
+            throw Exception("Quantities $units and ${other.units} cannot be multiplied")
         }
         return Quantity(quantity * other.convertTo(units).value, units)
     }
 
     operator fun div(other: Quantity): Quantity {
         if (units.baseUnit::class != other.units.baseUnit::class) {
-            throw Exception()
+            throw Exception("Quantities $units and ${other.units} cannot be divided")
         }
         return Quantity(quantity / other.convertTo(units).value, units)
     }
 
     override operator fun equals(other: Any?): Boolean {
         if (other !is Quantity || units.baseUnit::class != other.units.baseUnit::class) {
-            throw Exception()
+            throw Exception("Quantities $units and ${(other as Quantity).units} are not comparable")
         }
         return abs(this.minus(other).value) < 1e-12
     }
 
     operator fun compareTo(other: Quantity): Int {
         if (units.baseUnit::class != other.units.baseUnit::class) {
-            throw Exception()
+            throw Exception("Quantities $units and ${other.units} are not comparable ")
         }
         return when (abs(this.minus(other).value) < 1e-12) {
             true -> 0
