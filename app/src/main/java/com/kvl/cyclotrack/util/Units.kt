@@ -308,7 +308,14 @@ fun unitsToSystem(units: String?): String {
 
 fun normalizeDistance(distance: Double, measurementSystem: String) =
     when (unitsToSystem(measurementSystem)) {
-        "1" -> Quantity(distance, Mile).convertTo(Meter).value
-        "2" -> Quantity(distance, Kilometer).convertTo(Meter).value
-        else -> distance
+        "1" -> Quantity(distance, Mile).convertTo(Meter).normalize().value
+        "2" -> Quantity(distance, Kilometer).convertTo(Meter).normalize().value
+        else -> Quantity(distance, Meter).normalize().value
+    }
+
+fun quantifyDistance(distance: Double, measurementSystem: String) =
+    when (unitsToSystem(measurementSystem)) {
+        "1" -> Quantity(distance, Mile)
+        "2" -> Quantity(distance, Kilometer)
+        else -> Quantity(distance, Meter)
     }
