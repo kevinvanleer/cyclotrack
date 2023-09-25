@@ -11,11 +11,10 @@ import com.kvl.cyclotrack.util.Meter
 import com.kvl.cyclotrack.util.MetersPerSecond
 import com.kvl.cyclotrack.util.Mile
 import com.kvl.cyclotrack.util.MilesPerHour
-import com.kvl.cyclotrack.util.Pound
 import com.kvl.cyclotrack.util.Quantity
 import com.kvl.cyclotrack.util.Speed
 import com.kvl.cyclotrack.util.dateFormatPattenDob
-import com.kvl.cyclotrack.util.normalizeDistance
+import com.kvl.cyclotrack.util.quantifyDistance
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -71,13 +70,13 @@ fun parseSearchString(
                             rvalue = Quantity(
                                 it.groups["value"]!!.value.toDouble(),
                                 detectedUnit
-                            ).normalize().value
+                            ),
                         )
                     }
                 } ?: SearchExpression(
                     lvalue = "distance",
                     operator = "is",
-                    rvalue = normalizeDistance(
+                    rvalue = quantifyDistance(
                         it.groups["value"]!!.value.toDouble(),
                         it.groups["units"]?.value ?: measurementSystem
                     )
@@ -185,7 +184,7 @@ fun compareDateExpression(
         else -> Instant.ofEpochMilli(trip.timestamp) == expression.rvalue
     }
 
-fun compareDistanceExpression(
+fun compareDistanceExpressionOld(
     trip: Trip,
     expression: SearchExpression,
 ): Boolean {
@@ -206,30 +205,53 @@ fun compareDistanceExpression(
     }
 }
 
-fun compareMassExpression(
+fun compareDistanceExpression(
     trip: Trip,
     expression: SearchExpression,
-): Boolean = trip.userWeight?.let { userWeight ->
-    Quantity(userWeight.toDouble(), Kilogram).normalize().value.let { mass ->
+): Boolean = trip.distance?.let { distance ->
+    Quantity(distance, Meter).let { quantity ->
         when (expression.operator.lowercase()) {
             "is", "equals" -> {
-                val delta = Quantity(0.5, Pound).normalize().value
-                (((expression.rvalue as Double) - delta) <= mass) && (((
+                val delta = Quantity(0.5, (expression.rvalue as Quantity).unit)
+                (((expression.rvalue as Quantity) - delta) <= quantity) && (((
                         expression.rvalue
-                        ) + delta) > mass)
+                        ) + delta) > quantity)
             }
 
-            "greater than" -> mass > expression.rvalue as Double
-            "less than" -> mass < expression.rvalue as Double
-            "between" -> mass >= ((expression.rvalue as List<*>)[0] as Double) &&
-                    mass <= (expression.rvalue[1] as Double)
+            "greater than" -> quantity > expression.rvalue as Quantity
+            "less than" -> quantity < expression.rvalue as Quantity
+            "between" -> quantity >= ((expression.rvalue as List<*>)[0] as Quantity) &&
+                    quantity <= (expression.rvalue[1] as Quantity)
 
             else -> false
         }
     }
 } ?: false
 
-fun compareSpeedExpression(
+fun compareMassExpression(
+    trip: Trip,
+    expression: SearchExpression,
+): Boolean = trip.userWeight?.let { userWeight ->
+    Quantity(userWeight.toDouble(), Kilogram).let { mass ->
+        when (expression.operator.lowercase()) {
+            "is", "equals" -> {
+                val delta = Quantity(0.5, (expression.rvalue as Quantity).unit)
+                (((expression.rvalue as Quantity) - delta) <= mass) && (((
+                        expression.rvalue
+                        ) + delta) > mass)
+            }
+
+            "greater than" -> mass > expression.rvalue as Quantity
+            "less than" -> mass < expression.rvalue as Quantity
+            "between" -> mass >= ((expression.rvalue as List<*>)[0] as Quantity) &&
+                    mass <= (expression.rvalue[1] as Quantity)
+
+            else -> false
+        }
+    }
+} ?: false
+
+fun compareSpeedExpressionOld(
     trip: Trip,
     expression: SearchExpression,
 ): Boolean {
@@ -251,6 +273,29 @@ fun compareSpeedExpression(
         }
     } ?: false
 }
+
+fun compareSpeedExpression(
+    trip: Trip,
+    expression: SearchExpression,
+): Boolean = trip.averageSpeed?.let { speed ->
+    Quantity(speed.toDouble(), MetersPerSecond).let { quantity ->
+        when (expression.operator.lowercase()) {
+            "is", "equals" -> {
+                val delta = Quantity(0.5, (expression.rvalue as Quantity).unit)
+                (((expression.rvalue as Quantity) - delta) <= quantity) && (((
+                        expression.rvalue
+                        ) + delta) > quantity)
+            }
+
+            "greater than" -> quantity > expression.rvalue as Quantity
+            "less than" -> quantity < expression.rvalue as Quantity
+            "between" -> quantity >= ((expression.rvalue as List<*>)[0] as Quantity) &&
+                    quantity <= (expression.rvalue[1] as Quantity)
+
+            else -> false
+        }
+    }
+} ?: false
 
 fun parseDate(rvalue: String): Any {
     val dateFormats = listOf(
@@ -378,16 +423,21 @@ fun parseRvalue(regexMatchGroups: MatchGroupCollection, measurementSystem: Strin
             }
     }!!.map { rvalue ->
         when (regexMatchGroups["lvalue"]!!.value.lowercase()) {
-            "distance" -> normalizeDistance(rvalue.toDouble(), measurementSystem)
+            //"distance" -> normalizeDistance(rvalue.toDouble(), measurementSystem)
+            "distance" -> Quantity(
+                rvalue.toDouble(),
+                Length.fromMeasurementSystem(measurementSystem)
+            )
+
             "speed" -> Quantity(
                 rvalue.toDouble(),
                 Speed.fromMeasurementSystem(measurementSystem)
-            ).convertTo(MetersPerSecond).value
+            )
 
             "weight", "mass" -> Quantity(
                 rvalue.toDouble(),
                 Mass.fromMeasurementSystem(measurementSystem)
-            ).normalize().value
+            )
 
             "date" -> parseDate(rvalue)
 
