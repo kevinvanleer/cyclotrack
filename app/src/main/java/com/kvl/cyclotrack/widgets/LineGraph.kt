@@ -62,7 +62,8 @@ class LineGraph(
     private val areas: List<LineGraphAreaDataset>? = null,
     private val xLabels: AxisLabels? = null,
     private val yLabels: AxisLabels? = null,
-    private val borders: Int? = null
+    private val borders: Int? = null,
+    private val step: Boolean = false
 ) : Drawable() {
 
     private val xLabelTextSize = 28f
@@ -112,7 +113,7 @@ class LineGraph(
         yScale: Float
     ) = height - (point * yScale) + offset * yScale
 
-    private fun getPath(
+    private fun getLinearPath(
         height: Int,
         dataset: LineGraphDataset,
         yScale: Float,
@@ -140,11 +141,63 @@ class LineGraph(
         }
     }
 
+    private fun getStepPath(
+        height: Int,
+        dataset: LineGraphDataset,
+        yScale: Float,
+        xScale: Float
+    ): Path = Path().apply {
+        var last = Pair(
+            0f,
+            adjustCoordinateY(
+                height,
+                dataset.points.first().second,
+                dataset.yRange?.first ?: 0f,
+                yScale
+            )
+        )
+        moveTo(
+            last.first,
+            last.second
+        )
+        dataset.points.forEach { point ->
+            lineTo(
+                point.first * xScale,
+                last.second,
+            )
+            last = Pair(
+                point.first * xScale,
+                adjustCoordinateY(
+                    height,
+                    point.second,
+                    dataset.yRange?.first ?: 0f,
+                    yScale
+                )
+            )
+            lineTo(
+                last.first,
+                last.second
+            )
+        }
+    }
+
+    private fun getPath(
+        height: Int,
+        dataset: LineGraphDataset,
+        yScale: Float,
+        xScale: Float,
+        step: Boolean
+    ) = when (step) {
+        true -> getStepPath(height, dataset, yScale, xScale)
+        else -> getLinearPath(height, dataset, yScale, xScale)
+    }
+
     private fun drawArea(
         canvas: Canvas,
         dataset: LineGraphAreaDataset,
         width: Int,
         height: Int,
+        step: Boolean
     ) {
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
@@ -167,7 +220,8 @@ class LineGraph(
                         dataset.paint
                     ),
                     yScale,
-                    xScale
+                    xScale,
+                    step
                 ), dataset.paint ?: greenPaint
             )
         } catch (e: Exception) {
@@ -180,11 +234,12 @@ class LineGraph(
         dataset: LineGraphDataset,
         width: Int,
         height: Int,
+        step: Boolean
     ) {
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
         canvas.drawPath(
-            getPath(height, dataset, yScale, xScale), dataset.paint ?: greenPaint
+            getPath(height, dataset, yScale, xScale, step), dataset.paint ?: greenPaint
         )
 
         val fill = Paint(textPaintFill).apply { textAlign = Paint.Align.RIGHT }
@@ -281,6 +336,7 @@ class LineGraph(
                 area,
                 width,
                 height,
+                step
             )
         }
         datasets.forEach { dataset ->
@@ -289,6 +345,7 @@ class LineGraph(
                 dataset,
                 width,
                 height,
+                step
             )
         }
         if (yLabels != null) drawYLabels(canvas, yLabels, width, height)

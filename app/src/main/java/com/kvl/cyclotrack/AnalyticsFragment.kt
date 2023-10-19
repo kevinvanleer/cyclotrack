@@ -544,7 +544,8 @@ class AnalyticsFragment : Fragment() {
                 orientation = AxisLabelOrientation.INSIDE,
                 background = backgroundColor,
             ),
-            borders = BordersEnum.BOTTOM.value
+            borders = BordersEnum.BOTTOM.value,
+            step = true
         )
     }
 
