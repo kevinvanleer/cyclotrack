@@ -26,6 +26,18 @@ function Privacy() {
         data is transmitted from the device to the developer of Cyclotrack. No
         data is transmitted to a third party unless you explicitly enable a
         third party integration (e.g. Google Fit).
+        <h4>Data Protection</h4>
+        Cyclotrack takes a passive approach to data protection. The user has
+        full control over with whom data is shared. Location, biometric, and
+        personal information is never transmitted to the maker of Cyclotrack.
+        Data is never transmitted to a third party unless explicitly enabled by
+        the user. Data shared with Google or Strava may contain precise
+        location, heartrate, or other sensitive data and is transmitted per
+        their specifications. Data that is exported from Cyclotrack is stored on
+        the device, may contain sensitive information, and is the responsibility
+        of the user to protect. Cyclotrack does not make an attempt to encrypt
+        or secure data stored on the device beyond that of the protections put
+        in place by the operating system.
         <h4>Google Fit</h4>A user may link Cyclotrack with a Google Fit account.
         This is done by signing in to a Google account in Cyclotrack settings.
         When linked Cyclotrack will:
