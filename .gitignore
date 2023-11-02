@@ -53,3 +53,5 @@ yarn-error.log*
 .eslintcache
 
 .*.sw*
+
+app/src/debug/res/raw/test_db_20230802
