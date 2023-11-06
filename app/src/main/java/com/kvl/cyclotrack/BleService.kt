@@ -94,6 +94,7 @@ class BleService @Inject constructor(
                             Log.d(logTag, "Detected Bluetooth ON")
                             initialize()
                         }
+
                         BluetoothAdapter.STATE_OFF -> {
                             Log.d(logTag, "Detected Bluetooth OFF")
                             disconnect()
@@ -130,6 +131,7 @@ class BleService @Inject constructor(
                         Log.w(logTag, "Bluetooth permissions have not been granted", e)
                     }
                 }
+
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(logTag, "Disconnected ${gatt.device.address} from GATT server.")
                     if (gatts.any { it.device.address == gatt.device.address }) {
@@ -176,6 +178,7 @@ class BleService @Inject constructor(
                         gatt.getService(heartRateServiceUuid)
                             .getCharacteristic(hrmCharacteristicUuid)
                     )
+
                     hasCharacteristic(
                         cadenceSpeedServiceUuid,
                         cscMeasurementCharacteristicUuid
@@ -186,6 +189,7 @@ class BleService @Inject constructor(
                         )
                             .getCharacteristic(cscMeasurementCharacteristicUuid)
                     )
+
                     hasCharacteristic(
                         getGattUuid(fitnessMachineServiceId),
                         getGattUuid(indoorBikeDataCharacteristicId)
@@ -197,6 +201,7 @@ class BleService @Inject constructor(
                             )
                                 .getCharacteristic(getGattUuid(indoorBikeDataCharacteristicId))
                         )
+
                     else
                     -> Log.d(logTag, "No supported characteristics")
                 }
@@ -267,7 +272,9 @@ class BleService @Inject constructor(
                         logTag,
                         "Connecting to ${result.device.name}, ${result.device.type}: ${result.device}"
                     )
-                    gatts.add(result.device.connectGatt(context, true, genericGattCallback))
+                    //gatts.add(result.device.connectGatt(context, true, genericGattCallback))
+                    result.device.connectGatt(context, true, genericGattCallback)
+                        ?.let { gatts.add(it) }
                     bluetoothManager.adapter?.bluetoothLeScanner?.stopScan(this)
                     scanCallbacks.remove(this)
                 }
@@ -297,12 +304,13 @@ class BleService @Inject constructor(
                         Log.d(logTag, "Heart rate format UINT16.")
                         BluetoothGattCharacteristic.FORMAT_UINT16
                     }
+
                     else -> {
                         Log.d(logTag, "Heart rate format UINT8.")
                         BluetoothGattCharacteristic.FORMAT_UINT8
                     }
                 }
-                if (flag and 0b1000 == 0x01) {
+                if (flag and 0b1000 == 0b1000) {
                     Log.d("DEBUG", "Supports RR interval")
                 }
                 Log.d("DEBUG", characteristicValue.toString())
@@ -317,6 +325,7 @@ class BleService @Inject constructor(
                     EventBus.getDefault().post(it)
                 }
             }
+
             batteryLevelCharUuid -> {
                 val batteryLevel = characteristicValue[0]
                 Log.d(logTag, "Battery level: $batteryLevel")
@@ -327,24 +336,28 @@ class BleService @Inject constructor(
                             EventBus.getDefault().post(it)
                         }
                     }
+
                     addresses.speed -> {
                         speedSensor.copy(batteryLevel = batteryLevel).let {
                             speedSensor = it
                             EventBus.getDefault().post(it)
                         }
                     }
+
                     addresses.cadence -> {
                         cadenceSensor.copy(batteryLevel = batteryLevel).let {
                             cadenceSensor = it
                             EventBus.getDefault().post(it)
                         }
                     }
+
                     else -> Log.d(
                         logTag,
                         "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel"
                     )
                 }
             }
+
             cscMeasurementCharacteristicUuid -> {
                 val timeout = 2000
                 val speedId = 0x01
@@ -400,6 +413,7 @@ class BleService @Inject constructor(
                             }
                         }
                     }
+
                     (sensorType and cadenceId > 0) -> {
                         if (addresses.cadence == null) {
                             addresses.cadence = gatt.device.address
@@ -446,6 +460,7 @@ class BleService @Inject constructor(
                             }
                         }
                     }
+
                     else -> {
                         Log.d(logTag, "Unknown CSC sensor type")
                         val data: ByteArray = characteristicValue
@@ -461,6 +476,7 @@ class BleService @Inject constructor(
                     }
                 }
             }
+
             getGattUuid(indoorBikeDataCharacteristicId) -> {
                 val data: ByteArray = characteristicValue
                 if (data.isNotEmpty()) {
@@ -474,6 +490,7 @@ class BleService @Inject constructor(
                 }
                 getFitnessMachineFeatures(gatt)
             }
+
             getGattUuid(fitnessMachineFeatureCharacteristicId) -> {
                 val data: ByteArray = characteristicValue
                 if (data.isNotEmpty()) {
@@ -502,6 +519,7 @@ class BleService @Inject constructor(
                     Log.d(logTag, String.format("Received ${characteristic.uuid}: $hexString"))
                 }
             }
+
             else -> {
                 // For all other profiles, writes the data formatted in HEX.
                 val data: ByteArray = characteristicValue
@@ -607,7 +625,8 @@ class BleService @Inject constructor(
                     "Connecting to ${device.name}, ${device.type}: ${device.address}"
                 )
                 //TODO: Store BLE service for each device and use corresponding callback
-                gatts.add(device.connectGatt(context, true, genericGattCallback))
+                device.connectGatt(context, true, genericGattCallback)
+                    ?.let { gatts.add(it) }
             }
         } catch (e: SecurityException) {
             Log.w(logTag, "BLE permissions have not been granted", e)
@@ -631,7 +650,7 @@ class BleService @Inject constructor(
         Log.d(logTag, "disconnect")
         stopAllScans()
         gatts.forEach { gatt ->
-            Log.d(logTag, "Disconnecting ${gatt.device.address}")
+            Log.d(logTag, "Disconnecting ${gatt.device?.address}")
             try {
                 gatt.close()
             } catch (e: SecurityException) {
