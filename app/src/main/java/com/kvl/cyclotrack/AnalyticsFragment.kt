@@ -2,6 +2,7 @@ package com.kvl.cyclotrack
 
 import android.graphics.Paint
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -283,6 +284,7 @@ class AnalyticsFragment : Fragment() {
 
     private fun doAnnualTotals(view: View) {
         val now = Instant.now().atZone(ZoneId.systemDefault())
+        //val now = ZonedDateTime.of(2023, 12, 31, 20, 0, 0, 0, ZoneId.systemDefault())
         val thisYearStart = now.with(
             TemporalAdjusters.firstDayOfYear()
         ).truncatedTo(ChronoUnit.DAYS)
@@ -295,18 +297,15 @@ class AnalyticsFragment : Fragment() {
         ).truncatedTo(ChronoUnit.DAYS)
         val lastYearToday = now.minusYears(1)
             .truncatedTo(ChronoUnit.DAYS).plusDays(1)
-        val lastYearEnd = lastYearToday.with(
-            TemporalAdjusters.lastDayOfYear()
-        ).truncatedTo(ChronoUnit.DAYS).plusDays(1)
 
         buildPeriodTotalsAnalyticsCard(
             view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisYear),
             "This year",
-            thisYearStart,
-            thisYearEnd,
-            lastYearStart,
-            lastYearEnd,
-            lastYearToday
+            thisPeriodStart = thisYearStart,
+            thisPeriodEnd = thisYearEnd,
+            lastPeriodStart = lastYearStart,
+            lastPeriodEnd = thisYearStart,
+            lastPeriodToday = lastYearToday
         )
     }
 
@@ -324,16 +323,15 @@ class AnalyticsFragment : Fragment() {
         val lastMonthToday =
             now.minusMonths(1)
                 .truncatedTo(ChronoUnit.DAYS).plusDays(1)
-        val lastMonthEnd = lastMonthStart.with(TemporalAdjusters.lastDayOfMonth()).plusDays(1)
 
         buildPeriodTotalsAnalyticsCard(
             view.findViewById(R.id.fragmentAnalytics_analyticsCard_thisMonth),
             "This month",
-            thisMonthStart,
-            thisMonthEnd,
-            lastMonthStart,
-            lastMonthEnd,
-            lastMonthToday
+            thisPeriodStart = thisMonthStart,
+            thisPeriodEnd = thisMonthEnd,
+            lastPeriodStart = lastMonthStart,
+            lastPeriodEnd = thisMonthStart,
+            lastPeriodToday = lastMonthToday
         )
     }
 
@@ -424,13 +422,17 @@ class AnalyticsFragment : Fragment() {
     }
 
     private fun drawDistanceComparison(
-        thisMonthStart: ZonedDateTime,
-        thisMonthEnd: ZonedDateTime,
-        lastMonthStart: ZonedDateTime,
-        lastMonthEnd: ZonedDateTime,
+        thisPeriodStart: ZonedDateTime,
+        thisPeriodEnd: ZonedDateTime,
+        lastPeriodStart: ZonedDateTime,
+        lastPeriodEnd: ZonedDateTime,
         backgroundColor: Int
     ) =
         ImageView(requireContext()).apply {
+            Log.d(logTag, thisPeriodStart.toString())
+            Log.d(logTag, thisPeriodEnd.toString())
+            Log.d(logTag, lastPeriodStart.toString())
+            Log.d(logTag, lastPeriodEnd.toString())
             layoutParams =
                 ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -442,17 +444,17 @@ class AnalyticsFragment : Fragment() {
             minimumHeight = 300
             zipLiveData(
                 viewModel.recentTrips(
-                    thisMonthStart.toInstant().toEpochMilli(),
-                    thisMonthEnd.toInstant().toEpochMilli()
+                    thisPeriodStart.toInstant().toEpochMilli(),
+                    thisPeriodEnd.toInstant().toEpochMilli()
                 ),
                 viewModel.recentTrips(
-                    lastMonthStart.toInstant().toEpochMilli(),
-                    lastMonthEnd.toInstant().toEpochMilli()
+                    lastPeriodStart.toInstant().toEpochMilli(),
+                    lastPeriodEnd.toInstant().toEpochMilli()
                 )
             ).observe(viewLifecycleOwner) {
                 getDistanceComparisonGraph(
-                    Pair(thisMonthStart, thisMonthEnd),
-                    Pair(lastMonthStart, lastMonthEnd),
+                    Pair(thisPeriodStart, thisPeriodEnd),
+                    Pair(lastPeriodStart, lastPeriodEnd),
                     it.first,
                     it.second,
                     backgroundColor
