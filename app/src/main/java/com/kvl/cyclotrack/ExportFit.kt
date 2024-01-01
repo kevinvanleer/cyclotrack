@@ -1,7 +1,9 @@
 package com.kvl.cyclotrack
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
+import android.provider.Settings
 import com.garmin.fit.ActivityMesg
 import com.garmin.fit.DateTime
 import com.garmin.fit.DeveloperDataIdMesg
@@ -25,7 +27,6 @@ import com.kvl.cyclotrack.util.getFileName
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.Date
-import java.util.Random
 import java.util.TimeZone
 import kotlin.math.pow
 import kotlin.math.roundToInt
@@ -156,33 +157,36 @@ fun makeFitMessages(
     return messages
 }
 
+@SuppressLint("HardwareIds")
 fun writeFitFile(
+    context: Context,
     startTime: DateTime,
     file: java.io.File,
     messages: List<Mesg?>
 ) {
     val fileType = File.ACTIVITY
     val manufacturerId = Manufacturer.DEVELOPMENT.toShort()
-    val productId: Short = 0
+    val productId = "CYCLOTRACK".hashCode()
     val softwareVersion = BuildConfig.VERSION_CODE.toFloat()
-    val random = Random()
-    val serialNumber = random.nextInt()
+    val serialNumber =
+        (Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            ?: "0").toLong(radix = 16)
 
     // Every FIT file MUST contain a File ID message
     val fileIdMesg = FileIdMesg()
     fileIdMesg.type = fileType
     fileIdMesg.manufacturer = manufacturerId.toInt()
-    fileIdMesg.product = productId.toInt()
+    fileIdMesg.product = productId
     fileIdMesg.timeCreated = startTime
-    fileIdMesg.serialNumber = serialNumber.toLong()
+    fileIdMesg.serialNumber = serialNumber
 
     // A Device Info message is a BEST PRACTICE for FIT ACTIVITY files
     val deviceInfoMesg = DeviceInfoMesg()
     deviceInfoMesg.deviceIndex = DeviceIndex.CREATOR
     deviceInfoMesg.manufacturer = Manufacturer.DEVELOPMENT
-    deviceInfoMesg.product = productId.toInt()
+    deviceInfoMesg.product = productId
     deviceInfoMesg.productName = "Cyclotrack"
-    deviceInfoMesg.serialNumber = serialNumber.toLong()
+    deviceInfoMesg.serialNumber = serialNumber
     deviceInfoMesg.softwareVersion = softwareVersion
     deviceInfoMesg.timestamp = startTime
 
@@ -228,7 +232,12 @@ fun exportRideToFit(
     )
 
     val messages: MutableList<Mesg> = makeFitMessages(cyclotrackFitAppId, exportData)
-    writeFitFile(DateTime(Date(exportData.summary!!.timestamp)), privateAppFile, messages)
+    writeFitFile(
+        context,
+        DateTime(Date(exportData.summary!!.timestamp)),
+        privateAppFile,
+        messages
+    )
 
     moveToDownloads(
         context,

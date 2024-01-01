@@ -26,6 +26,8 @@ import androidx.work.WorkerParameters
 import com.google.android.gms.common.util.concurrent.HandlerExecutor
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.Export
+import com.kvl.cyclotrack.data.ExportRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -74,6 +76,9 @@ class ExportTripWorker @AssistedInject constructor(
     @Inject
     lateinit var weatherRepository: WeatherRepository
 
+    @Inject
+    lateinit var exportRepository: ExportRepository
+
     private suspend fun exportTripData(
         contentResolver: ContentResolver,
         tripId: Long,
@@ -81,6 +86,8 @@ class ExportTripWorker @AssistedInject constructor(
         fileType: String,
     ) {
         Log.d(logTag, "exportTripData")
+        Log.d(logTag, uri.toString())
+
         val mime = when (fileType) {
             "xlsx" -> xlsxMime
             else -> binaryMime
@@ -178,6 +185,7 @@ class ExportTripWorker @AssistedInject constructor(
                         uri,
                         exportData
                     )
+
                     else -> exportRideToFit(appContext, uri, exportData)
                 }
 
@@ -262,8 +270,17 @@ class ExportTripWorker @AssistedInject constructor(
                         return
                     }
                     notify(exportData.summary.id?.toInt() ?: 0, builder.build())
+
+                    exportRepository.save(
+                        Export(
+                            tripId = tripId,
+                            uri = uri.toString(),
+                            fileType = fileType,
+                            filename = getFileName() ?: "No name"
+                        )
+                    )
                 }
-            } catch (e: RuntimeException) {
+            } catch (e: Exception) {
                 Log.e(logTag, "Export failed", e)
                 FirebaseCrashlytics.getInstance().recordException(e)
 
@@ -331,18 +348,26 @@ class ExportTripWorker @AssistedInject constructor(
     }
 
     private suspend fun exportFile(tripId: Long, fileName: String, fileType: String): Result {
-        val downloadsPath =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        val destinationPath = File(downloadsPath, fileName)
-        val uri = FileProvider.getUriForFile(
-            appContext,
-            BuildConfig.APPLICATION_ID + ".provider",
-            destinationPath
-        );
-        destinationPath.mkdirs()
-        destinationPath.delete()
-        exportTripData(appContext.contentResolver, tripId, uri, fileType)
-        return Result.success()
+
+        try {
+            val downloadsPath =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val destinationPath = File(downloadsPath, fileName)
+            destinationPath.mkdirs()
+            destinationPath.delete()
+            val uri = FileProvider.getUriForFile(
+                appContext,
+                BuildConfig.APPLICATION_ID + ".provider",
+                destinationPath
+            );
+
+            exportTripData(appContext.contentResolver, tripId, uri, fileType)
+            return Result.success()
+        } catch (e: SecurityException) {
+            Log.e(logTag, "Could not prep destination path", e)
+            FirebaseCrashlytics.getInstance().recordException(e)
+            return Result.failure()
+        }
     }
 
     override suspend fun doWork(): Result {

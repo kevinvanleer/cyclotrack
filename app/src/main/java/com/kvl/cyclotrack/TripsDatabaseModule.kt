@@ -11,6 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementDao
+import com.kvl.cyclotrack.data.ExportDao
 import com.kvl.cyclotrack.data.HeartRateMeasurementDao
 import com.kvl.cyclotrack.data.SensorType
 import com.kvl.cyclotrack.util.getBikeMassOrNull
@@ -78,13 +79,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL(
             """CREATE TABLE 
-            |`TimeState` (
-            |`tripId` INTEGER NOT NULL,
-            |`state` INTEGER NOT NULL,
-            |`timestamp` INTEGER NOT NULL,
-            |`id` INTEGER PRIMARY KEY,
-            |FOREIGN KEY(`tripId`) REFERENCES Trip(`id`
-            |) ON DELETE CASCADE)""".trimMargin()
+            `TimeState` (
+            `tripId` INTEGER NOT NULL,
+            `state` INTEGER NOT NULL,
+            `timestamp` INTEGER NOT NULL,
+            `id` INTEGER PRIMARY KEY,
+            FOREIGN KEY(`tripId`) REFERENCES Trip(`id`)
+            ON DELETE CASCADE)"""
         )
         database.execSQL("CREATE INDEX index_TimeState_tripId on TimeState(`tripId`)")
     }
@@ -378,6 +379,30 @@ val MIGRATION_26_27 = object : Migration(26, 27) {
     }
 }
 
+val MIGRATION_27_28 = object : Migration(27, 28) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            """CREATE TABLE 
+            `Export` (
+            `timestamp` INTEGER NOT NULL,
+            `tripId` INTEGER NOT NULL,
+            `uri` TEXT NOT NULL,
+            `filename` TEXT NOT NULL,
+            `fileType` TEXT NOT NULL,
+            `id` INTEGER NOT NULL PRIMARY KEY,
+            FOREIGN KEY(`tripId`) REFERENCES Trip(`id`)
+            ON DELETE NO ACTION)"""
+        )
+        database.execSQL("CREATE INDEX index_Export_tripId on Export(`tripId`)")
+    }
+}
+
+val MIGRATION_28_27 = object : Migration(28, 27) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("DROP TABLE Export")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -415,6 +440,8 @@ object TripsDatabaseModule {
                 MIGRATION_24_25,
                 MIGRATION_25_26,
                 MIGRATION_26_27,
+                MIGRATION_27_28,
+                MIGRATION_28_27
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
@@ -492,5 +519,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideHeartRateMeasurementDao(db: TripsDatabase): HeartRateMeasurementDao {
         return db.heartRateMeasurementDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideExportDao(db: TripsDatabase): ExportDao {
+        return db.exportDao()
     }
 }

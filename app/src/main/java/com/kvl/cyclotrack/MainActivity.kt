@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
@@ -20,6 +21,10 @@ import androidx.work.BackoffPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException
+import com.google.android.gms.common.GooglePlayServicesRepairableException
+import com.google.android.gms.security.ProviderInstaller
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -28,6 +33,8 @@ import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
@@ -286,6 +293,27 @@ class MainActivity : AppCompatActivity() {
                 isEnabled = true
                 visibility = View.VISIBLE
                 setOnClickListener(handleFabClick())
+            }
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+
+            //GoogleApiAvailability().isGooglePlayServicesAvailable(applicationContext)
+
+            try {
+                ProviderInstaller.installIfNeeded(applicationContext)
+            } catch (e: GooglePlayServicesRepairableException) {
+                Log.e("GooglePlayServices", "Google Play Services needs to be installed", e)
+                /*GooglePlayServicesUtil.showErrorNotification(
+                    e.connectionStatusCode,
+                    applicationContext
+                )*/
+                GoogleApiAvailability().showErrorNotification(
+                    applicationContext,
+                    e.connectionStatusCode
+                )
+            } catch (e: GooglePlayServicesNotAvailableException) {
+                Log.e("GooglePlayServices", "Google Play Services cannot be installed", e)
             }
         }
     }

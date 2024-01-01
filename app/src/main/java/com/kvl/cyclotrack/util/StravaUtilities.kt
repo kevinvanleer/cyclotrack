@@ -5,21 +5,37 @@ import android.util.Log
 import com.garmin.fit.DateTime
 import com.garmin.fit.Mesg
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.kvl.cyclotrack.*
+import com.kvl.cyclotrack.GoogleFitSyncStatusEnum
+import com.kvl.cyclotrack.MeasurementsRepository
+import com.kvl.cyclotrack.OnboardSensorsRepository
+import com.kvl.cyclotrack.R
+import com.kvl.cyclotrack.SplitRepository
+import com.kvl.cyclotrack.TimeStateRepository
+import com.kvl.cyclotrack.Trip
+import com.kvl.cyclotrack.TripDetailsViewModel
+import com.kvl.cyclotrack.TripsRepository
+import com.kvl.cyclotrack.WeatherRepository
+import com.kvl.cyclotrack.cyclotrackFitAppId
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
+import com.kvl.cyclotrack.makeFitMessages
+import com.kvl.cyclotrack.writeFitFile
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import okhttp3.*
+import okhttp3.FormBody
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.Response
 import java.io.File
 import java.io.IOException
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
-import java.util.*
+import java.util.Date
 
 fun updateStravaAuthToken(
     context: Context,
@@ -84,6 +100,7 @@ fun updateStravaAuthToken(
                             }.commit()
                             return@response tokenResponse?.access_token
                         }
+
                         else -> {
                             when (response.code) {
                                 400, 401 ->
@@ -118,6 +135,7 @@ fun refreshStravaAccessToken(
                 }
                     ?: throw AuthenticationFailure("Not authorized to sync with Strava -- no refresh token")
             }
+
             else -> getPreferences(appContext).getString(
                 appContext.getString(R.string.preference_key_strava_access_token), null
             )
@@ -183,6 +201,7 @@ fun syncTripWithStrava(
     )
 
     writeFitFile(
+        appContext,
         DateTime(Date(exportData.summary!!.timestamp)),
         privateAppFile,
         messages
@@ -221,6 +240,7 @@ fun deauthorizeStrava(accessToken: String, context: Context) {
                                     remove(context.getString(R.string.preference_key_strava_access_expires_at))
                                 }.commit()
                             }
+
                             else -> {
                                 throw IOException("Strava disconnect failed: response code ${response.code}")
                             }
@@ -304,6 +324,7 @@ suspend fun syncTripWithStrava(
                                 ChronoUnit.MINUTES
                             )
                         }
+
                     else -> Instant.now()
                 }.let { nextWindow ->
                     getPreferences(appContext).edit().apply {
@@ -324,6 +345,7 @@ suspend fun syncTripWithStrava(
                     FirebaseCrashlytics.getInstance().recordException(e)
                     throw e
                 }
+
                 in 200..299 -> GoogleFitSyncStatusEnum.SYNCED
                 in 500..599 -> GoogleFitSyncStatusEnum.NOT_SYNCED
                 else -> GoogleFitSyncStatusEnum.FAILED

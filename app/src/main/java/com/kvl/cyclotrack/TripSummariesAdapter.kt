@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.model.RoundCap
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import kotlinx.coroutines.launch
 
 class TripSummariesAdapter(
@@ -78,9 +79,11 @@ class TripSummariesAdapter(
                             .navigate(TripSummariesFragmentDirections.actionViewTripDetails(tripId))
                     }
                 } catch (e: IllegalArgumentException) {
-                    Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
+                    Log.e("TRIP_SUMMARIES_ADAPTER", "Cannot find trip $tripId", e)
+                    FirebaseCrashlytics.getInstance().recordException(e)
                 } catch (e: IllegalStateException) {
-                    Log.e("TRIP_SUMMARIES_ADAPTER", e.message, e)
+                    Log.e("TRIP_SUMMARIES_ADAPTER", "Failed to navigate", e)
+                    FirebaseCrashlytics.getInstance().recordException(e)
                 }
             }
         }

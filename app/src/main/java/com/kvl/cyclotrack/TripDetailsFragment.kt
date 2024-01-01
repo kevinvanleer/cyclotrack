@@ -1015,7 +1015,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     )
                                 )
                         } catch (e: IllegalArgumentException) {
-                            Log.e(logTag, e.message, e)
+                            Log.e(logTag, "Cannot edit trip ${args.tripId}. Does not exist.", e)
+                            FirebaseCrashlytics.getInstance().recordException(e)
                         }
                         true
                     }
