@@ -282,8 +282,7 @@ class AnalyticsFragment : Fragment() {
         )
     }
 
-    private fun doAnnualTotals(view: View) {
-        val now = Instant.now().atZone(ZoneId.systemDefault())
+    private fun doAnnualTotals(now: ZonedDateTime, view: View) {
         //val now = ZonedDateTime.of(2023, 12, 31, 20, 0, 0, 0, ZoneId.systemDefault())
         val thisYearStart = now.with(
             TemporalAdjusters.firstDayOfYear()
@@ -309,8 +308,7 @@ class AnalyticsFragment : Fragment() {
         )
     }
 
-    private fun doMonthlyTotals(view: View) {
-        val now = Instant.now().atZone(ZoneId.systemDefault())
+    private fun doMonthlyTotals(now: ZonedDateTime, view: View) {
         val thisMonthStart = now.with(
             TemporalAdjusters.firstDayOfMonth()
         ).truncatedTo(ChronoUnit.DAYS)
@@ -429,10 +427,6 @@ class AnalyticsFragment : Fragment() {
         backgroundColor: Int
     ) =
         ImageView(requireContext()).apply {
-            Log.d(logTag, thisPeriodStart.toString())
-            Log.d(logTag, thisPeriodEnd.toString())
-            Log.d(logTag, lastPeriodStart.toString())
-            Log.d(logTag, lastPeriodEnd.toString())
             layoutParams =
                 ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -625,10 +619,10 @@ class AnalyticsFragment : Fragment() {
         }
     }
 
-    private fun doWeeklySummary(view: View) {
+    private fun doWeeklySummary(now: ZonedDateTime, view: View) {
         thisWeekSummaryTable = view.findViewById(R.id.fragmentAnalytics_thisWeekSummaryTable)
 
-        //Instant.now().atZone(ZoneId.systemDefault()).with(
+        //now.with(
         //    TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY)
         //).truncatedTo(ChronoUnit.DAYS)
         //    .toInstant()
@@ -636,7 +630,7 @@ class AnalyticsFragment : Fragment() {
         // for this week instead of last 7 days
         //Instant.parse("2021-09-04T05:00:00.00Z").atZone(ZoneId.systemDefault())
         //    .truncatedTo(ChronoUnit.DAYS)
-        Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
+        now.truncatedTo(ChronoUnit.DAYS)
             .minus(6, ChronoUnit.DAYS).toInstant()
             .let { startDay ->
                 viewModel.recentTrips(
@@ -689,11 +683,11 @@ class AnalyticsFragment : Fragment() {
             }
     }
 
-    private fun doPopularRides(view: View) {
+    private fun doPopularRides(now: ZonedDateTime, view: View) {
         val conversionFactor = getUserDistance(requireContext(), 1.0)
         viewModel.popularDistances(
             conversionFactor = conversionFactor,
-            timestamp = Instant.now().atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS)
+            timestamp = now.truncatedTo(ChronoUnit.DAYS)
                 .minus(90, ChronoUnit.DAYS).toInstant().toEpochMilli(),
             bucketSize = 5,
             limit = 3
@@ -759,14 +753,16 @@ class AnalyticsFragment : Fragment() {
             doSpotlightRide(trips.find { !it.inProgress })
         }
 
-        doWeeklySummary(view)
-        doMonthlyTotals(view)
-        doAnnualTotals(view)
+        viewModel.now.observe(viewLifecycleOwner) { now ->
+            doWeeklySummary(now.atZone(ZoneId.systemDefault()), view)
+            doMonthlyTotals(now.atZone(ZoneId.systemDefault()), view)
+            doAnnualTotals(now.atZone(ZoneId.systemDefault()), view)
 
-        doTopWeeks(view)
-        doTopMonths(view)
+            doTopWeeks(view)
+            doTopMonths(view)
 
-        doPopularRides(view)
+            doPopularRides(now.atZone(ZoneId.systemDefault()), view)
+        }
 
         viewModel.longestTrips(3)
             .observe(viewLifecycleOwner) { trips -> doLongestRides(view, trips) }
@@ -778,5 +774,10 @@ class AnalyticsFragment : Fragment() {
         }
 
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.updateNow()
     }
 }
