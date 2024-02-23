@@ -20,6 +20,7 @@ cyclotrack-keystore
 /.idea/assetWizardSettings.xml
 /.idea/deploymentTargetDropDown.xml
 /.idea/androidTestResultsUserPreferences.xml
+/.idea/migrations.xml
 
 
 .DS_Store
