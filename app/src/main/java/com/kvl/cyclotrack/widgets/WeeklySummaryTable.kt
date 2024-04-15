@@ -16,7 +16,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
-import java.util.*
+import java.util.Locale
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -51,6 +51,17 @@ class WeeklySummaryTable : ConstraintLayout {
         defStyle
     )
 
+    private fun reset() {
+        val daysInWeek = DayOfWeek.values().size
+        daySummaries.forEachIndexed { idx, view ->
+            view.dayOfWeek = DayOfWeek.of((firstDayOfWeek.value + idx - 1) % daysInWeek + 1)
+            view.statTopUnits = ""
+            view.statTopValue = ""
+            view.statBottomUnits = ""
+            view.statBottomValue = ""
+            view.alpha = 0.5f
+        }
+    }
 
     override fun onFinishInflate() {
         super.onFinishInflate()
@@ -63,19 +74,11 @@ class WeeklySummaryTable : ConstraintLayout {
         daySummaries.add(findViewById(R.id.day_summary_6))
         daySummaries.add(findViewById(R.id.day_summary_7))
 
-        val daysInWeek = DayOfWeek.values().size
-        daySummaries.forEachIndexed { idx, view ->
-            view.dayOfWeek = DayOfWeek.of((firstDayOfWeek.value + idx - 1) % daysInWeek + 1)
-            view.statTopUnits = ""
-            view.statTopValue = ""
-            view.statBottomUnits = ""
-            view.statBottomValue = ""
-            view.alpha = 0.5f
-        }
-
+        reset()
     }
 
     fun populate(data: Array<DailySummary>) {
+        reset()
         data.sortBy { it.date }
         data.forEachIndexed { idx, day ->
             daySummaries[idx].dayOfWeek = day.date.dayOfWeek
@@ -94,6 +97,7 @@ class WeeklySummaryTable : ConstraintLayout {
     }
 
     fun populate(data: Array<Trip>) {
+        reset()
         data.forEach { trip ->
             Log.d(this.javaClass.simpleName, trip.id.toString())
             daySummaries.find {
