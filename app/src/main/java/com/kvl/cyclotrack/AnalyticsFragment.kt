@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.graphics.Paint
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -210,6 +209,7 @@ class AnalyticsFragment : Fragment() {
         lastPeriodEnd: ZonedDateTime,
         lastPeriodToday: ZonedDateTime
     ) {
+        card.clear()
         viewModel.tripTotals(
             thisPeriodStart
                 .toInstant().toEpochMilli(),

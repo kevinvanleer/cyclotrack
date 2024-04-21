@@ -32,7 +32,10 @@ class AnalyticsCard : CardView {
 
     @Override
     override fun addView(child: View?) {
-        //super.addView(child)
         layout.addView(child)
+    }
+
+    fun clear() {
+        layout.removeAllViews()
     }
 }
