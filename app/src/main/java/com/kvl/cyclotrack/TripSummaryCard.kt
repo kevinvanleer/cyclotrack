@@ -18,7 +18,8 @@ import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.kvl.cyclotrack.util.SystemUtils
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 class TripSummaryCard : CardView {
     private lateinit var defaultBackgroundColor: ColorStateList
@@ -70,6 +71,7 @@ class TripSummaryCard : CardView {
                     R.color.accentColor, null
                 )
             )
+
             else -> if (this::defaultBackgroundColor.isInitialized) setCardBackgroundColor(
                 defaultBackgroundColor
             )
@@ -101,7 +103,7 @@ class TripSummaryCard : CardView {
         }
 
     fun setStartTime(value: Long) {
-        startTime = "at " + SimpleDateFormat("h:mm a").format(Date(value))
+        startTime = "at " + SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(value))
     }
 
     fun setDate(value: Long) {

@@ -168,7 +168,6 @@ class AnalyticsFragment : Fragment() {
                 setDate(trip.timestamp)
                 setTripDetails(trip.duration ?: 0.0, trip.distance ?: 0.0)
                 onResumeMap()
-                clearMap()
                 showSelectionIndicator = false
                 isSelected = false
 
@@ -176,6 +175,7 @@ class AnalyticsFragment : Fragment() {
                     val measurements = viewModel.getTripMeasurements(tripId)
                     val timeStates = viewModel.getTripTimeStates(tripId)
                     val mapData = plotPath(measurements, timeStates)
+                    clearMap()
                     if (mapData.bounds != null) {
                         mapData.paths.forEach { path ->
                             path.startCap(RoundCap())
