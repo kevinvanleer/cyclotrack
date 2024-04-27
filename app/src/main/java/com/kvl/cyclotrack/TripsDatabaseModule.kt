@@ -24,12 +24,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-fun resetFailedGoogleFitSyncs(database: SupportSQLiteDatabase) {
-    database.execSQL("UPDATE Trip SET googleFitSyncStatus = 0 WHERE googleFitSyncStatus = 2")
+fun resetFailedGoogleFitSyncs(db: SupportSQLiteDatabase) {
+    db.execSQL("UPDATE Trip SET googleFitSyncStatus = 0 WHERE googleFitSyncStatus = 2")
 }
 
-fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
-    database.execSQL(
+fun createDefaultBikeTriggers(db: SupportSQLiteDatabase) {
+    db.execSQL(
         """
             CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_insert
             AFTER INSERT ON Bike
@@ -40,7 +40,7 @@ fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
             END
             """
     )
-    database.execSQL(
+    db.execSQL(
         """
             CREATE TRIGGER IF NOT EXISTS trigger_bike_new_default_update
             AFTER UPDATE OF `isDefault` ON Bike
@@ -51,7 +51,7 @@ fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
             END
             """
     )
-    database.execSQL(
+    db.execSQL(
         """
             CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_delete
             AFTER DELETE ON Bike
@@ -62,7 +62,7 @@ fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
             END
             """
     )
-    database.execSQL(
+    db.execSQL(
         """
             CREATE TRIGGER IF NOT EXISTS trigger_bike_remove_default_update
             AFTER UPDATE OF `isDefault` ON Bike
@@ -76,8 +76,8 @@ fun createDefaultBikeTriggers(database: SupportSQLiteDatabase) {
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL(
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
             """CREATE TABLE 
             `TimeState` (
             `tripId` INTEGER NOT NULL,
@@ -87,152 +87,152 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
             FOREIGN KEY(`tripId`) REFERENCES Trip(`id`)
             ON DELETE CASCADE)"""
         )
-        database.execSQL("CREATE INDEX index_TimeState_tripId on TimeState(`tripId`)")
+        db.execSQL("CREATE INDEX index_TimeState_tripId on TimeState(`tripId`)")
     }
 }
 
 val MIGRATION_2_3 = object : Migration(2, 3) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE NO ACTION)")
-        database.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE NO ACTION)")
+        db.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
     }
 }
 
 val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("DROP TABLE `Split`")
-        database.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `totalDistance` REAL NOT NULL, `duration` REAL NOT NULL, `totalDuration` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE NO ACTION)")
-        database.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE `Split`")
+        db.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `totalDistance` REAL NOT NULL, `duration` REAL NOT NULL, `totalDuration` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE NO ACTION)")
+        db.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
     }
 }
 
 val MIGRATION_4_5 = object : Migration(4, 5) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Split` RENAME TO `Split_4_5`")
-        database.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `totalDistance` REAL NOT NULL, `duration` REAL NOT NULL, `totalDuration` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("INSERT INTO `Split` SELECT * FROM `Split_4_5`")
-        database.execSQL("DROP TABLE `Split_4_5`")
-        database.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Split` RENAME TO `Split_4_5`")
+        db.execSQL("CREATE TABLE `Split` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `distance` REAL NOT NULL, `totalDistance` REAL NOT NULL, `duration` REAL NOT NULL, `totalDuration` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("INSERT INTO `Split` SELECT * FROM `Split_4_5`")
+        db.execSQL("DROP TABLE `Split_4_5`")
+        db.execSQL("CREATE INDEX index_Split_tripId on Split(`tripId`)")
     }
 }
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN notes text")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN notes text")
     }
 }
 
 val MIGRATION_6_7 = object : Migration(6, 7) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `heartRate` INTEGER")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `heartRate` INTEGER")
     }
 }
 
 val MIGRATION_7_8 = object : Migration(7, 8) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `speedRevolutions` INTEGER")
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `speedLastEvent` INTEGER")
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `speedRpm` FLOAT")
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `cadenceRevolutions` INTEGER")
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `cadenceLastEvent` INTEGER")
-        database.execSQL("ALTER TABLE `Measurements` ADD COLUMN `cadenceRpm` FLOAT")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `speedRevolutions` INTEGER")
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `speedLastEvent` INTEGER")
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `speedRpm` FLOAT")
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `cadenceRevolutions` INTEGER")
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `cadenceLastEvent` INTEGER")
+        db.execSQL("ALTER TABLE `Measurements` ADD COLUMN `cadenceRpm` FLOAT")
     }
 }
 
 val MIGRATION_8_9 = object : Migration(8, 9) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userWheelCircumference` FLOAT")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `autoWheelCircumference` FLOAT")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userWheelCircumference` FLOAT")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `autoWheelCircumference` FLOAT")
     }
 }
 
 val MIGRATION_9_10 = object : Migration(9, 10) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userSex` INTEGER")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userWeight` FLOAT")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userHeight` FLOAT")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userAge` FLOAT")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userVo2max` FLOAT")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userRestingHeartRate` INTEGER")
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `userMaxHeartRate` INTEGER")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userSex` INTEGER")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userWeight` FLOAT")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userHeight` FLOAT")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userAge` FLOAT")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userVo2max` FLOAT")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userRestingHeartRate` INTEGER")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `userMaxHeartRate` INTEGER")
     }
 }
 
 val MIGRATION_10_11 = object : Migration(10, 11) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` INTEGER NOT NULL, `accelerometerX` FLOAT,`accelerometerY` FLOAT,`accelerometerZ` FLOAT, `accelerometerAverageX` FLOAT,`accelerometerAverageY` FLOAT,`accelerometerAverageZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `gyroscopeAverageX` FLOAT,`gyroscopeAverageY` FLOAT,`gyroscopeAverageZ` FLOAT,`tiltX` FLOAT,`tiltY` FLOAT,`tiltZ` FLOAT,`id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` INTEGER NOT NULL, `accelerometerX` FLOAT,`accelerometerY` FLOAT,`accelerometerZ` FLOAT, `accelerometerAverageX` FLOAT,`accelerometerAverageY` FLOAT,`accelerometerAverageZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `gyroscopeAverageX` FLOAT,`gyroscopeAverageY` FLOAT,`gyroscopeAverageZ` FLOAT,`tiltX` FLOAT,`tiltY` FLOAT,`tiltZ` FLOAT,`id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
     }
 }
 
 val MIGRATION_11_12 = object : Migration(11, 12) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("DROP TABLE `OnboardSensors`")
-        database.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` integer not null, `gravityX` FLOAT,`gravityY` FLOAT,`gravityZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE `OnboardSensors`")
+        db.execSQL("CREATE TABLE `OnboardSensors` (`tripId` INTEGER NOT NULL,  `timestamp` integer not null, `gravityX` FLOAT,`gravityY` FLOAT,`gravityZ` FLOAT, `gyroscopeX` FLOAT,`gyroscopeY` FLOAT,`gyroscopeZ` FLOAT, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX index_OnboardSensors_tripId on OnboardSensors(`tripId`)")
     }
 }
 
 val MIGRATION_12_13 = object : Migration(12, 13) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE IF NOT EXISTS `measurements_schema12_to_13`(`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `heartRate` INTEGER, `cadenceRevolutions` INTEGER, `cadenceLastEvent` INTEGER, `cadenceRpm` REAL, `speedRevolutions` INTEGER, `speedLastEvent` INTEGER, `speedRpm` REAL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("INSERT INTO `measurements_schema12_to_13`(tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, heartRate, cadenceRevolutions, cadenceLastEvent, cadenceRpm, speedRevolutions, speedLastEvent, speedRpm, id) SELECT tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMetersPerSecond, heartRate, cadenceRevolutions, cadenceLastEvent, cadenceRpm, speedRevolutions, speedLastEvent, speedRpm, id FROM Measurements")
-        database.execSQL("DROP TABLE `Measurements`")
-        database.execSQL("ALTER TABLE `measurements_schema12_to_13` RENAME TO `Measurements`")
-        database.execSQL("CREATE INDEX index_Measurements_tripId on Measurements(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `measurements_schema12_to_13`(`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `heartRate` INTEGER, `cadenceRevolutions` INTEGER, `cadenceLastEvent` INTEGER, `cadenceRpm` REAL, `speedRevolutions` INTEGER, `speedLastEvent` INTEGER, `speedRpm` REAL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("INSERT INTO `measurements_schema12_to_13`(tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, heartRate, cadenceRevolutions, cadenceLastEvent, cadenceRpm, speedRevolutions, speedLastEvent, speedRpm, id) SELECT tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMetersPerSecond, heartRate, cadenceRevolutions, cadenceLastEvent, cadenceRpm, speedRevolutions, speedLastEvent, speedRpm, id FROM Measurements")
+        db.execSQL("DROP TABLE `Measurements`")
+        db.execSQL("ALTER TABLE `measurements_schema12_to_13` RENAME TO `Measurements`")
+        db.execSQL("CREATE INDEX index_Measurements_tripId on Measurements(`tripId`)")
     }
 }
 
 val MIGRATION_13_14 = object : Migration(13, 14) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `TimeState` ADD COLUMN `originalTripId` INTEGER")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `TimeState` ADD COLUMN `originalTripId` INTEGER")
     }
 }
 
 val MIGRATION_14_15 = object : Migration(14, 15) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("UPDATE Trip SET inProgress = 0 WHERE inProgress = 1")
-        database.execSQL("INSERT INTO `TimeState` (`tripId`, `state`, `timestamp`, `originalTripId`) SELECT `tripId`, 3, `timestamp`+1, `originalTripId` FROM TimeState GROUP BY `tripId` HAVING max(timestamp) and `state` != 3")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("UPDATE Trip SET inProgress = 0 WHERE inProgress = 1")
+        db.execSQL("INSERT INTO `TimeState` (`tripId`, `state`, `timestamp`, `originalTripId`) SELECT `tripId`, 3, `timestamp`+1, `originalTripId` FROM TimeState GROUP BY `tripId` HAVING max(timestamp) and `state` != 3")
     }
 }
 
 val MIGRATION_15_16 = object : Migration(15, 16) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `googleFitSyncStatus` INTEGER NOT NULL DEFAULT 0")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `googleFitSyncStatus` INTEGER NOT NULL DEFAULT 0")
     }
 }
 
 val MIGRATION_16_17 = object : Migration(16, 17) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        resetFailedGoogleFitSyncs(database)
+    override fun migrate(db: SupportSQLiteDatabase) {
+        resetFailedGoogleFitSyncs(db)
     }
 
 }
 
 val MIGRATION_17_18 = object : Migration(17, 18) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `OnboardSensors` ADD COLUMN `pressure` FLOAT")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `OnboardSensors` ADD COLUMN `pressure` FLOAT")
     }
 }
 
 val MIGRATION_18_19 = object : Migration(18, 19) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE IF NOT EXISTS `Bike` (`name` TEXT, `dateOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `isDefault` INTEGER NOT NULL DEFAULT 0, `id` INTEGER PRIMARY KEY AUTOINCREMENT)")
-        createDefaultBikeTriggers(database)
-        database.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `Bike` (`name` TEXT, `dateOfPurchase` INTEGER, `weight` REAL, `wheelCircumference` REAL, `isDefault` INTEGER NOT NULL DEFAULT 0, `id` INTEGER PRIMARY KEY AUTOINCREMENT)")
+        createDefaultBikeTriggers(db)
+        db.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
             put("weight", getBikeMassOrNull(CyclotrackApp.instance))
             put("wheelCircumference", getUserCircumferenceOrNull(CyclotrackApp.instance))
             put("isDefault", 1)
         })
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `bikeId` INTEGER NOT NULL DEFAULT 1 REFERENCES Bike(id) ON DELETE SET DEFAULT")
-        database.execSQL("CREATE INDEX index_Trip_bikeId on Trip(`bikeId`)")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `bikeId` INTEGER NOT NULL DEFAULT 1 REFERENCES Bike(id) ON DELETE SET DEFAULT")
+        db.execSQL("CREATE INDEX index_Trip_bikeId on Trip(`bikeId`)")
     }
 }
 
 val MIGRATION_19_20 = object : Migration(19, 20) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE IF NOT EXISTS `ExternalSensor` (`name` TEXT, `address` TEXT NOT NULL, `features` INTEGER, `bikeId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`bikeId`) REFERENCES Bike(`id`) ON DELETE SET DEFAULT)")
-        val bikeId = database.query("SELECT id FROM Bike WHERE isDefault = 1").let {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `ExternalSensor` (`name` TEXT, `address` TEXT NOT NULL, `features` INTEGER, `bikeId` INTEGER, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`bikeId`) REFERENCES Bike(`id`) ON DELETE SET DEFAULT)")
+        val bikeId = db.query("SELECT id FROM Bike WHERE isDefault = 1").let {
             it.isBeforeFirst && it.moveToNext()
             when (it.count) {
                 1 -> it.getLong(0)
@@ -246,7 +246,7 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
             )?.forEach {
                 try {
                     Gson().fromJson(it, ExternalSensor::class.java).let {
-                        database.insert(
+                        db.insert(
                             "ExternalSensor",
                             OnConflictStrategy.ABORT,
                             ContentValues().apply {
@@ -262,55 +262,55 @@ val MIGRATION_19_20 = object : Migration(19, 20) {
             }
         }
 
-        database.execSQL("CREATE INDEX index_ExternalSensor_bikeId on ExternalSensor(`bikeId`)")
+        db.execSQL("CREATE INDEX index_ExternalSensor_bikeId on ExternalSensor(`bikeId`)")
     }
 }
 
 val MIGRATION_20_21 = object : Migration(20, 21) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        resetFailedGoogleFitSyncs(database)
+    override fun migrate(db: SupportSQLiteDatabase) {
+        resetFailedGoogleFitSyncs(db)
     }
 }
 
 val MIGRATION_21_22 = object : Migration(21, 22) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE `Weather` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sunrise` INTEGER NOT NULL, `sunset` INTEGER NOT NULL, `temperature` REAL NOT NULL, `feelsLike` REAL NOT NULL, `pressure` INTEGER NOT NULL, `humidity` INTEGER NOT NULL, dewPoint REAL NOT NULL, `uvIndex` REAL NOT NULL, `clouds` INTEGER NOT NULL, `visibility` INTEGER NOT NULL, `windSpeed` REAL NOT NULL, windDirection INTEGER NOT NULL, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("CREATE INDEX index_Weather_tripId on Weather(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE `Weather` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sunrise` INTEGER NOT NULL, `sunset` INTEGER NOT NULL, `temperature` REAL NOT NULL, `feelsLike` REAL NOT NULL, `pressure` INTEGER NOT NULL, `humidity` INTEGER NOT NULL, dewPoint REAL NOT NULL, `uvIndex` REAL NOT NULL, `clouds` INTEGER NOT NULL, `visibility` INTEGER NOT NULL, `windSpeed` REAL NOT NULL, windDirection INTEGER NOT NULL, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX index_Weather_tripId on Weather(`tripId`)")
     }
 }
 
 val MIGRATION_22_23 = object : Migration(22, 23) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `Trip` ADD COLUMN `stravaSyncStatus` INTEGER NOT NULL DEFAULT 0")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `stravaSyncStatus` INTEGER NOT NULL DEFAULT 0")
     }
 }
 
 val MIGRATION_23_24 = object : Migration(23, 24) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE `CadenceSpeedMeasurement` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sensorType` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, lastEvent INTEGER NOT NULL, rpm REAL, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("CREATE INDEX index_CadenceSpeedMeasurement_tripId on CadenceSpeedMeasurement(`tripId`)")
-        database.execSQL("CREATE TABLE `HeartRateMeasurement` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `heartRate` INTEGER NOT NULL, energyExpended INTEGER, rrIntervals TEXT, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("CREATE INDEX index_HeartRateMeasurement_tripId on HeartRateMeasurement(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE `CadenceSpeedMeasurement` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sensorType` INTEGER NOT NULL, `revolutions` INTEGER NOT NULL, lastEvent INTEGER NOT NULL, rpm REAL, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX index_CadenceSpeedMeasurement_tripId on CadenceSpeedMeasurement(`tripId`)")
+        db.execSQL("CREATE TABLE `HeartRateMeasurement` (`id` INTEGER PRIMARY KEY, `tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `heartRate` INTEGER NOT NULL, energyExpended INTEGER, rrIntervals TEXT, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("CREATE INDEX index_HeartRateMeasurement_tripId on HeartRateMeasurement(`tripId`)")
     }
 }
 
 val MIGRATION_24_23 = object : Migration(24, 23) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("DROP TABLE `CadenceSpeedMeasurement`")
-        database.execSQL("DROP TABLE `HeartRateMeasurement`")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE `CadenceSpeedMeasurement`")
+        db.execSQL("DROP TABLE `HeartRateMeasurement`")
     }
 }
 
 val MIGRATION_25_24 = object : Migration(25, 24) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("DELETE FROM `CadenceSpeedMeasurement`")
-        database.execSQL("DELETE FROM `HeartRateMeasurement`")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DELETE FROM `CadenceSpeedMeasurement`")
+        db.execSQL("DELETE FROM `HeartRateMeasurement`")
     }
 }
 
 val MIGRATION_24_25 = object : Migration(24, 25) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL(
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
             """INSERT INTO `HeartRateMeasurement`
                     (tripId,
                     timestamp,
@@ -322,7 +322,7 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
                 FROM Measurements
                 WHERE heartRate IS NOT NULL"""
         )
-        database.execSQL(
+        db.execSQL(
             """INSERT INTO `CadenceSpeedMeasurement`
                     (tripId,
                     timestamp,
@@ -341,7 +341,7 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
                 WHERE cadenceRevolutions IS NOT NULL""",
             arrayOf(SensorType.CADENCE.value)
         )
-        database.execSQL(
+        db.execSQL(
             """INSERT INTO `CadenceSpeedMeasurement`
                     (tripId,
                     timestamp,
@@ -364,24 +364,24 @@ val MIGRATION_24_25 = object : Migration(24, 25) {
 }
 
 val MIGRATION_25_26 = object : Migration(25, 26) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("CREATE TABLE IF NOT EXISTS `measurements_schema25_to_26`(`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
-        database.execSQL("INSERT INTO `measurements_schema25_to_26`(tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, id) SELECT tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, id FROM Measurements")
-        database.execSQL("DROP TABLE `Measurements`")
-        database.execSQL("ALTER TABLE `measurements_schema25_to_26` RENAME TO `Measurements`")
-        database.execSQL("CREATE INDEX index_Measurements_tripId on Measurements(`tripId`)")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `measurements_schema25_to_26`(`tripId` INTEGER NOT NULL, `accuracy` REAL NOT NULL, `altitude` REAL NOT NULL, `bearing` REAL NOT NULL, `elapsedRealtimeNanos` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `speed` REAL NOT NULL, `time` INTEGER NOT NULL, `bearingAccuracyDegrees` REAL NOT NULL, `elapsedRealtimeUncertaintyNanos` REAL NOT NULL, `speedAccuracyMetersPerSecond` REAL NOT NULL, `verticalAccuracyMeters` REAL NOT NULL, `id` INTEGER PRIMARY KEY, FOREIGN KEY(`tripId`) REFERENCES Trip(`id`) ON DELETE CASCADE)")
+        db.execSQL("INSERT INTO `measurements_schema25_to_26`(tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, id) SELECT tripId, accuracy, altitude, bearing, elapsedRealtimeNanos, latitude, longitude, speed, time, bearingAccuracyDegrees, elapsedRealtimeUncertaintyNanos, speedAccuracyMetersPerSecond, verticalAccuracyMeters, id FROM Measurements")
+        db.execSQL("DROP TABLE `Measurements`")
+        db.execSQL("ALTER TABLE `measurements_schema25_to_26` RENAME TO `Measurements`")
+        db.execSQL("CREATE INDEX index_Measurements_tripId on Measurements(`tripId`)")
     }
 }
 
 val MIGRATION_26_27 = object : Migration(26, 27) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("ALTER TABLE `TimeState` ADD COLUMN auto INTEGER NOT NULL DEFAULT 0")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `TimeState` ADD COLUMN auto INTEGER NOT NULL DEFAULT 0")
     }
 }
 
 val MIGRATION_27_28 = object : Migration(27, 28) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL(
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
             """CREATE TABLE 
             `Export` (
             `timestamp` INTEGER NOT NULL,
@@ -393,13 +393,13 @@ val MIGRATION_27_28 = object : Migration(27, 28) {
             FOREIGN KEY(`tripId`) REFERENCES Trip(`id`)
             ON DELETE NO ACTION)"""
         )
-        database.execSQL("CREATE INDEX index_Export_tripId on Export(`tripId`)")
+        db.execSQL("CREATE INDEX index_Export_tripId on Export(`tripId`)")
     }
 }
 
 val MIGRATION_28_27 = object : Migration(28, 27) {
-    override fun migrate(database: SupportSQLiteDatabase) {
-        database.execSQL("DROP TABLE Export")
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("DROP TABLE Export")
     }
 }
 
@@ -446,13 +446,13 @@ object TripsDatabaseModule {
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
-                    createDefaultBikeTriggers(db);
+                    createDefaultBikeTriggers(db)
                 }
 
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
 
-                    createDefaultBikeTriggers(db);
+                    createDefaultBikeTriggers(db)
                     db.insert("Bike", OnConflictStrategy.ABORT, ContentValues().apply {
                         put("weight", getBikeMassOrNull(appContext))
                         put("wheelCircumference", getUserCircumferenceOrNull(appContext))
