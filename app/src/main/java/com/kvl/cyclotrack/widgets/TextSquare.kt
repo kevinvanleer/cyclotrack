@@ -128,7 +128,7 @@ open class TextSquare : ConstraintLayout {
         }
     }
 
-    override fun onDraw(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
         //canvas?.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
@@ -146,15 +146,15 @@ open class TextSquare : ConstraintLayout {
             }.let { primaryWidth ->
                 val offset = (viewWidth - contentWidth) / 2
                 textSize = viewHeight
-                canvas?.drawText(primary, offset, viewHeight, this)
+                canvas.drawText(primary, offset, viewHeight, this)
                 textSize = spToPx(secondaryHeightSp)
-                canvas?.drawText(
+                canvas.drawText(
                     secondaryTop,
                     offset + primaryWidth + kerningPx,
                     spToPx((primaryHeightSp / 2f) + 2.5f),
                     this
                 )
-                canvas?.drawText(
+                canvas.drawText(
                     secondaryBottom,
                     offset + primaryWidth + kerningPx,
                     viewHeight,
