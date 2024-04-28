@@ -31,7 +31,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.logEvent
+import com.google.firebase.analytics.logEvent
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -98,6 +98,7 @@ class DiscoverSensorFragment : Fragment() {
                     }.create()
                 }.show()
             }
+
             else -> {
                 requestLocationPermissions.launch(
                     arrayOf(
@@ -143,6 +144,7 @@ class DiscoverSensorFragment : Fragment() {
                     }
                 }
             }
+
             false -> {
                 Log.d(logTag, "Removing device from discovered list")
                 viewModel.unlinkDevice(device)
@@ -254,6 +256,7 @@ class DiscoverSensorFragment : Fragment() {
                             Log.d(logTag, "Detected Bluetooth ON")
                             initializeBluetoothScan()
                         }
+
                         BluetoothAdapter.STATE_OFF -> {
                             Log.d(logTag, "Detected Bluetooth OFF")
                             disableBluetoothScan()
@@ -271,6 +274,7 @@ class DiscoverSensorFragment : Fragment() {
                 requireContext(),
                 Manifest.permission.BLUETOOTH_CONNECT
             ) -> startBluetoothScan()
+
             else -> {
                 Log.w(logTag, "No bluetooth scan permission. Requesting!")
                 disableBluetoothScan()
@@ -289,6 +293,7 @@ class DiscoverSensorFragment : Fragment() {
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) -> startBluetoothScan()
+
             else -> {
                 Log.w(logTag, "No bluetooth scan permission. Requesting!")
                 disableBluetoothScan()
@@ -348,6 +353,7 @@ class DiscoverSensorFragment : Fragment() {
             text = when (viewModel.bikeName.lowercase()) {
                 "body" ->
                     getString(R.string.body_sensor_linking_instructions)
+
                 else ->
                     getString(R.string.bike_sensor_linking_instructions)
 
