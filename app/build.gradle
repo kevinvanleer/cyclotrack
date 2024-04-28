@@ -3,14 +3,15 @@ import org.ajoberstar.grgit.Grgit
 plugins {
     id 'com.android.application'
     id 'com.google.dagger.hilt.android'
-}
 
-apply plugin: "kotlin-android"
-apply plugin: "kotlin-kapt"
-apply plugin: "androidx.navigation.safeargs.kotlin"
-apply plugin: "com.google.gms.google-services"
-apply plugin: "com.google.firebase.crashlytics"
-apply plugin: "org.jetbrains.kotlin.android"
+    id "kotlin-android"
+    id "kotlin-kapt"
+    id "androidx.navigation.safeargs.kotlin"
+    id "com.google.gms.google-services"
+    id "com.google.firebase.crashlytics"
+    id "org.jetbrains.kotlin.android"
+
+}
 
 def homePath = System.properties["user.home"]
 def keystorePropertiesFile = rootProject.file("keystore.properties")
