@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.kvl.cyclotrack.data.ExportRepository
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,6 +22,7 @@ class DeleteExportBroadcastReceiver : BroadcastReceiver() {
         Log.d("DELETE_EXPORT_RCVR", "Received broadcast")
         Log.d("DELETE_EXPORT_RCVR", "${intent?.data?.toString()}")
         val pendingResult = goAsync()
+        @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch {
             try {
                 exportRepository.load().let { exports ->
