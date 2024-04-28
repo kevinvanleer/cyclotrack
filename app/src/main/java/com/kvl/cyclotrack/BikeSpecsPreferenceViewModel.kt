@@ -9,7 +9,6 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -92,8 +91,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         bikeMass = stringInitValue
     }
 
+    @get:Bindable
     var name: String? = stringInitValue
-        @get:Bindable
         get() = field.takeIf { it != stringInitValue }
             ?: bikes.value?.find { bike -> bike.id == currentBikeId }?.name ?: ""
         set(newValue) {
@@ -110,8 +109,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
             field = newValue
         }
 
+    @get:Bindable
     var circumference: String = stringInitValue
-        @get:Bindable
         get() = field.takeIf { it != stringInitValue }
             ?: bikes.value?.find { bike -> bike.id == currentBikeId }?.wheelCircumference.toString()
                 .takeUnless { it == "null" } ?: ""
@@ -146,8 +145,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         }
     }
 
+    @get:Bindable
     var bikeMass: String? = stringInitValue
-        @get:Bindable
         get() = field.takeIf { it != stringInitValue }
             ?: bikes.value?.find { bike -> bike.id == currentBikeId }?.weight.toString()
                 .takeUnless { it == "null" } ?: ""
@@ -186,8 +185,8 @@ class BikeSpecsPreferenceViewModel @Inject constructor(
         }
     }
 
+    @get:Bindable
     var purchaseDate: String = "0000-00-00"
-        @get:Bindable
         get() =
             try {
                 bikes.value?.find { bike -> bike.id == currentBikeId }?.dateOfPurchase?.let {
