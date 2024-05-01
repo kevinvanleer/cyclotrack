@@ -163,9 +163,9 @@
     <string name="autopause_label">AUTO-PAUSE</string>
     <string name="preference_key_user_current_version">preference_key_user_current_version</string>
     <string name="whats_new_message">
-        Now you can easily see how your monthly and yearly progress is tracking stats page. The
-        stats page now graphs the current progress for the month and year with the prior period.
-        Graphs on the ride details page have also been restyled.
+        Fixed bug causing auto-pause after ride start (BLE only).
+        \n\nPrevent start button from temporarily being displayed when reentering the dashboard.
+        \n\nClear stale data from analytics and statistics views.
     </string>
     <string name="preferences_dashboard_safe_zone_top_margin">preference_dashboard_safe_zone_top_margin</string>
     <string name="preferences_dashboard_safe_zone_bottom_margin">preference_dashboard_safe_zone_bottom_margin</string>
