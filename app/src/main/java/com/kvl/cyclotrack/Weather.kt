@@ -33,13 +33,72 @@ data class CurrentWeatherConditions(
 )
 
 @Keep
-data class WeatherResponse(
+data class OneCall25WeatherResponse(
     val lat: Double,
     val lon: Double,
     val timezone: String,
     val timezone_offset: Int,
     val current: CurrentWeatherConditions
 )
+
+@Keep
+data class Coordinate(
+    val lat: Double,
+    val lon: Double,
+)
+
+@Keep
+data class CurrentConditions(
+    val temp: Double,
+    val feels_like: Double,
+    val temp_min: Double,
+    val temp_max: Double,
+    val pressure: Int,
+    val humidity: Int,
+    val sea_level: Int?,
+    val grnd_level: Int?,
+)
+
+@Keep
+data class WindConditions(
+    val speed: Double,
+    val deg: Int,
+    val gust: Double?,
+)
+
+@Keep
+data class CloudConditions(
+    val all: Int,
+)
+
+@Keep
+data class Sys(
+    val type: Int?,
+    val id: Int?,
+    val message: String?,
+    val country: String?,
+    val sunrise: Int,
+    val sunset: Int,
+)
+
+@Keep
+data class CurrentWeatherResponse25(
+    val coord: Coordinate,
+    val weather: Array<WeatherOverview>,
+    val base: String,
+    val main: CurrentConditions,
+    val visibility: Int,
+    val wind: WindConditions,
+    val clouds: CloudConditions,
+    val dt: Int,
+    val sys: Sys,
+    val timezone: Int,
+    val id: Long,
+    val name: String,
+    val cod: Int,
+)
+
+typealias WeatherResponse = CurrentWeatherResponse25
 
 @Entity(
     foreignKeys = [ForeignKey(
@@ -83,5 +142,22 @@ data class Weather(
         visibility = current.visibility,
         windSpeed = current.wind_speed,
         windDirection = current.wind_deg,
+    )
+
+    constructor(current: WeatherResponse, tripId: Long) : this(
+        tripId = tripId,
+        timestamp = current.dt,
+        sunrise = current.sys.sunrise,
+        sunset = current.sys.sunset,
+        temperature = current.main.temp,
+        feelsLike = current.main.feels_like,
+        pressure = current.main.pressure,
+        humidity = current.main.humidity,
+        dewPoint = -1.0,
+        uvIndex = -1.0,
+        clouds = current.clouds.all,
+        visibility = current.visibility,
+        windSpeed = current.wind.speed,
+        windDirection = current.wind.deg,
     )
 }

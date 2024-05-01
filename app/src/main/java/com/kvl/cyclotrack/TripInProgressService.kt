@@ -349,7 +349,8 @@ class TripInProgressService @Inject constructor() :
                 .adapter(WeatherResponse::class.java)
             val devAppId = getString(R.string.openweather_api_key)
             val weatherUrl =
-                "https://api.openweathermap.org/data/2.5/onecall?lat=$lat&lon=$lng&exclude=minutely,hourly,daily&appid=$devAppId"
+                //"https://api.openweathermap.org/data/2.5/onecall?lat=$lat&lon=$lng&exclude=minutely,hourly,daily&appid=$devAppId"
+                "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lng&appid=$devAppId"
             OkHttpClient().let { client ->
                 Request.Builder()
                     .url(weatherUrl)
@@ -358,11 +359,13 @@ class TripInProgressService @Inject constructor() :
                         lifecycleScope.launch(Dispatchers.IO) {
                             try {
                                 client.newCall(request).execute().let { response ->
+                                    Log.d(logTag, "Received response from OpenWeather")
+                                    Log.d(logTag, response.body.toString())
                                     if (response.isSuccessful) {
                                         try {
                                             val weatherResponse = response.body?.source()
                                                 ?.let { jsonAdapter.nullSafe().fromJson(it) }
-                                            weatherResponse?.current?.let {
+                                            weatherResponse?.let {
                                                 weatherRepository.recordWeather(
                                                     it,
                                                     tripId
