@@ -155,13 +155,23 @@ class TripInProgressFragment :
         hideStop()
     }
 
-    private fun slideResumeOut() {
-        resumeButton.animate().setDuration(100).translationX(resumeButton.width.toFloat())
-    }
+    private fun slidePauseDown() =
+        pauseButton.animate().setDuration(100).translationY(pauseButton.height.toFloat())
 
-    private fun slideStopOut() {
+    private fun slidePauseUp() =
+        pauseButton.animate().setDuration(100).translationY(0f)
+
+    private fun slideResumeOut() =
+        resumeButton.animate().setDuration(100).translationX(resumeButton.width.toFloat())
+
+    private fun slideStopOut() =
         stopButton.animate().setDuration(100).translationX(-stopButton.width.toFloat())
-    }
+
+    private fun slideResumeIn() =
+        resumeButton.animate().setDuration(100).translationX(0f)
+
+    private fun slideStopIn() =
+        stopButton.animate().setDuration(100).translationX(0f)
 
     private fun slideOutResumeStop() {
         slideResumeOut()
@@ -169,8 +179,8 @@ class TripInProgressFragment :
     }
 
     private fun slideInResumeStop() {
-        resumeButton.animate().setDuration(100).translationX(0f)
-        stopButton.animate().setDuration(100).translationX(0f)
+        slideResumeIn()
+        slideStopIn()
     }
 
     private fun turnOnGps() {
@@ -257,35 +267,41 @@ class TripInProgressFragment :
         }
     }
 
+    private fun setTimeStateButtonState(newState: TimeState) {
+        val tripId = newState.tripId
+        Log.d(logTag, "Observed currentTimeState change: ${newState.state}")
+        pauseButton.setOnClickListener(pauseTripListener(tripId))
+        resumeButton.setOnClickListener(resumeTripListener(tripId))
+        stopButton.setOnClickListener(stopTripListener(tripId))
+        autoPauseChip.visibility = GONE
+        when (newState.state) {
+            TimeStateEnum.START, TimeStateEnum.RESUME -> {
+                view?.doOnPreDraw { hideResumeStop() }
+                view?.doOnPreDraw { hidePause() }
+                pauseButton.text = getString(R.string.pause_label)
+            }
+
+            TimeStateEnum.PAUSE -> {
+                view?.doOnPreDraw { hidePause() }
+                autoPauseChip.visibility = when (newState.auto) {
+                    true -> VISIBLE
+                    else -> GONE
+                }
+                slideInResumeStop()
+            }
+
+            else -> {
+                pauseButton.setOnClickListener(startTripListener)
+                pauseButton.text = getString(R.string.start_label)
+                slidePauseUp()
+            }
+        }
+    }
+
     private fun handleTimeStateChanges(tripId: Long) =
         viewModel.currentTimeState(tripId).observe(viewLifecycleOwner) { currentState ->
             currentState?.let {
-                Log.d(logTag, "Observed currentTimeState change: ${currentState.state}")
-                pauseButton.setOnClickListener(pauseTripListener(tripId))
-                resumeButton.setOnClickListener(resumeTripListener(tripId))
-                stopButton.setOnClickListener(stopTripListener(tripId))
-                autoPauseChip.visibility = GONE
-                when (currentState.state) {
-                    TimeStateEnum.START, TimeStateEnum.RESUME -> {
-                        view?.doOnPreDraw { hideResumeStop() }
-                        view?.doOnPreDraw { hidePause() }
-                        pauseButton.text = getString(R.string.pause_label)
-                    }
-
-                    TimeStateEnum.PAUSE -> {
-                        view?.doOnPreDraw { hidePause() }
-                        autoPauseChip.visibility = when (currentState.auto) {
-                            true -> VISIBLE
-                            else -> GONE
-                        }
-                        slideInResumeStop()
-                    }
-
-                    else -> {
-                        pauseButton.setOnClickListener(startTripListener)
-                        pauseButton.text = getString(R.string.start_label)
-                    }
-                }
+                setTimeStateButtonState(it)
             }
         }
 
@@ -709,8 +725,6 @@ class TripInProgressFragment :
         Log.d(logTag, "Called onResume: currentState = ${viewModel.currentState}")
 
         view?.doOnPreDraw { hideResumeStop() }
-        pauseButton.setOnClickListener(startTripListener)
-        pauseButton.text = getString(R.string.start_label)
 
         try {
             //arguments?.getLong("tripId", args.tripId ?: -1)
@@ -719,14 +733,19 @@ class TripInProgressFragment :
             }
 
             when (val tripId = viewModel.tripId) {
-                null -> requireActivity().startService(Intent(
-                    requireContext(),
-                    TripInProgressService::class.java
-                ).apply {
-                    this.action = getString(R.string.action_initialize_trip_service)
-                })
+                null -> {
+                    requireActivity().startService(Intent(
+                        requireContext(),
+                        TripInProgressService::class.java
+                    ).apply {
+                        this.action = getString(R.string.action_initialize_trip_service)
+                    })
+                    pauseButton.setOnClickListener(startTripListener)
+                    pauseButton.text = getString(R.string.start_label)
+                }
 
                 else -> {
+                    view?.doOnPreDraw { hidePause() }
                     Log.d(logTag, "Received trip ID argument $tripId")
                     Log.d(logTag, "Resuming trip $tripId")
                     initializeAfterTripCreated(tripId)
@@ -739,6 +758,10 @@ class TripInProgressFragment :
                             this.action = getString(R.string.action_start_trip_service)
                             this.putExtra("tripId", tripId)
                         })
+
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        setTimeStateButtonState(viewModel.getCurrentTimeState(tripId))
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -820,7 +843,7 @@ class TripInProgressFragment :
 
     private val hidePauseHandler = android.os.Handler(Looper.getMainLooper())
     private val hidePauseCallback = Runnable {
-        pauseButton.animate().setDuration(100).translationY(pauseButton.height.toFloat())
+        slidePauseDown()
     }
 
     private fun isPauseButtonHidden() = pauseButton.translationY != 0f
@@ -828,7 +851,7 @@ class TripInProgressFragment :
     private fun handleScreenTouchClick(): Boolean {
         Log.d(logTag, "handleTouchClick")
         if (isPauseButtonHidden()) {
-            pauseButton.animate().setDuration(100).translationY(0f)
+            slidePauseUp()
             hidePauseHandler.postDelayed(
                 hidePauseCallback, 5000
             )

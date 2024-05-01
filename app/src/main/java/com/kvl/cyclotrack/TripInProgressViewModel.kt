@@ -44,6 +44,11 @@ class TripInProgressViewModel @Inject constructor(
     }
 
     var currentState: TimeStateEnum = TimeStateEnum.STOP
+    suspend fun getCurrentTimeState(tripId: Long) =
+        timeStateRepository.getLatest(tripId).let { newTimeState ->
+            currentState = newTimeState.state
+            newTimeState
+        }
 
     private var accumulatedDuration = 0.0
     private var startTime = Double.NaN
