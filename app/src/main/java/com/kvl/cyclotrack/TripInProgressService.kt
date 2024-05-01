@@ -1,16 +1,22 @@
 package com.kvl.cyclotrack
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
 import android.database.sqlite.SQLiteConstraintException
 import android.graphics.Color
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.edit
 import androidx.lifecycle.LifecycleService
@@ -708,17 +714,46 @@ class TripInProgressService @Inject constructor() :
             setArguments(Bundle().apply { putLong("tripId", tripId) })
         }.createPendingIntent()
 
-        startForeground(tripId.toInt(),
-            NotificationCompat.Builder(this, channelId).apply {
-                priority = NotificationCompat.PRIORITY_MAX
-                setOngoing(true)
-                setShowWhen(false)
-                setContentTitle(getText(R.string.notification_trip_in_progress_title))
-                setContentText(getText(R.string.notification_export_trip_in_progress_message))
-                setSmallIcon(R.drawable.ic_cyclotrack_notification)
-                setContentIntent(pendingIntent)
-            }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT })
+        val notification = NotificationCompat.Builder(this, channelId).apply {
+            priority = NotificationCompat.PRIORITY_MAX
+            setOngoing(true)
+            setShowWhen(false)
+            setContentTitle(getText(R.string.notification_trip_in_progress_title))
+            setContentText(getText(R.string.notification_export_trip_in_progress_message))
+            setSmallIcon(R.drawable.ic_cyclotrack_notification)
+            setContentIntent(pendingIntent)
+        }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT }
 
+        val serviceTypes = when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
+                FOREGROUND_SERVICE_TYPE_LOCATION or
+                        when (PackageManager.PERMISSION_GRANTED) {
+                            ActivityCompat.checkSelfPermission(
+                                applicationContext,
+                                Manifest.permission.BLUETOOTH_CONNECT
+                            ) -> FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
+
+                            else -> 0
+                        }
+            }
+
+            else -> {
+                0
+            }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                tripId.toInt(),
+                notification,
+                serviceTypes
+            )
+        } else {
+            startForeground(
+                tripId.toInt(),
+                notification
+            )
+        }
         running = true
     }
 

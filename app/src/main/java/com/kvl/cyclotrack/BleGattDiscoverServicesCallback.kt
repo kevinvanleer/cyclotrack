@@ -1,16 +1,20 @@
 package com.kvl.cyclotrack
 
 import android.annotation.SuppressLint
-import android.bluetooth.*
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
+import android.bluetooth.BluetoothProfile
 import android.os.Build
 import android.util.Log
 import com.kvl.cyclotrack.util.getIntValue
-import java.util.*
+import java.util.UUID
 
 
-fun getGattUuid(uuid: String): UUID {
+fun getGattUuid(id: String): UUID {
     val gattUuidSuffix = "0000-1000-8000-00805f9b34fb"
-    return UUID.fromString("$uuid-$gattUuidSuffix")
+    return UUID.fromString("$id-$gattUuidSuffix")
 }
 
 const val updateNotificationDescriptorId = "2902"
@@ -145,6 +149,7 @@ fun getGattDiscoverServicesCallback(
                         Log.w(logTag, "Bluetooth permissions have not been granted", e)
                     }
                 }
+
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.i(logTag, "Disconnected ${gatt.device.address} from GATT server.")
                 }
@@ -198,6 +203,7 @@ fun getGattDiscoverServicesCallback(
                             this, cadenceSpeedServiceUuid,
                             cscFeatureCharacteristicUuid
                         )
+
                     else -> {
                         onGetFeatures(this, bitmap)
                     }
@@ -223,6 +229,7 @@ fun getGattDiscoverServicesCallback(
                             gatt,
                             ExternalSensorFeatures().SPEED
                         )
+
                         (sensorType and cadenceId > 0) -> onGetFeatures(
                             gatt,
                             ExternalSensorFeatures().CADENCE
@@ -249,6 +256,7 @@ fun getGattDiscoverServicesCallback(
                             gatt,
                             ExternalSensorFeatures().SPEED
                         )
+
                         (sensorType and cadenceId > 0) -> onGetFeatures(
                             gatt,
                             ExternalSensorFeatures().CADENCE
@@ -283,6 +291,7 @@ fun getGattDiscoverServicesCallback(
                                     gatt,
                                     ExternalSensorFeatures().SPEED
                                 )
+
                                 (sensorType and cadenceId > 0) -> onGetFeatures(
                                     gatt,
                                     ExternalSensorFeatures().CADENCE
@@ -315,6 +324,7 @@ fun getGattDiscoverServicesCallback(
                                     gatt,
                                     ExternalSensorFeatures().SPEED
                                 )
+
                                 (sensorType and cadenceId > 0) -> onGetFeatures(
                                     gatt,
                                     ExternalSensorFeatures().CADENCE
