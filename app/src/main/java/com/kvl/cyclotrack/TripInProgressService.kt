@@ -227,6 +227,7 @@ class TripInProgressService @Inject constructor() :
         { event ->
             event.revolutionCount?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
+                    val currentTime = SystemUtils.currentTimeMillis();
                     try {
                         cadenceSpeedMeasurementRepository.save(
                             CadenceSpeedMeasurement(
@@ -235,7 +236,7 @@ class TripInProgressService @Inject constructor() :
                                 lastEvent = event.lastEvent!!,
                                 rpm = event.rpm,
                                 sensorType = SensorType.SPEED,
-                                timestamp = event.timestamp ?: SystemUtils.currentTimeMillis()
+                                timestamp = event.timestamp ?: currentTime
                             )
                         )
                     } catch (e: SQLiteConstraintException) {
@@ -244,54 +245,51 @@ class TripInProgressService @Inject constructor() :
                     }
 
                     if (autopauseEnabled) {
-                        handleAutoPause(tripId)
+                        handleAutoPause(tripId, currentTime)
                     }
                 }
             }
         }
     }
 
-    private suspend fun handleAutoPause(tripId: Long) {
-        Log.d(
-            logTag,
-            "$autopauseEnabled,$autopausePauseThreshold,$autopauseResumeThreshold,$autopauseRpmThreshold"
-        )
-        val currentAutoTimeState =
-            cadenceSpeedMeasurementRepository.getAutoTimeStates(
-                tripId = tripId,
-                pauseThreshold = autopausePauseThreshold,
-                resumeThreshold = autopauseResumeThreshold,
-                rpmThreshold = autopauseRpmThreshold,
-            ).find { p -> p.sensorType == SensorType.SPEED && p.triggered }
+    private suspend fun handleAutoPause(tripId: Long, currentTime: Long) =
+        cadenceSpeedMeasurementRepository.getAutoTimeStates(
+            tripId = tripId,
+            referenceTime = currentTime,
+            pauseThreshold = autopausePauseThreshold,
+            resumeThreshold = autopauseResumeThreshold,
+            rpmThreshold = autopauseRpmThreshold,
+        ).find { p -> p.triggered }?.let { currentAutoTimeState ->
+            Log.d(
+                logTag,
+                "$autopauseEnabled,$autopausePauseThreshold,$autopauseResumeThreshold,$autopauseRpmThreshold"
+            )
+            val currentTimeState = timeStateRepository.getLatest(tripId)
 
-        val currentTimeState = timeStateRepository.getLatest(tripId)
-        val newAutoTimeState =
-            currentAutoTimeState?.timeState ?: autoTimeState
+            val blockAutoResume =
+                blockAutoResumeEnabled && currentAutoTimeState.timeState == TimeStateEnum.RESUME
+                        && !currentTimeState.auto
+                        && currentTimeState.state == TimeStateEnum.PAUSE
 
-        val blockAutoResume =
-            blockAutoResumeEnabled && newAutoTimeState == TimeStateEnum.RESUME
-                    && !currentTimeState.auto
-                    && currentTimeState.state == TimeStateEnum.PAUSE
-
-        if (newAutoTimeState != autoTimeState) {
-            autoTimeState = newAutoTimeState
-            if (!blockAutoResume && autoTimeState != currentTimeState.state) {
-                try {
-                    timeStateRepository.appendTimeState(
-                        TimeState(
-                            tripId = tripId,
-                            state = autoTimeState,
-                            timestamp = currentAutoTimeState!!.timestamp,
-                            auto = true
+            if (currentAutoTimeState.timeState != autoTimeState) {
+                autoTimeState = currentAutoTimeState.timeState
+                if (!blockAutoResume && autoTimeState != currentTimeState.state) {
+                    try {
+                        timeStateRepository.appendTimeState(
+                            TimeState(
+                                tripId = tripId,
+                                state = autoTimeState,
+                                timestamp = currentAutoTimeState.timestamp,
+                                auto = true
+                            )
                         )
-                    )
-                } catch (e: SQLiteConstraintException) {
-                    Log.e(logTag, "Failed to add auto-pause time state", e)
-                    handleSqliteConstraintException(e)
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to add auto-pause time state", e)
+                        handleSqliteConstraintException(e)
+                    }
                 }
             }
         }
-    }
 
     lateinit var thisSpeedEventHandler: (SpeedData) -> Unit
 

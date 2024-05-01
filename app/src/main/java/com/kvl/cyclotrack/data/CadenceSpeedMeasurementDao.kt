@@ -1,7 +1,11 @@
 package com.kvl.cyclotrack.data
 
 import androidx.lifecycle.LiveData
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import com.kvl.cyclotrack.TimeStateEnum
 
 const val SPEED = 1
@@ -57,8 +61,8 @@ interface CadenceSpeedMeasurementDao {
             end as triggered,
             csm.sensorType
         from CadenceSpeedMeasurement as csm
-        where csm.tripId = :tripId and csm.timestamp < :referenceTime
-        group by csm.sensorType, csm.rpm < :rpmThreshold
+        where csm.tripId = :tripId and csm.timestamp < :referenceTime and csm.sensorType = 1
+        group by csm.rpm < :rpmThreshold
     """
     )
     suspend fun getAutoTimeStates(
