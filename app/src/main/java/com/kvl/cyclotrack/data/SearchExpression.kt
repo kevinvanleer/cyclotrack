@@ -28,7 +28,7 @@ import com.kvl.cyclotrack.util.Unit as Units
 
 val numberStringRegex = Regex("""^\s*(?<value>\d+.?\d+?)( (?<units>\S+)\s*)?$""")
 val expressionRegex =
-    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|bike|text|title|name|notes|description|details) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>\".*?\"|\'.*?\'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
+    Regex("""(?<junction>and|or)?\s?(?<negation>not)?\s?(?<lvalue>distance|date|speed|weight|mass|bike|text|title|name|notes|description|details) (?<operator>contains|is|equals|less than|greater than|before|after|between) (?<rvalue>".*?"|'.*?'|[\d\-/]+ (and|or) [\d\-/]+|\S+)\s?""")
 
 
 fun parseSearchString(
@@ -100,7 +100,7 @@ fun parseSearchString(
     return expressionRegex.findAll(searchString)
         .map {
             SearchExpression(it.groups, measurementSystem)
-        }.toList().takeUnless { it.isNullOrEmpty() } ?: listOf(
+        }.toList().takeUnless { it.isEmpty() } ?: listOf(
         SearchExpression(
             lvalue = "text",
             operator = "contains",
@@ -225,7 +225,7 @@ fun compareDistanceExpression(
         when (expression.operator.lowercase()) {
             "is", "equals" -> {
                 val delta = Quantity(0.5, (expression.rvalue as Quantity).unit)
-                (((expression.rvalue as Quantity) - delta) <= quantity) && (((
+                ((expression.rvalue - delta) <= quantity) && (((
                         expression.rvalue
                         ) + delta) > quantity)
             }
@@ -248,7 +248,7 @@ fun compareMassExpression(
         when (expression.operator.lowercase()) {
             "is", "equals" -> {
                 val delta = Quantity(0.5, (expression.rvalue as Quantity).unit)
-                (((expression.rvalue as Quantity) - delta) <= mass) && (((
+                ((expression.rvalue - delta) <= mass) && (((
                         expression.rvalue
                         ) + delta) > mass)
             }
@@ -294,7 +294,7 @@ fun compareSpeedExpression(
         when (expression.operator.lowercase()) {
             "is", "equals" -> {
                 val delta = Quantity(0.5, (expression.rvalue as Quantity).unit)
-                (((expression.rvalue as Quantity) - delta) <= quantity) && (((
+                ((expression.rvalue - delta) <= quantity) && (((
                         expression.rvalue
                         ) + delta) > quantity)
             }

@@ -1400,8 +1400,8 @@ class SearchRegexTest {
         )
         Assert.assertEquals(
             listOf(
-                dateToInstant(2023, 9, 1),
-                dateToInstant(2023, 9, 30)
+                dateToInstant(Instant.now().atZone(ZoneId.systemDefault()).year, 9, 1),
+                dateToInstant(Instant.now().atZone(ZoneId.systemDefault()).year, 9, 30)
             ),
             parseDate("Sep")
         )
