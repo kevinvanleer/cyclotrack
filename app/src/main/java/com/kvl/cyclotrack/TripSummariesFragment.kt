@@ -5,11 +5,18 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.cardview.widget.CardView
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -35,12 +42,46 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
     private lateinit var tripListView: RecyclerView
     private lateinit var searchTextLayout: TextInputLayout
+
+    private lateinit var hintCard: CardView
+    private lateinit var hintList: LinearLayout
     private lateinit var menu: Menu
+
+    private val hints = listOf(
+        "20 miles",
+        "15 km",
+        "18 mph",
+        "10 kph",
+        "distance greater than 10",
+        "distance less than 30",
+        "speed is 18 and distance greater than 20",
+        "speed between 15 and 17",
+        "2024-05-05",
+        "April 2024",
+        "date before 2023-10-01",
+        "date between 2023-10-01 and 2024-02-05",
+        "bike is \"<INSERT BIKE NAME HERE>\"",
+        "April 2024 and bike is \"<INSERT BIKE NAME HERE>\"",
+        "title contains \"flat tire\"",
+        "description contains \"pain\""
+    )
+
+    private fun createHintTextView(hint: String) = TextView(requireContext()).apply {
+        text = hint
+        textSize = 18.0F
+        setPadding(20, 20, 20, 20)
+        setOnClickListener { _ ->
+            binding.tripSummarySearchTextInput.setText("")
+            binding.tripSummarySearchTextInput.append(hint)
+            hintCard.visibility = View.GONE
+        }
+        width = 0
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         binding = FragmentTripSummariesBinding.inflate(inflater, container, false)
         binding.viewmodel = viewModel
@@ -72,6 +113,12 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         tripListView = view.findViewById(R.id.trip_summary_card_list)
         searchTextLayout = binding.tripSummarySearchTextLayout
 
+        hintCard = view.findViewById(R.id.trip_summary_search_hints_card)
+        hintList = view.findViewById(R.id.trip_summary_search_hints_list)
+        hints.forEach { hint ->
+            hintList.addView(createHintTextView(hint))
+        }
+
         binding.tripSummarySearchTextInput.setOnEditorActionListener { v, actionId, _ ->
             when (actionId) {
                 EditorInfo.IME_ACTION_SEARCH -> {
@@ -86,6 +133,13 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             val imm = requireContext().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
             imm.hideSoftInputFromWindow(v.windowToken, 0)
             return@setOnEditorActionListener true
+        }
+
+        binding.tripSummarySearchTextInput.setOnFocusChangeListener { _, b ->
+            when (b) {
+                true -> hintCard.visibility = View.VISIBLE
+                else -> hintCard.visibility = View.GONE
+            }
         }
 
         viewModel.allTrips.observe(viewLifecycleOwner) {

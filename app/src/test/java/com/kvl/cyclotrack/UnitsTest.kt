@@ -354,6 +354,8 @@ class UnitsTest {
         Assert.assertNotEquals(Mile, Units.fromString("m"))
         Assert.assertEquals(Meter, Units.fromString("m"))
         Assert.assertEquals(Kilometer, Units.fromString("km"))
+        Assert.assertEquals(Kilometer, Units.fromString("kilometer"))
+        Assert.assertEquals(Kilometer, Units.fromString("kilometers"))
         Assert.assertEquals(Inch, Units.fromString("in"))
         Assert.assertEquals(Foot, Units.fromString("ft"))
         Assert.assertNotEquals(Foot, Units.fromString("f"))

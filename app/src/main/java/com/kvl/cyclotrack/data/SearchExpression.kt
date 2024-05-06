@@ -486,4 +486,25 @@ data class SearchExpression(
         parseRvalue(regexMatchGroups, measurementSystem),
         regexMatchGroups["junction"]?.value,
     )
+
+    companion object {
+        val lvalues = listOf(
+            "distance",
+            "date",
+            "speed",
+            "weight",
+            "mass",
+            "bike",
+            "text",
+            "title",
+            "name",
+            "notes",
+            "description",
+            "details"
+        )
+        val operators =
+            listOf("is", "equals", "less than", "greater than", "before", "after", "between")
+        val junctions = listOf("and", "or")
+
+    }
 }
