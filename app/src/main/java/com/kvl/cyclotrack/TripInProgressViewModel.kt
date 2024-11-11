@@ -34,6 +34,10 @@ class TripInProgressViewModel @Inject constructor(
 
     var bikeWheelCircumference: Float? = null
 
+    var burnInReductionUserPref = false;
+    fun burnInReductionEnabled() =
+        burnInReductionUserPref || (_currentProgress.value?.duration ?: 0.0) > 7200.0
+
     init {
         EventBus.getDefault().register(this)
         viewModelScope.launch(Dispatchers.IO) {
@@ -60,6 +64,8 @@ class TripInProgressViewModel @Inject constructor(
         Log.d(logTag, "onChanged current time state observer: ${timeState.state}")
         currentState = timeState.state
     }
+
+    val burnInReductionActive = MutableLiveData(burnInReductionUserPref)
 
     private fun tripInProgress() = isTripInProgress(currentState)
 

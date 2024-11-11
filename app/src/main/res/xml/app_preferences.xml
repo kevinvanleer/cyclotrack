@@ -15,6 +15,11 @@
     <SeekBarPreference
         app:key="@string/preferences_dashboard_brightness_key"
         app:defaultValue="50" />
+    <SwitchPreference
+        app:key="@string/preference_key_burn_in_reduction"
+        app:title="Burn-in reduction"
+        app:summary="Display outlined text and remove icons on dashboard. (Automatically enabled after two hours even if turned off.)"
+        app:defaultValue="false" />
     <Preference
         app:key="@string/preference_key_dashboard_safe_zone"
         app:title="@string/preference_title_dashboard_safe_zone"

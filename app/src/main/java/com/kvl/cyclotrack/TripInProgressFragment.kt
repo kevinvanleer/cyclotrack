@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.IntentSender
 import android.content.SharedPreferences
+import android.graphics.Rect
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
@@ -25,6 +26,8 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
@@ -52,6 +55,8 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -81,6 +86,8 @@ class TripInProgressFragment :
     private lateinit var timeOfDayTextView: TextView
     private lateinit var temperatureTextView: TextView
     private lateinit var windDirectionArrow: ImageView
+    private lateinit var compassImage: ImageView
+    private lateinit var windIcon: ImageView
 
     private var gpsEnabled = true
     private var isTimeTickRegistered = false
@@ -100,6 +107,12 @@ class TripInProgressFragment :
             true -> autoCircumference ?: userCircumference
             else -> userCircumference ?: autoCircumference
         }
+
+    private val burnInReductionUserPref: Boolean
+        get() = sharedPreferences.getBoolean(
+            requireContext().applicationContext.getString(R.string.preference_key_burn_in_reduction),
+            false
+        )
 
     @Subscribe
     fun onWheelCircumferenceEvent(event: WheelCircumferenceEvent) {
@@ -153,6 +166,17 @@ class TripInProgressFragment :
     private fun hideResumeStop() {
         hideResume()
         hideStop()
+    }
+
+    private fun setPausePeek() {
+        if (stopButton.translationX != 0f && resumeButton.translationX != 0f) {
+            if (pauseButtonVisible)
+                pauseButton.animate().setDuration(0)
+                    .translationY(min(pauseButton.height, swipeRect.height()).toFloat())
+            else
+                pauseButton.animate().setDuration(0)
+                    .translationY(max(0, pauseButton.height - swipeRect.height()).toFloat())
+        }
     }
 
     private fun slidePauseDown() =
@@ -279,13 +303,19 @@ class TripInProgressFragment :
                 view?.doOnPreDraw { hideResumeStop() }
                 view?.doOnPreDraw { hidePause() }
                 pauseButton.text = getString(R.string.pause_label)
+                if (viewModel.burnInReductionEnabled()) {
+                    burnInReductionHandler.postDelayed(
+                        burnInReductionCallback, 5000
+                    )
+                }
             }
 
             TimeStateEnum.PAUSE -> {
                 view?.doOnPreDraw { hidePause() }
-                autoPauseChip.visibility = when (newState.auto) {
-                    true -> VISIBLE
-                    else -> GONE
+                autoPauseChip.visibility = if (newState.auto) VISIBLE else GONE
+                if (viewModel.burnInReductionEnabled()) {
+                    burnInReductionHandler.removeCallbacks(burnInReductionCallback)
+                    viewModel.burnInReductionActive.value = false
                 }
                 slideInResumeStop()
             }
@@ -376,6 +406,8 @@ class TripInProgressFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        viewModel.burnInReductionUserPref = burnInReductionUserPref;
+        viewModel.burnInReductionActive.value = viewModel.burnInReductionUserPref
 
         val safeZone = getSafeZoneMargins(requireContext())
         (view.layoutParams as ViewGroup.MarginLayoutParams).apply {
@@ -399,6 +431,7 @@ class TripInProgressFragment :
         initializeLocationServiceStateChangeHandler()
         initializeMeasurementUpdateObservers()
         initializeWeatherObservers()
+        initializeBurnInReduction()
     }
 
     private fun initializeClockTick() {
@@ -466,7 +499,8 @@ class TripInProgressFragment :
             if (!hasHeartRate()) topLeftView.value =
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
-            trackingImage.visibility = if (it.tracking) VISIBLE else INVISIBLE
+            trackingImage.visibility =
+                if (it.tracking && viewModel.burnInReductionActive.value == false) VISIBLE else INVISIBLE
         }
 
         viewModel.currentTime.observe(viewLifecycleOwner) {
@@ -558,13 +592,14 @@ class TripInProgressFragment :
     }
 
     private fun initializeWeatherObservers() {
-        val windIcon = requireView().findViewById<ImageView>(R.id.image_wind_icon)
         viewModel.latestWeather.observe(viewLifecycleOwner) { weather ->
             if (weather != null) {
-                temperatureTextView.visibility = VISIBLE
-                footerRightView.visibility = VISIBLE
-                windDirectionArrow.visibility = VISIBLE
-                windIcon.visibility = VISIBLE
+                if (viewModel.burnInReductionActive.value != true) {
+                    temperatureTextView.visibility = VISIBLE
+                    footerRightView.visibility = VISIBLE
+                    windDirectionArrow.visibility = VISIBLE
+                    windIcon.visibility = VISIBLE
+                }
 
                 //TODO: This will not update dynamically, maybe start a timer
                 when (weather.timestamp < (System.currentTimeMillis() / 1000 - 60 * 15)) {
@@ -622,6 +657,34 @@ class TripInProgressFragment :
         }
     }
 
+    private fun initializeBurnInReduction() {
+        viewModel.burnInReductionActive.observe(viewLifecycleOwner) { birEnabled ->
+            activity?.window?.let { window ->
+                val windowInsetsController =
+                    WindowCompat.getInsetsController(window, window.decorView)
+                // Configure the behavior of the hidden system bars.
+                if (birEnabled) windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
+                else windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+            }
+            trackingImage.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            compassImage.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            windIcon.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            footerView.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            footerRightView.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            temperatureTextView.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            timeOfDayTextView.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            windDirectionArrow.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            debugTextView.visibility = if (birEnabled) INVISIBLE else VISIBLE
+            topView.enableBurnInReduction(birEnabled)
+            topLeftView.enableBurnInReduction(birEnabled)
+            topRightView.enableBurnInReduction(birEnabled)
+            middleLeftView.enableBurnInReduction(birEnabled)
+            middleRightView.enableBurnInReduction(birEnabled)
+            bottomLeftView.enableBurnInReduction(birEnabled)
+            bottomRightView.enableBurnInReduction(birEnabled)
+        }
+    }
+
     private fun initializeViews(view: View) {
         pauseButton = view.findViewById(R.id.pause_button)
         resumeButton = view.findViewById(R.id.resume_button)
@@ -641,7 +704,8 @@ class TripInProgressFragment :
         timeOfDayTextView = view.findViewById(R.id.dashboard_textview_timeOfDay)
         temperatureTextView = view.findViewById(R.id.dashboard_textview_temperature)
         windDirectionArrow = view.findViewById(R.id.image_arrow_wind_direction)
-
+        compassImage = view.findViewById(R.id.compass_image)
+        windIcon = view.findViewById(R.id.image_wind_icon)
 
         //TODO: Cleanup below
         //This is a lot of implementation specific initialization
@@ -793,7 +857,8 @@ class TripInProgressFragment :
             bottomRightView.label = amPm
         } else {
             timeOfDayTextView.apply {
-                visibility = VISIBLE
+                visibility =
+                    if (viewModel.burnInReductionActive.value == true) INVISIBLE else VISIBLE
                 text = "$time $amPm"
             }
         }
@@ -825,39 +890,94 @@ class TripInProgressFragment :
         FirebaseAnalytics.getInstance(requireContext()).logEvent("LeaveDashboard") {}
     }
 
+    private var swipeRect: Rect = Rect()
+    private var pauseButtonVisible = false
+    private var burnInReductionPriorState = false
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.v(logTag, event.toString())
         Log.v(logTag, "viewModel.currentState = ${viewModel.currentState}")
 
+        if (viewModel.currentState == TimeStateEnum.STOP) return false
         return when (event?.action) {
             MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
-                handleScreenTouchClick()
+                handlePauseButtonVisibility()
+                if (viewModel.burnInReductionEnabled()) handleBurnInReductionState()
                 v?.performClick()
                 true
             } else false
 
-            MotionEvent.ACTION_DOWN -> true
+            MotionEvent.ACTION_DOWN -> {
+                pauseButtonVisible = pauseButton.translationY == 0f
+                if (viewModel.burnInReductionEnabled()) {
+                    burnInReductionPriorState = viewModel.burnInReductionActive.value ?: false
+                    viewModel.burnInReductionActive.value = false
+                }
+                swipeRect.apply {
+                    top = event.getY(0).roundToInt()
+                    bottom = event.getY(0).roundToInt()
+                    left = event.getX(0).roundToInt()
+                    right = event.getX(0).roundToInt()
+                }
+                true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                swipeRect.apply {
+                    if (event.getX(0) < left) left = event.getX(0).roundToInt()
+                    if (event.getX(0) > right) right = event.getX(0).roundToInt()
+                    if (pauseButtonVisible) {
+                        if (event.getY(0) > top)
+                            bottom = event.getY(0).roundToInt()
+                    } else {
+                        if (event.getY(0) < bottom)
+                            top = event.getY(0).roundToInt()
+                    }
+                }
+                setPausePeek()
+                true
+            }
+
             else -> false
         }
     }
 
+    private val burnInReductionHandler = android.os.Handler(Looper.getMainLooper())
+    private val burnInReductionCallback = Runnable {
+        viewModel.burnInReductionActive.value = viewModel.burnInReductionEnabled()
+    }
     private val hidePauseHandler = android.os.Handler(Looper.getMainLooper())
     private val hidePauseCallback = Runnable {
         slidePauseDown()
     }
 
-    private fun isPauseButtonHidden() = pauseButton.translationY != 0f
+    private fun isPauseButtonHidden() = pauseButton.translationY > pauseButton.height / 2f
 
-    private fun handleScreenTouchClick(): Boolean {
-        Log.d(logTag, "handleTouchClick")
+    private fun handleBurnInReductionState(): Boolean {
+        Log.d(logTag, "handleBurnInReductionState")
+
+        viewModel.burnInReductionActive.value =
+            !burnInReductionPriorState && isPauseButtonHidden()
+
+        burnInReductionHandler.removeCallbacks(burnInReductionCallback)
+        if (viewModel.burnInReductionActive.value != viewModel.burnInReductionEnabled()) {
+            burnInReductionHandler.postDelayed(
+                burnInReductionCallback, 5000
+            )
+        }
+        return true
+    }
+
+    private fun handlePauseButtonVisibility(): Boolean {
+        Log.d(logTag, "handlePauseButtonVisibility")
+
+        hidePauseHandler.removeCallbacks(hidePauseCallback)
         if (isPauseButtonHidden()) {
+            hidePauseCallback.run()
+        } else {
             slidePauseUp()
             hidePauseHandler.postDelayed(
                 hidePauseCallback, 5000
             )
-        } else {
-            hidePauseHandler.removeCallbacks(hidePauseCallback)
-            hidePauseCallback.run()
         }
         return true
     }
