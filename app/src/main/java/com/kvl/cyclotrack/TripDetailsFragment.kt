@@ -58,6 +58,7 @@ import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.configureGoogleFit
 import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
 import com.kvl.cyclotrack.util.getDatasets
+import com.kvl.cyclotrack.util.getGoogleAccount
 import com.kvl.cyclotrack.util.getSpeedDataFromGps
 import com.kvl.cyclotrack.util.getSpeedDataFromSensor
 import com.kvl.cyclotrack.util.getTrendData
@@ -750,6 +751,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                 Log.d(logTag, "Calculating calories burned")
                                 getCaloriesBurned(biometrics, overview, measurements)
                             }
+                            viewModel.updateBiometrics(biometrics)
                         }
                 }
             }
@@ -1113,6 +1115,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (getGoogleAccount(requireContext()) == null) {
+            Log.i(logTag, "Google token expired renewing token")
+            configureGoogleFit(requireActivity())
+        }
+
         if (this::mapView.isInitialized) mapView.onCreate(savedInstanceState)
     }
 

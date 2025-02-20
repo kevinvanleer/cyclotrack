@@ -4,13 +4,23 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.preference.PreferenceManager
-import com.kvl.cyclotrack.*
+import com.kvl.cyclotrack.Biometrics
+import com.kvl.cyclotrack.CyclotrackApp
+import com.kvl.cyclotrack.FEET_TO_INCHES
+import com.kvl.cyclotrack.FEET_TO_METERS
+import com.kvl.cyclotrack.GoogleFitApiService
+import com.kvl.cyclotrack.INCHES_TO_FEET
+import com.kvl.cyclotrack.METERS_TO_FEET
+import com.kvl.cyclotrack.R
+import com.kvl.cyclotrack.Trip
+import com.kvl.cyclotrack.TripsRepository
+import com.kvl.cyclotrack.UserSexEnum
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 import kotlin.math.roundToInt
 
 const val POUNDS_TO_KG = 0.453592
@@ -38,7 +48,7 @@ fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
         else -> 1.0
     }
 
-fun dateStringToAge(dateString: String) =
+fun dateStringToAge(dateString: String, timestamp: Long = System.currentTimeMillis()) =
     try {
         SimpleDateFormat(
             dateFormatPattenDob,
@@ -46,28 +56,32 @@ fun dateStringToAge(dateString: String) =
         ).parse(
             dateString
         )
-            ?.let { dateObj -> (SystemUtils.currentTimeMillis() - dateObj.time) / 1000f / 3600f / 24f / 365f }
+            ?.let { dateObj -> (timestamp - dateObj.time) / 1000f / 3600f / 24f / 365f }
     } catch (e: ParseException) {
         null
     }
 
-fun getBiometrics(id: Long, context: Context) = Biometrics(
+fun getBiometrics(id: Long, context: Context, timestamp: Long) = Biometrics(
     id,
     getUserSex(context),
     getUserWeight(context),
     getUserHeight(context),
-    getUserAge(context),
+    getUserAge(context, timestamp),
     getUserVo2max(context),
     getUserRestingHeartRate(context),
     getUserMaxHeartRate(context),
 )
 
-fun getBiometrics(id: Long, sharedPreferences: SharedPreferences) = Biometrics(
+fun getBiometrics(
+    id: Long,
+    sharedPreferences: SharedPreferences,
+    timestamp: Long = System.currentTimeMillis()
+) = Biometrics(
     id,
     getUserSex(sharedPreferences),
     getUserWeight(sharedPreferences),
     getUserHeight(sharedPreferences),
-    getUserAge(sharedPreferences),
+    getUserAge(sharedPreferences, timestamp),
     getUserVo2max(sharedPreferences),
     getUserRestingHeartRate(sharedPreferences),
     getUserMaxHeartRate(sharedPreferences),
@@ -132,14 +146,14 @@ fun getUserDob(context: Context): String? =
         null
     }
 
-fun getUserAge(context: Context): Float? =
+fun getUserAge(context: Context, timestamp: Long): Float? =
     try {
         PreferenceManager.getDefaultSharedPreferences(context).getString(
             context
                 .getString(R.string.preference_key_biometrics_user_dob),
             ""
         )?.let { dateString ->
-            dateStringToAge(dateString)
+            dateStringToAge(dateString, timestamp)
         }
     } catch (e: ParseException) {
         null
@@ -203,14 +217,14 @@ fun getUserHeight(sharedPreferences: SharedPreferences): Float? =
 
     }?.toFloat()
 
-fun getUserAge(sharedPreferences: SharedPreferences): Float? =
+fun getUserAge(sharedPreferences: SharedPreferences, timestamp: Long): Float? =
     try {
         sharedPreferences.getString(
             CyclotrackApp.instance
                 .getString(R.string.preference_key_biometrics_user_dob),
             ""
         )?.let { dateString ->
-            dateStringToAge(dateString)
+            dateStringToAge(dateString, timestamp)
         }
     } catch (e: ParseException) {
         null
@@ -245,10 +259,10 @@ fun estimateVo2Max(restingHeartRate: Int, maximumHeartRate: Int): Float {
 }
 
 fun getCaloriesEstimateType(
-    sharedPrefs: SharedPreferences,
+    sharedPrefs: SharedPreferences, timestamp: Long
 ): String {
     fun getSex(value: UserSexEnum?) = value?.name ?: getUserSex(sharedPrefs)?.name
-    fun getAge(value: Float?) = (value ?: getUserAge(sharedPrefs))?.roundToInt()
+    fun getAge(value: Float?) = (value ?: getUserAge(sharedPrefs, timestamp))?.roundToInt()
     fun getWeight(value: Float?) = value ?: getUserWeight(sharedPrefs)
     fun getHeight(value: Float?) = value ?: getUserHeight(sharedPrefs)
     fun getVo2max(value: Float?) = value ?: getUserVo2max(sharedPrefs)
@@ -306,7 +320,7 @@ fun getCaloriesBurnedLabel(
     heartRate: Short?,
 ): String {
     fun getSex(value: UserSexEnum?) = value ?: getUserSex(context)
-    fun getAge(value: Float?) = value ?: getUserAge(context)
+    fun getAge(value: Float?) = value ?: getUserAge(context, overview.timestamp)
     fun getWeight(value: Float?) = value ?: getUserWeight(context)
     fun getHeight(value: Float?) = value ?: getUserHeight(context)
     fun getVo2max(value: Float?) = value ?: getUserVo2max(context)
@@ -341,6 +355,7 @@ fun getCaloriesBurned(
         overview.distance?.toFloat()!!,
         heartRate
     )
+
     else -> estimateCaloriesBurnedVo2max(
         biometrics.userSex?.name,
         biometrics.userAge?.roundToInt(),
@@ -463,9 +478,9 @@ fun estimateCyclingCaloriesBurned(
     duration: Float,
     heartRate: Short,
 ): Int {
-/*  https://tourdevines.com.au/blog/how-many-calories-does-cycling-burn/
-    Men: [(Age x 0.2017) — (Weight x 0.09036) + (Heart Rate x 0.6309) — 55.0969] x Time / 4.184.
-    Women: [(Age x 0.074) — (Weight x 0.05741) + (Heart Rate x 0.4472) — 20.4022] x Time / 4.184.*/
+    /*  https://tourdevines.com.au/blog/how-many-calories-does-cycling-burn/
+        Men: [(Age x 0.2017) — (Weight x 0.09036) + (Heart Rate x 0.6309) — 55.0969] x Time / 4.184.
+        Women: [(Age x 0.074) — (Weight x 0.05741) + (Heart Rate x 0.4472) — 20.4022] x Time / 4.184.*/
     return (when (sex) {
         "MALE" -> age * 0.2017 - weight * 0.09036 + heartRate * 0.6309 - 55.0969
         else -> age * 0.074 - weight * 0.05741 + heartRate * 0.4472 - 20.4022
@@ -531,7 +546,7 @@ suspend fun getCombinedBiometrics(
     googleFitApiService: GoogleFitApiService,
 ): Biometrics {
     val logTag = "getCombinedBiometrics"
-    var biometrics = getBiometrics(tripId, context)
+    var biometrics = getBiometrics(tripId, context, timestamp)
     Log.d(logTag, "biometrics prefs: ${biometrics}")
 
     coroutineScope.launch {

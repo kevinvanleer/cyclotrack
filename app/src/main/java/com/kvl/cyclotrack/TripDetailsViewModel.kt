@@ -102,6 +102,12 @@ class TripDetailsViewModel @Inject constructor(
             googleFitApiService
         )
 
+    suspend fun updateBiometrics(biometrics: Biometrics) {
+        if (tripsRepository.getDefaultBiometrics(biometrics.id) != biometrics) {
+            tripsRepository.updateBiometrics(biometrics)
+        }
+    }
+
     suspend fun getFastestDistance(distance: Int, conversionFactor: Double, limit: Int = 10) =
         splitRepository.getFastestDistance(
             distance = distance,

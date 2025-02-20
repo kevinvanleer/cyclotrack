@@ -618,14 +618,17 @@ class TripInProgressFragment :
                     }
                 }
 
-                temperatureTextView.text = "${
+                temperatureTextView.text = String.format(
+                    "%s %s",
                     getUserTemperature(
                         requireContext(),
                         weather.temperature
-                    )
-                } ${getUserTemperatureUnit(requireContext())}"
+                    ),
+                    getUserTemperatureUnit(requireContext())
+                )
                 footerRightView.text =
-                    "%.1f %s".format(
+                    String.format(
+                        "%.1f %s",
                         getUserSpeed(requireContext(), weather.windSpeed),
                         getUserSpeedUnitShort(requireContext())
                     )
@@ -859,7 +862,7 @@ class TripInProgressFragment :
             timeOfDayTextView.apply {
                 visibility =
                     if (viewModel.burnInReductionActive.value == true) INVISIBLE else VISIBLE
-                text = "$time $amPm"
+                text = String.format("%s %s", time, amPm)
             }
         }
     }

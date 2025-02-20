@@ -13,10 +13,12 @@ import com.google.android.gms.fitness.data.Field
 import com.google.android.gms.fitness.request.DataReadRequest
 import com.kvl.cyclotrack.FeatureFlags
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.GregorianCalendar
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-private const val logTag = "GOOGLE_FIT_UTILITIES"
+private const val logTag = "GoogleFit"
 
 val fitnessOptions: FitnessOptions = FitnessOptions.builder().apply {
     addDataType(DataType.TYPE_WEIGHT, FitnessOptions.ACCESS_READ)
@@ -42,8 +44,14 @@ val fitnessOptions: FitnessOptions = FitnessOptions.builder().apply {
     }
 }.build()
 
-fun getGoogleAccount(context: Context): GoogleSignInAccount? =
-    GoogleSignIn.getAccountForExtension(context, fitnessOptions)
+fun getGoogleAccount(context: Context): GoogleSignInAccount? {
+    try {
+        return GoogleSignIn.getAccountForExtension(context, fitnessOptions).takeIf { !it.isExpired }
+    } catch (e: Exception) {
+        Log.e(logTag, "Error getting google account", e)
+    }
+    return null
+}
 
 private fun printDataPoint(dataPoint: DataPoint) {
     val startString =
@@ -71,6 +79,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_WEIGHT -> {
             Log.v(
                 logTag,
@@ -79,6 +88,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_SPEED -> {
             Log.v(
                 logTag,
@@ -87,6 +97,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_CYCLING_WHEEL_REVOLUTION -> {
             Log.v(
                 logTag,
@@ -95,6 +106,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_CYCLING_WHEEL_RPM -> {
             Log.v(
                 logTag,
@@ -103,6 +115,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_CYCLING_PEDALING_CUMULATIVE -> {
             Log.v(
                 logTag,
@@ -111,6 +124,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_CYCLING_PEDALING_CADENCE -> {
             Log.v(
                 logTag,
@@ -119,6 +133,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_LOCATION_SAMPLE -> {
             Log.v(
                 logTag,
@@ -145,6 +160,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_DISTANCE_DELTA -> {
             Log.v(
                 logTag,
@@ -153,6 +169,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.TYPE_HEART_RATE_BPM -> {
             Log.v(
                 logTag,
@@ -161,6 +178,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.AGGREGATE_HEIGHT_SUMMARY -> {
             Log.v(
                 logTag,
@@ -181,6 +199,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.AGGREGATE_WEIGHT_SUMMARY -> {
             Log.v(
                 logTag,
@@ -201,6 +220,7 @@ private fun printDataPoint(dataPoint: DataPoint) {
                 }"
             )
         }
+
         DataType.AGGREGATE_HEART_RATE_SUMMARY -> {
             Log.v(
                 logTag,

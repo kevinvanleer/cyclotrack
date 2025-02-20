@@ -7,7 +7,14 @@ import androidx.core.text.isDigitsOnly
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import com.google.android.gms.common.api.ApiException
-import com.kvl.cyclotrack.util.*
+import com.kvl.cyclotrack.util.convertSystemToUserHeight
+import com.kvl.cyclotrack.util.convertSystemToUserMass
+import com.kvl.cyclotrack.util.estimateMaxHeartRate
+import com.kvl.cyclotrack.util.estimateVo2Max
+import com.kvl.cyclotrack.util.getCaloriesEstimateType
+import com.kvl.cyclotrack.util.getUserAge
+import com.kvl.cyclotrack.util.getUserMaxHeartRate
+import com.kvl.cyclotrack.util.getUserVo2max
 import kotlin.math.roundToInt
 import kotlin.reflect.KProperty
 
@@ -99,6 +106,7 @@ class BiometricsViewModel constructor(
                             CyclotrackApp.instance
                         )
                     )
+
                     else
                     -> sharedPreferences.getString(
                         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
@@ -131,6 +139,7 @@ class BiometricsViewModel constructor(
                             CyclotrackApp.instance
                         )
                     )
+
                     else -> sharedPreferences.getString(
                         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
                         ""
@@ -294,7 +303,10 @@ class BiometricsViewModel constructor(
                         estimateVo2Max(
                             it,
                             getUserMaxHeartRate(sharedPreferences) ?: estimateMaxHeartRate(
-                                getUserAge(sharedPreferences)?.roundToInt()!!
+                                getUserAge(
+                                    sharedPreferences,
+                                    System.currentTimeMillis()
+                                )?.roundToInt()!!
                             )
                         )
                     }?.let {
@@ -308,7 +320,7 @@ class BiometricsViewModel constructor(
     @get:Bindable
     val maxHrHint: String
         get() = "Max heart rate ${
-            getUserAge(sharedPreferences)?.let {
+            getUserAge(sharedPreferences, System.currentTimeMillis())?.let {
                 "(${estimateMaxHeartRate(it.roundToInt())} based on age)"
             } ?: "(or use age to estimate)"
         }"
@@ -319,7 +331,7 @@ class BiometricsViewModel constructor(
 
     @get:Bindable
     val instructionText: String
-        get() = getCaloriesEstimateType(sharedPreferences)
+        get() = getCaloriesEstimateType(sharedPreferences, System.currentTimeMillis())
 
     @get:Bindable
     val isEditable: Boolean
