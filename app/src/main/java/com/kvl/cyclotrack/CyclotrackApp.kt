@@ -58,6 +58,7 @@ class CyclotrackApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var workFactory: HiltWorkerFactory
-    override fun getWorkManagerConfiguration() =
-        Configuration.Builder().setWorkerFactory(workFactory).build()
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder().setWorkerFactory(workFactory).build()
 }

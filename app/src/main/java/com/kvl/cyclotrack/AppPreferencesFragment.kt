@@ -19,7 +19,11 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
 import androidx.core.view.setPadding
 import androidx.navigation.findNavController
-import androidx.preference.*
+import androidx.preference.Preference
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
+import androidx.preference.SeekBarPreference
+import androidx.preference.SwitchPreference
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -27,7 +31,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.GoogleFitAccessGranted
-import com.kvl.cyclotrack.util.*
+import com.kvl.cyclotrack.util.configureGoogleFit
+import com.kvl.cyclotrack.util.deauthorizeStrava
+import com.kvl.cyclotrack.util.getPreferences
+import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.updateStravaAuthToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -197,16 +205,17 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
                     if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
                         Log.i(logTag, "Remove all data from Google Fit")
                         WorkManager.getInstance(context)
-                            .enqueue(OneTimeWorkRequestBuilder<RemoveAllGoogleFitDataWorker>()
-                                .build().apply {
-                                    WorkManager.getInstance(context)
-                                        .getWorkInfoByIdLiveData(id)
-                                        .observe(viewLifecycleOwner) { workInfo ->
-                                            if (workInfo.state == WorkInfo.State.SUCCEEDED) {
-                                                disconnectGoogleFit(context)
+                            .enqueue(
+                                OneTimeWorkRequestBuilder<RemoveAllGoogleFitDataWorker>()
+                                    .build().apply {
+                                        WorkManager.getInstance(context)
+                                            .getWorkInfoByIdLiveData(id)
+                                            .observe(viewLifecycleOwner) { workInfo ->
+                                                if (workInfo?.state == WorkInfo.State.SUCCEEDED) {
+                                                    disconnectGoogleFit(context)
+                                                }
                                             }
-                                        }
-                                })
+                                    })
                     } else {
                         disconnectGoogleFit(context)
                     }
