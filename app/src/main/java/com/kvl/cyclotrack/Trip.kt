@@ -1,9 +1,13 @@
 package com.kvl.cyclotrack
 
 import androidx.annotation.Keep
-import androidx.room.*
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverter
 import com.kvl.cyclotrack.util.SystemUtils
-import java.util.*
+import java.util.Calendar
 
 enum class GoogleFitSyncStatusEnum(val value: Int) {
     NOT_SYNCED(0),
@@ -56,13 +60,13 @@ fun getDefaultTripName(): String {
     val c = Calendar.getInstance()
 
     return when (c.get(Calendar.HOUR_OF_DAY)) {
-        in 0..3 -> "Night bike ride"
-        in 4..5 -> "Early morning bike ride"
-        in 6..9 -> "Morning bike ride"
-        in 10..13 -> "Midday bike ride"
-        in 14..17 -> "Afternoon bike ride"
-        in 18..20 -> "Evening bike ride"
-        in 21..23 -> "Night bike ride"
+        in 0..3 -> "Night ride"
+        in 4..5 -> "Early morning ride"
+        in 6..9 -> "Morning ride"
+        in 10..13 -> "Midday ride"
+        in 14..17 -> "Afternoon ride"
+        in 18..20 -> "Evening ride"
+        in 21..23 -> "Night ride"
         else -> "Bike ride"
     }
 }

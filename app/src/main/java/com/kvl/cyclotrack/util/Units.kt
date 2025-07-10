@@ -1,0 +1,321 @@
+package com.kvl.cyclotrack.util
+
+import kotlin.math.abs
+
+const val METERS_TO_FEET = 3.28084
+const val FEET_TO_METERS = 1 / METERS_TO_FEET
+const val METERS_TO_KM = 0.001
+const val METERS_TO_MM = 1000.0
+const val FEET_TO_MILES = 1.0 / 5280
+const val HOURS_TO_SECONDS = 3600.0
+const val SECONDS_TO_HOURS = 1.0 / HOURS_TO_SECONDS
+const val INCHES_TO_FEET = 1 / 12.0
+const val FEET_TO_INCHES = 12.0
+const val KELVIN_TO_CELSIUS = 273.15
+const val MILES_TO_FEET = 1 / FEET_TO_MILES
+
+const val SECONDS_PER_HOUR = HOURS_TO_SECONDS
+const val METERS_PER_MILE = MILES_TO_FEET * FEET_TO_METERS
+const val MILES_TO_METERS = METERS_PER_MILE
+const val METERS_TO_MILES = 1 / MILES_TO_METERS
+const val MILES_PER_HR_TO_METERS_PER_SEC = HOURS_TO_SECONDS * MILES_TO_METERS
+
+object MetricPrefix {
+    const val NANO: Double = 1e-9
+    const val MICRO: Double = 1e-6
+    const val MILLI: Double = 1e-3
+    const val CENTI: Double = 1e-2
+    const val DECI: Double = 1e-1
+    const val BASE: Double = 1.0
+    const val DECA: Double = 1e1
+    const val HECTO: Double = 1e2
+    const val KILO: Double = 1e3
+    const val MEGA: Double = 1e6
+    const val GIGA: Double = 1e9
+}
+
+//USCU = United States Customary Units
+object LengthConversions {
+    const val YARD: Double = 0.9144
+    const val INCH: Double = YARD / 36.0
+    const val FOOT: Double = YARD / 3.0
+    const val MILE: Double = 1760.0 * YARD
+    const val LEAGUE: Double = 5280.0 * YARD
+    const val METER: Double = 1.0
+}
+
+object MetersPerSecond : Speed(Meter, Second)
+object MilesPerHour : Speed(Mile, Hour)
+object KilometersPerHour : Speed(Kilo(Meter), Hour)
+
+open class Speed(override val numerator: Unit, override val denominator: Unit) : Rate {
+    override val conversionFactor: Double
+        get() = numerator.conversionFactor / denominator.conversionFactor
+    override val baseUnit: Rate
+        get() = Speed(numerator.baseUnit, denominator.baseUnit)
+
+    companion object {
+        fun fromMeasurementSystem(measurementSystem: String) =
+            when (measurementSystem) {
+                "1" -> MilesPerHour
+                "2" -> KilometersPerHour
+                else -> MetersPerSecond
+            }
+    }
+}
+
+interface Rate : Unit {
+    val numerator: Unit
+    val denominator: Unit
+}
+
+class Quantity(private val quantity: Double, private val units: Unit) {
+    val value
+        get() = quantity
+    val float
+        get() = quantity.toFloat()
+    val int
+        get() = quantity.toInt()
+    val unit
+        get() = units
+
+    fun convertTo(destUnits: Unit) =
+        Quantity(
+            quantity * units.conversionFactor / destUnits.conversionFactor,
+            destUnits
+        )
+
+    fun normalize() = convertTo(units.baseUnit)
+
+    operator fun plus(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception("Quantities $units and ${other.units} cannot be added")
+        }
+        return Quantity(quantity + other.convertTo(units).value, units)
+    }
+
+    operator fun minus(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception("Quantities $units and ${other.units} cannot be subtracted")
+        }
+        return Quantity(quantity - other.convertTo(units).value, units)
+    }
+
+    operator fun times(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception("Quantities $units and ${other.units} cannot be multiplied")
+        }
+        return Quantity(quantity * other.convertTo(units).value, units)
+    }
+
+    operator fun div(other: Quantity): Quantity {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception("Quantities $units and ${other.units} cannot be divided")
+        }
+        return Quantity(quantity / other.convertTo(units).value, units)
+    }
+
+    override operator fun equals(other: Any?): Boolean {
+        if (other !is Quantity || units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception("Quantities $units and ${(other as Quantity).units} are not comparable")
+        }
+        return abs(this.minus(other).value) < 1e-12
+    }
+
+    operator fun compareTo(other: Quantity): Int {
+        if (units.baseUnit::class != other.units.baseUnit::class) {
+            throw Exception("Quantities $units and ${other.units} are not comparable ")
+        }
+        return when (abs(this.minus(other).value) < 1e-12) {
+            true -> 0
+            else -> quantity.compareTo(other.convertTo(units).value)
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = quantity.hashCode()
+        result = 31 * result + units.hashCode()
+        return result
+    }
+}
+
+open class Centi(val base: Unit) : Unit {
+    override val conversionFactor: Double
+        get() = base.conversionFactor * MetricPrefix.CENTI
+    override val baseUnit: Unit
+        get() = base.baseUnit
+
+    val pseudonyms: Map<Unit, Array<String>>
+        get() = Unit.pseudonyms.mapValues { (_, v) -> v.map { "centi$it" }.toTypedArray() }
+}
+
+open class Kilo(val base: Unit) : Unit {
+    override val conversionFactor: Double
+        get() = base.conversionFactor * MetricPrefix.KILO
+    override val baseUnit: Unit
+        get() = base.baseUnit
+
+    val pseudonyms: Map<Unit, Array<String>>
+        get() = Unit.pseudonyms.mapValues { (_, v) -> v.map { "kilo$it" }.toTypedArray() }
+}
+
+object Kilometer : Kilo(Meter)
+object Centimeter : Centi(Meter)
+object Meter : Length() {
+    override val baseUnit: Unit = Meter
+}
+
+object Yard : Length() {
+    override val conversionFactor: Double =
+        LengthConversions.YARD
+}
+
+object Mile : Length() {
+    override val conversionFactor: Double =
+        LengthConversions.MILE
+}
+
+object Foot : Length() {
+    override val conversionFactor: Double =
+        LengthConversions.FOOT
+}
+
+object Inch : Length() {
+    override val conversionFactor: Double =
+        LengthConversions.INCH
+}
+
+abstract class Length : Unit {
+    override val conversionFactor: Double = 1.0
+    override val baseUnit: Unit = Meter
+
+    companion object {
+        fun fromMeasurementSystem(measurementSystem: String) =
+            when (measurementSystem) {
+                "1" -> Mile
+                "2" -> Kilometer
+                else -> Meter
+            }
+    }
+}
+
+object Year : Time() {
+    override val conversionFactor: Double = TimeConversions.YEAR
+}
+
+object Week : Time() {
+    override val conversionFactor: Double = TimeConversions.WEEK
+}
+
+object Day : Time() {
+    override val conversionFactor: Double = TimeConversions.DAY
+}
+
+object Hour : Time() {
+    override val conversionFactor: Double = TimeConversions.HOUR
+}
+
+object Minute : Time() {
+    override val conversionFactor: Double = TimeConversions.MINUTE
+}
+
+object Second : Time() {
+    override val conversionFactor: Double = TimeConversions.SECOND
+    override val baseUnit: Unit = Second
+}
+
+abstract class Time : Unit {
+    override val baseUnit: Unit = Second
+}
+
+object Kilogram : Kilo(Gram)
+
+object Pound : Mass() {
+    override val conversionFactor: Double = 453.59237
+}
+
+object Ounce : Mass() {
+    override val conversionFactor: Double = 28.349523125
+}
+
+object Gram : Mass() {
+    override val conversionFactor: Double = 1.0
+    override val baseUnit: Unit = Gram
+}
+
+abstract class Mass : Unit {
+    override val baseUnit: Unit = Gram
+
+    companion object {
+        fun fromMeasurementSystem(measurementSystem: String) =
+            when (measurementSystem) {
+                "1" -> Pound
+                "2" -> Kilogram
+                else -> Gram
+            }
+    }
+}
+
+interface Unit {
+    val conversionFactor: Double
+    val baseUnit: Unit
+
+    companion object {
+        val pseudonyms: Map<Unit, Array<String>>
+            get() = mapOf(
+                Pair(Mile, arrayOf("mile", "miles", "mi")),
+                Pair(Foot, arrayOf("foot", "feet", "ft")),
+                Pair(Inch, arrayOf("inch", "inches", "in")),
+                Pair(Kilometer, arrayOf("kilometer", "kilometers", "km")),
+                Pair(Meter, arrayOf("meter", "meters", "m")),
+                Pair(MilesPerHour, arrayOf("miles per hour", "mph", "mi/hr", "mi/h")),
+                Pair(KilometersPerHour, arrayOf("kilometers per hour", "kph", "km/h", "km/hr")),
+                Pair(Pound, arrayOf("meters per second", "m/s", "m/sec")),
+                Pair(MetersPerSecond, arrayOf("meters per second", "m/s", "m/sec")),
+                Pair(Ounce, arrayOf("ounce", "ounces", "oz")),
+                Pair(Pound, arrayOf("pound", "pounds", "lb", "lbs")),
+                Pair(Kilogram, arrayOf("kilogram", "kilograms", "kg")),
+                Pair(Gram, arrayOf("gram", "grams", "g")),
+            )
+
+        fun fromString(value: String): Unit? = pseudonyms.toList().find { pair ->
+            pair.second.any { it == value }
+        }?.first
+    }
+    //override fun toString(): String = pseudonyms[this]!!.get(0)!!
+
+}
+
+object TimeConversions {
+    const val SECOND: Double = 1.0
+    const val MINUTE: Double = 60.0
+    const val HOUR: Double = 3600.0
+    const val DAY: Double = HOUR * 24.0
+    const val WEEK: Double = DAY * 7.0
+    const val YEAR: Double = DAY * 365.25
+}
+
+fun kelvinToCelsius(kelvin: Double) = kelvin - KELVIN_TO_CELSIUS
+fun kelvinToFahrenheit(kelvin: Double) = kelvinToCelsius(kelvin) * 9.0 / 5.0 + 32.0
+
+fun unitsToSystem(units: String?): String {
+    return when (units) {
+        "2", "kilometers", "km", "cm", "C", "km/h" -> "2"
+        "1", "miles", "mile", "mi", "F", "mph", "m/h", "in", "inch", "inches", "ft", "feet" -> "1"
+        else -> "0"
+    }
+}
+
+fun normalizeDistance(distance: Double, measurementSystem: String) =
+    when (unitsToSystem(measurementSystem)) {
+        "1" -> Quantity(distance, Mile).convertTo(Meter).normalize().value
+        "2" -> Quantity(distance, Kilometer).convertTo(Meter).normalize().value
+        else -> Quantity(distance, Meter).normalize().value
+    }
+
+fun quantifyDistance(distance: Double, measurementSystem: String) =
+    when (unitsToSystem(measurementSystem)) {
+        "1" -> Quantity(distance, Mile)
+        "2" -> Quantity(distance, Kilometer)
+        else -> Quantity(distance, Meter)
+    }

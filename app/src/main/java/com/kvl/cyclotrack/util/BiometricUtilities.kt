@@ -6,11 +6,7 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import com.kvl.cyclotrack.Biometrics
 import com.kvl.cyclotrack.CyclotrackApp
-import com.kvl.cyclotrack.FEET_TO_INCHES
-import com.kvl.cyclotrack.FEET_TO_METERS
 import com.kvl.cyclotrack.GoogleFitApiService
-import com.kvl.cyclotrack.INCHES_TO_FEET
-import com.kvl.cyclotrack.METERS_TO_FEET
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.Trip
 import com.kvl.cyclotrack.TripsRepository

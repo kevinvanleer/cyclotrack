@@ -1,17 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingHorizontal="6dp"
-    tools:context=".TripSummariesFragment">
+<layout xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/trip_summary_card_list"
+    <data>
+
+        <import type="android.view.View" />
+
+        <import type="com.kvl.cyclotrack.FeatureFlags" />
+
+        <variable
+            name="viewmodel"
+            type="com.kvl.cyclotrack.TripSummariesViewModel" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
+        android:layout_height="match_parent"
+        android:paddingHorizontal="6dp"
+        tools:context=".TripSummariesFragment">
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/trip_summary_search_text_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="Search"
+            app:endIconMode="clear_text"
+            app:endIconScaleType="centerInside"
+            app:layout_constraintBottom_toTopOf="@id/trip_summary_card_list"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/trip_summary_search_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="?android:attr/actionModeWebSearchDrawable"
+                android:imeOptions="actionSearch"
+                android:maxLines="1"
+                android:inputType="text"
+                android:selectAllOnFocus="true"
+                android:text="@={viewmodel.searchText}" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/trip_summary_card_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/trip_summary_search_text_layout"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior" />
+
+        <TextView
+            android:id="@+id/trip_summaries_empty_search_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/empty_search_result_message"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/trip_summary_search_text_layout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/trip_summary_search_hints_card"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginTop="10dp"
+            android:padding="20dp"
+            android:visibility="gone"
+            app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/trip_summary_search_text_layout">
+
+            <androidx.core.widget.NestedScrollView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:id="@+id/trip_summary_search_hints_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </androidx.core.widget.NestedScrollView>
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
