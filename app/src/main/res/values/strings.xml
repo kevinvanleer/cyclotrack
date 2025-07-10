@@ -163,10 +163,9 @@
     <string name="autopause_label">AUTO-PAUSE</string>
     <string name="preference_key_user_current_version">preference_key_user_current_version</string>
     <string name="whats_new_message">
-    \n\n&#8226; Burn-In Reduction: Burn-in reduction will activate automatically for rides lasting over two hours. Want it on from the start of each ride? Enable it anytime in your user preferences!
-    \n\n&#8226; Quick Control: Tap the screen to temporarily disable burn-in reduction when needed.
-    \n\n&#8226; Swipe up to reveal the pause button. No more pauses caused by sweat or rain!
-</string>
+    \n\n&#8226; Search rides: now you can search through your ride history by date, distance, and other keywords!
+    \n\n&#8226; Increased visibility when burn-in reduction enabled.
+    </string>
     <string name="preferences_dashboard_safe_zone_top_margin">preference_dashboard_safe_zone_top_margin</string>
     <string name="preferences_dashboard_safe_zone_bottom_margin">preference_dashboard_safe_zone_bottom_margin</string>
     <string name="preference_key_dashboard_safe_zone">preference_key_dashboard_safe_zone</string>

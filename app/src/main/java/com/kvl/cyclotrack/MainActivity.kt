@@ -121,7 +121,7 @@ class MainActivity : AppCompatActivity() {
                     this,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ),
-                -> startTripHandler()
+                    -> startTripHandler()
 
                 else -> initializeLocationService()
             }
@@ -231,7 +231,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             commit()
                         }
-                    if (currentVersion < 63) {
+                    if (currentVersion < 66) {
                         showWhatsNewDialog()
                     }
                 }
