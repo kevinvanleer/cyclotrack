@@ -100,13 +100,13 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
             true -> {
                 measurementValueView.paint.apply {
                     style = Paint.Style.STROKE
-                    strokeWidth = 1f
+                    strokeWidth = 4f
                 }
                 measurementLabelView.paint.apply {
                     style = Paint.Style.STROKE
                     strokeWidth = 1f
                 }
-                measurementValueView.setTextColor(Color.argb(0.95f, 1f, 1f, 1f))
+                measurementValueView.setTextColor(Color.argb(0.99f, 1f, 1f, 1f))
                 measurementLabelView.setTextColor(Color.argb(0.75f, 1f, 1f, 1f))
                 measurementExtraInfoImageView.visibility = INVISIBLE
                 measurementExtraInfoTextView.visibility = INVISIBLE
