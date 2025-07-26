@@ -169,7 +169,7 @@ dependencies {
     implementation "com.google.android.gms:play-services-maps:19.2.0"
     implementation("com.google.android.gms:play-services-fitness:21.2.0")
     implementation "com.google.android.gms:play-services-location:21.3.0"
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("com.google.android.gms:play-services-auth:21.4.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
 
     implementation "androidx.room:room-runtime:$room_version"
@@ -191,11 +191,11 @@ dependencies {
     implementation "com.google.code.gson:gson:2.13.1"
 
     // requires kotlin plugin update
-    implementation platform("com.google.firebase:firebase-bom:33.16.0")
+    implementation platform("com.google.firebase:firebase-bom:34.0.0")
     implementation "com.google.firebase:firebase-crashlytics"
     implementation "com.google.firebase:firebase-analytics"
 
-    implementation platform("com.squareup.okhttp3:okhttp-bom:5.0.0")
+    implementation platform("com.squareup.okhttp3:okhttp-bom:5.1.0")
     implementation "com.squareup.okhttp3:okhttp"
     implementation "com.squareup.okhttp3:logging-interceptor"
     implementation "com.squareup.moshi:moshi:$moshi_version"
