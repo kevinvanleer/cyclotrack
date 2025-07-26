@@ -106,8 +106,8 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
                     style = Paint.Style.STROKE
                     strokeWidth = 1f
                 }
-                measurementValueView.setTextColor(Color.argb(0.99f, 1f, 1f, 1f))
-                measurementLabelView.setTextColor(Color.argb(0.75f, 1f, 1f, 1f))
+                measurementValueView.setTextColor(Color.argb(0.85f, 1f, 1f, 1f))
+                measurementLabelView.setTextColor(Color.argb(0.85f, 1f, 1f, 1f))
                 measurementExtraInfoImageView.visibility = INVISIBLE
                 measurementExtraInfoTextView.visibility = INVISIBLE
             }
