@@ -99,6 +99,7 @@ android {
     buildFeatures {
         dataBinding true
         buildConfig true
+        resValues true
     }
 
     dataBinding {
