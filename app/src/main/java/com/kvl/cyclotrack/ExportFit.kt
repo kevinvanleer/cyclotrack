@@ -171,7 +171,7 @@ fun writeFitFile(
     val softwareVersion = BuildConfig.VERSION_CODE.toFloat()
     val serialNumber =
         (Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-            ?: "0").toLong(radix = 16)
+            ?: "0").toULong(radix = 16).toLong()
 
     // Every FIT file MUST contain a File ID message
     val fileIdMesg = FileIdMesg()
