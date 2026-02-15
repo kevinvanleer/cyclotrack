@@ -133,7 +133,7 @@ fun makeFitMessages(
             messageIndex = 0
             timestamp =
                 DateTime(Date(exportData.summary!!.timestamp + (exportData.summary.duration!! * 1000).toLong()))
-            startTime = DateTime(getStartTime(exportData.timeStates!!)!!)
+            startTime = DateTime(Date(getStartTime(exportData.timeStates!!)!!))
             totalElapsedTime = (exportData.summary.duration).toFloat()
             totalTimerTime = accumulateActiveTime(exportData.timeStates).toFloat()
             sport = Sport.CYCLING
