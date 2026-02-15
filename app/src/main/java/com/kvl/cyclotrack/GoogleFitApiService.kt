@@ -7,8 +7,6 @@ import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessActivities
 import com.google.android.gms.fitness.data.*
 import com.google.android.gms.fitness.request.*
-import com.google.android.gms.fitness.result.SessionReadResponse
-import com.google.android.gms.tasks.Task
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.SystemUtils
@@ -595,40 +593,6 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
             ?.addOnFailureListener { Log.d(logTag, "Failed to insert session for trip ${trip.id}") }
     }
 
-    fun getSession(trip: Trip): Task<SessionReadResponse>? {
-        val sessionId = getSessionId(trip.id!!)
-        val start = trip.timestamp - (1000 * 60 * 60)
-        val end = trip.timestamp + (trip.duration?.times(1000.0)!! + (1000 * 60 * 60)).toLong()
-
-        val readRequest = SessionReadRequest.Builder()
-            .setSessionId(sessionId)
-            .setTimeInterval(start, end, TimeUnit.MILLISECONDS)
-            .build()
-        return getGoogleAccount(context)?.let {
-            Fitness.getSessionsClient(context, it)
-                .readSession(readRequest)
-        }
-    }
-
-    fun getSession(sessionId: String): Task<SessionReadResponse>? {
-        val readRequest = SessionReadRequest.Builder()
-            .setSessionId(sessionId)
-            .build()
-        return getGoogleAccount(context)?.let {
-            Fitness.getSessionsClient(context, it)
-                .readSession(readRequest)
-        }
-    }
-
-    fun getSession(start: Long, end: Long): Task<SessionReadResponse>? {
-        val readRequest = SessionReadRequest.Builder()
-            .setTimeInterval(start, end, TimeUnit.MILLISECONDS)
-            .build()
-        return getGoogleAccount(context)?.let {
-            Fitness.getSessionsClient(context, it)
-                .readSession(readRequest)
-        }
-    }
 
     fun deleteTrip(tripId: Long, startTime: Long, endTime: Long) {
         val request = DataDeleteRequest.Builder()
