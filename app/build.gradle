@@ -4,12 +4,16 @@ plugins {
     id 'com.android.application'
     id 'com.google.dagger.hilt.android'
     id "com.google.devtools.ksp"
-    id "kotlin-android"
     id "androidx.room"
     id "androidx.navigation.safeargs.kotlin"
     id "com.google.gms.google-services"
     id "com.google.firebase.crashlytics"
-    id "kotlin-kapt" // this is here for databinding support only
+    id "com.android.legacy-kapt"
+}
+
+def secureProps = new Properties()
+if (file("../secure.properties").exists()) {
+    file("../secure.properties")?.withInputStream { secureProps.load(it) }
 }
 
 def homePath = System.properties["user.home"]
@@ -80,18 +84,8 @@ android {
 
         testInstrumentationRunner "com.kvl.cyclotrack.CustomTestRunner"
 
-        def secureProps = new Properties()
-        if (file("../secure.properties").exists()) {
-            file("../secure.properties")?.withInputStream { secureProps.load(it) }
-        }
-        def openMapsVariantApiKey = secureProps.getProperty("OPENWEATHER_DEV") ?: ""
-        applicationVariants.configureEach { variant ->
-            if (variant.buildType.name == "release" || variant.buildType.name == "prod") {
-                openMapsVariantApiKey = secureProps.getProperty("OPENWEATHER_PROD") ?: ""
-            }
-        }
         resValue "string", "maps_api_key", (secureProps.getProperty("MAPS_API_KEY") ?: "")
-        resValue "string", "openweather_api_key", (openMapsVariantApiKey)
+        resValue "string", "openweather_api_key", (secureProps.getProperty("OPENWEATHER_DEV") ?: "")
         resValue "string", "strava_client_id", (secureProps.getProperty("STRAVA_CLIENT_ID") ?: "")
         resValue "string", "strava_client_secret", (secureProps.getProperty("STRAVA_CLIENT_SECRET") ?: "")
     }
@@ -117,6 +111,7 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             signingConfig signingConfigs.Default
             debuggable true
+            resValue "string", "openweather_api_key", (secureProps.getProperty("OPENWEATHER_PROD") ?: "")
         }
         debug {
             applicationIdSuffix ".debug"
@@ -131,6 +126,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             signingConfig signingConfigs.Default
+            resValue "string", "openweather_api_key", (secureProps.getProperty("OPENWEATHER_PROD") ?: "")
         }
     }
     testOptions {
