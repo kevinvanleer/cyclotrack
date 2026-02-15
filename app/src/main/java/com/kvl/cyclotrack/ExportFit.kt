@@ -126,13 +126,14 @@ fun makeFitMessages(
     }
 
     // Every FIT ACTIVITY file MUST contain at least one Session message
+    val sessionStartTime = getStartTime(exportData.timeStates!!)!!
+    val sessionEndTime = getEndTime(exportData.timeStates)!!
     messages.add(
         SessionMesg().apply {
             messageIndex = 0
-            timestamp =
-                DateTime(Date(exportData.summary!!.timestamp + (exportData.summary.duration!! * 1000).toLong()))
-            startTime = DateTime(Date(getStartTime(exportData.timeStates!!)!!))
-            totalElapsedTime = (exportData.summary.duration).toFloat()
+            timestamp = DateTime(Date(sessionEndTime))
+            startTime = DateTime(Date(sessionStartTime))
+            totalElapsedTime = ((sessionEndTime - sessionStartTime) / 1000.0).toFloat()
             totalTimerTime = accumulateActiveTime(exportData.timeStates).toFloat()
             sport = Sport.CYCLING
             subSport = SubSport.ROAD
