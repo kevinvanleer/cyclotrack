@@ -63,11 +63,15 @@ fun makeFitMessages(
         developerDataIndex = 0.toShort()
     })
 
-    val records = mutableListOf<RecordMesg>()
+    val recordsByTimestamp = linkedMapOf<Long, RecordMesg>()
+
+    fun getOrCreateRecord(millis: Long): RecordMesg =
+        recordsByTimestamp.getOrPut(millis / 1000) {
+            RecordMesg().apply { timestamp = DateTime(Date(millis)) }
+        }
 
     exportData.measurements?.forEach {
-        records.add(RecordMesg().apply {
-            timestamp = DateTime(Date(it.time))
+        getOrCreateRecord(it.time).apply {
             if (exportData.speedMeasurements == null || circumference == null) {
                 speed = it.speed
             }
@@ -75,38 +79,28 @@ fun makeFitMessages(
             positionLat = (it.latitude * toSemicircles).toInt()
             positionLong = (it.longitude * toSemicircles).toInt()
             gpsAccuracy = it.accuracy.roundToInt().toShort()
-        })
+        }
     }
 
     exportData.heartRateMeasurements?.forEach {
-        records.add(RecordMesg().apply {
-            timestamp = DateTime(Date(it.timestamp))
-            heartRate = it.heartRate
-        })
+        getOrCreateRecord(it.timestamp).heartRate = it.heartRate
     }
 
     if (circumference != null) {
         exportData.speedMeasurements?.forEach {
             it.rpm?.let { rpm ->
-                records.add(RecordMesg().apply {
-                    timestamp = DateTime(Date(it.timestamp))
-                    speed = rpm * circumference / 60
-                })
+                getOrCreateRecord(it.timestamp).speed = rpm * circumference / 60
             }
         }
     }
 
     exportData.cadenceMeasurements?.forEach {
         it.rpm?.let { rpm ->
-            records.add(RecordMesg().apply {
-                timestamp = DateTime(Date(it.timestamp))
-                cadence = rpm.toInt().toShort()
-            })
+            getOrCreateRecord(it.timestamp).cadence = rpm.toInt().toShort()
         }
     }
 
-    records.sortBy { it.timestamp.timestamp }
-    messages.addAll(records)
+    messages.addAll(recordsByTimestamp.values.sortedBy { it.timestamp.timestamp })
 
     // Timer Events are a BEST PRACTICE for FIT ACTIVITY files
     exportData.timeStates?.let {
