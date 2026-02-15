@@ -63,8 +63,10 @@ fun makeFitMessages(
         developerDataIndex = 0.toShort()
     })
 
+    val records = mutableListOf<RecordMesg>()
+
     exportData.measurements?.forEach {
-        messages.add(RecordMesg().apply {
+        records.add(RecordMesg().apply {
             timestamp = DateTime(Date(it.time))
             if (exportData.speedMeasurements == null || circumference == null) {
                 speed = it.speed
@@ -77,7 +79,7 @@ fun makeFitMessages(
     }
 
     exportData.heartRateMeasurements?.forEach {
-        messages.add(RecordMesg().apply {
+        records.add(RecordMesg().apply {
             timestamp = DateTime(Date(it.timestamp))
             heartRate = it.heartRate
         })
@@ -86,7 +88,7 @@ fun makeFitMessages(
     if (circumference != null) {
         exportData.speedMeasurements?.forEach {
             it.rpm?.let { rpm ->
-                messages.add(RecordMesg().apply {
+                records.add(RecordMesg().apply {
                     timestamp = DateTime(Date(it.timestamp))
                     speed = rpm * circumference / 60
                 })
@@ -96,13 +98,15 @@ fun makeFitMessages(
 
     exportData.cadenceMeasurements?.forEach {
         it.rpm?.let { rpm ->
-            messages.add(RecordMesg().apply {
+            records.add(RecordMesg().apply {
                 timestamp = DateTime(Date(it.timestamp))
                 cadence = rpm.toInt().toShort()
             })
         }
     }
 
+    records.sortBy { it.timestamp.timestamp }
+    messages.addAll(records)
 
     // Timer Events are a BEST PRACTICE for FIT ACTIVITY files
     exportData.timeStates?.let {
