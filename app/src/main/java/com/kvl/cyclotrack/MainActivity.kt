@@ -231,7 +231,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             commit()
                         }
-                    if (currentVersion < 66) {
+                    if (currentVersion < 68) {
                         showWhatsNewDialog()
                     }
                 }
