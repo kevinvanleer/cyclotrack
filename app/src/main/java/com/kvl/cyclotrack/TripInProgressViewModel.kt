@@ -6,6 +6,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
@@ -78,8 +79,33 @@ class TripInProgressViewModel @Inject constructor(
     val hrmSensor = MutableLiveData(HrmData(null, null))
     val cadenceSensor = MutableLiveData(CadenceData(null, null, null, null))
     val speedSensor = MutableLiveData(SpeedData(null, null, null, null))
+    val powerSensor = MutableLiveData(PowerData(null, null, null, null, null, null))
 
     val latestWeather = weatherRepository.observeLatest()
+
+    val cadenceRpm: LiveData<CadenceData?> = MediatorLiveData<CadenceData?>().apply {
+        addSource(cadenceSensor) {
+            value = CadenceData(
+                batteryLevel = it.batteryLevel,
+                revolutionCount = it.revolutionCount,
+                lastEvent = it.lastEvent,
+                rpm = it.rpm
+            )
+        }
+        addSource(powerSensor) {
+            if (cadenceSensor.value?.rpm == null) {
+                value = CadenceData(
+                    batteryLevel = it.batteryLevel,
+                    revolutionCount = it.cumulativeCrankRevolutions,
+                    lastEvent = it.lastCrankEventTime,
+                    rpm = when {
+                        it.rpm == 0f && (it.instantaneousPower ?: 0) > 0 -> value?.rpm
+                        else -> it.rpm
+                    }
+                )
+            }
+        }
+    }
 
     suspend fun getFastestDistance(distance: Int, conversionFactor: Double, limit: Int = 10) =
         splitRepository.getFastestDistance(
@@ -108,6 +134,30 @@ class TripInProgressViewModel @Inject constructor(
     @Subscribe
     fun onSpeedData(speed: SpeedData) {
         speedSensor.postValue(speed)
+    }
+
+    @Subscribe
+    fun onPowerData(power: PowerData) {
+        val inProgress = isTripInProgress(currentState)
+        val instantaneousPower = power.instantaneousPower?.toDouble() ?: 0.0
+        val newSampleCount = if (inProgress) powerSensor.value?.sampleCount?.plus(1)
+            ?: 1 else powerSensor.value?.sampleCount
+        powerSensor.postValue(
+            power.copy(
+                emaPower = exponentialSmoothing(
+                    alpha = 2 / (3 + 1.0),
+                    current = instantaneousPower,
+                    last = (powerSensor.value?.emaPower?.toDouble() ?: instantaneousPower)
+                ).toInt(),
+                averagePower = if (inProgress) average(
+                    newValue = instantaneousPower,
+                    sampleSize = newSampleCount ?: 1,
+                    lastAverage = powerSensor.value?.averagePower?.toDouble()
+                        ?: instantaneousPower,
+                ).toInt() else powerSensor.value?.averagePower,
+                sampleCount = newSampleCount
+            )
+        )
     }
 
     val currentProgress: LiveData<TripProgress>

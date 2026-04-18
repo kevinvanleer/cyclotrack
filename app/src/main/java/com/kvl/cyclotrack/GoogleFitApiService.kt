@@ -5,10 +5,20 @@ import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessActivities
-import com.google.android.gms.fitness.data.*
-import com.google.android.gms.fitness.request.*
+import com.google.android.gms.fitness.data.DataPoint
+import com.google.android.gms.fitness.data.DataSet
+import com.google.android.gms.fitness.data.DataSource
+import com.google.android.gms.fitness.data.DataType
+import com.google.android.gms.fitness.data.Field
+import com.google.android.gms.fitness.data.Session
+import com.google.android.gms.fitness.request.DataDeleteRequest
+import com.google.android.gms.fitness.request.DataReadRequest
+import com.google.android.gms.fitness.request.DataUpdateRequest
+import com.google.android.gms.fitness.request.SessionInsertRequest
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
+import com.kvl.cyclotrack.data.powerToCadence
 import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.fitnessOptions
 import com.kvl.cyclotrack.util.getGoogleAccount
@@ -168,6 +178,22 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         }
 
         return cadenceData.build()
+    }
+
+    private fun createCyclingPowerDataset(measurements: Array<CyclingPowerMeasurement>): DataSet {
+        val dataSource = DataSource.Builder()
+            .setAppPackageName(context)
+            .setDataType(DataType.TYPE_POWER_SAMPLE)
+            .setType(DataSource.TYPE_RAW)
+            .build()
+        val powerData = DataSet.builder(dataSource)
+        measurements.forEach {
+            val dataPoint = DataPoint.builder(dataSource)
+            dataPoint.setField(Field.FIELD_WATTS, it.instantaneousPower.toFloat())
+            dataPoint.setTimestamp(it.timestamp, TimeUnit.MILLISECONDS)
+            powerData.add(dataPoint.build())
+        }
+        return powerData.build()
     }
 
     private fun createCrankRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>): DataSet {
@@ -352,6 +378,10 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         )
     }
 
+    fun insertPowerDataset(measurements: Array<CyclingPowerMeasurement>) {
+        insertDataset(createCyclingPowerDataset(measurements))
+    }
+
     fun insertCrankRevolutionsDataset(measurements: Array<CadenceSpeedMeasurement>) {
         insertDataset(createCrankRevolutionsDataset(measurements))
     }
@@ -435,16 +465,21 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         heartRateMeasurements: Array<HeartRateMeasurement>,
         speedMeasurements: Array<CadenceSpeedMeasurement>,
         cadenceMeasurements: Array<CadenceSpeedMeasurement>,
-        wheelCircumference: Float
+        wheelCircumference: Float,
+        powerMeasurements: Array<CyclingPowerMeasurement>,
     ) {
         measurements.toList().chunked(1000).forEach {
             Log.d(logTag, "Processing measurements chunk")
             insertHeartRateDataset(heartRateMeasurements)
             insertLocationDataset(it.toTypedArray())
             insertDistanceDeltaDataset(it.toTypedArray())
-            insertCadenceDataset(cadenceMeasurements)
+            insertCadenceDataset(
+                if (cadenceMeasurements.isNotEmpty()) cadenceMeasurements
+                else powerToCadence(powerMeasurements)
+            )
             insertSpeedDataset(speedMeasurements, wheelCircumference)
             insertCrankRevolutionsDataset(cadenceMeasurements)
+            insertPowerDataset(powerMeasurements)
             insertWheelRevolutionsDataset(speedMeasurements)
         }
     }

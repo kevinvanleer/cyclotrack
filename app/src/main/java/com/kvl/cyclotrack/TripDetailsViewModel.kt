@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,7 +29,8 @@ class TripDetailsViewModel @Inject constructor(
     private val googleFitApiService: GoogleFitApiService,
     private val weatherRepository: WeatherRepository,
     private val hrmRepository: HeartRateMeasurementRepository,
-    private val cscRepository: CadenceSpeedMeasurementRepository
+    private val cscRepository: CadenceSpeedMeasurementRepository,
+    private val powerRepository: CyclingPowerMeasurementRepository,
 ) : ViewModel() {
     val logTag = "TripDetailsViewModel"
     var tripId: Long = 0
@@ -39,8 +42,9 @@ class TripDetailsViewModel @Inject constructor(
             onboardSensors = onboardSensorsRepository.observeDecimated(value)
             tripWeather = weatherRepository.observeTripWeather(value)
             heartRateMeasurements = hrmRepository.observeTripHeartRates(value)
-            cadenceMeasurements = cscRepository.observeTripCadence(value)
+            cadenceMeasurements = buildCadenceLiveData(value)
             speedMeasurements = cscRepository.observeTripSpeed(value)
+            powerMeasurements = powerRepository.observeTripPowerMeasurements(value)
             field = value
         }
 
@@ -54,6 +58,7 @@ class TripDetailsViewModel @Inject constructor(
     lateinit var heartRateMeasurements: LiveData<Array<HeartRateMeasurement>> private set
     lateinit var cadenceMeasurements: LiveData<Array<CadenceSpeedMeasurement>> private set
     lateinit var speedMeasurements: LiveData<Array<CadenceSpeedMeasurement>> private set
+    lateinit var powerMeasurements: LiveData<Array<CyclingPowerMeasurement>> private set
 
     suspend fun getBikeWheelCircumference(bikeId: Long) =
         userCircumferenceToMeters(bikeRepository.get(bikeId)?.wheelCircumference) ?: 0f
@@ -139,6 +144,7 @@ class TripDetailsViewModel @Inject constructor(
         val heartRateMeasurements: Array<HeartRateMeasurement>? = null,
         val speedMeasurements: Array<CadenceSpeedMeasurement>? = null,
         val cadenceMeasurements: Array<CadenceSpeedMeasurement>? = null,
+        val powerMeasurements: Array<CyclingPowerMeasurement>? = null
     )
 
     fun speedLiveData() = MediatorLiveData<SpeedData>().apply {
@@ -153,6 +159,24 @@ class TripDetailsViewModel @Inject constructor(
         }
         addSource(speedMeasurements) {
             value = value?.copy(speedMeasurements = it) ?: SpeedData(speedMeasurements = it)
+        }
+    }
+
+    private fun buildCadenceLiveData(tripId: Long): LiveData<Array<CadenceSpeedMeasurement>> {
+        val cscSource = cscRepository.observeTripCadence(tripId)
+        val powerSource = powerRepository.observeTripCadence(tripId)
+
+        return MediatorLiveData<Array<CadenceSpeedMeasurement>>().apply {
+            var cscData: Array<CadenceSpeedMeasurement>? = null
+            var powerData: Array<CadenceSpeedMeasurement>? = null
+
+            fun resolve() {
+                val csc = cscData ?: return
+                value = if (csc.isNotEmpty()) csc else (powerData ?: return)
+            }
+
+            addSource(cscSource) { cscData = it; resolve() }
+            addSource(powerSource) { powerData = it; resolve() }
         }
     }
 

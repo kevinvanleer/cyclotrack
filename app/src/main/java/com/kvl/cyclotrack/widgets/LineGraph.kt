@@ -225,7 +225,11 @@ class LineGraph(
                 ), dataset.paint ?: greenPaint
             )
         } catch (e: Exception) {
-            Log.e("LineGraph", "Could not draw area", e)
+            Log.e(
+                "LineGraph",
+                "Could not draw area: points1=${dataset.points1.size}, points2=${dataset.points2.size}, xRange=${dataset.xRange}, yRange=${dataset.yRange}",
+                e
+            )
         }
     }
 

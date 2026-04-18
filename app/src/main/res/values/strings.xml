@@ -163,7 +163,7 @@
     <string name="autopause_label">AUTO-PAUSE</string>
     <string name="preference_key_user_current_version">preference_key_user_current_version</string>
     <string name="whats_new_message">
-    \n\nFixed FIT file export errors causing failure or corruption. Re-export any previously exported rides for a corrected file.
+    \n\nPower meter support is here!\n\nConnect your power meter to see watts and cadence in real time on the dashboard. Power data is also recorded in ride summaries, exports, and Strava syncs.
     </string>
     <string name="preferences_dashboard_safe_zone_top_margin">preference_dashboard_safe_zone_top_margin</string>
     <string name="preferences_dashboard_safe_zone_bottom_margin">preference_dashboard_safe_zone_bottom_margin</string>

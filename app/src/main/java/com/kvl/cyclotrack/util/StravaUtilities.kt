@@ -17,6 +17,7 @@ import com.kvl.cyclotrack.TripsRepository
 import com.kvl.cyclotrack.WeatherRepository
 import com.kvl.cyclotrack.cyclotrackFitAppId
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.data.StravaTokenExchangeResponse
 import com.kvl.cyclotrack.makeFitMessages
@@ -261,6 +262,7 @@ suspend fun syncTripWithStrava(
     measurementsRepository: MeasurementsRepository,
     heartRateMeasurementRepository: HeartRateMeasurementRepository,
     cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository,
+    powerMeasurementRepository: CyclingPowerMeasurementRepository,
     timeStateRepository: TimeStateRepository,
     splitRepository: SplitRepository,
     onboardSensorsRepository: OnboardSensorsRepository,
@@ -276,7 +278,8 @@ suspend fun syncTripWithStrava(
         weather = weatherRepository.getTripWeather(tripId),
         heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
         speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),
-        cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(tripId)
+        cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(tripId),
+        powerMeasurements = powerMeasurementRepository.getPowerMeasurements(tripId)
     )
     val now = Instant.now()
     val nextWindow = Instant.parse(

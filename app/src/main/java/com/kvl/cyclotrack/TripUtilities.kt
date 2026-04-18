@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
 import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.FEET_TO_INCHES
@@ -250,6 +251,15 @@ fun getTripIntervals(
 
 fun getTripIntervals(
     timeStates: Array<TimeState>?,
+    measurements: Array<CyclingPowerMeasurement>? = null,
+): Array<LongRange> = getTripIntervals(
+    timeStates,
+    measurements?.firstOrNull()?.timestamp,
+    measurements?.lastOrNull()?.timestamp
+)
+
+fun getTripIntervals(
+    timeStates: Array<TimeState>?,
     measurements: Array<CadenceSpeedMeasurement>? = null,
 ): Array<LongRange> = getTripIntervals(
     timeStates,
@@ -329,6 +339,17 @@ fun getTripLegs(
     intervals: Array<LongRange>,
 ): Array<Array<HeartRateMeasurement>> {
     val legs = ArrayList<Array<HeartRateMeasurement>>()
+    intervals.forEach { interval ->
+        legs.add(measurements.filter { interval.contains(it.timestamp) }.toTypedArray())
+    }
+    return legs.toTypedArray()
+}
+
+fun getTripLegs(
+    measurements: Array<CyclingPowerMeasurement>,
+    intervals: Array<LongRange>,
+): Array<Array<CyclingPowerMeasurement>> {
+    val legs = ArrayList<Array<CyclingPowerMeasurement>>()
     intervals.forEach { interval ->
         legs.add(measurements.filter { interval.contains(it.timestamp) }.toTypedArray())
     }

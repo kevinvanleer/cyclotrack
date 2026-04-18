@@ -27,6 +27,7 @@ import androidx.navigation.NavDeepLinkBuilder
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
@@ -135,6 +136,9 @@ class TripInProgressService @Inject constructor() :
     lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
 
     @Inject
+    lateinit var cyclingPowerMeasurementRepository: CyclingPowerMeasurementRepository
+
+    @Inject
     lateinit var gpsService: GpsService
 
     @Inject
@@ -161,6 +165,7 @@ class TripInProgressService @Inject constructor() :
     private var hrmBpm: Short? = null
     private var speed: SpeedData? = null
     private var cadence: CadenceData? = null
+    private var power: PowerData? = null
 
     val hrmEventHandler: (Long) -> (HrmData) -> Unit = { tripId ->
         { event ->
@@ -302,6 +307,29 @@ class TripInProgressService @Inject constructor() :
     @Subscribe
     fun onBikeConnect(event: ConnectedBikeEvent) {
         updateBike(event.bike)
+    }
+
+    val powerEventHandler: (Long) -> (PowerData) -> Unit = { tripId ->
+        { event ->
+            event.instantaneousPower?.let {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        cyclingPowerMeasurementRepository.insertPowerData(tripId, event)
+                    } catch (e: SQLiteConstraintException) {
+                        Log.e(logTag, "Failed to add power measurement", e)
+                        handleSqliteConstraintException(e)
+                    }
+                }
+            }
+        }
+    }
+
+    lateinit var thisPowerEventHandler: (PowerData) -> Unit
+
+    @Subscribe
+    fun onPowerData(event: PowerData) {
+        power = event
+        thisPowerEventHandler(event)
     }
 
     private fun updateBike(newBike: Bike) {
@@ -868,6 +896,10 @@ class TripInProgressService @Inject constructor() :
 
         if (!::thisSpeedEventHandler.isInitialized) {
             thisSpeedEventHandler = speedEventHandler(tripId)
+        }
+
+        if (!::thisPowerEventHandler.isInitialized) {
+            thisPowerEventHandler = powerEventHandler(tripId)
         }
 
         if (shouldCollectOnboardSensors(applicationContext)) {

@@ -235,46 +235,51 @@ class TripInProgressFragment :
 
     private fun startTrip() {
         Log.d(logTag, "$host")
-        requireContext().startService(Intent(
-            requireContext(),
-            TripInProgressService::class.java
-        ).apply {
-            this.action = getString(R.string.action_start_trip_service)
-        })
+        requireContext().startService(
+            Intent(
+                requireContext(),
+                TripInProgressService::class.java
+            ).apply {
+                this.action = getString(R.string.action_start_trip_service)
+            })
     }
 
     private fun pauseTrip(tripId: Long) {
-        requireActivity().startService(Intent(
-            requireContext(),
-            TripInProgressService::class.java
-        ).apply {
-            this.action = getString(R.string.action_pause_trip_service)
-            this.putExtra("tripId", tripId)
-        })
+        requireActivity().startService(
+            Intent(
+                requireContext(),
+                TripInProgressService::class.java
+            ).apply {
+                this.action = getString(R.string.action_pause_trip_service)
+                this.putExtra("tripId", tripId)
+            })
     }
 
     private fun resumeTrip(tripId: Long) {
-        requireActivity().startService(Intent(
-            requireContext(),
-            TripInProgressService::class.java
-        ).apply {
-            this.action = getString(R.string.action_resume_trip_service)
-            this.putExtra("tripId", tripId)
-        })
+        requireActivity().startService(
+            Intent(
+                requireContext(),
+                TripInProgressService::class.java
+            ).apply {
+                this.action = getString(R.string.action_resume_trip_service)
+                this.putExtra("tripId", tripId)
+            })
     }
 
     private fun endTrip(tripId: Long) {
         FirebaseAnalytics.getInstance(requireContext())
             .logEvent("StopTrip") {
                 param("TripDuration", viewModel.currentProgress.value?.duration ?: 0.0)
+                param("TripDistance", viewModel.currentProgress.value?.distance ?: 0.0)
             }
-        requireActivity().startService(Intent(
-            requireContext(),
-            TripInProgressService::class.java
-        ).apply {
-            this.action = getString(R.string.action_stop_trip_service)
-            this.putExtra("tripId", tripId)
-        })
+        requireActivity().startService(
+            Intent(
+                requireContext(),
+                TripInProgressService::class.java
+            ).apply {
+                this.action = getString(R.string.action_stop_trip_service)
+                this.putExtra("tripId", tripId)
+            })
 
         when (tripId >= 0) {
             true -> {
@@ -348,19 +353,24 @@ class TripInProgressFragment :
                 .logEvent("StartTrip") {
                     param(
                         "CadenceEnabled",
-                        (viewModel.cadenceSensor.value != null).compareTo(false).toLong()
+                        (viewModel.cadenceSensor.value?.rpm != null).compareTo(false).toString()
                     )
                     param(
                         "HrmEnabled",
-                        (viewModel.hrmSensor.value != null).compareTo(false).toLong()
+                        (viewModel.hrmSensor.value?.bpm != null).compareTo(false).toString()
                     )
                     param(
                         "SpeedEnabled",
-                        (viewModel.speedSensor.value != null).compareTo(false).toLong()
+                        (viewModel.speedSensor.value?.rpm != null).compareTo(false).toString()
+                    )
+                    param(
+                        "PowerEnabled",
+                        (viewModel.powerSensor.value?.instantaneousPower != null).compareTo(false)
+                            .toString()
                     )
                     param(
                         "GpsEnabled",
-                        (viewModel.gpsEnabled.value != null).compareTo(false).toLong()
+                        (viewModel.gpsEnabled.value == true).compareTo(false).toString()
                     )
                 }
         }
@@ -509,14 +519,16 @@ class TripInProgressFragment :
 
         viewModel.lastCompleteSplit.observe(viewLifecycleOwner) { split ->
             Log.d(logTag, "Observed last split change")
-            middleRightView.value =
-                String.format(
-                    "%.1f",
-                    getUserSpeed(
-                        requireContext(),
-                        (split.distance / split.duration.coerceAtLeast(0.0001))
+            if (viewModel.powerSensor.value?.instantaneousPower == null) {
+                middleRightView.value =
+                    String.format(
+                        "%.1f",
+                        getUserSpeed(
+                            requireContext(),
+                            (split.distance / split.duration.coerceAtLeast(0.0001))
+                        )
                     )
-                )
+            }
             viewLifecycleOwner.lifecycleScope.launch {
                 viewModel.getFastestDistance(
                     getUserDistance(requireContext(), split.totalDistance).roundToInt(),
@@ -529,15 +541,17 @@ class TripInProgressFragment :
                         topView.setIconVisibility(INVISIBLE)
                     }
                 }
-                viewModel.getFastestSplit(
-                    getUserDistance(requireContext(), split.totalDistance).roundToInt(),
-                    getUserDistance(requireContext(), 1.0),
-                    3
-                ).let {
-                    if (it.size == 3 && it.firstOrNull()?.tripId == split.tripId) {
-                        middleRightView.setIconVisibility(VISIBLE)
-                    } else {
-                        middleRightView.setIconVisibility(INVISIBLE)
+                if (viewModel.powerSensor.value?.instantaneousPower == null) {
+                    viewModel.getFastestSplit(
+                        getUserDistance(requireContext(), split.totalDistance).roundToInt(),
+                        getUserDistance(requireContext(), 1.0),
+                        3
+                    ).let {
+                        if (it.size == 3 && it.firstOrNull()?.tripId == split.tripId) {
+                            middleRightView.setIconVisibility(VISIBLE)
+                        } else {
+                            middleRightView.setIconVisibility(INVISIBLE)
+                        }
                     }
                 }
             }
@@ -554,18 +568,34 @@ class TripInProgressFragment :
                 "${hrm.batteryLevel}%"
         }
 
-        viewModel.cadenceSensor.observe(viewLifecycleOwner) { cadence ->
-            Log.d(logTag, "cadence battery: ${cadence.batteryLevel}")
-            Log.d(logTag, "cadence: ${cadence.rpm}")
-            if (cadence.rpm != null) {
+        viewModel.cadenceRpm.observe(viewLifecycleOwner) { cadence ->
+            Log.d(logTag, "cadenceRpm: ${cadence?.rpm}")
+            if (cadence?.rpm != null) {
                 bottomRightView.label = "RPM"
                 bottomRightView.value = when {
                     cadence.rpm.isFinite() && cadence.rpm < 1e3f -> cadence.rpm.toInt().toString()
                     else -> bottomRightView.value
                 }
             }
-            if (cadence.batteryLevel != null && cadence.batteryLevel < lowBatteryThreshold) bottomRightView.extraInfo =
+            if (cadence?.batteryLevel != null && cadence.batteryLevel < lowBatteryThreshold) bottomRightView.extraInfo =
                 "${cadence.batteryLevel}%"
+        }
+
+        viewModel.powerSensor.observe(viewLifecycleOwner) { power ->
+            Log.d(logTag, "power: ${power.instantaneousPower}")
+            val displayPower = when (power.instantaneousPower) {
+                0 -> 0
+                else -> power.emaPower ?: power.instantaneousPower
+            }
+            if (displayPower != null) {
+                middleRightView.label = "WATTS"
+                middleRightView.value = when {
+                    displayPower < 10000 -> displayPower.toString()
+                    else -> middleRightView.value
+                }
+            }
+            if (power.batteryLevel != null && power.batteryLevel < lowBatteryThreshold) middleRightView.extraInfo =
+                "${power.batteryLevel}%"
         }
 
         viewModel.speedSensor.observe(viewLifecycleOwner) { speed ->
@@ -801,12 +831,13 @@ class TripInProgressFragment :
 
             when (val tripId = viewModel.tripId) {
                 null -> {
-                    requireActivity().startService(Intent(
-                        requireContext(),
-                        TripInProgressService::class.java
-                    ).apply {
-                        this.action = getString(R.string.action_initialize_trip_service)
-                    })
+                    requireActivity().startService(
+                        Intent(
+                            requireContext(),
+                            TripInProgressService::class.java
+                        ).apply {
+                            this.action = getString(R.string.action_initialize_trip_service)
+                        })
                     pauseButton.setOnClickListener(startTripListener)
                     pauseButton.text = getString(R.string.start_label)
                 }
@@ -854,7 +885,7 @@ class TripInProgressFragment :
             Calendar.getInstance().get(Calendar.MINUTE)
         )
         val amPm = if (Calendar.getInstance().get(Calendar.AM_PM) == 0) "AM" else "PM"
-        if (viewModel.cadenceSensor.value?.rpm == null) {
+        if (viewModel.cadenceRpm.value?.rpm == null) {
             timeOfDayTextView.visibility = INVISIBLE
             bottomRightView.value = time
             bottomRightView.label = amPm
@@ -884,12 +915,13 @@ class TripInProgressFragment :
         if (isTimeTickRegistered) context?.unregisterReceiver(timeTickReceiver)
 
         if (viewModel.tripId == null)
-            requireContext().startService(Intent(
-                requireContext(),
-                TripInProgressService::class.java
-            ).apply {
-                this.action = getString(R.string.action_shutdown_trip_service)
-            })
+            requireContext().startService(
+                Intent(
+                    requireContext(),
+                    TripInProgressService::class.java
+                ).apply {
+                    this.action = getString(R.string.action_shutdown_trip_service)
+                })
         FirebaseAnalytics.getInstance(requireContext()).logEvent("LeaveDashboard") {}
     }
 

@@ -3,6 +3,7 @@ package com.kvl.cyclotrack
 import android.location.Location
 import com.google.android.gms.maps.model.LatLng
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import kotlin.math.roundToInt
 
@@ -42,6 +43,28 @@ fun getRotation(start: LatLng, end: LatLng): Float {
     )
     return results[1]
 }
+
+fun getWeightedAveragePower(measurements: Array<CyclingPowerMeasurement>): Short? =
+    getAveragePower(measurements.filter { it.instantaneousPower != 0 }.toTypedArray())
+
+fun getAveragePower(measurements: Array<CyclingPowerMeasurement>): Short? {
+    var sum = 0f
+    var count = 0
+    measurements.forEach {
+        sum += it.instantaneousPower
+        ++count
+    }
+    return if (count == 0) {
+        null
+    } else {
+        (sum / count).roundToInt().toShort()
+    }
+}
+
+fun getWork(measurements: Array<CyclingPowerMeasurement>): Int =
+    measurements.zip(measurements.drop(1)) { a, b ->
+        ((a.instantaneousPower + b.instantaneousPower) / 2) * ((b.timestamp - a.timestamp) / 1000f)
+    }.sum().roundToInt()
 
 fun getAverageHeartRate(measurements: Array<HeartRateMeasurement>): Short? {
     var sum = 0f

@@ -26,6 +26,7 @@ import androidx.work.WorkerParameters
 import com.google.android.gms.common.util.concurrent.HandlerExecutor
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.Export
 import com.kvl.cyclotrack.data.ExportRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
@@ -60,6 +61,9 @@ class ExportTripWorker @AssistedInject constructor(
 
     @Inject
     lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
+
+    @Inject
+    lateinit var cyclingPowerMeasurementRepository: CyclingPowerMeasurementRepository
 
     @Inject
     lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
@@ -158,16 +162,19 @@ class ExportTripWorker @AssistedInject constructor(
             heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
             speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),
             cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(tripId),
+            powerMeasurements = cyclingPowerMeasurementRepository.getPowerMeasurements(tripId),
             timeStates = timeStateRepository.getTimeStates(tripId),
             splits = splitRepository.getTripSplits(tripId),
             onboardSensors = onboardSensorsRepository.get(tripId),
             weather = weatherRepository.getTripWeather(tripId)
         )
+        //TODO: Claude says this guard is not necessary
         if (exportData.summary != null &&
             exportData.measurements != null &&
             exportData.heartRateMeasurements != null &&
             exportData.cadenceMeasurements != null &&
             exportData.speedMeasurements != null &&
+            exportData.powerMeasurements != null &&
             exportData.timeStates != null &&
             exportData.splits != null &&
             exportData.onboardSensors != null &&

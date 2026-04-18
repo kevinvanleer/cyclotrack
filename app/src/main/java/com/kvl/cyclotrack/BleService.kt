@@ -68,6 +68,7 @@ class BleService @Inject constructor(
         var hrm: String? = null
         var speed: String? = null
         var cadence: String? = null
+        var power: String? = null
     }
     private val logTag = "BleService"
     private var scanCallbacks = ArrayList<ScanCallback>()
@@ -76,12 +77,25 @@ class BleService @Inject constructor(
     private var hrmSensor = HrmData(null, null)
     private var cadenceSensor = CadenceData(null, null, null, null)
     private var speedSensor = SpeedData(null, null, null, null)
+    private var powerSensor = PowerData(null)
 
     private fun getFitnessMachineFeatures(gatt: BluetoothGatt) {
         val featureChar = gatt
             .getService(getGattUuid(fitnessMachineServiceId))
             ?.getCharacteristic(getGattUuid(fitnessMachineFeatureCharacteristicId))
         Log.v(logTag, "read supported fitness machine features: ${featureChar?.uuid}")
+        try {
+            featureChar?.let { gatt.readCharacteristic(it) }
+        } catch (e: SecurityException) {
+            Log.w(logTag, "Bluetooth permissions have not been granted", e)
+        }
+    }
+
+    private fun getPowerFeatures(gatt: BluetoothGatt) {
+        val featureChar = gatt
+            .getService(getGattUuid(powerServiceId))
+            ?.getCharacteristic(getGattUuid(powerFeatureCharacteristicId))
+        Log.v(logTag, "read supported power features: ${featureChar?.uuid}")
         try {
             featureChar?.let { gatt.readCharacteristic(it) }
         } catch (e: SecurityException) {
@@ -198,6 +212,19 @@ class BleService @Inject constructor(
                     )
 
                     hasCharacteristic(
+                        powerServiceUuid,
+                        powerMeasurementCharacteristicUuid
+                    ) -> {
+                        enableNotifications(
+                            gatt,
+                            gatt.getService(
+                                powerServiceUuid
+                            )
+                                .getCharacteristic(powerMeasurementCharacteristicUuid)
+                        )
+                    }
+
+                    hasCharacteristic(
                         getGattUuid(fitnessMachineServiceId),
                         getGattUuid(indoorBikeDataCharacteristicId)
                     ) ->
@@ -210,7 +237,7 @@ class BleService @Inject constructor(
                         )
 
                     else
-                    -> Log.d(logTag, "No supported characteristics")
+                        -> Log.d(logTag, "No supported characteristics")
                 }
             }
         }
@@ -358,6 +385,13 @@ class BleService @Inject constructor(
                         }
                     }
 
+                    addresses.power -> {
+                        powerSensor.copy(batteryLevel = batteryLevel).let {
+                            powerSensor = it
+                            EventBus.getDefault().post(it)
+                        }
+                    }
+
                     else -> Log.d(
                         logTag,
                         "No sensor associated with device ${gatt.device.address} with battery level $batteryLevel"
@@ -484,6 +518,14 @@ class BleService @Inject constructor(
                 }
             }
 
+            powerMeasurementCharacteristicUuid -> {
+                handlePowerMeasurementMessage(characteristicValue, characteristic, gatt)
+            }
+
+            powerFeatureCharacteristicUuid -> {
+                Log.v(logTag, "Received power features broadcast")
+            }
+
             getGattUuid(indoorBikeDataCharacteristicId) -> {
                 val data: ByteArray = characteristicValue
                 if (data.isNotEmpty()) {
@@ -536,6 +578,31 @@ class BleService @Inject constructor(
                     }
                     Log.d(logTag, String.format("Received ${characteristic.uuid}: $hexString"))
                 }
+            }
+        }
+    }
+
+    private fun handlePowerMeasurementMessage(
+        characteristicValue: ByteArray,
+        characteristic: BluetoothGattCharacteristic,
+        gatt: BluetoothGatt
+    ) {
+        Log.d(logTag, "Received power measurement")
+        if (addresses.power == null) {
+            addresses.power = gatt.device.address
+            readBatteryLevel(gatt)
+        }
+        val data: ByteArray = characteristicValue
+        if (data.isNotEmpty()) {
+            val hexString: String =
+                data.clone().let { it.reverse(); it }.joinToString(separator = " ") {
+                    String.format("%02X", it)
+                }
+            Log.d(logTag, String.format("Power data: ${characteristic.uuid}: $hexString"))
+            parseCyclingPower(data, powerSensor).let {
+                powerSensor = it
+                EventBus.getDefault().post(it)
+                Log.v(logTag, powerSensor.toString())
             }
         }
     }

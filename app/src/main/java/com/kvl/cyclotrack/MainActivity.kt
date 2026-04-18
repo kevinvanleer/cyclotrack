@@ -31,6 +31,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
+import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
@@ -150,7 +151,7 @@ class MainActivity : AppCompatActivity() {
                         .logEvent("AnalyticsOptInDialogOk") {
                             param(
                                 "analytics_enabled",
-                                optInCheckbox.isChecked.compareTo(false).toLong()
+                                optInCheckbox.isChecked.compareTo(false).toString()
                             )
                         }
                     PreferenceManager.getDefaultSharedPreferences(context).edit {
@@ -231,7 +232,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             commit()
                         }
-                    if (currentVersion < 68) {
+                    if (currentVersion < 69) {
                         showWhatsNewDialog()
                     }
                 }
@@ -266,6 +267,12 @@ class MainActivity : AppCompatActivity() {
             }
 
         checkUserCurrentVersion()
+
+        if (!PreferenceManager.getDefaultSharedPreferences(this)
+                .contains(getString(R.string.preferences_key_google_fit))
+        ) {
+            setGoogleFitSyncEnabled(this, hasFitnessPermissions(this))
+        }
 
         newRidesDisabledDialog = this.let {
             AlertDialog.Builder(it).apply {

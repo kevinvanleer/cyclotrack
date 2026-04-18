@@ -35,6 +35,7 @@ import com.kvl.cyclotrack.util.configureGoogleFit
 import com.kvl.cyclotrack.util.deauthorizeStrava
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.updateStravaAuthToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -239,6 +240,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         )
             .signOut()
             .addOnSuccessListener {
+                setGoogleFitSyncEnabled(context, false)
                 configureGoogleFitPreference(
                     context
                 )
@@ -258,6 +260,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onGoogleFitAccessGranted(@Suppress("UNUSED_PARAMETER") event: GoogleFitAccessGranted) {
+        setGoogleFitSyncEnabled(requireContext(), true)
         userGoogleFitBiometricsDialog.show()
         configureGoogleFitPreference(requireContext())
     }

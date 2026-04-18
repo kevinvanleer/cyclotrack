@@ -179,9 +179,30 @@
                 android:id="@+id/trip_details_heart_rate_chart"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
+                android:visibility="gone"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate" />
+
+            <com.kvl.cyclotrack.widgets.HeadingView
+                android:id="@+id/trip_details_power"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/tripDetailsHeadingTopMargin"
+                android:visibility="gone"
+                app:headingLabel="Power"
+                app:iconSrc="@drawable/ic_baseline_power_24"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
+
+            <ImageView
+                android:id="@+id/trip_details_power_chart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/trip_details_power" />
 
             <com.kvl.cyclotrack.widgets.HeadingView
                 android:id="@+id/trip_details_cadence"
@@ -192,7 +213,7 @@
                 app:iconSrc="@drawable/ic_sync_alt"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/trip_details_heart_rate_chart" />
+                app:layout_constraintTop_toBottomOf="@id/trip_details_power_chart" />
 
             <ImageView
                 android:id="@+id/trip_details_cadence_chart"

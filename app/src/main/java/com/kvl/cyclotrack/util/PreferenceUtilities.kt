@@ -159,6 +159,16 @@ fun useVo2maxCalorieEstimate(context: Context) = getPreferences(context).getBool
     context.getString(R.string.preferences_key_advanced_use_vo2max_calorie_estimate), false
 )
 
+fun isGoogleFitSyncEnabled(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preferences_key_google_fit),
+    false
+)
+
+fun setGoogleFitSyncEnabled(context: Context, enabled: Boolean) =
+    getPreferences(context).edit {
+        putBoolean(context.getString(R.string.preferences_key_google_fit), enabled)
+    }
+
 fun isStravaSynced(context: Context) = getPreferences(context).getString(
     context.getString(R.string.preference_key_strava_refresh_token),
     null

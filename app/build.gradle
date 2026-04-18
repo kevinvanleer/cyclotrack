@@ -55,8 +55,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdk = 26
         targetSdk = 36
-        versionCode 68
-        versionName "Fix FIT export bugs"
+        versionCode 69
+        versionName "Power meter"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->

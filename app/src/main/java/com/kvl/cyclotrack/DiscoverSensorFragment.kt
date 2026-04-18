@@ -140,7 +140,7 @@ class DiscoverSensorFragment : Fragment() {
                     viewModel.linkDevice(device)
                     FirebaseAnalytics.getInstance(requireContext()).logEvent("AddedBleSensor") {
                         param("sensorName", device.name ?: "N/A")
-                        param("sensorFeatures", (device.features ?: -1).toLong())
+                        param("sensorFeatures", (device.features ?: -1).toString())
                     }
                 }
             }

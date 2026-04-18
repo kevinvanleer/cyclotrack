@@ -177,6 +177,9 @@ fun exportRideToFastExcelStream(
     if (exportData.speedMeasurements?.isNotEmpty() == true) {
         addDataToSheet(workbook.newWorksheet("speed"), exportData.speedMeasurements)
     }
+    if (exportData.powerMeasurements?.isNotEmpty() == true) {
+        addDataToSheet(workbook.newWorksheet("power"), exportData.powerMeasurements)
+    }
 
     workbook.setCompressionLevel(9)
     workbook.finish()

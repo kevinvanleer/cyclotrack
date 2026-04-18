@@ -28,6 +28,7 @@ val fitnessOptions: FitnessOptions = FitnessOptions.builder().apply {
     addDataType(DataType.TYPE_LOCATION_SAMPLE, FitnessOptions.ACCESS_WRITE)
     addDataType(DataType.TYPE_HEART_RATE_BPM, FitnessOptions.ACCESS_WRITE)
     addDataType(DataType.TYPE_CYCLING_PEDALING_CADENCE, FitnessOptions.ACCESS_WRITE)
+    addDataType(DataType.TYPE_POWER_SAMPLE, FitnessOptions.ACCESS_WRITE)
     addDataType(DataType.TYPE_SPEED, FitnessOptions.ACCESS_WRITE)
     addDataType(DataType.TYPE_ACTIVITY_SEGMENT, FitnessOptions.ACCESS_WRITE)
 

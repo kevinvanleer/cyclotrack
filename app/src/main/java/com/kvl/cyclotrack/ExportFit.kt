@@ -100,6 +100,13 @@ fun makeFitMessages(
         }
     }
 
+    exportData.powerMeasurements?.forEach {
+        getOrCreateRecord(it.timestamp).apply {
+            power = it.instantaneousPower
+            it.rpm?.toInt()?.toShort()?.let { rpm -> cadence = rpm }
+        }
+    }
+
     messages.addAll(recordsByTimestamp.values.sortedBy { it.timestamp.timestamp })
 
     // Timer Events are a BEST PRACTICE for FIT ACTIVITY files

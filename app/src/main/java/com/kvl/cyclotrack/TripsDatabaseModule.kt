@@ -11,6 +11,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementDao
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementDao
 import com.kvl.cyclotrack.data.ExportDao
 import com.kvl.cyclotrack.data.HeartRateMeasurementDao
 import com.kvl.cyclotrack.data.SensorType
@@ -403,6 +404,45 @@ val MIGRATION_28_27 = object : Migration(28, 27) {
     }
 }
 
+val MIGRATION_28_29 = object : Migration(28, 29) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `CyclingPowerMeasurement` " +
+                "(`id` INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "`tripId` INTEGER NOT NULL, " +
+                "`timestamp` INTEGER NOT NULL, " +
+                "`instantaneousPower` INTEGER NOT NULL, " +
+                "`pedalPowerBalance` REAL, " +
+                "`accumulatedTorque` REAL, " +
+                "`cumulativeWheelRevolutions` INTEGER, " +
+                "`lastWheelEventTime` INTEGER, " +
+                "`cumulativeCrankRevolutions` INTEGER, " +
+                "`lastCrankEventTime` INTEGER, " +
+                "`maximumForceMagnitude` INTEGER, " +
+                "`minimumForceMagnitude` INTEGER, " +
+                "`maximumTorqueMagnitude` REAL, " +
+                "`minimumTorqueMagnitude` REAL, " +
+                "`maximumAngle` INTEGER, " +
+                "`minimumAngle` INTEGER, " +
+                "`topDeadSpotAngle` INTEGER, " +
+                "`bottomDeadSpotAngle` INTEGER, " +
+                "`accumulatedEnergy` INTEGER, " +
+                "`offsetCompensation` INTEGER, " +
+                "`rpm` REAL, " +
+                "`wheelRpm` REAL, " +
+                "FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_CyclingPowerMeasurement_tripId` ON `CyclingPowerMeasurement` (`tripId`)")
+    }
+}
+
+val MIGRATION_29_28 = object : Migration(29, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(sql = "DROP INDEX index_CyclingPowerMeasurement_tripId")
+        db.execSQL("DROP TABLE CyclingPowerMeasurement")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -441,7 +481,9 @@ object TripsDatabaseModule {
                 MIGRATION_25_26,
                 MIGRATION_26_27,
                 MIGRATION_27_28,
-                MIGRATION_28_27
+                MIGRATION_28_27,
+                MIGRATION_28_29,
+                MIGRATION_29_28,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
@@ -525,5 +567,11 @@ object TripsDatabaseModule {
     @Singleton
     fun provideExportDao(db: TripsDatabase): ExportDao {
         return db.exportDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCyclingPowerMeasurementDao(db: TripsDatabase): CyclingPowerMeasurementDao {
+        return db.cyclingPowerMeasurementDao()
     }
 }

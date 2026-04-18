@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.util.syncTripWithStrava
 import dagger.assisted.Assisted
@@ -28,6 +29,9 @@ class StravaCreateActivityWorker @AssistedInject constructor(
     lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
 
     @Inject
+    lateinit var powerMeasurementRepository: CyclingPowerMeasurementRepository
+
+    @Inject
     lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
 
     @Inject
@@ -49,6 +53,7 @@ class StravaCreateActivityWorker @AssistedInject constructor(
                 measurementsRepository,
                 heartRateMeasurementRepository,
                 cadenceSpeedMeasurementRepository,
+                powerMeasurementRepository,
                 timeStateRepository,
                 splitRepository,
                 onboardSensorsRepository,

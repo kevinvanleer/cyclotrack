@@ -5,7 +5,7 @@ import kotlin.math.pow
 fun List<Double>.average(): Double =
     this.reduce { acc, d -> acc + d } / this.size
 
-fun average(newValue: Double, sampleSize: Int, lastAverage: Double): Double =
+fun average(newValue: Double, sampleSize: Long, lastAverage: Double): Double =
     (lastAverage * (sampleSize - 1) + newValue) / sampleSize
 
 fun List<Double>.sampleVariance(): Double {
@@ -20,7 +20,8 @@ fun sampleVariance(
     oldAverage: Double,
 ): Double {
     return (oldVariance * (sampleSize - 2) / (sampleSize - 1)) + ((newValue - oldAverage).pow(
-        2.0) / sampleSize)
+        2.0
+    ) / sampleSize)
 }
 
 fun List<Double>.populationVariance(): Double {

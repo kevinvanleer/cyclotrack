@@ -6,6 +6,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import dagger.assisted.Assisted
@@ -32,6 +33,9 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
     lateinit var cadenceSpeedMeasurementRepository: CadenceSpeedMeasurementRepository
 
     @Inject
+    lateinit var powerMeasurementRepository: CyclingPowerMeasurementRepository
+
+    @Inject
     lateinit var heartRateMeasurementRepository: HeartRateMeasurementRepository
 
     @Inject
@@ -50,6 +54,7 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                     val measurements = measurementsRepository.get(tripId)
                     val speedMeasurements =
                         cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId)
+                    val powerMeasurements = powerMeasurementRepository.getPowerMeasurements(tripId)
 
                     googleFitApiService.insertDatasets(
                         measurements = measurements,
@@ -58,6 +63,7 @@ class GoogleFitCreateSessionWorker @AssistedInject constructor(
                         cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(
                             tripId
                         ),
+                        powerMeasurements = powerMeasurements,
                         wheelCircumference = getEffectiveCircumference(trip, speedMeasurements)
                             ?: userCircumferenceToMeters(bikeRepository.get(trip.bikeId)?.wheelCircumference)
                             ?: 0f

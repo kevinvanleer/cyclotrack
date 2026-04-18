@@ -54,15 +54,16 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.util.configureGoogleFit
 import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
 import com.kvl.cyclotrack.util.getDatasets
-import com.kvl.cyclotrack.util.getGoogleAccount
 import com.kvl.cyclotrack.util.getSpeedDataFromGps
 import com.kvl.cyclotrack.util.getSpeedDataFromSensor
 import com.kvl.cyclotrack.util.getTrendData
 import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.isGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.useBleSpeedData
 import com.kvl.cyclotrack.widgets.AxisLabelOrientation
 import com.kvl.cyclotrack.widgets.AxisLabels
@@ -426,6 +427,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         val heartRateHeadingView: HeadingView = view.findViewById(R.id.trip_details_heart_rate)
         val cadenceChartView: ImageView = view.findViewById(R.id.trip_details_cadence_chart)
         val cadenceHeadingView: HeadingView = view.findViewById(R.id.trip_details_cadence)
+        val powerChartView: ImageView = view.findViewById(R.id.trip_details_power_chart)
+        val powerHeadingView: HeadingView = view.findViewById(R.id.trip_details_power)
 
         val strokeStyle = Paint().apply {
             isAntiAlias = true
@@ -451,6 +454,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
         heartRateHeadingView.visibility = View.GONE
         heartRateChartView.visibility = View.GONE
+        powerHeadingView.visibility = View.GONE
+        powerChartView.visibility = View.GONE
         cadenceHeadingView.visibility = View.GONE
         cadenceChartView.visibility = View.GONE
         notesView.visibility = View.GONE
@@ -482,6 +487,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 strokeStyle,
                 trendStyle,
             )
+            observePower(
+                powerHeadingView,
+                powerChartView,
+                strokeStyle,
+                trendStyle,
+            )
 
             observeSpeed(speedChartView, strokeStyle, trendStyle)
 
@@ -509,6 +520,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         notesView.visibility = View.VISIBLE
                         notesView.text = overview.notes
                     }
+                }
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
+                        .let { biometrics ->
+                            Log.d(logTag, "biometrics: $biometrics")
+                            viewModel.updateBiometrics(biometrics)
+                        }
                 }
             }
 
@@ -737,22 +756,36 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 }
             }
 
-            zipLiveData(viewModel.heartRateMeasurements, viewModel.tripOverview).observe(
+            zipLiveData(
+                viewModel.powerMeasurements,
+                viewModel.heartRateMeasurements,
+                viewModel.tripOverview
+            ).observe(
                 viewLifecycleOwner
             ) { pairs ->
-                val measurements = pairs.first
-                val overview = pairs.second
-                Log.d(logTag, "Observed change to measurements and overview")
-                viewLifecycleOwner.lifecycleScope.launch {
-                    viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
-                        .let { biometrics ->
-                            Log.d(logTag, "biometrics: $biometrics")
-                            if (biometrics.userWeight != null) {
-                                Log.d(logTag, "Calculating calories burned")
-                                getCaloriesBurned(biometrics, overview, measurements)
+                val powerMeasurements = pairs.first
+                val heartRateMeasurements = pairs.second
+                val overview = pairs.third
+                Log.d(logTag, "Observed change to power, hrm, and overview")
+                if (powerMeasurements.isNotEmpty() && overview.duration != null) {
+                    val kilojoules =
+                        getWork(powerMeasurements).div(1000)
+                    val caloriesHeadingView: HeadingView =
+                        requireView().findViewById(R.id.trip_details_calories)
+                    caloriesHeadingView.label = "kJoules"
+                    caloriesHeadingView.visibility = View.VISIBLE
+                    caloriesHeadingView.value = kilojoules.toString()
+                } else {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        viewModel.getCombinedBiometrics(overview.timestamp, requireContext())
+                            .let { biometrics ->
+                                Log.d(logTag, "biometrics: $biometrics")
+                                if (biometrics.userWeight != null) {
+                                    Log.d(logTag, "Calculating calories burned")
+                                    getCaloriesBurned(biometrics, overview, heartRateMeasurements)
+                                }
                             }
-                            viewModel.updateBiometrics(biometrics)
-                        }
+                    }
                 }
             }
             if (FeatureFlags.devBuild) {
@@ -1116,8 +1149,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (getGoogleAccount(requireContext()) == null) {
-            Log.i(logTag, "Google token expired renewing token")
+        if (isGoogleFitSyncEnabled(requireContext()) && !hasFitnessPermissions(requireContext())) {
+            Log.i(logTag, "Google Fit permissions lost, renewing")
             configureGoogleFit(requireActivity())
         }
 
@@ -1610,6 +1643,150 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 background = (scrollView.background as ColorDrawable).color
             )
         )
+    }
+
+    private fun observePower(
+        powerHeadingView: HeadingView,
+        powerChartView: ImageView,
+        strokeStyle: Paint,
+        trendStyle: Paint,
+    ) {
+        zipLiveData(viewModel.powerMeasurements, viewModel.timeState).observe(
+            viewLifecycleOwner
+        ) { pair ->
+            val measurements = pair.first
+            val timeStates = pair.second
+            val intervals = getTripIntervals(timeStates, measurements)
+            val legs = getTripLegs(measurements, intervals)
+
+            fun makePowerDataset(
+                measurementsList: Array<CyclingPowerMeasurement>,
+                intervals: Array<LongRange>,
+                avgPower: Float,
+            ): LineChartDataset {
+                val entries = ArrayList<Pair<Float, Float>>()
+                val hi = ArrayList<Pair<Float, Float>>()
+                val lo = ArrayList<Pair<Float, Float>>()
+                val trend = ArrayList<Pair<Float, Float>>()
+                val intervalStart = intervals.last().first
+                var trendLast: Float? = null
+                var trendAlpha = 0.5f
+                var hiLast: Float? = null
+                var loLast: Float? = null
+
+                val accumulatedTime = accumulateTime(intervals)
+                measurementsList.forEach { measurements ->
+                    try {
+                        measurements.instantaneousPower.toFloat()
+                            .let { watts ->
+                                val timestamp =
+                                    (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
+
+                                entries.add(
+                                    Pair(
+                                        timestamp,
+                                        watts
+                                    )
+                                )
+                                getTrendData(
+                                    watts,
+                                    trendAlpha,
+                                    avgPower,
+                                    trendLast,
+                                    hiLast,
+                                    loLast
+                                ).let { (trendNew, hiNew, loNew) ->
+                                    trend.add(
+                                        Pair(
+                                            timestamp,
+                                            trendNew
+                                        )
+                                    )
+                                    trendLast = trendNew
+                                    hiNew?.let {
+                                        hi.add(
+                                            Pair(
+                                                timestamp,
+                                                it
+                                            )
+                                        )
+                                        hiLast = it
+                                    }
+                                    loNew?.let {
+                                        lo.add(
+                                            Pair(
+                                                timestamp,
+                                                it
+                                            )
+                                        )
+                                        loLast = it
+                                    }
+                                }
+                                val targetAlpha = 0.01f
+                                if (trendAlpha > targetAlpha) trendAlpha -= 0.005f
+                                if (trendAlpha < targetAlpha) trendAlpha = targetAlpha
+                            }
+
+                    } catch (e: Exception) {
+                        Log.e(
+                            logTag,
+                            "Could not create power value for timestamp ${measurements.timestamp}"
+                        )
+                    }
+                }
+
+                return LineChartDataset(entries = entries, trend = trend, hi = hi, lo = lo)
+            }
+
+            fun makePowerLineChart(
+                intervals: Array<LongRange>,
+                legs: Array<Array<CyclingPowerMeasurement>>,
+                avgPower: Float
+            ) {
+                val allData = LineChartDataset(
+                    ArrayList(),
+                    ArrayList(),
+                    ArrayList(),
+                    ArrayList(),
+                )
+                legs.forEachIndexed { idx, leg ->
+                    makePowerDataset(
+                        leg,
+                        intervals.sliceArray(IntRange(0, idx)),
+                        avgPower
+                    ).let {
+                        allData.entries.addAll(it.entries)
+                        allData.trend.addAll(it.trend)
+                        allData.hi.addAll(it.hi)
+                        allData.lo.addAll(it.lo)
+                    }
+                }
+                allData.takeIf { it.trend.isNotEmpty() }?.let { lineData ->
+                    try {
+                        powerChartView.setImageDrawable(
+                            getSpeedCadenceLineGraph(
+                                lineData,
+                                avgPower,
+                                { value: Float -> "${value.roundToInt()} watts" },
+                                strokeStyle,
+                                trendStyle.apply { style = Paint.Style.FILL_AND_STROKE }
+                            )
+                        )
+                    } catch (e: Exception) {
+                        Log.e(logTag, "Could not create power chart", e)
+                    }
+                }
+            }
+
+            val avgPower = getAveragePower(legs.flatten().toTypedArray())
+            if (avgPower != null) {
+                powerHeadingView.visibility = View.VISIBLE
+                powerChartView.visibility = View.VISIBLE
+                powerHeadingView.value =
+                    "$avgPower watts (average)"
+                makePowerLineChart(intervals, legs, avgPower.toFloat())
+            }
+        }
     }
 
     private fun observeCadence(

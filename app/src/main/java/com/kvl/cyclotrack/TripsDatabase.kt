@@ -5,6 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementDao
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
+import com.kvl.cyclotrack.data.CyclingPowerMeasurementDao
 import com.kvl.cyclotrack.data.Export
 import com.kvl.cyclotrack.data.ExportDao
 import com.kvl.cyclotrack.data.HeartRateMeasurement
@@ -23,16 +25,18 @@ import com.kvl.cyclotrack.data.SensorTypeConverter
         Weather::class,
         HeartRateMeasurement::class,
         CadenceSpeedMeasurement::class,
-        Export::class
+        Export::class,
+        CyclingPowerMeasurement::class
     ],
-    version = 28
+    version = 29
 )
 @TypeConverters(
     TimeStateEnumConverter::class,
     UserSexEnumConverter::class,
     GoogleFitSyncStatusConverter::class,
-    SensorTypeConverter::class
+    SensorTypeConverter::class,
 )
+
 abstract class TripsDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun measurementsDao(): MeasurementsDao
@@ -45,4 +49,5 @@ abstract class TripsDatabase : RoomDatabase() {
     abstract fun heartRateMeasurementDao(): HeartRateMeasurementDao
     abstract fun cadenceSpeedMeasurementDao(): CadenceSpeedMeasurementDao
     abstract fun exportDao(): ExportDao
+    abstract fun cyclingPowerMeasurementDao(): CyclingPowerMeasurementDao
 }
