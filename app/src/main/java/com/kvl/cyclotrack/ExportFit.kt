@@ -34,6 +34,120 @@ import kotlin.math.roundToInt
 
 val cyclotrackFitAppId = "comkvlcyclotrack".toByteArray()
 
+private const val FIT_EPOCH_SECONDS = 631_065_600L
+
+private object LocalNum {
+    const val GPS = 0
+    const val HR = 1
+    const val SPEED = 2
+    const val CADENCE = 3
+    const val POWER = 4
+    const val EVENT = 5
+}
+
+internal fun fitSec(ms: Long): Long = ms / 1000 - FIT_EPOCH_SECONDS
+
+internal fun pauseIntervals(timeStates: Array<TimeState>?): List<LongRange> {
+    if (timeStates.isNullOrEmpty()) return emptyList()
+    val sorted = timeStates.sortedBy { it.timestamp }
+    val result = mutableListOf<LongRange>()
+    var pauseStart: Long? = null
+    for (ts in sorted) {
+        when (ts.state) {
+            TimeStateEnum.PAUSE ->
+                if (pauseStart == null) pauseStart = fitSec(ts.timestamp)
+            TimeStateEnum.RESUME, TimeStateEnum.START ->
+                pauseStart?.let {
+                    result.add(it until fitSec(ts.timestamp))
+                    pauseStart = null
+                }
+            TimeStateEnum.STOP -> pauseStart = null
+        }
+    }
+    return result
+}
+
+internal fun <T> bySecMean(
+    samples: List<T>?,
+    sec: (T) -> Long,
+    value: (T) -> Double,
+): Map<Long, Double> =
+    samples?.groupBy(sec)
+        ?.mapValues { (_, group) -> group.map(value).average() }
+        ?: emptyMap()
+
+internal fun interpolateGaps(
+    samplesBySec: Map<Long, Double>,
+    pausedSecs: Set<Long>,
+): List<Pair<Long, Double>> {
+    if (samplesBySec.size < 2) return samplesBySec.toList()
+    val sorted = samplesBySec.toSortedMap()
+    val secs = sorted.keys.toList()
+    val out = mutableListOf<Pair<Long, Double>>()
+    for (i in secs.indices) {
+        val aSec = secs[i]
+        val aVal = sorted.getValue(aSec)
+        out.add(aSec to aVal)
+        if (i == secs.lastIndex) break
+        val bSec = secs[i + 1]
+        val bVal = sorted.getValue(bSec)
+        for (sec in (aSec + 1) until bSec) {
+            if (sec in pausedSecs) continue
+            val frac = (sec - aSec).toDouble() / (bSec - aSec)
+            out.add(sec to aVal + (bVal - aVal) * frac)
+        }
+    }
+    return out
+}
+
+private fun emitStream(
+    samplesBySec: Map<Long, Double>,
+    pausedSecs: Set<Long>,
+    out: MutableList<RecordMesg>,
+    localNum: Int,
+    apply: RecordMesg.(Double) -> Unit,
+) {
+    interpolateGaps(samplesBySec, pausedSecs).forEach { (sec, value) ->
+        out.add(RecordMesg().apply {
+            this.localNum = localNum
+            timestamp = DateTime(sec)
+            apply(value)
+        })
+    }
+}
+
+private fun resolveCadenceSource(
+    exportData: TripDetailsViewModel.ExportData,
+): List<Pair<Long, Double>> {
+    exportData.cadenceMeasurements?.takeIf { it.isNotEmpty() }?.let { csc ->
+        return csc.mapNotNull { m -> m.rpm?.let { Pair(m.timestamp, it.toDouble()) } }
+    }
+    return exportData.powerMeasurements
+        ?.mapNotNull { m -> m.rpm?.let { Pair(m.timestamp, it.toDouble()) } }
+        ?: emptyList()
+}
+
+private fun makeTimerEvents(timeStates: Array<TimeState>?): List<EventMesg> {
+    if (timeStates.isNullOrEmpty()) return emptyList()
+    val sorted = timeStates.sortedBy { it.timestamp }
+    // Drop a PAUSE immediately followed by STOP — STOP_ALL covers it
+    val pruned = sorted.filterIndexed { i, ts ->
+        !(ts.state == TimeStateEnum.PAUSE && sorted.getOrNull(i + 1)?.state == TimeStateEnum.STOP)
+    }
+    return pruned.map { ts ->
+        EventMesg().apply {
+            localNum = LocalNum.EVENT
+            timestamp = DateTime(fitSec(ts.timestamp))
+            event = Event.TIMER
+            eventType = when (ts.state) {
+                TimeStateEnum.START, TimeStateEnum.RESUME -> EventType.START
+                TimeStateEnum.PAUSE -> EventType.STOP
+                TimeStateEnum.STOP -> EventType.STOP_ALL
+            }
+        }
+    }
+}
+
 fun makeFitMessages(
     appId: ByteArray,
     exportData: TripDetailsViewModel.ExportData,
@@ -44,17 +158,6 @@ fun makeFitMessages(
     val circumference = exportData.summary?.autoWheelCircumference
         ?: exportData.summary?.userWheelCircumference
 
-    exportData.timeStates?.let {
-        getStartTime(it)?.let {
-            messages.add(EventMesg().apply {
-                timestamp = DateTime(Date(it))
-                event = Event.TIMER
-                eventType = EventType.START
-            })
-        }
-    }
-
-    // Create the Developer Id message for the developer data fields.
     messages.add(DeveloperDataIdMesg().apply {
         for (i in appId.indices) {
             setApplicationId(i, appId[i])
@@ -63,64 +166,58 @@ fun makeFitMessages(
         developerDataIndex = 0.toShort()
     })
 
-    val recordsByTimestamp = linkedMapOf<Long, RecordMesg>()
+    val timerEvents = makeTimerEvents(exportData.timeStates)
+    val pausedSecs: Set<Long> = pauseIntervals(exportData.timeStates)
+        .flatMapTo(HashSet()) { it.toList() }
 
-    fun getOrCreateRecord(millis: Long): RecordMesg =
-        recordsByTimestamp.getOrPut(millis / 1000) {
-            RecordMesg().apply { timestamp = DateTime(Date(millis)) }
-        }
+    val records = mutableListOf<RecordMesg>()
+    val emitGpsSpeed = exportData.speedMeasurements == null || circumference == null
 
-    exportData.measurements?.forEach {
-        getOrCreateRecord(it.time).apply {
-            if (exportData.speedMeasurements == null || circumference == null) {
-                speed = it.speed
-            }
-            altitude = it.altitude.toFloat()
-            positionLat = (it.latitude * toSemicircles).toInt()
-            positionLong = (it.longitude * toSemicircles).toInt()
-            gpsAccuracy = it.accuracy.roundToInt().toShort()
-        }
-    }
-
-    exportData.heartRateMeasurements?.forEach {
-        getOrCreateRecord(it.timestamp).heartRate = it.heartRate
-    }
-
-    if (circumference != null) {
-        exportData.speedMeasurements?.forEach {
-            it.rpm?.let { rpm ->
-                getOrCreateRecord(it.timestamp).speed = rpm * circumference / 60
-            }
-        }
-    }
-
-    exportData.cadenceMeasurements?.forEach {
-        it.rpm?.let { rpm ->
-            getOrCreateRecord(it.timestamp).cadence = rpm.toInt().toShort()
-        }
-    }
-
-    exportData.powerMeasurements?.forEach {
-        getOrCreateRecord(it.timestamp).apply {
-            power = it.instantaneousPower
-            it.rpm?.toInt()?.toShort()?.let { rpm -> cadence = rpm }
-        }
-    }
-
-    messages.addAll(recordsByTimestamp.values.sortedBy { it.timestamp.timestamp })
-
-    // Timer Events are a BEST PRACTICE for FIT ACTIVITY files
-    exportData.timeStates?.let {
-        getEndTime(it)?.let {
-            messages.add(EventMesg().apply {
-                timestamp = DateTime(Date(it))
-                event = Event.TIMER
-                eventType = EventType.STOP_ALL
+    exportData.measurements
+        ?.distinctBy { it.time / 1000 }
+        ?.forEach {
+            records.add(RecordMesg().apply {
+                localNum = LocalNum.GPS
+                timestamp = DateTime(fitSec(it.time))
+                if (emitGpsSpeed) speed = it.speed
+                altitude = it.altitude.toFloat()
+                positionLat = (it.latitude * toSemicircles).toInt()
+                positionLong = (it.longitude * toSemicircles).toInt()
+                gpsAccuracy = it.accuracy.roundToInt().toShort()
             })
         }
+
+    emitStream(
+        bySecMean(exportData.heartRateMeasurements?.toList(), { fitSec(it.timestamp) }, { it.heartRate.toDouble() }),
+        pausedSecs, records, LocalNum.HR,
+    ) { heartRate = it.roundToInt().toShort() }
+
+    if (circumference != null) {
+        val rpmSamples = exportData.speedMeasurements
+            ?.mapNotNull { m -> m.rpm?.let { Pair(m.timestamp, it.toDouble()) } }
+        emitStream(
+            bySecMean(rpmSamples, { fitSec(it.first) }, { it.second }),
+            pausedSecs, records, LocalNum.SPEED,
+        ) { speed = (it * circumference / 60).toFloat() }
     }
 
-    // Every FIT ACTIVITY file MUST contain at least one Lap message
+    emitStream(
+        bySecMean(resolveCadenceSource(exportData), { fitSec(it.first) }, { it.second }),
+        pausedSecs, records, LocalNum.CADENCE,
+    ) { cadence = it.roundToInt().toShort() }
+
+    emitStream(
+        bySecMean(exportData.powerMeasurements?.toList(), { fitSec(it.timestamp) }, { it.instantaneousPower.toDouble() }),
+        pausedSecs, records, LocalNum.POWER,
+    ) { power = it.roundToInt() }
+
+    val chronological: List<Mesg> =
+        (records.map { Pair(it.timestamp.timestamp, it as Mesg) } +
+                timerEvents.map { Pair(it.timestamp.timestamp, it as Mesg) })
+            .sortedBy { it.first }
+            .map { it.second }
+    messages.addAll(chronological)
+
     exportData.splits?.forEachIndexed { idx, split ->
         messages.add(LapMesg().apply {
             messageIndex = idx
@@ -132,34 +229,34 @@ fun makeFitMessages(
         })
     }
 
-    // Every FIT ACTIVITY file MUST contain at least one Session message
-    val sessionStartTime = getStartTime(exportData.timeStates!!)!!
-    val sessionEndTime = getEndTime(exportData.timeStates)!!
-    messages.add(
-        SessionMesg().apply {
-            messageIndex = 0
-            timestamp = DateTime(Date(sessionEndTime))
-            startTime = DateTime(Date(sessionStartTime))
-            totalElapsedTime = ((sessionEndTime - sessionStartTime) / 1000.0).toFloat()
-            totalTimerTime = accumulateActiveTime(exportData.timeStates).toFloat()
-            sport = Sport.CYCLING
-            subSport = SubSport.ROAD
-            firstLapIndex = 0
-            numLaps = exportData.splits!!.size
-            exportData.weather?.map { it.temperature }?.takeIf { it.isNotEmpty() }?.average()?.let {
-                avgTemperature = kelvinToCelsius(it).roundToInt()
-                    .toByte()
-            }
-        })
+    val timeStates = requireNotNull(exportData.timeStates) { "timeStates required for FIT export" }
+    val sessionStartTime = requireNotNull(getStartTime(timeStates)) { "trip has no start time" }
+    val sessionEndTime = requireNotNull(getEndTime(timeStates)) { "trip has no end time" }
+    val splits = requireNotNull(exportData.splits) { "splits required for FIT export" }
+    val summary = requireNotNull(exportData.summary) { "summary required for FIT export" }
 
-    // Every FIT ACTIVITY file MUST contain EXACTLY one Activity message
+    messages.add(SessionMesg().apply {
+        messageIndex = 0
+        timestamp = DateTime(Date(sessionEndTime))
+        startTime = DateTime(Date(sessionStartTime))
+        totalElapsedTime = ((sessionEndTime - sessionStartTime) / 1000.0).toFloat()
+        totalTimerTime = accumulateActiveTime(timeStates).toFloat()
+        sport = Sport.CYCLING
+        subSport = SubSport.ROAD
+        firstLapIndex = 0
+        numLaps = splits.size
+        exportData.weather?.map { it.temperature }?.takeIf { it.isNotEmpty() }?.average()?.let {
+            avgTemperature = kelvinToCelsius(it).roundToInt().toByte()
+        }
+    })
+
     messages.add(ActivityMesg().apply {
-        timestamp = DateTime(Date(exportData.summary!!.timestamp))
+        timestamp = DateTime(Date(summary.timestamp))
         numSessions = 1
         val timeZone: TimeZone = TimeZone.getDefault()
         val timezoneOffset = timeZone.rawOffset + timeZone.dstSavings
-        localTimestamp = DateTime(Date(exportData.summary.timestamp + timezoneOffset)).timestamp
-        totalTimerTime = accumulateActiveTime(exportData.timeStates!!).toFloat()
+        localTimestamp = DateTime(Date(summary.timestamp + timezoneOffset)).timestamp
+        totalTimerTime = accumulateActiveTime(timeStates).toFloat()
     })
     return messages
 }
@@ -179,7 +276,6 @@ fun writeFitFile(
         (Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
             ?: "0").toULong(radix = 16).toLong()
 
-    // Every FIT file MUST contain a File ID message
     val fileIdMesg = FileIdMesg()
     fileIdMesg.type = fileType
     fileIdMesg.manufacturer = manufacturerId.toInt()
@@ -187,7 +283,6 @@ fun writeFitFile(
     fileIdMesg.timeCreated = startTime
     fileIdMesg.serialNumber = serialNumber
 
-    // A Device Info message is a BEST PRACTICE for FIT ACTIVITY files
     val deviceInfoMesg = DeviceInfoMesg()
     deviceInfoMesg.deviceIndex = DeviceIndex.CREATOR
     deviceInfoMesg.manufacturer = Manufacturer.DEVELOPMENT
@@ -197,11 +292,7 @@ fun writeFitFile(
     deviceInfoMesg.softwareVersion = softwareVersion
     deviceInfoMesg.timestamp = startTime
 
-    val encode =
-        FileEncoder(
-            file,
-            Fit.ProtocolVersion.V2_0
-        )
+    val encode = FileEncoder(file, Fit.ProtocolVersion.V2_0)
     encode.write(fileIdMesg)
     encode.write(deviceInfoMesg)
     for (message in messages) {
@@ -232,7 +323,6 @@ fun exportRideToFit(
     destination: Uri,
     exportData: TripDetailsViewModel.ExportData,
 ) {
-
     val privateAppFile = java.io.File(
         context.filesDir,
         getFileName(context.contentResolver, destination)!!
@@ -246,9 +336,5 @@ fun exportRideToFit(
         messages
     )
 
-    moveToDownloads(
-        context,
-        privateAppFile,
-        destination,
-    )
+    moveToDownloads(context, privateAppFile, destination)
 }
