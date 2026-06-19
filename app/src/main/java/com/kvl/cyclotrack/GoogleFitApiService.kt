@@ -468,19 +468,24 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         wheelCircumference: Float,
         powerMeasurements: Array<CyclingPowerMeasurement>,
     ) {
-        measurements.toList().chunked(1000).forEach {
-            Log.d(logTag, "Processing measurements chunk")
-            insertHeartRateDataset(heartRateMeasurements)
-            insertLocationDataset(it.toTypedArray())
-            insertDistanceDeltaDataset(it.toTypedArray())
-            insertCadenceDataset(
-                if (cadenceMeasurements.isNotEmpty()) cadenceMeasurements
-                else powerToCadence(powerMeasurements)
-            )
-            insertSpeedDataset(speedMeasurements, wheelCircumference)
-            insertCrankRevolutionsDataset(cadenceMeasurements)
-            insertPowerDataset(powerMeasurements)
-            insertWheelRevolutionsDataset(speedMeasurements)
+        val cadence = if (cadenceMeasurements.isNotEmpty()) cadenceMeasurements
+        else powerToCadence(powerMeasurements)
+        // Raw streams: one point per sample, plain chunks.
+        heartRateMeasurements.asList().chunked(1000).forEach {
+            insertHeartRateDataset(it.toTypedArray())
+        }
+        measurements.asList().chunked(1000).forEach { insertLocationDataset(it.toTypedArray()) }
+        powerMeasurements.asList().chunked(1000).forEach { insertPowerDataset(it.toTypedArray()) }
+        // Delta streams: consecutive-pair deltas, overlap chunks by 1 so the
+        // sample straddling each boundary still emits its delta.
+        measurements.asList().deltaChunked().forEach { insertDistanceDeltaDataset(it.toTypedArray()) }
+        cadence.asList().deltaChunked().forEach { insertCadenceDataset(it.toTypedArray()) }
+        speedMeasurements.asList().deltaChunked().forEach {
+            insertSpeedDataset(it.toTypedArray(), wheelCircumference)
+            insertWheelRevolutionsDataset(it.toTypedArray())
+        }
+        cadenceMeasurements.asList().deltaChunked().forEach {
+            insertCrankRevolutionsDataset(it.toTypedArray())
         }
     }
 
@@ -491,15 +496,20 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
         cadenceMeasurements: Array<CadenceSpeedMeasurement>,
         wheelCircumference: Float
     ) {
-        measurements.toList().chunked(1000).forEach {
-            Log.d(logTag, "Processing measurements chunk")
-            updateHeartRateDataset(heartRateMeasurements)
-            updateLocationDataset(it.toTypedArray())
-            updateDistanceDeltaDataset(it.toTypedArray())
-            updateCadenceDataset(cadenceMeasurements)
-            updateSpeedDataset(speedMeasurements, wheelCircumference)
-            updateCrankRevolutionsDataset(cadenceMeasurements)
-            updateWheelRevolutionsDataset(speedMeasurements)
+        // Raw streams: one point per sample, plain chunks.
+        heartRateMeasurements.asList().chunked(1000).forEach {
+            updateHeartRateDataset(it.toTypedArray())
+        }
+        measurements.asList().chunked(1000).forEach { updateLocationDataset(it.toTypedArray()) }
+        // Delta streams: overlap chunks by 1 so no boundary delta is dropped.
+        measurements.asList().deltaChunked().forEach { updateDistanceDeltaDataset(it.toTypedArray()) }
+        cadenceMeasurements.asList().deltaChunked().forEach {
+            updateCadenceDataset(it.toTypedArray())
+            updateCrankRevolutionsDataset(it.toTypedArray())
+        }
+        speedMeasurements.asList().deltaChunked().forEach {
+            updateSpeedDataset(it.toTypedArray(), wheelCircumference)
+            updateWheelRevolutionsDataset(it.toTypedArray())
         }
     }
 
@@ -681,3 +691,11 @@ class GoogleFitApiService @Inject constructor(@ApplicationContext private val co
     fun hasPermission(): Boolean =
         GoogleSignIn.hasPermissions(getGoogleAccount(context), fitnessOptions)
 }
+
+// Delta datasets skip their first element (it only seeds the previous-sample
+// reference). Overlapping windows by one repeats each chunk's last sample as the
+// next chunk's seed, so no boundary delta is dropped. Window size bounds the
+// per-insert Parcel so GMS Fit doesn't OOM on long rides.
+internal fun <T> List<T>.deltaChunked(size: Int = 1000): List<List<T>> =
+    if (this.size <= size) listOf(this)
+    else windowed(size, size - 1, partialWindows = true).filter { it.size > 1 }
