@@ -167,7 +167,7 @@ class StatisticsTest {
     fun incrementalAverage() {
         val testData = listOf(1.0, 2.0, 3.0, 4.0)
         val avg = testData.average()
-        Assert.assertEquals(3.0, average(5.0, testData.size + 1, avg), 1e-6)
+        Assert.assertEquals(3.0, average(5.0, testData.size + 1L, avg), 1e-6)
     }
 
     @Test
