@@ -8,6 +8,9 @@ interface OnboardSensorsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(measurements: OnboardSensors): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun save(measurements: List<OnboardSensors>)
+
     @Update
     fun update(measurements: OnboardSensors)
 

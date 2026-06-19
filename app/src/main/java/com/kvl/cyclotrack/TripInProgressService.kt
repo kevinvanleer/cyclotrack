@@ -44,6 +44,8 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -711,16 +713,31 @@ class TripInProgressService @Inject constructor() :
 
     private lateinit var thisGpsObserver: Observer<Location>
 
-    private fun sensorObserver(tripId: Long): Observer<SensorModel> = Observer { newData ->
-        lifecycleScope.launch {
+    private val sensorChannel = Channel<OnboardSensors>(
+        capacity = 1024,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    // Single service-lifetime consumer started in onCreate; batches drained writes
+    // to ease SQLite write-lock pressure. sensorObserver is just the producer.
+    private fun consumeSensorBatches() = lifecycleScope.launch {
+        for (first in sensorChannel) {
+            val batch = ArrayList<OnboardSensors>().apply { add(first) }
+            while (true) {
+                val next = sensorChannel.tryReceive().getOrNull() ?: break
+                batch.add(next)
+            }
             try {
-                sensorsRepository.insertMeasurements(tripId, newData)
+                sensorsRepository.insertMeasurements(batch)
             } catch (e: SQLiteConstraintException) {
                 Log.e(logTag, "Failed to add sensor measurements", e)
                 handleSqliteConstraintException(e)
             }
         }
     }
+
+    private fun sensorObserver(tripId: Long): Observer<SensorModel> =
+        Observer { newData -> sensorChannel.trySend(OnboardSensors(tripId, newData)) }
 
     private lateinit var thisSensorObserver: Observer<SensorModel>
 
@@ -1038,6 +1055,7 @@ class TripInProgressService @Inject constructor() :
 
     override fun onCreate() {
         super.onCreate()
+        consumeSensorBatches()
         Log.d(logTag, "::onCreate; this=$this")
         Log.d(logTag, "gpsService=$gpsService")
         Log.d(logTag, "bleService=$bleService")

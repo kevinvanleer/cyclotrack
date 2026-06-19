@@ -6,6 +6,9 @@ class OnboardSensorsRepository @Inject constructor(private val onboardSensorsDao
     suspend fun insertMeasurements(tripId: Long, measurements: SensorModel) =
         onboardSensorsDao.save(OnboardSensors(tripId, measurements))
 
+    suspend fun insertMeasurements(measurements: List<OnboardSensors>) =
+        onboardSensorsDao.save(measurements)
+
     fun update(measurements: OnboardSensors) = onboardSensorsDao.update(measurements)
 
     suspend fun getDecimated(tripId: Long) = onboardSensorsDao.loadDecimated(tripId)
