@@ -58,6 +58,10 @@ android {
         versionCode 69
         versionName "Power meter"
 
+        ndk {
+            debugSymbolLevel = "SYMBOL_TABLE"
+        }
+
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
             def git = Grgit.open(dir: project.rootDir)
