@@ -105,7 +105,13 @@ class TripInProgressService @Inject constructor() :
     private val speedThreshold = 0.5f
     private var nextWeatherUpdate = 0L
     private val weatherUpdatePeriod = 5 * 60000
-    private var running = false
+
+    companion object {
+        @Volatile
+        var running = false
+            private set
+    }
+
     var bike: Bike? = null
 
     @Inject
@@ -1088,6 +1094,7 @@ class TripInProgressService @Inject constructor() :
 
     override fun onDestroy() {
         super.onDestroy()
+        running = false
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
         if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)

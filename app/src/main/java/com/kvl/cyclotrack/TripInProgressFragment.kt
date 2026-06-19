@@ -848,14 +848,16 @@ class TripInProgressFragment :
                     Log.d(logTag, "Resuming trip $tripId")
                     initializeAfterTripCreated(tripId)
                     viewModel.resumeTrip(tripId, viewLifecycleOwner)
-                    requireActivity().startService(
-                        Intent(
-                            requireContext(),
-                            TripInProgressService::class.java
-                        ).apply {
-                            this.action = getString(R.string.action_start_trip_service)
-                            this.putExtra("tripId", tripId)
-                        })
+                    if (!TripInProgressService.running) {
+                        requireActivity().startService(
+                            Intent(
+                                requireContext(),
+                                TripInProgressService::class.java
+                            ).apply {
+                                this.action = getString(R.string.action_start_trip_service)
+                                this.putExtra("tripId", tripId)
+                            })
+                    }
 
                     viewLifecycleOwner.lifecycleScope.launch {
                         setTimeStateButtonState(viewModel.getCurrentTimeState(tripId))
@@ -869,6 +871,11 @@ class TripInProgressFragment :
                     Log.e(logTag, "Failed to parse navigation args", e)
                     FirebaseCrashlytics.getInstance().recordException(e)
                     endTrip(-1)
+                }
+
+                is java.lang.IllegalStateException -> {
+                    Log.e(logTag, "Failed to start trip service", e)
+                    FirebaseCrashlytics.getInstance().recordException(e)
                 }
 
                 else -> throw e
