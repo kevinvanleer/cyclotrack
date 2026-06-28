@@ -762,6 +762,7 @@ class TripInProgressService @Inject constructor() :
         )
 
         val pendingIntent = NavDeepLinkBuilder(this).apply {
+            setComponentName(MainActivity::class.java)
             setGraph(R.navigation.cyclotrack_nav_graph)
             setDestination(R.id.DashboardActivity)
             setArguments(Bundle().apply { putLong("tripId", tripId) })
