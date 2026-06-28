@@ -25,20 +25,18 @@ class RemoveTripWorker @AssistedInject constructor(
             Log.i(logTag, "Removing data from dB for trip $tripId")
             tripsRepository.get(tripId).let { trip ->
                 trip.takeIf { trip.inProgress }?.let { tripInProgress ->
-                    applicationContext.stopService(
+                    applicationContext.startService(
                         Intent(
                             applicationContext,
                             TripInProgressService::class.java
                         ).apply {
                             this.action =
-                                applicationContext.getString(R.string.action_stop_trip_service)
+                                applicationContext.getString(R.string.action_remove_trip_service)
                             this.putExtra("tripId", tripInProgress.id)
                         })
 
-                }
-
+                } ?: tripsRepository.removeTrip(tripId)
             }
-            tripsRepository.removeTrip(tripId)
         }
         return Result.success()
     }

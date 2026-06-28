@@ -177,7 +177,7 @@ class TripInProgressService @Inject constructor() :
 
     val hrmEventHandler: (Long) -> (HrmData) -> Unit = { tripId ->
         { event ->
-            event.bpm?.let {
+            if (running) event.bpm?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         heartRateMeasurementRepository.save(
@@ -207,7 +207,7 @@ class TripInProgressService @Inject constructor() :
 
     val cadenceEventHandler: (Long) -> (CadenceData) -> Unit = { tripId ->
         { event ->
-            event.revolutionCount?.let {
+            if (running) event.revolutionCount?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         cadenceSpeedMeasurementRepository.save(
@@ -238,7 +238,7 @@ class TripInProgressService @Inject constructor() :
 
     val speedEventHandler: (Long) -> (SpeedData) -> Unit = { tripId ->
         { event ->
-            event.revolutionCount?.let {
+            if (running) event.revolutionCount?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
                     val currentTime = SystemUtils.currentTimeMillis();
                     try {
@@ -319,7 +319,7 @@ class TripInProgressService @Inject constructor() :
 
     val powerEventHandler: (Long) -> (PowerData) -> Unit = { tripId ->
         { event ->
-            event.instantaneousPower?.let {
+            if (running) event.instantaneousPower?.let {
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         cyclingPowerMeasurementRepository.insertPowerData(tripId, event)
@@ -434,6 +434,7 @@ class TripInProgressService @Inject constructor() :
 
     private fun gpsObserver(tripId: Long): Observer<Location> = Observer { newLocation ->
         Log.d(logTag, "onChanged gps observer")
+        if (!running) return@Observer
         val newMeasurement = Measurements(
             tripId,
             LocationData(newLocation),
@@ -479,7 +480,7 @@ class TripInProgressService @Inject constructor() :
     private fun handleSqliteConstraintException(e: SQLiteConstraintException) {
         FirebaseCrashlytics.getInstance().recordException(e)
         Log.i(logTag, "Terminating after SQLiteConstraintException...")
-        onDestroy()
+        shutdown()
     }
 
     private fun updateDerivedTripState(
@@ -728,7 +729,7 @@ class TripInProgressService @Inject constructor() :
                 batch.add(next)
             }
             try {
-                sensorsRepository.insertMeasurements(batch)
+                if (running) sensorsRepository.insertMeasurements(batch)
             } catch (e: SQLiteConstraintException) {
                 Log.e(logTag, "Failed to add sensor measurements", e)
                 handleSqliteConstraintException(e)
@@ -1007,7 +1008,6 @@ class TripInProgressService @Inject constructor() :
         running = false
         clearState()
         job?.join()
-        stopSelf()
     }
 
     private fun shutdown() {
@@ -1044,6 +1044,15 @@ class TripInProgressService @Inject constructor() :
 
                 getString(R.string.action_stop_trip_service) -> lifecycleScope.launch {
                     end(it.getLongExtra("tripId", -1))
+                    shutdown()
+                }
+
+                getString(R.string.action_remove_trip_service) -> lifecycleScope.launch {
+                    it.getLongExtra("tripId", -1).let { tripId ->
+                        end(tripId)
+                        tripsRepository.removeTrip(tripId)
+                    }
+                    shutdown()
                 }
 
                 getString(R.string.action_shutdown_trip_service) -> shutdown()
