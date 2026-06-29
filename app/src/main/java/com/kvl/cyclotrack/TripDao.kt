@@ -1,7 +1,11 @@
 package com.kvl.cyclotrack
 
 import androidx.lifecycle.LiveData
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
 
 data class TripInProgress(
     val id: Long,
@@ -67,6 +71,11 @@ data class TripAggregation(
     val tripCount: Int,
     val firstStart: Long,
     val lastStart: Long,
+)
+
+data class ReviewGateStats(
+    val rideCount: Int,
+    val newestRideStart: Long,
 )
 
 data class Biometrics(
@@ -162,6 +171,9 @@ interface TripDao {
 
     @Query("select sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount, min(timestamp) as firstStart, max(timestamp) as lastStart from trip where distance > 1 AND duration > 60")
     fun subscribeTotals(): LiveData<TripAggregation>
+
+    @Query("select count(*) as rideCount, ifnull(max(timestamp), 0) as newestRideStart from trip where distance > 1000 AND duration > 60")
+    suspend fun getReviewGateStats(): ReviewGateStats
 
     @Query("select strftime('%Y-%m-%d',  datetime(round(timestamp/1000),'unixepoch','localtime','start of day','weekday 6', '-6 day') ) as period, sum(distance) as totalDistance, sum(duration) as totalDuration, count(*) as tripCount from trip WHERE distance > 1 AND duration > 60 group by period order by totalDistance desc limit :limit")
     fun subscribeWeeklyTotals(limit: Int): LiveData<Array<PeriodTotals>>

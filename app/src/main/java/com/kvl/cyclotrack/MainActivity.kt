@@ -25,6 +25,7 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.analytics.FirebaseAnalytics
@@ -37,10 +38,14 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private val logTag = MainActivity::class.simpleName
+
+    @Inject
+    lateinit var tripsRepository: TripsRepository
     lateinit var googleFitApiService: GoogleFitApiService
     private var newRidesDisabledDialog: AlertDialog? = null
     private val viewModel: MainActivityViewModel by viewModels()
@@ -200,6 +205,27 @@ class MainActivity : AppCompatActivity() {
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
                     .build()
             ).enqueue()
+        }
+
+        lifecycleScope.launch {
+            tripsRepository.getReviewGateStats().let {
+                maybeRequestReview(it.rideCount, it.newestRideStart)
+            }
+        }
+    }
+
+    private fun maybeRequestReview(rideCount: Int, newestRideStart: Long) {
+        val minRides = 3
+        val prefKey = "last_review_prompt"
+        if (rideCount < minRides) return
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (newestRideStart <= prefs.getLong(prefKey, 0)) return
+        val manager = ReviewManagerFactory.create(this)
+        manager.requestReviewFlow().addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                manager.launchReviewFlow(this, task.result)
+                prefs.edit { putLong(prefKey, System.currentTimeMillis()) }
+            }
         }
     }
 
