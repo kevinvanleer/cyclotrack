@@ -58,10 +58,6 @@ android {
         versionCode 70
         versionName "Power meter"
 
-        ndk {
-            debugSymbolLevel = "SYMBOL_TABLE"
-        }
-
         def noWipBranches = ["main", "master", "dev", "release/*"]
         def lastCommitHash = { ->
             def git = Grgit.open(dir: project.rootDir)
@@ -131,6 +127,9 @@ android {
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             signingConfig signingConfigs.Default
             resValue "string", "openweather_api_key", (secureProps.getProperty("OPENWEATHER_PROD") ?: "")
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
         }
     }
     testOptions {
