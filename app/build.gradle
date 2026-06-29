@@ -55,7 +55,7 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdk = 26
         targetSdk = 36
-        versionCode 69
+        versionCode 70
         versionName "Power meter"
 
         ndk {
