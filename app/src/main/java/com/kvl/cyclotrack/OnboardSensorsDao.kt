@@ -1,7 +1,12 @@
 package com.kvl.cyclotrack
 
 import androidx.lifecycle.LiveData
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.RoomWarnings
+import androidx.room.Update
 
 @Dao
 interface OnboardSensorsDao {
@@ -23,11 +28,11 @@ interface OnboardSensorsDao {
     @Query("SELECT * FROM OnboardSensors WHERE tripId = :tripId")
     fun subscribe(tripId: Long): LiveData<Array<OnboardSensors>>
 
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Query("select obs1.* from OnboardSensors as obs1 left join OnboardSensors as obs2 on obs2.id = (select max(id) from OnboardSensors as obs3 where obs3.id < obs1.id and obs1.tripId = :tripId) where obs1.gyroscopeX <> obs2.gyroscopeX and obs1.tripId = :tripId")
     suspend fun loadDecimated(tripId: Long): Array<OnboardSensors>
 
-    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
+    @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
     @Query("select obs1.* from OnboardSensors as obs1 left join OnboardSensors as obs2 on obs2.id = (select max(id) from OnboardSensors as obs3 where obs3.id < obs1.id and obs1.tripId = :tripId) where obs1.gyroscopeX <> obs2.gyroscopeX and obs1.tripId = :tripId")
     fun subscribeDecimated(tripId: Long): LiveData<Array<OnboardSensors>>
 }
