@@ -94,6 +94,7 @@ data class Trip(
     val notes: String? = null,
     val userWheelCircumference: Float? = null,
     val autoWheelCircumference: Float? = null,
+    val slopeOffset: Float? = null,
     val userSex: UserSexEnum? = null,
     val userWeight: Float? = null,
     val userHeight: Float? = null,

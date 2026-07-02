@@ -11,6 +11,7 @@ data class Bike(
     val dateOfPurchase: Long? = null,
     val weight: Float? = null,
     val wheelCircumference: Float? = null,
+    val autoSlopeOffset: Float? = null,
     val isDefault: Boolean = false,
     @PrimaryKey(autoGenerate = true) val id: Long? = null
 )

@@ -443,6 +443,21 @@ val MIGRATION_29_28 = object : Migration(29, 28) {
     }
 }
 
+val MIGRATION_29_30 = object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Bike` ADD COLUMN `autoSlopeOffset` FLOAT")
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `slopeOffset` FLOAT")
+    }
+}
+
+val MIGRATION_30_31 = object : Migration(30, 31) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `OnboardSensors` ADD COLUMN `accelerometerX` FLOAT")
+        db.execSQL("ALTER TABLE `OnboardSensors` ADD COLUMN `accelerometerY` FLOAT")
+        db.execSQL("ALTER TABLE `OnboardSensors` ADD COLUMN `accelerometerZ` FLOAT")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -484,6 +499,8 @@ object TripsDatabaseModule {
                 MIGRATION_28_27,
                 MIGRATION_28_29,
                 MIGRATION_29_28,
+                MIGRATION_29_30,
+                MIGRATION_30_31,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
