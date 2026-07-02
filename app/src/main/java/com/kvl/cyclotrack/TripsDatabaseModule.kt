@@ -458,6 +458,27 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
     }
 }
 
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `Export_new` " +
+                "(`timestamp` INTEGER NOT NULL, " +
+                "`tripId` INTEGER NOT NULL, " +
+                "`uri` TEXT NOT NULL, " +
+                "`filename` TEXT NOT NULL, " +
+                "`fileType` TEXT NOT NULL, " +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)"
+        )
+        db.execSQL(
+            "INSERT INTO `Export_new` (`timestamp`, `tripId`, `uri`, `filename`, `fileType`, `id`) " +
+                "SELECT `timestamp`, `tripId`, `uri`, `filename`, `fileType`, `id` FROM `Export`"
+        )
+        db.execSQL("DROP TABLE `Export`")
+        db.execSQL("ALTER TABLE `Export_new` RENAME TO `Export`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Export_tripId` ON `Export` (`tripId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -501,6 +522,7 @@ object TripsDatabaseModule {
                 MIGRATION_29_28,
                 MIGRATION_29_30,
                 MIGRATION_30_31,
+                MIGRATION_31_32,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {

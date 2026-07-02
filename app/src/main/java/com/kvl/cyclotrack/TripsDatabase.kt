@@ -28,7 +28,7 @@ import com.kvl.cyclotrack.data.SensorTypeConverter
         Export::class,
         CyclingPowerMeasurement::class
     ],
-    version = 31
+    version = 32
 )
 @TypeConverters(
     TimeStateEnumConverter::class,
