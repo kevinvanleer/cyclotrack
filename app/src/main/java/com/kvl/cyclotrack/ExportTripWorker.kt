@@ -88,6 +88,7 @@ class ExportTripWorker @AssistedInject constructor(
         tripId: Long,
         uri: Uri,
         fileType: String,
+        intendedFileName: String,
     ) {
         Log.d(logTag, "exportTripData")
         Log.d(logTag, uri.toString())
@@ -126,7 +127,7 @@ class ExportTripWorker @AssistedInject constructor(
             .setProgress(1, 0, true)
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Data export \"${getFileName()}\" will finish soon.")
+                    .bigText("Data export \"${getFileName() ?: intendedFileName}\" will finish soon.")
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         val inProgressId = getUriFilePart()?.toIntOrNull() ?: 0
@@ -146,6 +147,9 @@ class ExportTripWorker @AssistedInject constructor(
                 // for ActivityCompat#requestPermissions for more details.
                 return
             }
+            // a re-export deletes the previous MediaStore entry, so clear the previous
+            // export's completion notification (keyed on trip id) along with it
+            cancel(tripId.toInt())
             notify(inProgressId, inProgressBuilder.build())
         }
         appContext.mainExecutor().execute {
@@ -246,7 +250,7 @@ class ExportTripWorker @AssistedInject constructor(
                     .setAutoCancel(true)
                     .setStyle(
                         NotificationCompat.BigTextStyle()
-                            .bigText("Data export \"${getFileName()}\" is ready in your downloads folder.")
+                            .bigText("Data export \"${getFileName() ?: intendedFileName}\" is ready in your downloads folder.")
                     )
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .addAction(
@@ -300,7 +304,7 @@ class ExportTripWorker @AssistedInject constructor(
                     .setAutoCancel(true)
                     .setStyle(
                         NotificationCompat.BigTextStyle()
-                            .bigText("There was an error processing data export \"${getFileName()}\".")
+                            .bigText("There was an error processing data export \"${getFileName() ?: intendedFileName}\".")
                     )
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 with(NotificationManagerCompat.from(appContext)) {
@@ -346,7 +350,7 @@ class ExportTripWorker @AssistedInject constructor(
 
         appContext.contentResolver.insert(downloadsFolder, exportDetails)?.let { uri ->
             try {
-                exportTripData(appContext.contentResolver, tripId, uri, fileType)
+                exportTripData(appContext.contentResolver, tripId, uri, fileType, fileName)
             } catch (e: RuntimeException) {
                 return Result.failure()
             }
@@ -368,7 +372,7 @@ class ExportTripWorker @AssistedInject constructor(
                 destinationPath
             );
 
-            exportTripData(appContext.contentResolver, tripId, uri, fileType)
+            exportTripData(appContext.contentResolver, tripId, uri, fileType, fileName)
             return Result.success()
         } catch (e: SecurityException) {
             Log.e(logTag, "Could not prep destination path", e)
