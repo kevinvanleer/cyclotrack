@@ -14,6 +14,7 @@ import com.kvl.cyclotrack.data.CadenceSpeedMeasurementDao
 import com.kvl.cyclotrack.data.CyclingPowerMeasurementDao
 import com.kvl.cyclotrack.data.ExportDao
 import com.kvl.cyclotrack.data.HeartRateMeasurementDao
+import com.kvl.cyclotrack.data.OnboardSensorMeasurementDao
 import com.kvl.cyclotrack.data.SensorType
 import com.kvl.cyclotrack.util.getBikeMassOrNull
 import com.kvl.cyclotrack.util.getPreferences
@@ -479,6 +480,13 @@ val MIGRATION_31_32 = object : Migration(31, 32) {
     }
 }
 
+val MIGRATION_32_33 = object : Migration(32, 33) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `OnboardSensorMeasurement` (`tripId` INTEGER NOT NULL, `timestamp` INTEGER NOT NULL, `sensorType` INTEGER NOT NULL, `v0` REAL NOT NULL, `v1` REAL, `v2` REAL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_OnboardSensorMeasurement_tripId` ON `OnboardSensorMeasurement` (`tripId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -523,6 +531,7 @@ object TripsDatabaseModule {
                 MIGRATION_29_30,
                 MIGRATION_30_31,
                 MIGRATION_31_32,
+                MIGRATION_32_33,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
@@ -570,6 +579,12 @@ object TripsDatabaseModule {
     @Singleton
     fun provideOnboardSensorsDao(db: TripsDatabase): OnboardSensorsDao {
         return db.onboardSensorsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideOnboardSensorMeasurementDao(db: TripsDatabase): OnboardSensorMeasurementDao {
+        return db.onboardSensorMeasurementDao()
     }
 
     @Provides

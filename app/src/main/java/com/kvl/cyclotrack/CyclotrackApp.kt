@@ -4,10 +4,13 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import androidx.core.content.edit
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.preference.PreferenceManager
 import androidx.work.Configuration
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.kvl.cyclotrack.util.TelemetryEvent
+import com.kvl.cyclotrack.util.emitTelemetry
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -15,6 +18,7 @@ import javax.inject.Inject
 class CyclotrackApp : Application(), Configuration.Provider {
     companion object {
         lateinit var instance: CyclotrackApp private set
+        private const val PREF_LAST_VERSION_CODE = "last_installed_version_code"
     }
 
     private fun createNotificationChannel() {
@@ -54,6 +58,17 @@ class CyclotrackApp : Application(), Configuration.Provider {
             PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(getString(R.string.preferences_key_enable_analytics), false)
         )
+        emitUpdateInstalled()
+    }
+
+    private fun emitUpdateInstalled() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val last = prefs.getLong(PREF_LAST_VERSION_CODE, -1)
+        val current = BuildConfig.VERSION_CODE.toLong()
+        if (last != current) {
+            if (last >= 0) emitTelemetry(TelemetryEvent.UpdateInstalled(last, current))
+            prefs.edit { putLong(PREF_LAST_VERSION_CODE, current) }
+        }
     }
 
     @Inject

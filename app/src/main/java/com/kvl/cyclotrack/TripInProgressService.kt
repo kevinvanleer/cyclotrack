@@ -13,8 +13,10 @@ import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
 import android.database.sqlite.SQLiteConstraintException
 import android.graphics.Color
 import android.location.Location
+import android.hardware.SensorEvent
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -31,6 +33,8 @@ import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
+import com.kvl.cyclotrack.data.OnboardSensorMeasurement
+import com.kvl.cyclotrack.data.OnboardSensorType
 import com.kvl.cyclotrack.data.SensorType
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
@@ -55,6 +59,7 @@ import okio.IOException
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
+import kotlin.math.abs
 import kotlin.math.max
 
 fun Array<Split>.lastTwo(tripId: Long): Pair<Split, Split> {
@@ -112,6 +117,8 @@ class TripInProgressService @Inject constructor() :
         @Volatile
         var running = false
             private set
+
+        const val SENSOR_CLOCK_SANITY_MS = 10_000L
     }
 
     var bike: Bike? = null
@@ -714,7 +721,7 @@ class TripInProgressService @Inject constructor() :
 
     private lateinit var thisGpsObserver: Observer<Location>
 
-    private val sensorChannel = Channel<OnboardSensors>(
+    private val sensorChannel = Channel<OnboardSensorMeasurement>(
         capacity = 1024,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -723,13 +730,13 @@ class TripInProgressService @Inject constructor() :
     // to ease SQLite write-lock pressure. sensorObserver is just the producer.
     private fun consumeSensorBatches() = lifecycleScope.launch {
         for (first in sensorChannel) {
-            val batch = ArrayList<OnboardSensors>().apply { add(first) }
+            val batch = ArrayList<OnboardSensorMeasurement>().apply { add(first) }
             while (true) {
                 val next = sensorChannel.tryReceive().getOrNull() ?: break
                 batch.add(next)
             }
             try {
-                if (running) sensorsRepository.insertMeasurements(batch)
+                if (running) sensorsRepository.insertSensorMeasurements(batch)
             } catch (e: SQLiteConstraintException) {
                 Log.e(logTag, "Failed to add sensor measurements", e)
                 handleSqliteConstraintException(e)
@@ -737,8 +744,36 @@ class TripInProgressService @Inject constructor() :
         }
     }
 
+    // SensorEvent objects are recycled by the framework, so change detection keys on
+    // event.timestamp rather than object identity.
+    private val lastSensorEventTimestamps = LongArray(OnboardSensorType.entries.size)
+
+    private fun trySendSensorEvent(tripId: Long, sensorType: OnboardSensorType, event: SensorEvent?) {
+        if (event == null || event.timestamp == lastSensorEventTimestamps[sensorType.value]) return
+        lastSensorEventTimestamps[sensorType.value] = event.timestamp
+        // event.timestamp is usually elapsedRealtimeNanos, but some HALs use other clock
+        // bases; fall back to receipt time when the derived wall clock is implausible
+        val now = SystemUtils.currentTimeMillis()
+        val derived = now - (SystemClock.elapsedRealtimeNanos() - event.timestamp) / 1_000_000
+        sensorChannel.trySend(
+            OnboardSensorMeasurement(
+                tripId = tripId,
+                timestamp = if (abs(now - derived) <= SENSOR_CLOCK_SANITY_MS) derived else now,
+                sensorType = sensorType,
+                v0 = event.values[0],
+                v1 = event.values.getOrNull(1),
+                v2 = event.values.getOrNull(2),
+            )
+        )
+    }
+
     private fun sensorObserver(tripId: Long): Observer<SensorModel> =
-        Observer { newData -> sensorChannel.trySend(OnboardSensors(tripId, newData)) }
+        Observer { newData ->
+            trySendSensorEvent(tripId, OnboardSensorType.GRAVITY, newData.gravity)
+            trySendSensorEvent(tripId, OnboardSensorType.GYROSCOPE, newData.gyroscope)
+            trySendSensorEvent(tripId, OnboardSensorType.ACCELEROMETER, newData.accelerometer)
+            trySendSensorEvent(tripId, OnboardSensorType.PRESSURE, newData.pressure)
+        }
 
     private lateinit var thisSensorObserver: Observer<SensorModel>
 

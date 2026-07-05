@@ -15,4 +15,13 @@
         app:title="@string/switch_preference_useAutoCircumference_title"
         app:summary="@string/switch_preference_useAutoCircumference_description"
         app:defaultValue="false" />
+    <PreferenceCategory
+        app:key="onboard_sensors_migration_category"
+        app:title="Data migration"
+        app:isPreferenceVisible="false">
+        <com.kvl.cyclotrack.preferences.ProgressPreference
+            app:key="onboard_sensors_migration_progress"
+            app:title="Sensor data migration"
+            app:selectable="false" />
+    </PreferenceCategory>
 </PreferenceScreen>

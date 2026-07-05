@@ -13,6 +13,7 @@ import com.kvl.cyclotrack.data.CyclingPowerMeasurement
 import com.kvl.cyclotrack.data.CyclingPowerMeasurementRepository
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
+import com.kvl.cyclotrack.data.OnboardSensorMeasurement
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -139,7 +140,7 @@ class TripDetailsViewModel @Inject constructor(
         val measurements: Array<Measurements>? = null,
         val timeStates: Array<TimeState>? = null,
         val splits: Array<Split>? = null,
-        val onboardSensors: Array<OnboardSensors>? = null,
+        val onboardSensors: Array<OnboardSensorMeasurement>? = null,
         val weather: Array<Weather>? = null,
         val heartRateMeasurements: Array<HeartRateMeasurement>? = null,
         val speedMeasurements: Array<CadenceSpeedMeasurement>? = null,

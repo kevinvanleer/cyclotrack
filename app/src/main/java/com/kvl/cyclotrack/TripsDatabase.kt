@@ -11,6 +11,9 @@ import com.kvl.cyclotrack.data.Export
 import com.kvl.cyclotrack.data.ExportDao
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementDao
+import com.kvl.cyclotrack.data.OnboardSensorMeasurement
+import com.kvl.cyclotrack.data.OnboardSensorMeasurementDao
+import com.kvl.cyclotrack.data.OnboardSensorTypeConverter
 import com.kvl.cyclotrack.data.SensorTypeConverter
 
 @Database(
@@ -20,6 +23,7 @@ import com.kvl.cyclotrack.data.SensorTypeConverter
         TimeState::class,
         Split::class,
         OnboardSensors::class,
+        OnboardSensorMeasurement::class,
         Bike::class,
         ExternalSensor::class,
         Weather::class,
@@ -28,13 +32,14 @@ import com.kvl.cyclotrack.data.SensorTypeConverter
         Export::class,
         CyclingPowerMeasurement::class
     ],
-    version = 32
+    version = 33
 )
 @TypeConverters(
     TimeStateEnumConverter::class,
     UserSexEnumConverter::class,
     GoogleFitSyncStatusConverter::class,
     SensorTypeConverter::class,
+    OnboardSensorTypeConverter::class,
 )
 
 abstract class TripsDatabase : RoomDatabase() {
@@ -43,6 +48,7 @@ abstract class TripsDatabase : RoomDatabase() {
     abstract fun timeStateDao(): TimeStateDao
     abstract fun splitDao(): SplitDao
     abstract fun onboardSensorsDao(): OnboardSensorsDao
+    abstract fun onboardSensorMeasurementDao(): OnboardSensorMeasurementDao
     abstract fun bikeDao(): BikeDao
     abstract fun externalSensorsDao(): ExternalSensorDao
     abstract fun weatherDao(): WeatherDao

@@ -18,7 +18,9 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
 import androidx.work.BackoffPolicy
+import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.android.gms.common.GoogleApiAvailability
@@ -36,6 +38,7 @@ import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -181,6 +184,24 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
 
         Log.d(logTag, "MainActivity onResume")
+        lifecycleScope.launch {
+            val workManager = WorkManager.getInstance(this@MainActivity)
+            // REPLACE resets accumulated backoff and applies constraint changes to the
+            // work spec, but must not cancel an actively running drain
+            val running = workManager
+                .getWorkInfosForUniqueWorkFlow(OnboardSensorsMigrationWorker.WORK_NAME)
+                .first().any { it.state == WorkInfo.State.RUNNING }
+            workManager.beginUniqueWork(
+                OnboardSensorsMigrationWorker.WORK_NAME,
+                if (running) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<OnboardSensorsMigrationWorker>()
+                    .setConstraints(
+                        Constraints.Builder().setRequiresCharging(true).build()
+                    )
+                    .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
+                    .build()
+            ).enqueue()
+        }
         if (hasFitnessPermissions(this)) {
             WorkManager.getInstance(this).beginUniqueWork(
                 "GoogleFitSyncTripsWorker",

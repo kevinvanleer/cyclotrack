@@ -1,24 +1,87 @@
 package com.kvl.cyclotrack
 
+import android.database.sqlite.SQLiteConstraintException
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.liveData
+import androidx.lifecycle.switchMap
+import androidx.room.withTransaction
+import com.kvl.cyclotrack.data.OnboardSensorMeasurement
+import com.kvl.cyclotrack.data.OnboardSensorMeasurementDao
+import com.kvl.cyclotrack.data.OnboardSensorsPivot
+import com.kvl.cyclotrack.data.reconstructSnapshots
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class OnboardSensorsRepository @Inject constructor(private val onboardSensorsDao: OnboardSensorsDao) {
-    suspend fun insertMeasurements(tripId: Long, measurements: SensorModel) =
-        onboardSensorsDao.save(OnboardSensors(tripId, measurements))
+// Singleton: the per-trip migration mutexes only serialize ensureMigrated if every
+// caller shares this instance. Unscoped injection would hand each worker/viewmodel
+// its own mutex map and allow concurrent drains to duplicate a trip's data.
+@Singleton
+class OnboardSensorsRepository @Inject constructor(
+    private val onboardSensorsDao: OnboardSensorsDao,
+    private val measurementDao: OnboardSensorMeasurementDao,
+    private val db: TripsDatabase,
+) {
+    private val migrateMutexes = ConcurrentHashMap<Long, Mutex>()
 
-    suspend fun insertMeasurements(measurements: List<OnboardSensors>) =
-        onboardSensorsDao.save(measurements)
+    suspend fun insertSensorMeasurements(measurements: List<OnboardSensorMeasurement>) =
+        measurementDao.save(measurements)
 
-    fun update(measurements: OnboardSensors) = onboardSensorsDao.update(measurements)
+    suspend fun get(tripId: Long): Array<OnboardSensorMeasurement> {
+        ensureMigrated(tripId)
+        return measurementDao.load(tripId).toTypedArray()
+    }
 
-    suspend fun getDecimated(tripId: Long) = onboardSensorsDao.loadDecimated(tripId)
+    fun observeDecimated(tripId: Long): LiveData<Array<OnboardSensors>> =
+        liveData(Dispatchers.IO) {
+            ensureMigrated(tripId)
+            emitSource(measurementDao.subscribe(tripId).switchMap { measurements ->
+                liveData(Dispatchers.Default) { emit(reconstructSnapshots(measurements)) }
+            })
+        }
 
-    fun observeDecimated(tripId: Long) = onboardSensorsDao.subscribeDecimated(tripId)
-
-    suspend fun get(tripId: Long) = onboardSensorsDao.load(tripId)
-
-    fun observe(tripId: Long) = onboardSensorsDao.subscribe(tripId)
-
-    suspend fun changeTrip(tripId: Long, newTripId: Long) =
+    suspend fun changeTrip(tripId: Long, newTripId: Long) {
         onboardSensorsDao.changeTrip(tripId, newTripId)
+        measurementDao.changeTrip(tripId, newTripId)
+    }
+
+    suspend fun legacyTripIds() = onboardSensorsDao.tripIds()
+
+    suspend fun hasLegacyRows() = onboardSensorsDao.hasRows()
+
+    data class MigrationProgress(val migrated: Int, val total: Int)
+
+    suspend fun migrationProgress() = MigrationProgress(
+        migrated = onboardSensorsDao.migratedTripCount(),
+        total = onboardSensorsDao.sensorTripCount(),
+    )
+
+    // ponytail: single-process mutexes; fine while only the app process touches the db
+    suspend fun ensureMigrated(tripId: Long) =
+        migrateMutexes.computeIfAbsent(tripId) { Mutex() }.withLock {
+            val pivot = OnboardSensorsPivot()
+            while (true) {
+                val chunk = onboardSensorsDao.loadChunk(tripId, pivot.lastId, MIGRATE_CHUNK_SIZE)
+                if (chunk.isEmpty()) break
+                val measurements = pivot.pivot(chunk)
+                try {
+                    db.withTransaction {
+                        measurementDao.save(measurements)
+                        onboardSensorsDao.deleteChunk(tripId, pivot.lastId)
+                    }
+                } catch (e: SQLiteConstraintException) {
+                    // trip deleted between loadChunk and save: the cascade already wiped
+                    // both tables' rows, so there is nothing left to migrate
+                    if (!onboardSensorsDao.tripExists(tripId)) return@withLock
+                    throw e
+                }
+            }
+        }
+
+    companion object {
+        const val MIGRATE_CHUNK_SIZE = 10_000
+    }
 }
