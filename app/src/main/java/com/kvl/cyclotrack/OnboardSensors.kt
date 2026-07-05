@@ -32,18 +32,4 @@ data class OnboardSensors(
     val accelerometerZ: Float? = null,
     @PrimaryKey(autoGenerate = true)
     val id: Long? = null,
-) {
-    constructor(tripId: Long, sensorData: SensorModel) : this(
-        tripId = tripId,
-        gravityX = sensorData.gravity?.values?.get(0),
-        gravityY = sensorData.gravity?.values?.get(1),
-        gravityZ = sensorData.gravity?.values?.get(2),
-        gyroscopeX = sensorData.gyroscope?.values?.get(0),
-        gyroscopeY = sensorData.gyroscope?.values?.get(1),
-        gyroscopeZ = sensorData.gyroscope?.values?.get(2),
-        pressure = sensorData.pressure?.values?.get(0),
-        accelerometerX = sensorData.accelerometer?.values?.get(0),
-        accelerometerY = sensorData.accelerometer?.values?.get(1),
-        accelerometerZ = sensorData.accelerometer?.values?.get(2),
-    )
-}
+)

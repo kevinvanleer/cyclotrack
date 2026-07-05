@@ -46,28 +46,6 @@ data class OnboardSensorMeasurement(
     val id: Long? = null,
 )
 
-fun reconstructSnapshots(measurements: List<OnboardSensorMeasurement>): Array<OnboardSensors> {
-    val last = arrayOfNulls<OnboardSensorMeasurement>(OnboardSensorType.entries.size)
-    return measurements.map { m ->
-        last[m.sensorType.value] = m
-        OnboardSensors(
-            tripId = m.tripId,
-            timestamp = m.timestamp,
-            gravityX = last[OnboardSensorType.GRAVITY.value]?.v0,
-            gravityY = last[OnboardSensorType.GRAVITY.value]?.v1,
-            gravityZ = last[OnboardSensorType.GRAVITY.value]?.v2,
-            gyroscopeX = last[OnboardSensorType.GYROSCOPE.value]?.v0,
-            gyroscopeY = last[OnboardSensorType.GYROSCOPE.value]?.v1,
-            gyroscopeZ = last[OnboardSensorType.GYROSCOPE.value]?.v2,
-            accelerometerX = last[OnboardSensorType.ACCELEROMETER.value]?.v0,
-            accelerometerY = last[OnboardSensorType.ACCELEROMETER.value]?.v1,
-            accelerometerZ = last[OnboardSensorType.ACCELEROMETER.value]?.v2,
-            pressure = last[OnboardSensorType.PRESSURE.value]?.v0,
-            id = m.id,
-        )
-    }.toTypedArray()
-}
-
 class OnboardSensorsPivot {
     private val last = arrayOfNulls<List<Float?>>(OnboardSensorType.entries.size)
 

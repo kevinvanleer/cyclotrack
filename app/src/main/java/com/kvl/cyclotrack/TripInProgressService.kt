@@ -13,10 +13,8 @@ import android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
 import android.database.sqlite.SQLiteConstraintException
 import android.graphics.Color
 import android.location.Location
-import android.hardware.SensorEvent
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -34,9 +32,9 @@ import com.kvl.cyclotrack.data.DerivedTripState
 import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.data.OnboardSensorMeasurement
-import com.kvl.cyclotrack.data.OnboardSensorType
 import com.kvl.cyclotrack.data.SensorType
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
+import com.kvl.cyclotrack.events.OnboardSensorEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
@@ -59,7 +57,6 @@ import okio.IOException
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
-import kotlin.math.abs
 import kotlin.math.max
 
 fun Array<Split>.lastTwo(tripId: Long): Pair<Split, Split> {
@@ -117,8 +114,6 @@ class TripInProgressService @Inject constructor() :
         @Volatile
         var running = false
             private set
-
-        const val SENSOR_CLOCK_SANITY_MS = 10_000L
     }
 
     var bike: Bike? = null
@@ -160,7 +155,7 @@ class TripInProgressService @Inject constructor() :
     lateinit var bleService: BleService
 
     @Inject
-    lateinit var onboardSensors: SensorLiveData
+    lateinit var onboardSensorSource: OnboardSensorSource
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -727,7 +722,7 @@ class TripInProgressService @Inject constructor() :
     )
 
     // Single service-lifetime consumer started in onCreate; batches drained writes
-    // to ease SQLite write-lock pressure. sensorObserver is just the producer.
+    // to ease SQLite write-lock pressure. onOnboardSensorEvent is just the producer.
     private fun consumeSensorBatches() = lifecycleScope.launch {
         for (first in sensorChannel) {
             val batch = ArrayList<OnboardSensorMeasurement>().apply { add(first) }
@@ -744,38 +739,32 @@ class TripInProgressService @Inject constructor() :
         }
     }
 
-    // SensorEvent objects are recycled by the framework, so change detection keys on
-    // event.timestamp rather than object identity.
-    private val lastSensorEventTimestamps = LongArray(OnboardSensorType.entries.size)
+    val onboardSensorEventHandler: (Long) -> (OnboardSensorEvent) -> Unit = { tripId ->
+        { event ->
+            if (running) sensorChannel.trySend(event.toMeasurement(tripId))
+        }
+    }
+    lateinit var thisOnboardSensorEventHandler: (OnboardSensorEvent) -> Unit
 
-    private fun trySendSensorEvent(tripId: Long, sensorType: OnboardSensorType, event: SensorEvent?) {
-        if (event == null || event.timestamp == lastSensorEventTimestamps[sensorType.value]) return
-        lastSensorEventTimestamps[sensorType.value] = event.timestamp
-        // event.timestamp is usually elapsedRealtimeNanos, but some HALs use other clock
-        // bases; fall back to receipt time when the derived wall clock is implausible
-        val now = SystemUtils.currentTimeMillis()
-        val derived = now - (SystemClock.elapsedRealtimeNanos() - event.timestamp) / 1_000_000
-        sensorChannel.trySend(
-            OnboardSensorMeasurement(
-                tripId = tripId,
-                timestamp = if (abs(now - derived) <= SENSOR_CLOCK_SANITY_MS) derived else now,
-                sensorType = sensorType,
-                v0 = event.values[0],
-                v1 = event.values.getOrNull(1),
-                v2 = event.values.getOrNull(2),
-            )
-        )
+    @Subscribe
+    fun onGravityData(event: OnboardSensorEvent.Gravity) {
+        thisOnboardSensorEventHandler(event)
     }
 
-    private fun sensorObserver(tripId: Long): Observer<SensorModel> =
-        Observer { newData ->
-            trySendSensorEvent(tripId, OnboardSensorType.GRAVITY, newData.gravity)
-            trySendSensorEvent(tripId, OnboardSensorType.GYROSCOPE, newData.gyroscope)
-            trySendSensorEvent(tripId, OnboardSensorType.ACCELEROMETER, newData.accelerometer)
-            trySendSensorEvent(tripId, OnboardSensorType.PRESSURE, newData.pressure)
-        }
+    @Subscribe
+    fun onGyroscopeData(event: OnboardSensorEvent.Gyroscope) {
+        thisOnboardSensorEventHandler(event)
+    }
 
-    private lateinit var thisSensorObserver: Observer<SensorModel>
+    @Subscribe
+    fun onAccelerometerData(event: OnboardSensorEvent.Accelerometer) {
+        thisOnboardSensorEventHandler(event)
+    }
+
+    @Subscribe
+    fun onPressureData(event: OnboardSensorEvent.Pressure) {
+        thisOnboardSensorEventHandler(event)
+    }
 
     private fun createNotificationChannel(channelId: String, channelName: String): String {
         //TODO: MAKE THIS YOUR OWN -- COPIED FROM POST
@@ -963,10 +952,8 @@ class TripInProgressService @Inject constructor() :
         }
 
         if (shouldCollectOnboardSensors(applicationContext)) {
-            if (!::thisSensorObserver.isInitialized || !onboardSensors.hasObservers()) {
-                thisSensorObserver = sensorObserver(tripId)
-                onboardSensors.observe(this, thisSensorObserver)
-            }
+            thisOnboardSensorEventHandler = onboardSensorEventHandler(tripId)
+            onboardSensorSource.start()
         }
     }
 
@@ -1039,7 +1026,7 @@ class TripInProgressService @Inject constructor() :
         }
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
-        if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
+        onboardSensorSource.stop()
 
         running = false
         clearState()
@@ -1160,7 +1147,7 @@ class TripInProgressService @Inject constructor() :
         running = false
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
-        if (::thisSensorObserver.isInitialized) onboardSensors.removeObserver(thisSensorObserver)
+        onboardSensorSource.stop()
 
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
         EventBus.getDefault().unregister(this)

@@ -252,7 +252,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         viewModel.locationMeasurements.removeObservers(viewLifecycleOwner)
         viewModel.splits.removeObservers(viewLifecycleOwner)
         viewModel.timeState.removeObservers(viewLifecycleOwner)
-        viewModel.onboardSensors.removeObservers(viewLifecycleOwner)
         WorkManager.getInstance(requireContext())
             .beginWith(
                 listOf(
@@ -279,7 +278,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         viewModel.locationMeasurements.removeObservers(viewLifecycleOwner)
         viewModel.splits.removeObservers(viewLifecycleOwner)
         viewModel.timeState.removeObservers(viewLifecycleOwner)
-        viewModel.onboardSensors.removeObservers(viewLifecycleOwner)
         Log.d(logTag, "trip overview has observers: ${viewModel.tripOverview.hasObservers()}")
         WorkManager.getInstance(requireContext())
             .enqueue(

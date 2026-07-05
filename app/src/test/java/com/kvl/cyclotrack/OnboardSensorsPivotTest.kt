@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import com.kvl.cyclotrack.data.OnboardSensorType
 import com.kvl.cyclotrack.data.OnboardSensorsPivot
-import com.kvl.cyclotrack.data.reconstructSnapshots
 import org.junit.Assert
 import org.junit.Test
 
@@ -64,22 +63,4 @@ class OnboardSensorsPivotTest {
         Assert.assertTrue(OnboardSensorsPivot().pivot(listOf(row(1))).isEmpty())
     }
 
-    @Test
-    fun `reconstruct carries values forward like legacy snapshots`() {
-        val rows = listOf(
-            row(1, gravity = Triple(0.1f, 9.8f, 0.2f), pressure = 1013.1f),
-            row(2, gravity = Triple(0.2f, 9.7f, 0.3f), pressure = 1013.1f),
-            row(3, gravity = Triple(0.2f, 9.7f, 0.3f), pressure = 1013.2f),
-        )
-        val snapshots = reconstructSnapshots(OnboardSensorsPivot().pivot(rows))
-        val final = snapshots.last()
-        Assert.assertEquals(0.2f, final.gravityX)
-        Assert.assertEquals(9.7f, final.gravityY)
-        Assert.assertEquals(1013.2f, final.pressure)
-        Assert.assertTrue(snapshots.all { it.pressure != null || it.gravityX != null })
-        Assert.assertEquals(
-            rows.last().timestamp,
-            snapshots.last().timestamp,
-        )
-    }
 }

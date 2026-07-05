@@ -1,15 +1,10 @@
 package com.kvl.cyclotrack
 
 import android.database.sqlite.SQLiteConstraintException
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.liveData
-import androidx.lifecycle.switchMap
 import androidx.room.withTransaction
 import com.kvl.cyclotrack.data.OnboardSensorMeasurement
 import com.kvl.cyclotrack.data.OnboardSensorMeasurementDao
 import com.kvl.cyclotrack.data.OnboardSensorsPivot
-import com.kvl.cyclotrack.data.reconstructSnapshots
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ConcurrentHashMap
@@ -34,14 +29,6 @@ class OnboardSensorsRepository @Inject constructor(
         ensureMigrated(tripId)
         return measurementDao.load(tripId).toTypedArray()
     }
-
-    fun observeDecimated(tripId: Long): LiveData<Array<OnboardSensors>> =
-        liveData(Dispatchers.IO) {
-            ensureMigrated(tripId)
-            emitSource(measurementDao.subscribe(tripId).switchMap { measurements ->
-                liveData(Dispatchers.Default) { emit(reconstructSnapshots(measurements)) }
-            })
-        }
 
     suspend fun changeTrip(tripId: Long, newTripId: Long) {
         onboardSensorsDao.changeTrip(tripId, newTripId)

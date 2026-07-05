@@ -40,7 +40,6 @@ class TripDetailsViewModel @Inject constructor(
             timeState = timeStateRepository.observeTimeStates(value)
             splits = splitRepository.observeTripSplits(value)
             locationMeasurements = measurementsRepository.observe(value)
-            onboardSensors = onboardSensorsRepository.observeDecimated(value)
             tripWeather = weatherRepository.observeTripWeather(value)
             heartRateMeasurements = hrmRepository.observeTripHeartRates(value)
             cadenceMeasurements = buildCadenceLiveData(value)
@@ -54,7 +53,6 @@ class TripDetailsViewModel @Inject constructor(
     lateinit var splits: LiveData<Array<Split>> private set
 
     lateinit var locationMeasurements: LiveData<Array<Measurements>> private set
-    lateinit var onboardSensors: LiveData<Array<OnboardSensors>> private set
     lateinit var tripWeather: LiveData<Array<Weather>> private set
     lateinit var heartRateMeasurements: LiveData<Array<HeartRateMeasurement>> private set
     lateinit var cadenceMeasurements: LiveData<Array<CadenceSpeedMeasurement>> private set
