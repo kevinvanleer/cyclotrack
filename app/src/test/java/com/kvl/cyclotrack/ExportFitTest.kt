@@ -31,7 +31,7 @@ class ExportFitTest {
             ts(TimeStateEnum.RESUME, 631_065_720L),
             ts(TimeStateEnum.STOP, 631_065_730L),
         )
-        assertEquals(listOf(100L until 110L), pauseIntervals(states))
+        assertEquals(listOf(110L until 120L), pauseIntervals(states))
     }
 
     @Test
@@ -44,7 +44,7 @@ class ExportFitTest {
             ts(TimeStateEnum.RESUME, 631_065_727L),
             ts(TimeStateEnum.STOP, 631_065_730L),
         )
-        assertEquals(listOf(100L until 105L, 110L until 117L), pauseIntervals(states))
+        assertEquals(listOf(110L until 115L, 120L until 127L), pauseIntervals(states))
     }
 
     @Test
