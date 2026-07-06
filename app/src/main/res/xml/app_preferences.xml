@@ -14,12 +14,37 @@
         app:defaultValue="true" />
     <SeekBarPreference
         app:key="@string/preferences_dashboard_brightness_key"
-        app:defaultValue="50" />
+        app:dependency="@string/preferences_dashboard_brightness_toggle_key"
+        app:defaultValue="80"
+        app:showSeekBarValue="true" />
     <SwitchPreference
         app:key="@string/preference_key_burn_in_reduction"
         app:title="Burn-in reduction"
         app:summary="Display outlined text and remove icons on dashboard. (Automatically enabled after two hours even if turned off.)"
         app:defaultValue="false" />
+    <SwitchPreference
+        app:key="@string/preference_key_power_saving_enable"
+        app:title="Power saving mode"
+        app:summary="When battery drops below the level set here, the display sleeps after 60 seconds of inactivity. Tap or press the power button to peek."
+        app:defaultValue="false" />
+    <SeekBarPreference
+        app:key="@string/preference_key_power_saving_battery_threshold"
+        app:title="Activate below battery level"
+        app:dependency="@string/preference_key_power_saving_enable"
+        app:min="5"
+        android:max="100"
+        app:defaultValue="100"
+        app:showSeekBarValue="true" />
+    <SwitchPreference
+        app:key="@string/preference_key_lock_screen_dashboard"
+        app:title="Show dashboard on lock screen"
+        app:summary="During a ride the dashboard appears when the screen wakes, without unlocking. Pause and stop work normally."
+        app:defaultValue="false" />
+    <SwitchPreference
+        app:key="@string/preference_key_thermal_protection"
+        app:title="Thermal display protection"
+        app:summary="Automatically reduce display output as the phone heats up (outline text, dim, screen off)."
+        app:defaultValue="true" />
     <Preference
         app:key="@string/preference_key_dashboard_safe_zone"
         app:title="@string/preference_title_dashboard_safe_zone"

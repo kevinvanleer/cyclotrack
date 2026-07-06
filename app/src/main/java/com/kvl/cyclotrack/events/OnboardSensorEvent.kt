@@ -7,13 +7,16 @@ sealed interface OnboardSensorEvent {
     val timestamp: Long
 
     fun toMeasurement(tripId: Long): OnboardSensorMeasurement
+}
+
+sealed interface PhysicsSensorEvent : OnboardSensorEvent {
 
     data class Gravity(
         val x: Float,
         val y: Float,
         val z: Float,
         override val timestamp: Long,
-    ) : OnboardSensorEvent {
+    ) : PhysicsSensorEvent {
         override fun toMeasurement(tripId: Long) =
             OnboardSensorMeasurement(tripId, timestamp, OnboardSensorType.GRAVITY, x, y, z)
     }
@@ -23,7 +26,7 @@ sealed interface OnboardSensorEvent {
         val y: Float,
         val z: Float,
         override val timestamp: Long,
-    ) : OnboardSensorEvent {
+    ) : PhysicsSensorEvent {
         override fun toMeasurement(tripId: Long) =
             OnboardSensorMeasurement(tripId, timestamp, OnboardSensorType.GYROSCOPE, x, y, z)
     }
@@ -33,7 +36,7 @@ sealed interface OnboardSensorEvent {
         val y: Float,
         val z: Float,
         override val timestamp: Long,
-    ) : OnboardSensorEvent {
+    ) : PhysicsSensorEvent {
         override fun toMeasurement(tripId: Long) =
             OnboardSensorMeasurement(tripId, timestamp, OnboardSensorType.ACCELEROMETER, x, y, z)
     }
@@ -41,7 +44,7 @@ sealed interface OnboardSensorEvent {
     data class Pressure(
         val pressure: Float,
         override val timestamp: Long,
-    ) : OnboardSensorEvent {
+    ) : PhysicsSensorEvent {
         override fun toMeasurement(tripId: Long) =
             OnboardSensorMeasurement(tripId, timestamp, OnboardSensorType.PRESSURE, pressure)
     }

@@ -173,3 +173,19 @@ fun isStravaSynced(context: Context) = getPreferences(context).getString(
     context.getString(R.string.preference_key_strava_refresh_token),
     null
 ).isNullOrBlank().not()
+
+fun powerSavingEnabled(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preference_key_power_saving_enable), false
+)
+
+fun powerSavingBatteryThreshold(context: Context) = getPreferences(context).getInt(
+    context.getString(R.string.preference_key_power_saving_battery_threshold), 20
+)
+
+fun lockScreenDashboardEnabled(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preference_key_lock_screen_dashboard), false
+)
+
+fun thermalProtectionEnabled(context: Context) = getPreferences(context).getBoolean(
+    context.getString(R.string.preference_key_thermal_protection), true
+)

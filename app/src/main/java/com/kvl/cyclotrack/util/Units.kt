@@ -297,6 +297,7 @@ object TimeConversions {
 
 fun kelvinToCelsius(kelvin: Double) = kelvin - KELVIN_TO_CELSIUS
 fun kelvinToFahrenheit(kelvin: Double) = kelvinToCelsius(kelvin) * 9.0 / 5.0 + 32.0
+fun celsiusToKelvin(celsius: Float) = (celsius + KELVIN_TO_CELSIUS).toFloat()
 
 fun unitsToSystem(units: String?): String {
     return when (units) {

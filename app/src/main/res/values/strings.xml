@@ -175,4 +175,8 @@
     <string name="preferences_dashboard_safe_zone_right_margin">preferences_dashboard_safe_zone_right_margin</string>
     <string name="preference_key_burn_in_reduction">preference_burn_in_reduction</string>
     <string name="empty_search_result_message">Sorry, couldn\'t find anything...</string>
+    <string name="preference_key_power_saving_enable">preference_key_power_saving_enable</string>
+    <string name="preference_key_power_saving_battery_threshold">preference_key_power_saving_battery_threshold</string>
+    <string name="preference_key_lock_screen_dashboard">preference_key_lock_screen_dashboard</string>
+    <string name="preference_key_thermal_protection">preference_key_thermal_protection</string>
 </resources>

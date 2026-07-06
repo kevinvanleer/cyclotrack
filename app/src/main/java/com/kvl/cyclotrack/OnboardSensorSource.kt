@@ -10,7 +10,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
 import android.util.Log
-import com.kvl.cyclotrack.events.OnboardSensorEvent
+import com.kvl.cyclotrack.events.PhysicsSensorEvent
 import com.kvl.cyclotrack.util.SystemUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.greenrobot.eventbus.EventBus
@@ -62,19 +62,19 @@ class OnboardSensorSource @Inject constructor(@ApplicationContext context: Conte
         val derived = now - (SystemClock.elapsedRealtimeNanos() - event.timestamp) / 1_000_000
         val timestamp = if (abs(now - derived) <= SENSOR_CLOCK_SANITY_MS) derived else now
         when (event.sensor.type) {
-            Sensor.TYPE_GRAVITY -> OnboardSensorEvent.Gravity(
+            Sensor.TYPE_GRAVITY -> PhysicsSensorEvent.Gravity(
                 event.values[0], event.values[1], event.values[2], timestamp
             )
 
-            Sensor.TYPE_GYROSCOPE -> OnboardSensorEvent.Gyroscope(
+            Sensor.TYPE_GYROSCOPE -> PhysicsSensorEvent.Gyroscope(
                 event.values[0], event.values[1], event.values[2], timestamp
             )
 
-            Sensor.TYPE_ACCELEROMETER -> OnboardSensorEvent.Accelerometer(
+            Sensor.TYPE_ACCELEROMETER -> PhysicsSensorEvent.Accelerometer(
                 event.values[0], event.values[1], event.values[2], timestamp
             )
 
-            Sensor.TYPE_PRESSURE -> OnboardSensorEvent.Pressure(event.values[0], timestamp)
+            Sensor.TYPE_PRESSURE -> PhysicsSensorEvent.Pressure(event.values[0], timestamp)
             else -> null
         }?.let { EventBus.getDefault().post(it) }
     }

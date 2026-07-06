@@ -14,6 +14,9 @@ enum class OnboardSensorType(val value: Int) {
     GYROSCOPE(1),
     ACCELEROMETER(2),
     PRESSURE(3),
+    BATTERY_TEMPERATURE(4),
+    BATTERY_LEVEL(5),
+    THERMAL_STATUS(6),
 }
 
 class OnboardSensorTypeConverter {

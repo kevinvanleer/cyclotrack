@@ -33,8 +33,10 @@ import com.kvl.cyclotrack.data.HeartRateMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurementRepository
 import com.kvl.cyclotrack.data.OnboardSensorMeasurement
 import com.kvl.cyclotrack.data.SensorType
+import com.kvl.cyclotrack.events.BatteryEvent
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.OnboardSensorEvent
+import com.kvl.cyclotrack.events.PhysicsSensorEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
@@ -156,6 +158,9 @@ class TripInProgressService @Inject constructor() :
 
     @Inject
     lateinit var onboardSensorSource: OnboardSensorSource
+
+    @Inject
+    lateinit var batterySource: BatterySource
 
     @Inject
     lateinit var sharedPreferences: SharedPreferences
@@ -745,25 +750,16 @@ class TripInProgressService @Inject constructor() :
         }
     }
     lateinit var thisOnboardSensorEventHandler: (OnboardSensorEvent) -> Unit
+    lateinit var thisBatteryEventHandler: (BatteryEvent) -> Unit
 
     @Subscribe
-    fun onGravityData(event: OnboardSensorEvent.Gravity) {
+    fun onPhysicsSensorEvent(event: PhysicsSensorEvent) {
         thisOnboardSensorEventHandler(event)
     }
 
     @Subscribe
-    fun onGyroscopeData(event: OnboardSensorEvent.Gyroscope) {
-        thisOnboardSensorEventHandler(event)
-    }
-
-    @Subscribe
-    fun onAccelerometerData(event: OnboardSensorEvent.Accelerometer) {
-        thisOnboardSensorEventHandler(event)
-    }
-
-    @Subscribe
-    fun onPressureData(event: OnboardSensorEvent.Pressure) {
-        thisOnboardSensorEventHandler(event)
+    fun onBatteryEvent(event: BatteryEvent) {
+        thisBatteryEventHandler(event)
     }
 
     private fun createNotificationChannel(channelId: String, channelName: String): String {
@@ -951,6 +947,8 @@ class TripInProgressService @Inject constructor() :
             thisPowerEventHandler = powerEventHandler(tripId)
         }
 
+        thisBatteryEventHandler = onboardSensorEventHandler(tripId)
+        batterySource.start()
         if (shouldCollectOnboardSensors(applicationContext)) {
             thisOnboardSensorEventHandler = onboardSensorEventHandler(tripId)
             onboardSensorSource.start()
@@ -1027,6 +1025,7 @@ class TripInProgressService @Inject constructor() :
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
         onboardSensorSource.stop()
+        batterySource.stop()
 
         running = false
         clearState()
@@ -1148,6 +1147,7 @@ class TripInProgressService @Inject constructor() :
 
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
         onboardSensorSource.stop()
+        batterySource.stop()
 
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
         EventBus.getDefault().unregister(this)
