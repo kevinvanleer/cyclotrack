@@ -816,19 +816,32 @@ class TripInProgressService @Inject constructor() :
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                tripId.toInt(),
-                notification,
-                serviceTypes
-            )
-        } else {
-            startForeground(
-                tripId.toInt(),
-                notification
-            )
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    tripId.toInt(),
+                    notification,
+                    serviceTypes
+                )
+            } else {
+                startForeground(
+                    tripId.toInt(),
+                    notification
+                )
+            }
+            running = true
+        } catch (e: SecurityException) {
+            // FGS-location start rejected: app not in an eligible state (background
+            // start) or location permission revoked; stop cleanly so the next
+            // foreground entry can retry instead of crashing
+            Log.e(logTag, "Not allowed to start foreground service", e)
+            FirebaseCrashlytics.getInstance().recordException(e)
+            stopSelf()
+        } catch (e: IllegalStateException) {
+            Log.e(logTag, "Not allowed to start foreground service", e)
+            FirebaseCrashlytics.getInstance().recordException(e)
+            stopSelf()
         }
-        running = true
     }
 
     private suspend fun getCombinedBiometrics(id: Long): Biometrics =
