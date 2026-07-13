@@ -27,7 +27,7 @@ class AnalyticsViewModel @Inject constructor(
     fun monthlyTotals() = tripsRepository.observeMonthlyTotals(3)
     fun weeklyTotals() = tripsRepository.observeWeeklyTotals(3)
 
-    suspend fun getTripMeasurements(tripId: Long) = measurementsRepository.get(tripId)
+    suspend fun getTripMeasurements(tripId: Long) = measurementsRepository.getDecimated(tripId)
     suspend fun getTripTimeStates(tripId: Long) = timeStateRepository.getTimeStates(tripId)
 
     fun updateNow() {

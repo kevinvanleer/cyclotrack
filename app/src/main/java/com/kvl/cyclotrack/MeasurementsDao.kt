@@ -17,6 +17,12 @@ interface MeasurementsDao {
     @Query("SELECT * FROM measurements WHERE tripId = :tripId ORDER BY time DESC LIMIT :count")
     suspend fun loadLatestCount(tripId: Long, count: Int): Array<Measurements>
 
+    @Query("SELECT count(*) FROM measurements WHERE tripId = :tripId")
+    suspend fun count(tripId: Long): Long
+
+    @Query("SELECT * FROM measurements WHERE tripId = :tripId AND id % :factor = 0 ORDER BY time ASC")
+    suspend fun loadDecimated(tripId: Long, factor: Long): Array<Measurements>
+
     @Query("SELECT * FROM measurements WHERE time = (SELECT max(time) FROM Measurements WHERE tripId = :tripId)")
     suspend fun loadLatest(tripId: Long): Measurements?
 

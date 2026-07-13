@@ -54,7 +54,7 @@ class TripSummariesViewModel @Inject constructor(
         }
 
     suspend fun getMeasurements(tripId: Long) =
-        measurementsRepository.get(tripId)
+        measurementsRepository.getDecimated(tripId)
 
     suspend fun getTripTimeStates(tripId: Long): Array<TimeState> =
         timeStateRepository.getTimeStates(tripId)
