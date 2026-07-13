@@ -6,6 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.IntentSender
 import android.content.SharedPreferences
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Rect
 import android.location.Location
 import android.os.Bundle
@@ -41,13 +44,19 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
+import com.google.android.material.button.MaterialButton
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.kvl.cyclotrack.events.BatteryEvent
 import com.kvl.cyclotrack.events.StartTripEvent
+import com.kvl.cyclotrack.events.ThermalTierEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import com.kvl.cyclotrack.util.getBrightnessPreference
 import com.kvl.cyclotrack.util.getSafeZoneMargins
+import com.kvl.cyclotrack.util.lockScreenDashboardEnabled
+import com.kvl.cyclotrack.util.thermalProtectionEnabled
+import com.kvl.cyclotrack.widgets.batteryLevelDrawable
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
@@ -83,7 +92,12 @@ class TripInProgressFragment :
     private lateinit var footerRightView: TextView
     private lateinit var trackingImage: ImageView
     private lateinit var debugTextView: TextView
+    private lateinit var blackoutOverlay: View
+    private lateinit var blackoutMessage: TextView
+    private lateinit var thermalIndicator: ImageView
     private lateinit var timeOfDayTextView: TextView
+    private lateinit var batteryLevelTextView: TextView
+    private lateinit var batteryLevelIcon: ImageView
     private lateinit var temperatureTextView: TextView
     private lateinit var windDirectionArrow: ImageView
     private lateinit var compassImage: ImageView
@@ -120,6 +134,26 @@ class TripInProgressFragment :
         autoCircumferenceVariance = event.variance
     }
 
+    // small always-visible cue that the display changes are thermal protection, not a
+    // glitch; exempt from chrome hiding on purpose. Mercury level tracks the tier and
+    // the tint tracks the presentation: chrome white at WARM, green from HOT up.
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    fun onThermalTierEvent(event: ThermalTierEvent) {
+        thermalIndicator.visibility =
+            if (event.tier >= ThermalTier.WARM) VISIBLE else GONE
+        thermalIndicator.setImageResource(
+            when (event.tier) {
+                ThermalTier.HOT -> R.drawable.ic_thermometer_half_outline
+                ThermalTier.EXTREME -> R.drawable.ic_thermometer_full_outline
+                else -> R.drawable.ic_thermometer_quarter_outline
+            }
+        )
+        thermalIndicator.imageTintList = ColorStateList.valueOf(
+            if (event.tier >= ThermalTier.HOT) DIM_STROKE_COLOR
+            else MeasurementView.DEFAULT_STROKE_COLOR
+        )
+    }
+
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             Log.v(logTag, "Received time tick")
@@ -127,8 +161,20 @@ class TripInProgressFragment :
         }
     }
 
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    fun onBatteryEvent(event: BatteryEvent.Level) {
+        batteryLevelTextView.text = "${event.percent.roundToInt()}%"
+        batteryLevelIcon.setImageResource(batteryLevelDrawable(event.percent.roundToInt()))
+    }
+
     companion object {
         fun newInstance() = TripInProgressFragment()
+
+        // pure green: only the green subpixel emits (blue ages fastest, stays off)
+        val DIM_STROKE_COLOR = Color.argb(0.85f, 0f, 1f, 0f)
+
+        // hot-tier ceiling overriding the dashboard brightness pref
+        const val DIM_BRIGHTNESS_CAP = 0.6f
     }
 
     override fun onCreateView(
@@ -313,15 +359,18 @@ class TripInProgressFragment :
                         burnInReductionCallback, 5000
                     )
                 }
+                armTwoHourBirTimer()
             }
 
             TimeStateEnum.PAUSE -> {
                 view?.doOnPreDraw { hidePause() }
                 autoPauseChip.visibility = if (newState.auto) VISIBLE else GONE
-                if (viewModel.burnInReductionEnabled()) {
-                    burnInReductionHandler.removeCallbacks(burnInReductionCallback)
-                    viewModel.burnInReductionActive.value = false
-                }
+                burnInReductionHandler.removeCallbacks(burnInReductionCallback)
+                // recompute rather than force NORMAL: protection stays active while
+                // paused (a hot stop is the peak-damage scenario) and resume/stop
+                // render in the level's button styling; peek is the reveal
+                viewModel.publishBurnInRequest()
+                viewModel.peekDisplay()
                 slideInResumeStop()
             }
 
@@ -416,8 +465,9 @@ class TripInProgressFragment :
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewModel.burnInReductionUserPref = burnInReductionUserPref;
-        viewModel.burnInReductionActive.value = viewModel.burnInReductionUserPref
+        viewModel.burnInReductionUserPref = burnInReductionUserPref
+        viewModel.thermalProtectionUserPref = thermalProtectionEnabled(requireContext())
+        viewModel.publishBurnInRequest()
 
         val safeZone = getSafeZoneMargins(requireContext())
         (view.layoutParams as ViewGroup.MarginLayoutParams).apply {
@@ -510,7 +560,7 @@ class TripInProgressFragment :
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
             trackingImage.visibility =
-                if (it.tracking && viewModel.burnInReductionActive.value == false) VISIBLE else INVISIBLE
+                if (it.tracking && !chromeIconsHidden()) VISIBLE else INVISIBLE
         }
 
         viewModel.currentTime.observe(viewLifecycleOwner) {
@@ -624,9 +674,11 @@ class TripInProgressFragment :
     private fun initializeWeatherObservers() {
         viewModel.latestWeather.observe(viewLifecycleOwner) { weather ->
             if (weather != null) {
-                if (viewModel.burnInReductionActive.value != true) {
+                if (!chromeTextHidden()) {
                     temperatureTextView.visibility = VISIBLE
                     footerRightView.visibility = VISIBLE
+                }
+                if (!chromeIconsHidden()) {
                     windDirectionArrow.visibility = VISIBLE
                     windIcon.visibility = VISIBLE
                 }
@@ -690,32 +742,176 @@ class TripInProgressFragment :
         }
     }
 
-    private fun initializeBurnInReduction() {
-        viewModel.burnInReductionActive.observe(viewLifecycleOwner) { birEnabled ->
-            activity?.window?.let { window ->
-                val windowInsetsController =
-                    WindowCompat.getInsetsController(window, window.decorView)
-                // Configure the behavior of the hidden system bars.
-                if (birEnabled) windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-                else windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
-            }
-            trackingImage.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            compassImage.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            windIcon.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            footerView.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            footerRightView.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            temperatureTextView.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            timeOfDayTextView.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            windDirectionArrow.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            debugTextView.visibility = if (birEnabled) INVISIBLE else VISIBLE
-            topView.enableBurnInReduction(birEnabled)
-            topLeftView.enableBurnInReduction(birEnabled)
-            topRightView.enableBurnInReduction(birEnabled)
-            middleLeftView.enableBurnInReduction(birEnabled)
-            middleRightView.enableBurnInReduction(birEnabled)
-            bottomLeftView.enableBurnInReduction(birEnabled)
-            bottomRightView.enableBurnInReduction(birEnabled)
+    private fun applySleep(sleep: Boolean) {
+        if (lockScreenDashboardEnabled(requireContext())) {
+            view?.keepScreenOn = !sleep              // OS timeout turns display off for real
+        } else {
+            val wasBlack = blackoutOverlay.visibility == VISIBLE
+            blackoutOverlay.visibility = if (sleep) VISIBLE else GONE  // OLED black = pixels off
+            if (sleep && !wasBlack) showBlackoutMessage() else if (!sleep) hideBlackoutMessage()
         }
+    }
+
+    private fun showBlackoutMessage() {
+        blackoutMessage.animate().cancel()
+        blackoutMessage.alpha = 1f
+        blackoutMessage.visibility = VISIBLE
+        blackoutMessage.animate()
+            .alpha(0f)
+            .setStartDelay(5000)
+            .setDuration(3000)
+            .withEndAction { blackoutMessage.visibility = GONE }
+    }
+
+    private fun hideBlackoutMessage() {
+        blackoutMessage.animate().cancel()
+        blackoutMessage.visibility = GONE
+    }
+
+    private fun measurementViews() = listOf(
+        topView, topLeftView, topRightView, middleLeftView,
+        middleRightView, bottomLeftView, bottomRightView
+    )
+
+    private fun applyOutline(outline: Boolean, textColor: Int) {
+        measurementViews().forEach { it.setOutlineMode(outline, textColor) }
+        applyButtonOutline(outline, textColor)
+    }
+
+    private fun dashboardButtons() = listOf(pauseButton, resumeButton, stopButton, autoPauseChip)
+
+    private var defaultButtonTint: ColorStateList? = null
+
+    private fun applyButtonOutline(outline: Boolean, textColor: Int) {
+        dashboardButtons().forEach { button ->
+            (button as? MaterialButton)?.apply {
+                if (defaultButtonTint == null) defaultButtonTint = backgroundTintList
+                if (outline) {
+                    backgroundTintList = ColorStateList.valueOf(Color.BLACK)
+                    setStrokeColor(ColorStateList.valueOf(textColor))
+                    strokeWidth = TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics
+                    ).toInt()
+                } else {
+                    backgroundTintList = defaultButtonTint
+                    strokeWidth = 0
+                }
+                setTextColor(textColor)
+            }
+        }
+    }
+
+
+    // green + the Helmholtz–Kohlrausch effect buy back the perceived-brightness cost
+    // that made dimmed WHITE outlines unreadable; a 100% boost is itself a heat source
+    private fun applyDim(dim: Boolean) {
+        activity?.window?.apply {
+            attributes = attributes.also {
+                val pref = getBrightnessPreference(requireContext())
+                it.screenBrightness = when {
+                    !dim -> pref
+                    pref < 0 -> DIM_BRIGHTNESS_CAP // boost off: cap system brightness too
+                    else -> minOf(pref, DIM_BRIGHTNESS_CAP)
+                }
+            }
+        }
+    }
+
+    private fun initializeBurnInReduction() {
+        viewModel.displayLevel.observe(viewLifecycleOwner) { renderDisplay() }
+        viewModel.displayPeek.observe(viewLifecycleOwner) { renderDisplay() }
+    }
+
+    private fun peeking() = viewModel.displayPeek.value == true
+    private fun currentLevel() = viewModel.displayLevel.value ?: DisplayLevel.NORMAL
+
+    fun chromeIconsHidden() = !peeking() && currentLevel() >= DisplayLevel.OUTLINE
+    fun chromeTextHidden() = !peeking() && currentLevel() >= DisplayLevel.DIM
+
+    // Two independent layers: COLOR/STYLE is a function of the level and is applied to
+    // every view, visible or not (so views revealed later are already correct);
+    // VISIBILITY is a function of the level, and a peek overrides visibility only —
+    // revealing the full dashboard in the level's colors for the peek window.
+    private fun renderDisplay() {
+        val level = currentLevel()
+        val peeking = peeking()
+
+        val green = level >= DisplayLevel.DIM
+        val textColor = when {
+            green -> DIM_STROKE_COLOR
+            level >= DisplayLevel.OUTLINE -> MeasurementView.DEFAULT_STROKE_COLOR
+            else -> Color.WHITE
+        }
+        // outline style follows the level even through a peek: a peek reveals hidden
+        // views, it never re-fills text
+        val outlineText = level >= DisplayLevel.OUTLINE
+
+        applyOutline(outline = outlineText, textColor = textColor)
+        applyChrome(outlineText, textColor, green)
+        measurementViews().forEach { it.setLabelVisible(!chromeTextHidden()) }
+        applyDim(!peeking && level >= DisplayLevel.DIM)
+        applySleep(!peeking && level >= DisplayLevel.SLEEP)
+    }
+
+    private fun chromeTextViews() = listOf(
+        footerView, footerRightView, temperatureTextView,
+        timeOfDayTextView, batteryLevelTextView, debugTextView
+    )
+
+    private fun chromeIcons() = listOf(
+        trackingImage, compassImage, windIcon, windDirectionArrow, batteryLevelIcon
+    )
+
+    private fun applyChrome(outlineText: Boolean, textColor: Int, green: Boolean) {
+        activity?.window?.let { window ->
+            val windowInsetsController =
+                WindowCompat.getInsetsController(window, window.decorView)
+            if (chromeIconsHidden())
+                windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
+            else windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
+        // the level gates visibility, but each view's owner state still decides
+        // whether it has anything to show — un-hiding must not resurrect icons whose
+        // data isn't there (GPS fix, weather) or debug chrome in production
+        val hasWeather = viewModel.latestWeather.value != null
+        fun iconVis(allowed: Boolean) =
+            if (chromeIconsHidden() || !allowed) INVISIBLE else VISIBLE
+
+        trackingImage.visibility =
+            if (FeatureFlags.productionBuild) GONE
+            else iconVis(viewModel.currentProgress.value?.tracking == true)
+        compassImage.visibility = iconVis(true)
+        windIcon.visibility = iconVis(hasWeather)
+        windDirectionArrow.visibility = iconVis(hasWeather)
+        batteryLevelIcon.visibility = iconVis(true)
+
+        // tint applies even while hidden so a peek reveals correctly colored icons;
+        // 0.85 alpha from OUTLINE up, matching the rest of the protected presentation
+        val iconTint = when {
+            green -> ColorStateList.valueOf(DIM_STROKE_COLOR)
+            outlineText -> ColorStateList.valueOf(MeasurementView.DEFAULT_STROKE_COLOR)
+            else -> null
+        }
+        chromeIcons().forEach { it.imageTintList = iconTint }
+
+        fun textVis(allowed: Boolean) =
+            if (chromeTextHidden() || !allowed) INVISIBLE else VISIBLE
+
+        temperatureTextView.visibility = textVis(hasWeather)
+        footerRightView.visibility = textVis(hasWeather)
+        footerView.visibility = textVis(true)
+        batteryLevelTextView.visibility = textVis(true)
+        debugTextView.visibility =
+            if (FeatureFlags.productionBuild) GONE else textVis(true)
+
+        chromeTextViews().forEach { text ->
+            text.paint.style = if (outlineText) Paint.Style.STROKE else Paint.Style.FILL
+            text.paint.strokeWidth = 2f
+            text.setTextColor(textColor)
+            text.invalidate() // paint mutations don't invalidate on their own
+        }
+        // the clock owns timeOfDayTextView's visibility (cadence-dependent placement)
+        updateClock()
     }
 
     private fun initializeViews(view: View) {
@@ -735,10 +931,23 @@ class TripInProgressFragment :
         trackingImage = view.findViewById(R.id.image_tracking)
         debugTextView = view.findViewById(R.id.textview_debug)
         timeOfDayTextView = view.findViewById(R.id.dashboard_textview_timeOfDay)
+        batteryLevelTextView = view.findViewById(R.id.dashboard_textview_batteryLevel)
+        batteryLevelIcon = view.findViewById(R.id.image_battery_level)
         temperatureTextView = view.findViewById(R.id.dashboard_textview_temperature)
         windDirectionArrow = view.findViewById(R.id.image_arrow_wind_direction)
         compassImage = view.findViewById(R.id.compass_image)
         windIcon = view.findViewById(R.id.image_wind_icon)
+        blackoutOverlay = view.findViewById(R.id.blackout_overlay)
+        blackoutOverlay.setOnClickListener { viewModel.peekDisplay() }
+        blackoutMessage = view.findViewById(R.id.blackout_message)
+        thermalIndicator = view.findViewById(R.id.image_thermal_indicator)
+
+        // flat instrument panel: shadows are invisible on black and the dark-theme
+        // elevation overlay would lighten black fills; ripple is the press feedback
+        dashboardButtons().forEach {
+            it.stateListAnimator = null
+            it.elevation = 0f
+        }
 
         //TODO: Cleanup below
         //This is a lot of implementation specific initialization
@@ -899,7 +1108,7 @@ class TripInProgressFragment :
         } else {
             timeOfDayTextView.apply {
                 visibility =
-                    if (viewModel.burnInReductionActive.value == true) INVISIBLE else VISIBLE
+                    if (chromeTextHidden()) INVISIBLE else VISIBLE
                 text = String.format("%s %s", time, amPm)
             }
         }
@@ -934,7 +1143,6 @@ class TripInProgressFragment :
 
     private var swipeRect: Rect = Rect()
     private var pauseButtonVisible = false
-    private var burnInReductionPriorState = false
     override fun onTouch(v: View?, event: MotionEvent?): Boolean {
         Log.v(logTag, event.toString())
         Log.v(logTag, "viewModel.currentState = ${viewModel.currentState}")
@@ -943,17 +1151,21 @@ class TripInProgressFragment :
         return when (event?.action) {
             MotionEvent.ACTION_UP -> if (viewModel.currentState == TimeStateEnum.START || viewModel.currentState == TimeStateEnum.RESUME) {
                 handlePauseButtonVisibility()
-                if (viewModel.burnInReductionEnabled()) handleBurnInReductionState()
+                if ((viewModel.displayLevel.value
+                        ?: DisplayLevel.NORMAL) > DisplayLevel.NORMAL
+                ) viewModel.peekDisplay()
                 v?.performClick()
                 true
-            } else false
+            } else {
+                // paused: no pause-button gymnastics, but a tap still reveals
+                if ((viewModel.displayLevel.value
+                        ?: DisplayLevel.NORMAL) > DisplayLevel.NORMAL
+                ) viewModel.peekDisplay()
+                false
+            }
 
             MotionEvent.ACTION_DOWN -> {
                 pauseButtonVisible = pauseButton.translationY == 0f
-                if (viewModel.burnInReductionEnabled()) {
-                    burnInReductionPriorState = viewModel.burnInReductionActive.value ?: false
-                    viewModel.burnInReductionActive.value = false
-                }
                 swipeRect.apply {
                     top = event.getY(0).roundToInt()
                     bottom = event.getY(0).roundToInt()
@@ -985,29 +1197,25 @@ class TripInProgressFragment :
 
     private val burnInReductionHandler = android.os.Handler(Looper.getMainLooper())
     private val burnInReductionCallback = Runnable {
-        viewModel.burnInReductionActive.value = viewModel.burnInReductionEnabled()
+        viewModel.publishBurnInRequest()
     }
+
+    // fire exactly at the 2h auto-enable boundary instead of waiting for a UI event;
+    // the boundary is trip start + 2h, absolute and invariant, so scheduling is
+    // idempotent (+100ms clears the boundary) and needs no re-arm or pause handling
+    private val twoHourBirCallback = Runnable { viewModel.publishBurnInRequest() }
+    private fun armTwoHourBirTimer() {
+        burnInReductionHandler.removeCallbacks(twoHourBirCallback)
+        val remainingMs = (viewModel.twoHourRemainingMs() ?: 7_200_000).coerceAtLeast(0)
+        burnInReductionHandler.postDelayed(twoHourBirCallback, remainingMs + 100)
+    }
+
     private val hidePauseHandler = android.os.Handler(Looper.getMainLooper())
     private val hidePauseCallback = Runnable {
         slidePauseDown()
     }
 
     private fun isPauseButtonHidden() = pauseButton.translationY > pauseButton.height / 2f
-
-    private fun handleBurnInReductionState(): Boolean {
-        Log.d(logTag, "handleBurnInReductionState")
-
-        viewModel.burnInReductionActive.value =
-            !burnInReductionPriorState && isPauseButtonHidden()
-
-        burnInReductionHandler.removeCallbacks(burnInReductionCallback)
-        if (viewModel.burnInReductionActive.value != viewModel.burnInReductionEnabled()) {
-            burnInReductionHandler.postDelayed(
-                burnInReductionCallback, 5000
-            )
-        }
-        return true
-    }
 
     private fun handlePauseButtonVisibility(): Boolean {
         Log.d(logTag, "handlePauseButtonVisibility")

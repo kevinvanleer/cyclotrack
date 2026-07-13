@@ -94,7 +94,7 @@
         android:layout_height="wrap_content"
         android:contentDescription="@string/location_fix_obtained"
         android:src="@android:drawable/ic_menu_mylocation"
-        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintStart_toEndOf="@id/image_thermal_indicator"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -111,7 +111,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/dashboard_textview_timeOfDay"
+        android:id="@+id/dashboard_textview_batteryLevel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
@@ -121,6 +121,29 @@
         android:textColor="#FFFFFF"
         android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_battery_level"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/battery_level_indicator_description"
+        android:src="@drawable/ic_baseline_battery_unknown_24"
+        app:layout_constraintBottom_toBottomOf="@id/dashboard_textview_batteryLevel"
+        app:layout_constraintEnd_toStartOf="@id/dashboard_textview_batteryLevel"
+        app:layout_constraintTop_toTopOf="@id/dashboard_textview_batteryLevel" />
+
+    <TextView
+        android:id="@+id/dashboard_textview_timeOfDay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="12dp"
+        android:fontFamily="@font/orbitron_medium"
+        android:textAppearance="@style/DashboardFontAppearance"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toStartOf="@id/image_battery_level"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -263,5 +286,46 @@
         app:layout_constraintEnd_toEndOf="@id/resume_button"
         app:layout_constraintStart_toStartOf="@id/stop_button" />
 
+    <ImageView
+        android:id="@+id/image_thermal_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/thermal_protection_indicator_description"
+        android:src="@drawable/ic_thermometer_quarter_outline"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/dashboard_textview_batteryLevel"
+        app:tint="#D9FFFFFF" />
+
+    <View
+        android:id="@+id/blackout_overlay"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/black"
+        android:clickable="true"
+        android:elevation="10dp"
+        android:focusable="true"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/blackout_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:elevation="11dp"
+        android:fontFamily="@font/orbitron_medium"
+        android:gravity="center"
+        android:paddingHorizontal="24dp"
+        android:text="@string/blackout_overlay_message"
+        android:textColor="#D900FF00"
+        android:textSize="18sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

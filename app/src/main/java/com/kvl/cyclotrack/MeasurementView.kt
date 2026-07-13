@@ -15,7 +15,8 @@ import androidx.core.widget.doOnTextChanged
 import kotlin.math.min
 
 class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
-    private var burnInReductionEnabled = false
+    private var outlineMode = false
+    private var labelsHidden = false
     private val logTag = "MeasurementView"
     private var _valueTextSizeAttr = -1f
     private var _valueTextAttr = "0.0"
@@ -56,9 +57,9 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         get() = measurementExtraInfoTextView.text
         set(newValue) {
             measurementExtraInfoTextView.visibility =
-                if (burnInReductionEnabled) View.INVISIBLE else View.VISIBLE
+                if (labelsHidden) View.INVISIBLE else View.VISIBLE
             measurementExtraInfoImageView.visibility =
-                if (burnInReductionEnabled) View.INVISIBLE else View.VISIBLE
+                if (labelsHidden) View.INVISIBLE else View.VISIBLE
             measurementExtraInfoTextView.text = newValue
         }
 
@@ -72,7 +73,7 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
 
     fun setIconVisibility(visibility: Int) {
         measurementExtraInfoImageView.visibility =
-            if (burnInReductionEnabled) INVISIBLE else visibility
+            if (labelsHidden) INVISIBLE else visibility
     }
 
     init {
@@ -94,8 +95,11 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         attributes.recycle()
     }
 
-    fun enableBurnInReduction(enabled: Boolean) {
-        burnInReductionEnabled = enabled
+    fun setOutlineMode(
+        enabled: Boolean,
+        textColor: Int = if (enabled) DEFAULT_STROKE_COLOR else Color.WHITE,
+    ) {
+        outlineMode = enabled
         when (enabled) {
             true -> {
                 measurementValueView.paint.apply {
@@ -106,10 +110,6 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
                     style = Paint.Style.STROKE
                     strokeWidth = 1f
                 }
-                measurementValueView.setTextColor(Color.argb(0.85f, 1f, 1f, 1f))
-                measurementLabelView.setTextColor(Color.argb(0.85f, 1f, 1f, 1f))
-                measurementExtraInfoImageView.visibility = INVISIBLE
-                measurementExtraInfoTextView.visibility = INVISIBLE
             }
 
             else -> {
@@ -123,14 +123,35 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
                     TypedValue.COMPLEX_UNIT_PX,
                     defaultValueTextSize
                 )
-                measurementValueView.setTextColor(Color.WHITE)
-                measurementLabelView.setTextColor(Color.WHITE)
-                if (measurementExtraInfoTextView.text.isNotEmpty()) {
-                    measurementExtraInfoTextView.visibility = VISIBLE
-                    measurementExtraInfoImageView.visibility = VISIBLE
-                }
             }
         }
+        measurementValueView.setTextColor(textColor)
+        measurementLabelView.setTextColor(textColor)
+        // paint mutations don't invalidate on their own; without this the style change
+        // only appears when the text next updates
+        measurementValueView.invalidate()
+        measurementLabelView.invalidate()
+    }
+
+    fun setLabelVisible(visible: Boolean) {
+        labelsHidden = !visible
+        measurementLabelView.visibility = if (visible) VISIBLE else INVISIBLE
+        if (!visible) {
+            measurementExtraInfoImageView.visibility = INVISIBLE
+            measurementExtraInfoTextView.visibility = INVISIBLE
+        } else if (measurementExtraInfoTextView.text.isNotEmpty()) {
+            measurementExtraInfoTextView.visibility = VISIBLE
+            measurementExtraInfoImageView.visibility = VISIBLE
+        }
+    }
+
+    fun enableBurnInReduction(enabled: Boolean) {
+        setOutlineMode(enabled)
+        setLabelVisible(!enabled)
+    }
+
+    companion object {
+        val DEFAULT_STROKE_COLOR = Color.argb(0.85f, 1f, 1f, 1f)
     }
 
     override fun onFinishInflate() {
@@ -180,7 +201,7 @@ class MeasurementView(context: Context, attrs: AttributeSet) : ConstraintLayout(
         }
         var direction = 1f
         measurementValueView.doOnTextChanged { _, _, _, _ ->
-            if (burnInReductionEnabled) {
+            if (outlineMode) {
                 if (measurementValueView.textSize >= maxValueTextSize
                 ) {
                     direction = -1f

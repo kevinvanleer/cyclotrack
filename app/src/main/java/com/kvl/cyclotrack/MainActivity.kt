@@ -20,16 +20,16 @@ import androidx.preference.PreferenceManager
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
-import androidx.work.WorkInfo
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
-import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import com.kvl.cyclotrack.util.hasFitnessPermissions
@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity() {
                             )
                             commit()
                         }
-                    if (currentVersion < 69) {
+                    if (currentVersion < 72) {
                         showWhatsNewDialog()
                     }
                 }

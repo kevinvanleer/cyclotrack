@@ -11,6 +11,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kvl.cyclotrack.events.ThermalTierEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.util.SystemUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,9 @@ import org.greenrobot.eventbus.ThreadMode
 import java.util.Timer
 import javax.inject.Inject
 import kotlin.concurrent.timerTask
+
+enum class DisplayLevel { NORMAL, OUTLINE, DIM, SLEEP }
+enum class DisplayPolicy { BURN_IN, POWER_SAVER }
 
 @HiltViewModel
 class TripInProgressViewModel @Inject constructor(
@@ -36,11 +40,19 @@ class TripInProgressViewModel @Inject constructor(
     var bikeWheelCircumference: Float? = null
 
     var burnInReductionUserPref = false;
+
+    // the 2h auto-enable is absolute from trip start — no pause exclusion, no reset.
+    // tripStartMs comes from the first TimeState, so the boundary is invariant across
+    // fragment recreation and process restarts
+    private var tripStartMs: Long? = null
+
     fun burnInReductionEnabled() =
-        burnInReductionUserPref || (_currentProgress.value?.duration ?: 0.0) > 7200.0
+        burnInReductionUserPref || twoHourRemainingMs()?.let { it <= 0 } == true
+
+    fun twoHourRemainingMs(): Long? =
+        tripStartMs?.let { it + 7_200_000 - SystemUtils.currentTimeMillis() }
 
     init {
-        EventBus.getDefault().register(this)
         viewModelScope.launch(Dispatchers.IO) {
             bikeWheelCircumference =
                 userCircumferenceToMeters(bikeRepository.getDefaultBike().wheelCircumference)
@@ -65,8 +77,6 @@ class TripInProgressViewModel @Inject constructor(
         Log.d(logTag, "onChanged current time state observer: ${timeState.state}")
         currentState = timeState.state
     }
-
-    val burnInReductionActive = MutableLiveData(burnInReductionUserPref)
 
     private fun tripInProgress() = isTripInProgress(currentState)
 
@@ -173,6 +183,7 @@ class TripInProgressViewModel @Inject constructor(
 
     private fun accumulateDuration(timeStates: Array<TimeState>?) {
         timeStates?.let { ts ->
+            tripStartMs = ts.firstOrNull()?.timestamp ?: tripStartMs
             getTripInProgressIntervals(ts).takeIf { it.isNotEmpty() }?.let { intervals ->
                 accumulatedDuration = accumulateTripTime(intervals)
                 startTime = intervals.last().last / 1e3
@@ -189,6 +200,34 @@ class TripInProgressViewModel @Inject constructor(
 
     private val lastCompleteSplitObserver: Observer<Split?> = Observer { newSplit ->
         newSplit?.let { n -> _lastCompleteSplitLive.value = n };
+    }
+
+
+    val displayLevel = MutableLiveData(DisplayLevel.NORMAL)
+    private val requests = mutableMapOf<DisplayPolicy, DisplayLevel>()
+    private var peekUntilMs = 0L
+    private val peekHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val peekCallback = Runnable { publishDisplayLevel() }
+
+    var thermalProtectionUserPref = true
+
+    fun publishBurnInRequest() {
+        val baseline =
+            if (burnInReductionEnabled()) DisplayLevel.OUTLINE else DisplayLevel.NORMAL
+        // the sticky event is the single readable copy of the tier
+        val tier = EventBus.getDefault()
+            .getStickyEvent(ThermalTierEvent::class.java)?.tier ?: ThermalTier.NORMAL
+        val thermal =
+            if (thermalProtectionUserPref) tier.level else DisplayLevel.NORMAL
+        requestDisplayLevel(DisplayPolicy.BURN_IN, maxOf(baseline, thermal))
+    }
+
+    // sticky: a recreated ViewModel (dashboard navigation) re-applies the current tier
+    // at registration; ThermalMonitor owns the state machine for the life of the trip
+    @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
+    fun onThermalTierEvent(event: ThermalTierEvent) {
+        // also re-evaluates the 2h baseline between UI events
+        publishBurnInRequest()
     }
 
 
@@ -211,6 +250,29 @@ class TripInProgressViewModel @Inject constructor(
             .observe(lifecycleOwner, accumulateDurationObserver)
         splitRepository.observeLastCompleteSplit(tripId)
             .observe(lifecycleOwner, lastCompleteSplitObserver)
+    }
+
+    fun requestDisplayLevel(policy: DisplayPolicy, level: DisplayLevel) {
+        requests[policy] = level
+        publishDisplayLevel()
+    }
+
+    fun peekDisplay(durationMs: Long = 10_000) {
+        peekUntilMs = SystemUtils.currentTimeMillis() + durationMs
+        publishDisplayLevel()
+        peekHandler.removeCallbacks(peekCallback)
+        peekHandler.postDelayed(peekCallback, durationMs)   // re-applies max after the peek
+    }
+
+    // peek does not change the level — it is a transient reveal the presentation layer
+    // renders on top of the current level (SLEEP's peek shows the dashboard in green)
+    val displayPeek = MutableLiveData(false)
+
+    private fun publishDisplayLevel() {
+        val effective = requests.values.maxOrNull() ?: DisplayLevel.NORMAL
+        if (displayLevel.value != effective) displayLevel.value = effective
+        val peeking = SystemUtils.currentTimeMillis() < peekUntilMs
+        if (displayPeek.value != peeking) displayPeek.value = peeking
     }
 
     fun startTrip(tripId: Long, lifecycleOwner: LifecycleOwner) {
@@ -246,5 +308,12 @@ class TripInProgressViewModel @Inject constructor(
         Log.d(logTag, "Called onCleared")
         super.onCleared()
         cleanup()
+    }
+
+    init {
+        // last initializer on purpose: registering delivers the sticky ThermalTierEvent
+        // synchronously, and its handler touches properties declared above — an earlier
+        // init block would run before those backing fields exist and crash
+        EventBus.getDefault().register(this)
     }
 }

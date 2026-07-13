@@ -85,6 +85,11 @@
     <string name="notification_id_trip_in_progress">notification_channel_trip_in_progress_low</string>
     <string name="notification_trip_in_progress_title">Ride in progress</string>
     <string name="notification_trip_in_progress_message">Tap to return to dashboard</string>
+    <string name="notification_display_protection_active">Display protection active (%1$.0f°C) — recording continues</string>
+    <string name="notification_display_protection_sleep">Display off to protect from heat (%1$.0f°C) — recording continues</string>
+    <string name="blackout_overlay_message">SCREEN TOO HOT — COOLING\nTAP TO WAKE</string>
+    <string name="thermal_protection_indicator_description">Thermal display protection active</string>
+    <string name="battery_level_indicator_description">Phone battery level</string>
     <string name="action_initialize_trip_service">com.kvl.cyclotrack::action_initialize_trip_service</string>
     <string name="action_start_trip_service">com.kvl.cyclotrack::action_start_trip_service</string>
     <string name="action_pause_trip_service">com.kvl.cyclotrack::action_pause_trip_service</string>
@@ -164,7 +169,7 @@
     <string name="autopause_label">AUTO-PAUSE</string>
     <string name="preference_key_user_current_version">preference_key_user_current_version</string>
     <string name="whats_new_message">
-    \n\nPower meter support is here!\n\nConnect your power meter to see watts and cadence in real time on the dashboard. Power data is also recorded in ride summaries, exports, and Strava syncs.
+    \n\nYour screen now protects itself from heat!\n\nOLED displays age faster when they run hot in direct sun. When the phone heats up during a ride, CycloTrack automatically reduces what the display emits — first outlined text, then green (the gentlest color for the panel), and in extreme heat the screen goes dark to cool off. Tap any time to wake it.\n\nA thermometer in the top-left corner shows when protection is active, and the ride notification always confirms recording continues.\n\nAlso new: your phone battery level on the dashboard.
     </string>
     <string name="preferences_dashboard_safe_zone_top_margin">preference_dashboard_safe_zone_top_margin</string>
     <string name="preferences_dashboard_safe_zone_bottom_margin">preference_dashboard_safe_zone_bottom_margin</string>

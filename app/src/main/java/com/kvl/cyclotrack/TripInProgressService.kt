@@ -24,6 +24,8 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDeepLinkBuilder
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurementRepository
@@ -38,6 +40,7 @@ import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.OnboardSensorEvent
 import com.kvl.cyclotrack.events.PhysicsSensorEvent
 import com.kvl.cyclotrack.events.StartTripEvent
+import com.kvl.cyclotrack.events.ThermalTierEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
 import com.kvl.cyclotrack.util.SystemUtils
@@ -58,6 +61,7 @@ import okhttp3.Request
 import okio.IOException
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import javax.inject.Inject
 import kotlin.math.max
 
@@ -158,6 +162,9 @@ class TripInProgressService @Inject constructor() :
 
     @Inject
     lateinit var onboardSensorSource: OnboardSensorSource
+
+    @Inject
+    lateinit var thermalMonitor: ThermalMonitor
 
     @Inject
     lateinit var batterySource: BatterySource
@@ -776,7 +783,9 @@ class TripInProgressService @Inject constructor() :
         return channelId
     }
 
-    private fun startForegroundCompat(tripId: Long) {
+    private var notifiedTripId: Long? = null
+
+    private fun tripNotification(tripId: Long, contentText: CharSequence): Notification {
         val channelId = createNotificationChannel(
             getString(R.string.notification_id_trip_in_progress),
             getString(R.string.notification_channel_name_trip_in_progress)
@@ -789,14 +798,44 @@ class TripInProgressService @Inject constructor() :
             setArguments(Bundle().apply { putLong("tripId", tripId) })
         }.createPendingIntent()
 
-        val notification = NotificationCompat.Builder(this, channelId).apply {
+        return NotificationCompat.Builder(this, channelId).apply {
             setOngoing(true)
             setShowWhen(false)
             setContentTitle(getText(R.string.notification_trip_in_progress_title))
-            setContentText(getText(R.string.notification_trip_in_progress_message))
+            setContentText(contentText)
             setSmallIcon(R.drawable.ic_cyclotrack_notification)
             setContentIntent(pendingIntent)
         }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onThermalTierEvent(event: ThermalTierEvent) {
+        val tripId = notifiedTripId ?: return
+        if (!running) return
+        FirebaseAnalytics.getInstance(applicationContext).logEvent("ThermalTierChanged") {
+            param("tier", event.tier.name)
+            param("batteryTempC", event.tempC.toDouble())
+        }
+        val text = when (event.tier) {
+            ThermalTier.NORMAL -> getText(R.string.notification_trip_in_progress_message)
+            ThermalTier.WARM, ThermalTier.HOT ->
+                getString(R.string.notification_display_protection_active, event.tempC)
+
+            ThermalTier.EXTREME ->
+                getString(R.string.notification_display_protection_sleep, event.tempC)
+        }
+        try {
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .notify(tripId.toInt(), tripNotification(tripId, text))
+        } catch (e: SecurityException) {
+            Log.w(logTag, "Unable to update trip notification", e)
+        }
+    }
+
+    private fun startForegroundCompat(tripId: Long) {
+        notifiedTripId = tripId
+        val notification =
+            tripNotification(tripId, getText(R.string.notification_trip_in_progress_message))
 
         val serviceTypes = when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
@@ -961,6 +1000,7 @@ class TripInProgressService @Inject constructor() :
         }
 
         thisBatteryEventHandler = onboardSensorEventHandler(tripId)
+        thermalMonitor.start()
         batterySource.start()
         if (shouldCollectOnboardSensors(applicationContext)) {
             thisOnboardSensorEventHandler = onboardSensorEventHandler(tripId)
@@ -1039,6 +1079,7 @@ class TripInProgressService @Inject constructor() :
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
         onboardSensorSource.stop()
         batterySource.stop()
+        thermalMonitor.stop()
 
         running = false
         clearState()
@@ -1161,6 +1202,7 @@ class TripInProgressService @Inject constructor() :
         if (::thisGpsObserver.isInitialized) gpsService.removeObserver(thisGpsObserver)
         onboardSensorSource.stop()
         batterySource.stop()
+        thermalMonitor.stop()
 
         sharedPreferences.unregisterOnSharedPreferenceChangeListener(this)
         EventBus.getDefault().unregister(this)

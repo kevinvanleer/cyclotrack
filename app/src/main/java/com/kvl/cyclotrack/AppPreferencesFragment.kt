@@ -297,6 +297,18 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.app_preferences, rootKey)
 
+        // unreleased features: prefs exist only in non-production builds; thermal
+        // protection ships always-on
+        listOf(
+            R.string.preference_key_power_saving_enable,
+            R.string.preference_key_power_saving_battery_threshold,
+            R.string.preference_key_lock_screen_dashboard,
+            R.string.preference_key_thermal_protection,
+        ).forEach { key ->
+            findPreference<Preference>(getString(key))?.isVisible =
+                !FeatureFlags.productionBuild
+        }
+
         findPreference<Preference>(getString(R.string.preference_key_dashboard_safe_zone))?.apply {
             onPreferenceClickListener = Preference.OnPreferenceClickListener {
                 view?.findNavController()?.let {

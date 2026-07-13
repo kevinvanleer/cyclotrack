@@ -32,8 +32,10 @@ class BatterySource @Inject constructor(@param:ApplicationContext private val co
             val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
             if (level >= 0 && scale > 0) {
                 (level * 100f / scale).takeIf { it != lastLevel }?.let {
+                    // sticky: the dashboard battery indicator seeds on re-subscribe
+                    // instead of sitting blank until the next whole-percent change
                     lastLevel = it
-                    EventBus.getDefault().post(BatteryEvent.Level(it, now))
+                    EventBus.getDefault().postSticky(BatteryEvent.Level(it, now))
                 }
             }
         }
@@ -66,5 +68,6 @@ class BatterySource @Inject constructor(@param:ApplicationContext private val co
                 .removeThermalStatusListener(thermalListener)
         }
         lastTemp = null; lastLevel = null; lastStatus = null
+        EventBus.getDefault().removeStickyEvent(BatteryEvent.Level::class.java)
     }
 }
