@@ -11,6 +11,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.location.Location
+import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Looper
 import android.text.format.DateUtils
@@ -52,6 +53,7 @@ import com.kvl.cyclotrack.events.BatteryEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.ThermalTierEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
+import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.getBrightnessPreference
 import com.kvl.cyclotrack.util.getSafeZoneMargins
 import com.kvl.cyclotrack.util.lockScreenDashboardEnabled
@@ -941,7 +943,14 @@ class TripInProgressFragment :
         blackoutOverlay.setOnClickListener { viewModel.peekDisplay() }
         blackoutMessage = view.findViewById(R.id.blackout_message)
         thermalIndicator = view.findViewById(R.id.image_thermal_indicator)
-
+        
+        context?.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))?.let {
+            val level = it.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = it.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+            if (level >= 0 && scale > 0) onBatteryEvent(
+                BatteryEvent.Level(level * 100f / scale, SystemUtils.currentTimeMillis())
+            )
+        }
         // flat instrument panel: shadows are invisible on black and the dark-theme
         // elevation overlay would lighten black fills; ripple is the press feedback
         dashboardButtons().forEach {
