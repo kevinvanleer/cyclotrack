@@ -66,7 +66,7 @@ class CyclotrackApp : Application(), Configuration.Provider {
         val last = prefs.getLong(PREF_LAST_VERSION_CODE, -1)
         val current = BuildConfig.VERSION_CODE.toLong()
         if (last != current) {
-            if (last >= 0) emitTelemetry(TelemetryEvent.UpdateInstalled(last, current))
+            if (last >= 0) emitTelemetry(this, TelemetryEvent.UpdateInstalled(last, current))
             prefs.edit { putLong(PREF_LAST_VERSION_CODE, current) }
         }
     }

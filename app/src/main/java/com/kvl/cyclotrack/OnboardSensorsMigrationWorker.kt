@@ -32,7 +32,10 @@ class OnboardSensorsMigrationWorker @AssistedInject constructor(
     override suspend fun doWork(): Result = try {
         val tripIds = onboardSensorsRepository.legacyTripIds()
         if (!sharedPreferences.getBoolean(PREF_STARTED_EVENT, false)) {
-            emitTelemetry(TelemetryEvent.OnboardSensorsMigrationStarted(tripIds.size))
+            emitTelemetry(
+                applicationContext,
+                TelemetryEvent.OnboardSensorsMigrationStarted(tripIds.size)
+            )
             sharedPreferences.edit {
                 putBoolean(PREF_STARTED_EVENT, true)
                 putInt(PREF_RIDES_TO_MIGRATE, tripIds.size)
@@ -60,6 +63,7 @@ class OnboardSensorsMigrationWorker @AssistedInject constructor(
                 !onboardSensorsRepository.hasLegacyRows()
             ) {
                 emitTelemetry(
+                    applicationContext,
                     TelemetryEvent.OnboardSensorsMigrationFinished(
                         sharedPreferences.getInt(PREF_RIDES_TO_MIGRATE, tripIds.size)
                     )
