@@ -221,7 +221,12 @@ class MainActivity : AppCompatActivity() {
         if (isStravaSynced(this)) {
             WorkManager.getInstance(this).beginUniqueWork(
                 "StravaSyncTripsWorker",
-                ExistingWorkPolicy.REPLACE,
+                // REPLACE cancels only cooperatively: the outgoing worker's full-trip
+                // Room loads keep running while the replacement starts its own,
+                // stacking multiple trips' data in the heap (OOM cluster on 256MB
+                // devices). APPEND_OR_REPLACE serializes behind live work but still
+                // replaces failed/cancelled chains.
+                ExistingWorkPolicy.APPEND_OR_REPLACE,
                 OneTimeWorkRequestBuilder<StravaSyncTripsWorker>()
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
                     .build()

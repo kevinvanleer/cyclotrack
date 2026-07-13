@@ -7,7 +7,6 @@ import com.garmin.fit.Mesg
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.GoogleFitSyncStatusEnum
 import com.kvl.cyclotrack.MeasurementsRepository
-import com.kvl.cyclotrack.OnboardSensorsRepository
 import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.SplitRepository
 import com.kvl.cyclotrack.TimeStateRepository
@@ -265,7 +264,6 @@ suspend fun syncTripWithStrava(
     powerMeasurementRepository: CyclingPowerMeasurementRepository,
     timeStateRepository: TimeStateRepository,
     splitRepository: SplitRepository,
-    onboardSensorsRepository: OnboardSensorsRepository,
     weatherRepository: WeatherRepository
 ) {
     val logTag = "syncTripWithStrava"
@@ -274,7 +272,9 @@ suspend fun syncTripWithStrava(
         measurements = measurementsRepository.get(tripId),
         timeStates = timeStateRepository.getTimeStates(tripId),
         splits = splitRepository.getTripSplits(tripId),
-        onboardSensors = onboardSensorsRepository.get(tripId),
+        // FIT upload never reads onboard sensors (only xlsx export does);
+        // loading them here was the largest allocation in the sync path
+        onboardSensors = emptyArray(),
         weather = weatherRepository.getTripWeather(tripId),
         heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
         speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),

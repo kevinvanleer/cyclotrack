@@ -41,9 +41,6 @@ class StravaCreateActivityWorker @AssistedInject constructor(
     lateinit var splitRepository: SplitRepository
 
     @Inject
-    lateinit var onboardSensorsRepository: OnboardSensorsRepository
-
-    @Inject
     lateinit var weatherRepository: WeatherRepository
 
     override suspend fun doWork(): Result {
@@ -56,7 +53,6 @@ class StravaCreateActivityWorker @AssistedInject constructor(
                 powerMeasurementRepository,
                 timeStateRepository,
                 splitRepository,
-                onboardSensorsRepository,
                 weatherRepository
             )
         }

@@ -174,7 +174,12 @@ class ExportTripWorker @AssistedInject constructor(
                 powerMeasurements = cyclingPowerMeasurementRepository.getPowerMeasurements(tripId),
                 timeStates = timeStateRepository.getTimeStates(tripId),
                 splits = splitRepository.getTripSplits(tripId),
-                onboardSensors = onboardSensorsRepository.get(tripId),
+                // only the xlsx export reads onboard sensors; skip the load
+                // (largest table by far) for fit exports
+                onboardSensors = when (fileType) {
+                    "xlsx" -> onboardSensorsRepository.get(tripId)
+                    else -> emptyArray()
+                },
                 weather = weatherRepository.getTripWeather(tripId)
             )
             //TODO: Claude says this guard is not necessary
