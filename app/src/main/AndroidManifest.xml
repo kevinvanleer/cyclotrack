@@ -68,8 +68,7 @@
 
         <receiver
             android:name=".DeleteExportBroadcastReceiver"
-            android:exported="true"
-            android:permission="android.permission.WRITE_EXTERNAL_STORAGE" />
+            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"

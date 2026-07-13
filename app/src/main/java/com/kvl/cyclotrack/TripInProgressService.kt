@@ -763,14 +763,15 @@ class TripInProgressService @Inject constructor() :
     }
 
     private fun createNotificationChannel(channelId: String, channelName: String): String {
-        //TODO: MAKE THIS YOUR OWN -- COPIED FROM POST
         val channel = NotificationChannel(
             channelId,
-            channelName, NotificationManager.IMPORTANCE_HIGH
+            channelName, NotificationManager.IMPORTANCE_LOW
         )
         channel.lightColor = Color.BLUE
         channel.lockscreenVisibility = Notification.VISIBILITY_PRIVATE
         val service = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        // retired IMPORTANCE_HIGH channel; importance is immutable once created
+        service.deleteNotificationChannel("notification_id_trip_in_progress")
         service.createNotificationChannel(channel)
         return channelId
     }
@@ -789,11 +790,10 @@ class TripInProgressService @Inject constructor() :
         }.createPendingIntent()
 
         val notification = NotificationCompat.Builder(this, channelId).apply {
-            priority = NotificationCompat.PRIORITY_MAX
             setOngoing(true)
             setShowWhen(false)
             setContentTitle(getText(R.string.notification_trip_in_progress_title))
-            setContentText(getText(R.string.notification_export_trip_in_progress_message))
+            setContentText(getText(R.string.notification_trip_in_progress_message))
             setSmallIcon(R.drawable.ic_cyclotrack_notification)
             setContentIntent(pendingIntent)
         }.build().also { it.flags = it.flags or Notification.FLAG_ONGOING_EVENT }

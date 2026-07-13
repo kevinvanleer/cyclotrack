@@ -49,9 +49,20 @@ class ExportTripWorker @AssistedInject constructor(
     @Assisted val appContext: Context,
     @Assisted params: WorkerParameters,
 ) : CoroutineWorker(appContext, params) {
+    companion object {
+        fun inProgressTag(fileType: String) = "export-in-progress-$fileType"
+        fun completeTag(fileType: String) = "export-complete-$fileType"
+    }
+
     val logTag = "ExportTripWorker"
     private val xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     private val binaryMime = "application/octet-stream"
+
+    private fun canPostNotifications() =
+        ActivityCompat.checkSelfPermission(
+            appContext,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
 
     @Inject
     lateinit var tripsRepository: TripsRepository
@@ -130,27 +141,18 @@ class ExportTripWorker @AssistedInject constructor(
                     .bigText("Data export \"${getFileName() ?: intendedFileName}\" will finish soon.")
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-        val inProgressId = getUriFilePart()?.toIntOrNull() ?: 0
-        with(NotificationManagerCompat.from(appContext)) {
+        val notificationId = tripId.toInt()
+        val notifications = NotificationManagerCompat.from(appContext)
+        if (canPostNotifications()) {
             Log.d(logTag, "notify in progress")
-            if (ActivityCompat.checkSelfPermission(
-                    appContext,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                // TODO: Consider calling
-                //    ActivityCompat#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for ActivityCompat#requestPermissions for more details.
-                return
-            }
             // a re-export deletes the previous MediaStore entry, so clear the previous
-            // export's completion notification (keyed on trip id) along with it
-            cancel(tripId.toInt())
-            notify(inProgressId, inProgressBuilder.build())
+            // export's completion notification (dead uri) until the new one replaces it
+            notifications.cancel(completeTag(fileType), notificationId)
+            notifications.notify(
+                inProgressTag(fileType),
+                notificationId,
+                inProgressBuilder.build()
+            )
         }
         appContext.mainExecutor().execute {
             Toast.makeText(
@@ -159,37 +161,36 @@ class ExportTripWorker @AssistedInject constructor(
                 Toast.LENGTH_SHORT
             ).show()
         }
-        Log.d(logTag, "building export data")
-        val exportData = TripDetailsViewModel.ExportData(
-            summary = tripsRepository.get(tripId),
-            measurements = measurementsRepository.get(tripId),
-            heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
-            speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),
-            cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(tripId),
-            powerMeasurements = cyclingPowerMeasurementRepository.getPowerMeasurements(tripId),
-            timeStates = timeStateRepository.getTimeStates(tripId),
-            splits = splitRepository.getTripSplits(tripId),
-            onboardSensors = onboardSensorsRepository.get(tripId),
-            weather = weatherRepository.getTripWeather(tripId)
-        )
-        //TODO: Claude says this guard is not necessary
-        if (exportData.summary != null &&
-            exportData.measurements != null &&
-            exportData.heartRateMeasurements != null &&
-            exportData.cadenceMeasurements != null &&
-            exportData.speedMeasurements != null &&
-            exportData.powerMeasurements != null &&
-            exportData.timeStates != null &&
-            exportData.splits != null &&
-            exportData.onboardSensors != null &&
-            exportData.weather != null
-        ) {
-            Log.d(
-                logTag,
-                "Exporting trip $tripId..."
+        try {
+            Log.d(logTag, "building export data")
+            val exportData = TripDetailsViewModel.ExportData(
+                summary = tripsRepository.get(tripId),
+                measurements = measurementsRepository.get(tripId),
+                heartRateMeasurements = heartRateMeasurementRepository.get(tripId),
+                speedMeasurements = cadenceSpeedMeasurementRepository.getSpeedMeasurements(tripId),
+                cadenceMeasurements = cadenceSpeedMeasurementRepository.getCadenceMeasurements(
+                    tripId
+                ),
+                powerMeasurements = cyclingPowerMeasurementRepository.getPowerMeasurements(tripId),
+                timeStates = timeStateRepository.getTimeStates(tripId),
+                splits = splitRepository.getTripSplits(tripId),
+                onboardSensors = onboardSensorsRepository.get(tripId),
+                weather = weatherRepository.getTripWeather(tripId)
             )
+            //TODO: Claude says this guard is not necessary
+            if (exportData.summary != null &&
+                exportData.measurements != null &&
+                exportData.heartRateMeasurements != null &&
+                exportData.cadenceMeasurements != null &&
+                exportData.speedMeasurements != null &&
+                exportData.powerMeasurements != null &&
+                exportData.timeStates != null &&
+                exportData.splits != null &&
+                exportData.onboardSensors != null &&
+                exportData.weather != null
+            ) {
+                Log.d(logTag, "Exporting trip $tripId...")
 
-            try {
                 when (fileType) {
                     "xlsx" -> exportRideToXlsx(
                         contentResolver,
@@ -199,6 +200,15 @@ class ExportTripWorker @AssistedInject constructor(
 
                     else -> exportRideToFit(appContext, uri, exportData)
                 }
+
+                exportRepository.save(
+                    Export(
+                        tripId = tripId,
+                        uri = uri.toString(),
+                        fileType = fileType,
+                        filename = getFileName() ?: "No name"
+                    )
+                )
 
                 val viewFileIntent = Intent().apply {
                     action = Intent.ACTION_VIEW
@@ -231,14 +241,13 @@ class ExportTripWorker @AssistedInject constructor(
                     DeleteExportBroadcastReceiver::class.java
                 ).apply {
                     action = appContext.getString(R.string.intent_action_delete_exported_data)
-                    putExtra("TRIP_ID", exportData.summary.id)
                     data = uri
                 }
                 val deletePendingIntent = PendingIntent.getBroadcast(
                     appContext,
                     uri.hashCode() * 100 + 3,
                     deleteIntent,
-                    PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+                    PendingIntent.FLAG_IMMUTABLE
                 )
                 val builder = NotificationCompat.Builder(
                     appContext,
@@ -263,57 +272,42 @@ class ExportTripWorker @AssistedInject constructor(
                         "DELETE",
                         deletePendingIntent
                     )
-                with(NotificationManagerCompat.from(appContext)) {
+                if (canPostNotifications()) {
                     Log.d(logTag, "notify export complete")
-                    cancel(inProgressId)
-                    if (ActivityCompat.checkSelfPermission(
-                            appContext,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
-                        return
-                    }
-                    notify(exportData.summary.id?.toInt() ?: 0, builder.build())
-
-                    exportRepository.save(
-                        Export(
-                            tripId = tripId,
-                            uri = uri.toString(),
-                            fileType = fileType,
-                            filename = getFileName() ?: "No name"
-                        )
+                    notifications.notify(
+                        completeTag(fileType),
+                        notificationId,
+                        builder.build()
                     )
                 }
-            } catch (e: Exception) {
-                Log.e(logTag, "Export failed", e)
-                FirebaseCrashlytics.getInstance().recordException(e)
-
-                val builder = NotificationCompat.Builder(
-                    appContext,
-                    appContext.getString(R.string.notification_export_trip_id)
-                )
-                    .setSmallIcon(R.drawable.ic_cyclotrack_notification)
-                    .setContentTitle("Export failed!")
-                    .setAutoCancel(true)
-                    .setStyle(
-                        NotificationCompat.BigTextStyle()
-                            .bigText("There was an error processing data export \"${getFileName() ?: intendedFileName}\".")
-                    )
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                with(NotificationManagerCompat.from(appContext)) {
-                    Log.d(logTag, "notify export complete")
-                    cancel(inProgressId)
-                    notify(exportData.summary.id?.toInt() ?: 0, builder.build())
-                }
-                throw e
             }
+        } catch (e: Exception) {
+            Log.e(logTag, "Export failed", e)
+            FirebaseCrashlytics.getInstance().recordException(e)
+
+            val builder = NotificationCompat.Builder(
+                appContext,
+                appContext.getString(R.string.notification_export_trip_id)
+            )
+                .setSmallIcon(R.drawable.ic_cyclotrack_notification)
+                .setContentTitle("Export failed!")
+                .setAutoCancel(true)
+                .setStyle(
+                    NotificationCompat.BigTextStyle()
+                        .bigText("There was an error processing data export \"${getFileName() ?: intendedFileName}\".")
+                )
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            if (canPostNotifications()) {
+                Log.d(logTag, "notify export failed")
+                notifications.notify(
+                    completeTag(fileType),
+                    notificationId,
+                    builder.build()
+                )
+            }
+            throw e
+        } finally {
+            notifications.cancel(inProgressTag(fileType), notificationId)
         }
     }
 
@@ -364,7 +358,7 @@ class ExportTripWorker @AssistedInject constructor(
             val downloadsPath =
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             val destinationPath = File(downloadsPath, fileName)
-            destinationPath.mkdirs()
+            downloadsPath.mkdirs()
             destinationPath.delete()
             val uri = FileProvider.getUriForFile(
                 appContext,

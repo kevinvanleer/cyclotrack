@@ -82,9 +82,9 @@
     <string name="preferences_sync_with_google_fit_summary">Sign in to Google Fit to sync your workouts</string>
     <string name="preferences_disconnect_google_fit_title">Disconnect from Google Fit</string>
     <string name="preferences_disconnect_google_fit_summary">Stop syncing data between Cyclotrack and Google Fit</string>
-    <string name="notification_id_trip_in_progress">notification_id_trip_in_progress</string>
+    <string name="notification_id_trip_in_progress">notification_channel_trip_in_progress_low</string>
     <string name="notification_trip_in_progress_title">Ride in progress</string>
-    <string name="notification_export_trip_in_progress_message">Tap to return to dashboard</string>
+    <string name="notification_trip_in_progress_message">Tap to return to dashboard</string>
     <string name="action_initialize_trip_service">com.kvl.cyclotrack::action_initialize_trip_service</string>
     <string name="action_start_trip_service">com.kvl.cyclotrack::action_start_trip_service</string>
     <string name="action_pause_trip_service">com.kvl.cyclotrack::action_pause_trip_service</string>
