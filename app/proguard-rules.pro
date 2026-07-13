@@ -39,3 +39,13 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLParameters
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
+
+# Strip verbose/debug/info logging from production builds; keep w/e for
+# bugreports and Play pre-launch logs. Only prod sets minifyEnabled, so
+# this never affects the release (personal, adb-debuggable) variant.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static boolean isLoggable(java.lang.String, int);
+}
