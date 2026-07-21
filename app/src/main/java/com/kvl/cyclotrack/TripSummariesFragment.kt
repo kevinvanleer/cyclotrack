@@ -123,6 +123,7 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
             when (actionId) {
                 EditorInfo.IME_ACTION_SEARCH -> {
                     Log.d(logTag, "Clicked search icon: ${viewModel.searchText}")
+                    hintCard.visibility = View.GONE
                     viewModel.filterTrips()
                 }
 
