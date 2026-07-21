@@ -199,6 +199,8 @@ class LineGraph(
         height: Int,
         step: Boolean
     ) {
+        if (dataset.points1.isEmpty() || dataset.points2.isEmpty()) return
+
         val xScale = width / (dataset.xAxisWidth ?: 1f)
         val yScale = height / (dataset.yAxisHeight ?: 1f)
 
