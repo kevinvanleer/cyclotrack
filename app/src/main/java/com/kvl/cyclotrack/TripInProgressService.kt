@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -791,12 +792,26 @@ class TripInProgressService @Inject constructor() :
             getString(R.string.notification_channel_name_trip_in_progress)
         )
 
-        val pendingIntent = NavDeepLinkBuilder(this).apply {
-            setComponentName(MainActivity::class.java)
-            setGraph(R.navigation.cyclotrack_nav_graph)
-            setDestination(R.id.DashboardActivity)
-            setArguments(Bundle().apply { putLong("tripId", tripId) })
-        }.createPendingIntent()
+        val pendingIntent = try {
+            NavDeepLinkBuilder(this).apply {
+                setComponentName(MainActivity::class.java)
+                setGraph(R.navigation.cyclotrack_nav_graph)
+                setDestination(R.id.DashboardActivity)
+                setArguments(Bundle().apply { putLong("tripId", tripId) })
+            }.createPendingIntent()
+        } catch (e: NullPointerException) {
+            // ponytail: NavDeepLinkBuilder(Context) NPEs on some devices where
+            // getLaunchIntentForPackage resolves a null className. Fall back to a
+            // plain launch — notification still opens the app, just not the deep link.
+            FirebaseCrashlytics.getInstance().recordException(e)
+            PendingIntent.getActivity(
+                this, 0,
+                Intent(this, MainActivity::class.java)
+                    .putExtra("tripId", tripId)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
 
         return NotificationCompat.Builder(this, channelId).apply {
             setOngoing(true)
