@@ -4,8 +4,11 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.Context
+import android.os.ParcelUuid
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -37,6 +40,20 @@ class DiscoverSensorViewModel @Inject constructor(
 
     private val bluetoothLeScanner: BluetoothLeScanner? =
         (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
+
+    // Only wake onScanResult for actual cycling sensors. An unfiltered scan reports every BLE
+    // device in range (phones, watches, beacons), flooding the callback — the root of the
+    // discover-screen OOM. ponytail: a sensor that doesn't advertise its service UUID in the
+    // advertising packet won't match; add its UUID here if a real sensor fails to appear.
+    private val sensorServiceFilters = listOf(
+        heartRateServiceUuid,
+        cadenceSpeedServiceUuid,
+        powerServiceUuid,
+        getGattUuid(fitnessMachineServiceId),
+    ).map { ScanFilter.Builder().setServiceUuid(ParcelUuid(it)).build() }
+
+    private val scanSettings =
+        ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
 
     fun linkDevice(device: ExternalSensor) {
         viewModelScope.launch {
@@ -94,7 +111,7 @@ class DiscoverSensorViewModel @Inject constructor(
 
         try {
             if (BleService.isBluetoothEnabled(appContext)) bluetoothLeScanner?.startScan(
-                scanDevicesCallback
+                sensorServiceFilters, scanSettings, scanDevicesCallback
             )
         } catch (e: SecurityException) {
             Log.w(logTag, "Bluetooth permissions have not been granted", e)

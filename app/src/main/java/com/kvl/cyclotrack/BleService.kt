@@ -10,7 +10,9 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -691,7 +693,14 @@ class BleService @Inject constructor(
                 bluetoothAdapter.bluetoothLeScanner?.let { bluetoothLeScanner ->
                     val callback = scanForDevice(device.address)
                     scanCallbacks.add(callback)
-                    bluetoothLeScanner.startScan(callback)
+                    // Filter to the target MAC so the OS only wakes the callback for this
+                    // device, not every BLE advertiser in range.
+                    bluetoothLeScanner.startScan(
+                        listOf(ScanFilter.Builder().setDeviceAddress(device.address).build()),
+                        ScanSettings.Builder()
+                            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),
+                        callback
+                    )
                 } ?: Log.w(logTag, "BLE scanner not available")
             } else {
                 Log.i(
