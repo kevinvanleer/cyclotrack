@@ -107,7 +107,9 @@ class TripDetailsViewModel @Inject constructor(
         )
 
     suspend fun updateBiometrics(biometrics: Biometrics) {
-        if (tripsRepository.getDefaultBiometrics(biometrics.id) != biometrics) {
+        if (biometrics.userWeight != null &&
+            tripsRepository.getDefaultBiometrics(biometrics.id) != biometrics
+        ) {
             tripsRepository.updateBiometrics(biometrics)
         }
     }
