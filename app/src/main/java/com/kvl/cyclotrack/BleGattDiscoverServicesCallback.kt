@@ -167,6 +167,9 @@ fun BluetoothGatt.hasCharacteristic(serviceUuid: UUID, charUuid: UUID): Boolean 
 }
 
 fun BluetoothGatt.printGattTable() {
+    // Debug-only: the string is built even when Log.v is stripped in prod, so this allocated
+    // GATT-table strings on every service discovery under connection churn. Skip in prod.
+    if (!FeatureFlags.devBuild) return
     val logTag = "BluetoothGatt"
     if (services.isEmpty()) {
         Log.v(
