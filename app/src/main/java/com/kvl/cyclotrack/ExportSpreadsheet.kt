@@ -127,6 +127,9 @@ inline fun <reified T : Any> addDataToSheet(sheet: Worksheet, data: Array<T>) {
 
     data.forEachIndexed { rowIdx, measurement ->
         populateRow(sheet, rowIdx + 1, reflection, measurement)
+        // fastexcel buffers the whole sheet in memory until finish(); flush completed rows
+        // to the stream periodically so a long ride doesn't hold every cell at once (OOM).
+        if (rowIdx > 0 && rowIdx % 1000 == 0) sheet.flush()
     }
     sheet.finish()
 }
