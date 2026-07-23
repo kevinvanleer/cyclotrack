@@ -1025,11 +1025,6 @@ fun getSpeed(
     speedThreshold: Float,
 ): Float = if (new.speed > speedThreshold) new.speed else 0f
 
-fun calculateSlope(
-    derivedTripState: List<DerivedTripState>,
-): Double =
-    leastSquaresFitSlope(derivedTripState.map { Pair(it.totalDistance, it.altitude) })
-
 fun calculateWheelCircumference(
     derivedTripState: Array<DerivedTripState>,
     sampleSize: Int,

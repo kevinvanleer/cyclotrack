@@ -1,4 +1,3 @@
-
 plugins {
     id 'com.android.application'
     id 'com.google.dagger.hilt.android'
@@ -54,8 +53,8 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdk = 26
         targetSdk = 36
-        versionCode 73
-        versionName "Thermal protection"
+        versionCode 74
+        versionName "Real-time grade"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
         // Use the git CLI (natively worktree-aware) instead of grgit: grgit can't open a

@@ -14,7 +14,10 @@ import android.location.Location
 import android.os.BatteryManager
 import android.os.Bundle
 import android.os.Looper
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.format.DateUtils
+import android.text.style.RelativeSizeSpan
 import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
@@ -28,12 +31,15 @@ import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.setPadding
+import androidx.core.view.updatePaddingRelative
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -50,6 +56,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.events.BatteryEvent
+import com.kvl.cyclotrack.events.SlopeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.ThermalTierEvent
 import com.kvl.cyclotrack.events.WheelCircumferenceEvent
@@ -92,6 +99,9 @@ class TripInProgressFragment :
     private lateinit var topRightView: MeasurementView
     private lateinit var footerView: TextView
     private lateinit var footerRightView: TextView
+    private lateinit var footerLeftLayout: LinearLayout
+    private lateinit var textViewSlope: TextView
+    private lateinit var imageViewSlopeIcon: ImageView
     private lateinit var trackingImage: ImageView
     private lateinit var debugTextView: TextView
     private lateinit var blackoutOverlay: View
@@ -397,6 +407,20 @@ class TripInProgressFragment :
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onSlopeEvent(event: SlopeEvent) {
+        textViewSlope.text = String.format(
+            Locale.getDefault(), "%d%%",
+            if (event.slope.isFinite()) (event.slope * 100f).roundToInt() else 0
+        )
+        if (!hasHeartRate()) topLeftView.value =
+            String.format(
+                Locale.getDefault(),
+                "%.3f",
+                if (event.slope.isFinite()) event.slope else 0f
+            )
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     fun onStartTripEvent(event: StartTripEvent) {
         event.tripId.takeIf { it >= 0 }?.let { tripId ->
             initializeAfterTripCreated(tripId)
@@ -559,9 +583,6 @@ class TripInProgressFragment :
                     String.format("%.1f", if (averageSpeed.isFinite()) averageSpeed else 0f)
                 }
 
-            if (!hasHeartRate()) topLeftView.value =
-                String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
-
             trackingImage.visibility =
                 if (it.tracking && !decorationHidden()) VISIBLE else INVISIBLE
         }
@@ -711,12 +732,18 @@ class TripInProgressFragment :
                     ),
                     getUserTemperatureUnit(requireContext())
                 )
-                footerRightView.text =
-                    String.format(
-                        "%.1f %s",
-                        getUserSpeed(requireContext(), weather.windSpeed),
-                        getUserSpeedUnitShort(requireContext())
-                    )
+                footerRightView.text = run {
+                    val value =
+                        String.format("%.1f", getUserSpeed(requireContext(), weather.windSpeed))
+                    val unit =
+                        getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
+                    SpannableString("$value $unit").apply {
+                        setSpan(
+                            RelativeSizeSpan(0.5f), value.length, length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                    }
+                }
                 when (weather.windSpeed) {
                     0.0 -> {
                         windDirectionArrow.setPadding(
@@ -856,13 +883,15 @@ class TripInProgressFragment :
         applySleep(!peeking && level >= DisplayLevel.SLEEP)
     }
 
-    private fun bezelText() = listOf(
+    private fun bezelText() = listOfNotNull(
         footerView, footerRightView, temperatureTextView,
-        timeOfDayTextView, batteryLevelTextView, debugTextView
+        timeOfDayTextView, batteryLevelTextView, debugTextView,
+        if (::textViewSlope.isInitialized) textViewSlope else null,
     )
 
-    private fun bezelImages() = listOf(
-        trackingImage, compassImage, windIcon, windDirectionArrow, batteryLevelIcon
+    private fun bezelImages() = listOfNotNull(
+        trackingImage, compassImage, windIcon, windDirectionArrow, batteryLevelIcon,
+        if (::imageViewSlopeIcon.isInitialized) imageViewSlopeIcon else null,
     )
 
     private fun applyBezel(outlineText: Boolean, textColor: Int, green: Boolean) {
@@ -873,9 +902,6 @@ class TripInProgressFragment :
                 windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
             else windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
         }
-        // the level gates visibility, but each view's owner state still decides
-        // whether it has anything to show — un-hiding must not resurrect glyphs whose
-        // data isn't there (GPS fix, weather) or debug bezel in production
         val hasWeather = viewModel.latestWeather.value != null
         fun decorationVis(allowed: Boolean) =
             if (decorationHidden() || !allowed) INVISIBLE else VISIBLE
@@ -887,8 +913,6 @@ class TripInProgressFragment :
         windIcon.visibility = decorationVis(hasWeather)
         batteryLevelIcon.visibility = decorationVis(true)
 
-        // tint applies even while hidden so a peek reveals correctly colored images;
-        // 0.85 alpha from OUTLINE up, matching the rest of the protected presentation
         val imageTint = when {
             green -> ColorStateList.valueOf(DIM_STROKE_COLOR)
             outlineText -> ColorStateList.valueOf(MeasurementView.DEFAULT_STROKE_COLOR)
@@ -900,24 +924,52 @@ class TripInProgressFragment :
             if (measurementHidden() || !allowed) INVISIBLE else VISIBLE
 
         temperatureTextView.visibility = measurementVis(hasWeather)
-        // a bezel measurement that renders as an image: visibility follows its nature
-        // (measurementHidden, sheds at DIM with the wind speed), tint follows its
-        // rendering (bezelImages()) — the one measurement x image crossing
         windDirectionArrow.visibility = measurementVis(hasWeather)
         footerRightView.visibility = measurementVis(hasWeather)
         footerView.visibility = measurementVis(true)
         batteryLevelTextView.visibility = measurementVis(true)
         debugTextView.visibility =
             if (FeatureFlags.productionBuild) GONE else measurementVis(true)
+        if (::textViewSlope.isInitialized) {
+            footerLeftLayout.visibility = measurementVis(true)
+            imageViewSlopeIcon.visibility = if (decorationHidden()) GONE else VISIBLE
+        }
 
         bezelText().forEach { text ->
             text.paint.style = if (outlineText) Paint.Style.STROKE else Paint.Style.FILL
             text.paint.strokeWidth = 2f
             text.setTextColor(textColor)
-            text.invalidate() // paint mutations don't invalidate on their own
+            text.invalidate()
         }
-        // the clock owns timeOfDayTextView's visibility (cadence-dependent placement)
         updateClock()
+    }
+
+    private fun setupSlopeView() {
+        footerLeftLayout.visibility = VISIBLE
+        textViewSlope = TextView(requireContext())
+        textViewSlope.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        textViewSlope.typeface = ResourcesCompat.getFont(requireContext(), R.font.orbitron_medium)
+        textViewSlope.setTextColor(Color.WHITE)
+        textViewSlope.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f)
+        textViewSlope.updatePaddingRelative(
+            start = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics
+            ).toInt()
+        )
+        textViewSlope.text = "-%"
+        imageViewSlopeIcon = ImageView(requireContext())
+        val slopeIconSize = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 30f, resources.displayMetrics
+        ).toInt()
+        imageViewSlopeIcon.layoutParams = LinearLayout.LayoutParams(slopeIconSize, slopeIconSize)
+        // white-fill variant: bezel images paint raw fill at NORMAL, and the shared
+        // themed ic_mountains is black — black-on-black on the always-dark dashboard
+        imageViewSlopeIcon.setImageResource(R.drawable.ic_mountains_solid)
+        footerLeftLayout.addView(imageViewSlopeIcon)
+        footerLeftLayout.addView(textViewSlope)
     }
 
     private fun initializeViews(view: View) {
@@ -934,6 +986,7 @@ class TripInProgressFragment :
         topRightView = view.findViewById(R.id.measurement_topRight)
         footerView = view.findViewById(R.id.measurement_footer)
         footerRightView = view.findViewById(R.id.measurement_footer_right)
+        footerLeftLayout = view.findViewById(R.id.measurement_footer_left)
         trackingImage = view.findViewById(R.id.image_tracking)
         debugTextView = view.findViewById(R.id.textview_debug)
         timeOfDayTextView = view.findViewById(R.id.dashboard_textview_timeOfDay)
@@ -970,6 +1023,8 @@ class TripInProgressFragment :
             debugTextView.visibility = GONE
         }
 
+        setupSlopeView();
+
         middleRightView.label =
             "SPLIT ${getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())}"
         middleRightView.setIcon(R.drawable.ic_trophy)
@@ -996,8 +1051,8 @@ class TripInProgressFragment :
         //autoCircumference?.let { c -> debugString += " | C%.3f".format(c) }
         //autoCircumferenceVariance?.let { v -> debugString += " | ±%.7f".format(v) }
         //viewModel.currentProgress.value?.slope?.let { s -> debugString += " | S%.3f".format(s) }
-        viewModel.currentProgress.value?.slope?.takeIf { it.isFinite() }
-            ?.let { s -> debugString += "S%.1f".format(s * 100f) }
+        //viewModel.currentProgress.value?.slope?.takeIf { it.isFinite() }
+        //    ?.let { s -> debugString += "S%.1f".format(s * 100f) }
         return debugString
     }
 

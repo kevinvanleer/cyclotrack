@@ -29,6 +29,11 @@ data class TripWheelCircumference(
     val autoWheelCircumference: Float?,
 )
 
+data class TripSlopeOffset(
+    val id: Long,
+    val slopeOffset: Float?,
+)
+
 data class TripGoogleFitSync(
     val id: Long,
     val googleFitSyncStatus: GoogleFitSyncStatusEnum,
@@ -105,6 +110,9 @@ interface TripDao {
 
     @Update(entity = Trip::class)
     suspend fun updateCircumference(stats: TripWheelCircumference)
+
+    @Update(entity = Trip::class)
+    suspend fun updateSlopeOffset(slopeOffset: TripSlopeOffset)
 
     @Update(entity = Trip::class)
     suspend fun updateStuff(stats: TripStuff)

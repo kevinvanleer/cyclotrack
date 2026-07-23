@@ -187,8 +187,8 @@
 
     <ImageView
         android:id="@+id/image_arrow_wind_direction"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_marginHorizontal="6dp"
         android:contentDescription="@string/wind_direction_icon_description"
         android:padding="6dp"
@@ -198,6 +198,19 @@
         app:layout_constraintEnd_toStartOf="@id/measurement_footer_right"
         app:layout_constraintTop_toTopOf="@id/measurement_footer_right" />
 
+    <LinearLayout
+        android:id="@+id/measurement_footer_left"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:layout_marginStart="12dp"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/measurement_footer" />
+
     <TextView
         android:id="@+id/measurement_footer_right"
         android:layout_width="wrap_content"
@@ -206,23 +219,23 @@
         android:fontFamily="@font/orbitron_medium"
         android:textAppearance="@style/DashboardFontAppearance"
         android:textColor="#FFFFFF"
-        android:textSize="16sp"
+        android:textSize="20sp"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/measurement_footer" />
+        app:layout_constraintEnd_toStartOf="@id/image_wind_icon" />
 
     <ImageView
         android:id="@+id/image_wind_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="3dp"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="12dp"
         android:contentDescription="@string/wind_icon_description"
         android:padding="3dp"
+        android:paddingStart="8dp"
         android:src="@drawable/ic_wind_solid"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@id/measurement_footer_right"
-        app:layout_constraintStart_toEndOf="@id/measurement_footer_right"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/measurement_footer_right" />
 
     <Button

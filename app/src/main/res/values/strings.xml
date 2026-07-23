@@ -169,7 +169,7 @@
     <string name="autopause_label">AUTO-PAUSE</string>
     <string name="preference_key_user_current_version">preference_key_user_current_version</string>
     <string name="whats_new_message">
-    \n\nYour screen now protects itself from heat!\n\nOLED displays age faster when they run hot in direct sun. When the phone heats up during a ride, CycloTrack automatically reduces what the display emits — first outlined text, then green (the gentlest color for the panel), and in extreme heat the screen goes dark to cool off. Tap any time to wake it.\n\nA thermometer in the top-left corner shows when protection is active, and the ride notification always confirms recording continues.\n\nAlso new: your phone battery level on the dashboard.
+    \n\nNow see your grade in real time!\n\nCycloTrack shows how steep the road is right now, live on your dashboard and marked by a mountains icon in the lower-left. It senses the incline directly as you ride, so it reacts instantly as the road steepens or flattens — no lag while it catches up.\n\nSee where the road pitches steepest, and catch the false flats that feel level but quietly sap your speed.
     </string>
     <string name="preferences_dashboard_safe_zone_top_margin">preference_dashboard_safe_zone_top_margin</string>
     <string name="preferences_dashboard_safe_zone_bottom_margin">preference_dashboard_safe_zone_bottom_margin</string>

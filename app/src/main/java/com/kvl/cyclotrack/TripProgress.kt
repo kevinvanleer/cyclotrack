@@ -7,7 +7,6 @@ data class TripProgress(
     val speed: Float,
     val maxSpeed: Float,
     val distance: Double,
-    val slope: Double,
     val duration: Double,
     val tracking: Boolean,
 )

@@ -32,8 +32,12 @@ class OnboardSensorSource @Inject constructor(@ApplicationContext context: Conte
         val thread = HandlerThread("OnboardSensorSource").apply { start() }
         handlerThread = thread
         val handler = Handler(thread.looper)
-        // TYPE_ACCELEROMETER intentionally not registered; arrives with slope-correction
-        listOf(Sensor.TYPE_GRAVITY, Sensor.TYPE_GYROSCOPE, Sensor.TYPE_PRESSURE)
+        listOf(
+            Sensor.TYPE_ACCELEROMETER,
+            Sensor.TYPE_GRAVITY,
+            Sensor.TYPE_GYROSCOPE,
+            Sensor.TYPE_PRESSURE
+        )
             .forEach { type ->
                 sensorManager.getDefaultSensor(type)?.let { sensor ->
                     sensorManager.registerListener(

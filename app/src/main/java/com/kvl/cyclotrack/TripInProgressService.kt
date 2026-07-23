@@ -40,6 +40,7 @@ import com.kvl.cyclotrack.events.BatteryEvent
 import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.events.OnboardSensorEvent
 import com.kvl.cyclotrack.events.PhysicsSensorEvent
+import com.kvl.cyclotrack.events.SlopeEvent
 import com.kvl.cyclotrack.events.StartTripEvent
 import com.kvl.cyclotrack.events.ThermalTierEvent
 import com.kvl.cyclotrack.events.TripProgressEvent
@@ -121,6 +122,7 @@ class TripInProgressService @Inject constructor() :
         @Volatile
         var running = false
             private set
+
     }
 
     var bike: Bike? = null
@@ -631,7 +633,23 @@ class TripInProgressService @Inject constructor() :
                         handleSqliteConstraintException(e)
                     }
 
-                    val newSlope = calculateSlope(derivedTripState.takeLast(20))
+                    // Slope is its own channel (SlopeEvent). The estimator owns all routing: it
+                    // calibrates the gravity offset (baro if present, else GPS altitude) and keeps
+                    // the GPS-altitude fallback. Post here only when gravity isn't driving the
+                    // display (sensors off, or gravity still warming up) — otherwise the sensor-rate
+                    // onGravityGrade subscriber handles it.
+                    gradeState = GradeEstimator.onLocation(
+                        gradeState,
+                        lastPressure,
+                        new.altitude,
+                        totalDistance,
+                        speedMps = new.speed.toDouble(),
+                        timeMs = new.time,
+                    )
+                    gradeState.committedOffset?.let { persistSlopeOffset(tripId, it) }
+                    if (!gradeState.gravityWarm) {
+                        EventBus.getDefault().post(SlopeEvent(GradeEstimator.slope(gradeState)))
+                    }
 
                     TripProgress(
                         measurements = new,
@@ -641,7 +659,6 @@ class TripInProgressService @Inject constructor() :
                             tripProgress?.maxSpeed ?: 0f
                         ),
                         distance = totalDistance,
-                        slope = newSlope,
                         duration = totalDuration,
                         accuracy = new.accuracy,
                         bearing = new.bearing,
@@ -658,7 +675,6 @@ class TripInProgressService @Inject constructor() :
                             speed = 0f,
                             maxSpeed = 0f,
                             distance = 0.0,
-                            slope = 0.0,
                             measurements = null,
                             accuracy = new.accuracy,
                             bearing = new.bearing,
@@ -721,7 +737,6 @@ class TripInProgressService @Inject constructor() :
             speed = newSpeed,
             maxSpeed = 0f,
             distance = 0.0,
-            slope = 0.0,
             measurements = null,
             accuracy = new.accuracy,
             bearing = new.bearing,
@@ -773,6 +788,53 @@ class TripInProgressService @Inject constructor() :
     @Subscribe
     fun onBatteryEvent(event: BatteryEvent) {
         thisBatteryEventHandler(event)
+    }
+
+    // Fresh per trip (initGradeEstimator), seeded from the last locked calibration so grade is
+    // correct from the first sample. A new trip resets totalDistance to 0, so the estimator's
+    // distance-window state must not carry over from a prior trip — hence the per-trip reset.
+    private lateinit var gradeState: GradeState
+    private var savedGradeOffset: Double? = null
+
+    private fun initGradeEstimator() {
+        // Seed from this bike's last locked offset so grade is correct from the first sample.
+        gradeState = GradeEstimator.seed((bike?.autoSlopeOffset ?: Float.NaN).toDouble())
+        savedGradeOffset = null
+    }
+
+    // MAIN thread mode: gradeState is also mutated by the GPS handler on the main
+    // thread, so grade updates stay single-threaded
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onGravityGrade(event: PhysicsSensorEvent.Gravity) {
+        gradeState = GradeEstimator.onGravity(
+            gradeState,
+            floatArrayOf(event.x, event.y, event.z),
+            timestampMs = event.timestamp,
+        )
+        val s = GradeEstimator.slope(gradeState)
+        if (FeatureFlags.devBuild) Log.v(logTag, "grade gY=${event.y} gZ=${event.z} slope=$s")
+        EventBus.getDefault().post(SlopeEvent(s))
+    }
+
+    private var lastPressure: Float? = null
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onPressureGrade(event: PhysicsSensorEvent.Pressure) {
+        lastPressure = event.pressure
+    }
+
+    // On lock, record the offset per-trip (audit/reproducibility) and per-bike (seeds this bike's next trip).
+    private suspend fun persistSlopeOffset(tripId: Long, value: Double) {
+        if (value == savedGradeOffset) return
+        savedGradeOffset = value
+        val offset = value.toFloat()
+        tripsRepository.updateSlopeOffset(TripSlopeOffset(id = tripId, slopeOffset = offset))
+        bike?.let {
+            val updated = it.copy(autoSlopeOffset = offset)
+            bikesRepository.update(updated)
+            bike = updated
+        }
+        Log.d(logTag, "grade offset locked; per-trip + per-bike offset=$value")
     }
 
     private fun createNotificationChannel(channelId: String, channelName: String): String {
@@ -968,6 +1030,7 @@ class TripInProgressService @Inject constructor() :
         Log.d(logTag, "tripsRepository=$tripsRepository")
 
         bleService.restore()
+        if (!::gradeState.isInitialized) initGradeEstimator()  // recover after process death
 
         Log.d(logTag, "Restart trip service for ID ${tripId}; this=$this")
 
@@ -982,7 +1045,6 @@ class TripInProgressService @Inject constructor() :
                             speed = 0f,
                             maxSpeed = 0f,
                             distance = it.distance ?: 0.0,
-                            slope = calculateSlope(derivedTripState.takeLast(20)),
                             duration = it.duration ?: 0.0,
                             tracking = false
                         )
@@ -1022,6 +1084,10 @@ class TripInProgressService @Inject constructor() :
         thisBatteryEventHandler = onboardSensorEventHandler(tripId)
         thermalMonitor.start()
         batterySource.start()
+
+        // Gravity grade rides on the onboard sensors, which are only powered when logging is
+        // enabled (TYPE_GRAVITY fuses the gyro, so it can't run cheaply on its own). When off,
+        // fall back to GPS-altitude slope in the GPS handler — no extra sensors powered.
         if (shouldCollectOnboardSensors(applicationContext)) {
             thisOnboardSensorEventHandler = onboardSensorEventHandler(tripId)
             onboardSensorSource.start()
@@ -1067,6 +1133,7 @@ class TripInProgressService @Inject constructor() :
     private fun clearState() {
         autoCircumference = null
         tripProgress = null
+        initGradeEstimator()   // fresh per trip: a new trip resets totalDistance to 0
         if (!FeatureFlags.devBuild) derivedTripState.clear()
     }
 
