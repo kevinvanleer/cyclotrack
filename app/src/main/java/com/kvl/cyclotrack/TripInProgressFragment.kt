@@ -137,8 +137,8 @@ class TripInProgressFragment :
     }
 
     // small always-visible cue that the display changes are thermal protection, not a
-    // glitch; exempt from chrome hiding on purpose. Mercury level tracks the tier and
-    // the tint tracks the presentation: chrome white at WARM, green from HOT up.
+    // glitch; exempt from bezel hiding on purpose. Mercury level tracks the tier and
+    // the tint tracks the presentation: white at WARM, green from HOT up.
     @Subscribe(sticky = true, threadMode = ThreadMode.MAIN)
     fun onThermalTierEvent(event: ThermalTierEvent) {
         thermalIndicator.visibility =
@@ -563,7 +563,7 @@ class TripInProgressFragment :
                 String.format("%.3f", if (it.slope.isFinite()) it.slope else 0f)
 
             trackingImage.visibility =
-                if (it.tracking && !chromeIconsHidden()) VISIBLE else INVISIBLE
+                if (it.tracking && !decorationHidden()) VISIBLE else INVISIBLE
         }
 
         viewModel.currentTime.observe(viewLifecycleOwner) {
@@ -677,12 +677,12 @@ class TripInProgressFragment :
     private fun initializeWeatherObservers() {
         viewModel.latestWeather.observe(viewLifecycleOwner) { weather ->
             if (weather != null) {
-                if (!chromeTextHidden()) {
+                if (!measurementHidden()) {
                     temperatureTextView.visibility = VISIBLE
                     footerRightView.visibility = VISIBLE
                     windDirectionArrow.visibility = VISIBLE
                 }
-                if (!chromeIconsHidden()) {
+                if (!decorationHidden()) {
                     windIcon.visibility = VISIBLE
                 }
 
@@ -771,13 +771,13 @@ class TripInProgressFragment :
         blackoutMessage.visibility = GONE
     }
 
-    private fun measurementViews() = listOf(
+    private fun faceMeasurements() = listOf(
         topView, topLeftView, topRightView, middleLeftView,
         middleRightView, bottomLeftView, bottomRightView
     )
 
     private fun applyOutline(outline: Boolean, textColor: Int) {
-        measurementViews().forEach { it.setOutlineMode(outline, textColor) }
+        faceMeasurements().forEach { it.setOutlineMode(outline, textColor) }
         applyButtonOutline(outline, textColor)
     }
 
@@ -828,8 +828,8 @@ class TripInProgressFragment :
     private fun peeking() = viewModel.displayPeek.value == true
     private fun currentLevel() = viewModel.displayLevel.value ?: DisplayLevel.NORMAL
 
-    fun chromeIconsHidden() = !peeking() && currentLevel() >= DisplayLevel.OUTLINE
-    fun chromeTextHidden() = !peeking() && currentLevel() >= DisplayLevel.DIM
+    fun decorationHidden() = !peeking() && currentLevel() >= DisplayLevel.OUTLINE
+    fun measurementHidden() = !peeking() && currentLevel() >= DisplayLevel.DIM
 
     // Two independent layers: COLOR/STYLE is a function of the level and is applied to
     // every view, visible or not (so views revealed later are already correct);
@@ -850,65 +850,67 @@ class TripInProgressFragment :
         val outlineText = level >= DisplayLevel.OUTLINE
 
         applyOutline(outline = outlineText, textColor = textColor)
-        applyChrome(outlineText, textColor, green)
-        measurementViews().forEach { it.setLabelVisible(!chromeTextHidden()) }
+        applyBezel(outlineText, textColor, green)
+        faceMeasurements().forEach { it.setLabelVisible(!measurementHidden()) }
         applyDim(!peeking && level >= DisplayLevel.DIM)
         applySleep(!peeking && level >= DisplayLevel.SLEEP)
     }
 
-    private fun chromeTextViews() = listOf(
+    private fun bezelText() = listOf(
         footerView, footerRightView, temperatureTextView,
         timeOfDayTextView, batteryLevelTextView, debugTextView
     )
 
-    private fun chromeIcons() = listOf(
+    private fun bezelImages() = listOf(
         trackingImage, compassImage, windIcon, windDirectionArrow, batteryLevelIcon
     )
 
-    private fun applyChrome(outlineText: Boolean, textColor: Int, green: Boolean) {
+    private fun applyBezel(outlineText: Boolean, textColor: Int, green: Boolean) {
         activity?.window?.let { window ->
             val windowInsetsController =
                 WindowCompat.getInsetsController(window, window.decorView)
-            if (chromeIconsHidden())
+            if (decorationHidden())
                 windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
             else windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
         }
         // the level gates visibility, but each view's owner state still decides
-        // whether it has anything to show — un-hiding must not resurrect icons whose
-        // data isn't there (GPS fix, weather) or debug chrome in production
+        // whether it has anything to show — un-hiding must not resurrect glyphs whose
+        // data isn't there (GPS fix, weather) or debug bezel in production
         val hasWeather = viewModel.latestWeather.value != null
-        fun iconVis(allowed: Boolean) =
-            if (chromeIconsHidden() || !allowed) INVISIBLE else VISIBLE
+        fun decorationVis(allowed: Boolean) =
+            if (decorationHidden() || !allowed) INVISIBLE else VISIBLE
 
         trackingImage.visibility =
             if (FeatureFlags.productionBuild) GONE
-            else iconVis(viewModel.currentProgress.value?.tracking == true)
-        compassImage.visibility = iconVis(true)
-        windIcon.visibility = iconVis(hasWeather)
-        windDirectionArrow.visibility = iconVis(hasWeather)
-        batteryLevelIcon.visibility = iconVis(true)
+            else decorationVis(viewModel.currentProgress.value?.tracking == true)
+        compassImage.visibility = decorationVis(true)
+        windIcon.visibility = decorationVis(hasWeather)
+        batteryLevelIcon.visibility = decorationVis(true)
 
-        // tint applies even while hidden so a peek reveals correctly colored icons;
+        // tint applies even while hidden so a peek reveals correctly colored images;
         // 0.85 alpha from OUTLINE up, matching the rest of the protected presentation
-        val iconTint = when {
+        val imageTint = when {
             green -> ColorStateList.valueOf(DIM_STROKE_COLOR)
             outlineText -> ColorStateList.valueOf(MeasurementView.DEFAULT_STROKE_COLOR)
             else -> null
         }
-        chromeIcons().forEach { it.imageTintList = iconTint }
+        bezelImages().forEach { it.imageTintList = imageTint }
 
-        fun textVis(allowed: Boolean) =
-            if (chromeTextHidden() || !allowed) INVISIBLE else VISIBLE
+        fun measurementVis(allowed: Boolean) =
+            if (measurementHidden() || !allowed) INVISIBLE else VISIBLE
 
-        temperatureTextView.visibility = textVis(hasWeather)
-        windDirectionArrow.visibility = textVis(hasWeather)
-        footerRightView.visibility = textVis(hasWeather)
-        footerView.visibility = textVis(true)
-        batteryLevelTextView.visibility = textVis(true)
+        temperatureTextView.visibility = measurementVis(hasWeather)
+        // a bezel measurement that renders as an image: visibility follows its nature
+        // (measurementHidden, sheds at DIM with the wind speed), tint follows its
+        // rendering (bezelImages()) — the one measurement x image crossing
+        windDirectionArrow.visibility = measurementVis(hasWeather)
+        footerRightView.visibility = measurementVis(hasWeather)
+        footerView.visibility = measurementVis(true)
+        batteryLevelTextView.visibility = measurementVis(true)
         debugTextView.visibility =
-            if (FeatureFlags.productionBuild) GONE else textVis(true)
+            if (FeatureFlags.productionBuild) GONE else measurementVis(true)
 
-        chromeTextViews().forEach { text ->
+        bezelText().forEach { text ->
             text.paint.style = if (outlineText) Paint.Style.STROKE else Paint.Style.FILL
             text.paint.strokeWidth = 2f
             text.setTextColor(textColor)
@@ -1119,7 +1121,7 @@ class TripInProgressFragment :
         } else {
             timeOfDayTextView.apply {
                 visibility =
-                    if (chromeTextHidden()) INVISIBLE else VISIBLE
+                    if (measurementHidden()) INVISIBLE else VISIBLE
                 text = String.format("%s %s", time, amPm)
             }
         }

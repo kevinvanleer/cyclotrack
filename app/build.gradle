@@ -55,7 +55,7 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdk = 26
         targetSdk = 36
-        versionCode 72
+        versionCode 73
         versionName "Thermal protection"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
