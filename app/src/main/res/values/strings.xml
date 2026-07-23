@@ -87,7 +87,7 @@
     <string name="notification_trip_in_progress_message">Tap to return to dashboard</string>
     <string name="notification_display_protection_active">Display protection active (%1$.0f°C) — recording continues</string>
     <string name="notification_display_protection_sleep">Display off to protect from heat (%1$.0f°C) — recording continues</string>
-    <string name="blackout_overlay_message">SCREEN TOO HOT — COOLING\nTAP TO WAKE</string>
+    <string name="blackout_overlay_message">SCREEN TOO HOT\nTAP TO WAKE</string>
     <string name="thermal_protection_indicator_description">Thermal display protection active</string>
     <string name="battery_level_indicator_description">Phone battery level</string>
     <string name="action_initialize_trip_service">com.kvl.cyclotrack::action_initialize_trip_service</string>
