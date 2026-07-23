@@ -679,9 +679,9 @@ class TripInProgressFragment :
                 if (!chromeTextHidden()) {
                     temperatureTextView.visibility = VISIBLE
                     footerRightView.visibility = VISIBLE
+                    windDirectionArrow.visibility = VISIBLE
                 }
                 if (!chromeIconsHidden()) {
-                    windDirectionArrow.visibility = VISIBLE
                     windIcon.visibility = VISIBLE
                 }
 
@@ -900,6 +900,7 @@ class TripInProgressFragment :
             if (chromeTextHidden() || !allowed) INVISIBLE else VISIBLE
 
         temperatureTextView.visibility = textVis(hasWeather)
+        windDirectionArrow.visibility = textVis(hasWeather)
         footerRightView.visibility = textVis(hasWeather)
         footerView.visibility = textVis(true)
         batteryLevelTextView.visibility = textVis(true)
@@ -943,7 +944,7 @@ class TripInProgressFragment :
         blackoutOverlay.setOnClickListener { viewModel.peekDisplay() }
         blackoutMessage = view.findViewById(R.id.blackout_message)
         thermalIndicator = view.findViewById(R.id.image_thermal_indicator)
-        
+
         context?.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))?.let {
             val level = it.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
             val scale = it.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
