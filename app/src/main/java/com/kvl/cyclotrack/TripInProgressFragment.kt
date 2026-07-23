@@ -175,8 +175,9 @@ class TripInProgressFragment :
         // pure green: only the green subpixel emits (blue ages fastest, stays off)
         val DIM_STROKE_COLOR = Color.argb(0.85f, 0f, 1f, 0f)
 
-        // hot-tier ceiling overriding the dashboard brightness pref
-        const val DIM_BRIGHTNESS_CAP = 0.6f
+        // 1.0 = no brightness reduction at DIM: dimmed output was unreadable in sun,
+        // green strokes carry the burn-in/thermal protection instead
+        const val DIM_BRIGHTNESS_CAP = 1.0f
     }
 
     override fun onCreateView(
