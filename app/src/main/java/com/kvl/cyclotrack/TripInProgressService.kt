@@ -185,6 +185,11 @@ class TripInProgressService @Inject constructor() :
 
     private val derivedTripState = ArrayList<DerivedTripState>()
 
+    // Trips whose removal is in flight. Guards the resume+delete race: a racing resume for a
+    // trip being deleted is ignored so it can't re-start recording into a row about to vanish.
+    // Main-thread confined (only touched from onStartCommand).
+    private val removingTrips = mutableSetOf<Long>()
+
     private var hrmBpm: Short? = null
     private var speed: SpeedData? = null
     private var cadence: CadenceData? = null
@@ -1117,6 +1122,7 @@ class TripInProgressService @Inject constructor() :
                 getString(R.string.action_start_trip_service) -> {
                     when (val tripId = it.getLongExtra("tripId", -1)) {
                         -1L -> lifecycleScope.launch { start() }
+                        in removingTrips -> Log.w(logTag, "Ignoring resume for trip $tripId being removed")
                         else -> restart(tripId)
                     }
                     lifecycleScope.launch {
@@ -1138,12 +1144,15 @@ class TripInProgressService @Inject constructor() :
                     shutdown()
                 }
 
-                getString(R.string.action_remove_trip_service) -> lifecycleScope.launch {
-                    it.getLongExtra("tripId", -1).let { tripId ->
+                getString(R.string.action_remove_trip_service) -> {
+                    val tripId = it.getLongExtra("tripId", -1)
+                    // Mark before end()/removeTrip so a racing resume is ignored.
+                    removingTrips.add(tripId)
+                    lifecycleScope.launch {
                         end(tripId)
                         tripsRepository.removeTrip(tripId)
+                        shutdown()
                     }
-                    shutdown()
                 }
 
                 getString(R.string.action_shutdown_trip_service) -> shutdown()
