@@ -1122,7 +1122,11 @@ class TripInProgressService @Inject constructor() :
                 getString(R.string.action_start_trip_service) -> {
                     when (val tripId = it.getLongExtra("tripId", -1)) {
                         -1L -> lifecycleScope.launch { start() }
-                        in removingTrips -> Log.w(logTag, "Ignoring resume for trip $tripId being removed")
+                        in removingTrips -> Log.w(
+                            logTag,
+                            "Ignoring resume for trip $tripId being removed"
+                        )
+
                         else -> restart(tripId)
                     }
                     lifecycleScope.launch {
@@ -1145,13 +1149,13 @@ class TripInProgressService @Inject constructor() :
                 }
 
                 getString(R.string.action_remove_trip_service) -> {
-                    val tripId = it.getLongExtra("tripId", -1)
-                    // Mark before end()/removeTrip so a racing resume is ignored.
-                    removingTrips.add(tripId)
-                    lifecycleScope.launch {
-                        end(tripId)
-                        tripsRepository.removeTrip(tripId)
-                        shutdown()
+                    it.getLongExtra("tripId", -1).takeIf { tripId -> tripId >= 0 }?.let { tripId ->
+                        removingTrips.add(tripId)
+                        lifecycleScope.launch {
+                            end(tripId)
+                            tripsRepository.removeTrip(tripId)
+                            shutdown()
+                        }
                     }
                 }
 
