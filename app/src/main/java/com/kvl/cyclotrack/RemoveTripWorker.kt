@@ -23,7 +23,7 @@ class RemoveTripWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         inputData.getLongArray("tripIds")?.takeIf { it.isNotEmpty() }?.forEach { tripId ->
             Log.i(logTag, "Removing data from dB for trip $tripId")
-            tripsRepository.get(tripId).let { trip ->
+            tripsRepository.getOrNull(tripId)?.let { trip ->
                 trip.takeIf { trip.inProgress }?.let { tripInProgress ->
                     applicationContext.startService(
                         Intent(
