@@ -73,7 +73,8 @@ class TripInProgressViewModel @Inject constructor(
     private val clockTick = Timer()
     private val _currentProgress = MutableLiveData<TripProgress>()
     private val _currentTime = MutableLiveData<Double>()
-    private val currentTimeStateObserver: Observer<TimeState> = Observer { timeState ->
+    private val currentTimeStateObserver: Observer<TimeState?> = Observer { timeState ->
+        timeState ?: return@Observer
         Log.d(logTag, "onChanged current time state observer: ${timeState.state}")
         currentState = timeState.state
     }
