@@ -13,6 +13,14 @@ import com.kvl.cyclotrack.widgets.Entry
 
 private const val logTag = "TripDetailsUtilities"
 
+// A chart can't render tens of thousands of vertices, and holding an Entry per raw sample
+// across multiple lists OOMs long rides on low-heap devices. Feed every sample through the
+// smoothing math but only plot every Nth point (plus the last).
+fun chartEmitter(size: Int, target: Int = 1500): (Int) -> Boolean {
+    val stride = maxOf(1, size / target)
+    return { index -> index % stride == 0 || index == size - 1 }
+}
+
 fun useBleSpeedData(
     speedMeasurements: Array<CadenceSpeedMeasurement>,
     locationMeasurements: Array<Measurements>
@@ -97,10 +105,10 @@ val getSpeedDataFromSensor: (
             var loLast: Float? = null
             var trendAlpha = 0.5f
             var lastMeasurement: CadenceSpeedMeasurement? = null
-            val stride = maxOf(1, measurementsList.size / 1500)
+            val shouldEmit = chartEmitter(measurementsList.size)
 
             measurementsList.forEachIndexed { index, measurements ->
-                val emit = index % stride == 0 || index == measurementsList.lastIndex
+                val emit = shouldEmit(index)
                 lastMeasurement
                     ?.let { last ->
                         if (validateSpeed(measurements, last)) {
@@ -173,10 +181,7 @@ val getSpeedDataFromGps: (
         var hiLast: Float? = null
         var loLast: Float? = null
 
-        // A chart can't render 20k vertices, and holding an Entry per raw sample across four
-        // lists OOMs long rides on low-heap devices. Advance the trend/hi/lo EMAs on every
-        // sample (math unchanged) but only plot every Nth point (plus the last).
-        val stride = maxOf(1, measurements.size / 1500)
+        val shouldEmit = chartEmitter(measurements.size)
 
         measurements.forEachIndexed { index, measurement ->
             val speed = getUserSpeed(
@@ -185,7 +190,7 @@ val getSpeedDataFromGps: (
             )
             val timestamp =
                 (accumulatedTime + (measurement.time - intervalStart) / 1e3).toFloat()
-            val emit = index % stride == 0 || index == measurements.lastIndex
+            val emit = shouldEmit(index)
             if (emit) entries.add(Entry(timestamp, speed))
             getTrendData(
                 speed,

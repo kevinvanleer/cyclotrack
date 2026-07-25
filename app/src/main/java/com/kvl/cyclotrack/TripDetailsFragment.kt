@@ -56,6 +56,7 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.data.CadenceSpeedMeasurement
 import com.kvl.cyclotrack.data.CyclingPowerMeasurement
 import com.kvl.cyclotrack.data.HeartRateMeasurement
+import com.kvl.cyclotrack.util.chartEmitter
 import com.kvl.cyclotrack.util.configureGoogleFit
 import com.kvl.cyclotrack.util.getCaloriesBurnedLabel
 import com.kvl.cyclotrack.util.getDatasets
@@ -596,7 +597,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     var lastMeasurements: Measurements? = null
                     var smoothed: Double = measurements[0].altitude
                     var smoothedLast = smoothed
-                    val stride = maxOf(1, measurements.size / 1500)
+                    val shouldEmit = chartEmitter(measurements.size)
                     measurements.forEachIndexed { index, it ->
                         smoothed =
                             exponentialSmoothing(
@@ -611,7 +612,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                         lastMeasurements = it
 
-                        if (index % stride == 0 || index == measurements.lastIndex) {
+                        if (shouldEmit(index)) {
                             entries.add(
                                 Entry(
                                     totalDistance,
@@ -1676,9 +1677,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 var loLast: Float? = null
 
                 val accumulatedTime = accumulateTime(intervals)
-                val stride = maxOf(1, measurementsList.size / 1500)
+                val shouldEmit = chartEmitter(measurementsList.size)
                 measurementsList.forEachIndexed { index, measurements ->
-                    val emit = index % stride == 0 || index == measurementsList.lastIndex
+                    val emit = shouldEmit(index)
                     try {
                         measurements.instantaneousPower.toFloat()
                             .let { watts ->
@@ -1823,9 +1824,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val accumulatedTime = accumulateTime(intervals)
                 var lastMeasurements: CadenceSpeedMeasurement? = null
-                val stride = maxOf(1, measurementsList.size / 1500)
+                val shouldEmit = chartEmitter(measurementsList.size)
                 measurementsList.forEachIndexed { index, measurements ->
-                    val emit = index % stride == 0 || index == measurementsList.lastIndex
+                    val emit = shouldEmit(index)
                     lastMeasurements
                         ?.let { last ->
                             if (validateCadence(measurements, last)) {
@@ -1973,9 +1974,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val accumulatedTime = accumulateTime(intervals)
 
-                val stride = maxOf(1, measurements.size / 1500)
+                val shouldEmit = chartEmitter(measurements.size)
                 measurements.forEachIndexed { index, it ->
-                    if (index % stride == 0 || index == measurements.lastIndex) {
+                    if (shouldEmit(index)) {
                         val timestamp =
                             (accumulatedTime + (it.timestamp - intervalStart) / 1e3).toFloat()
                         entries.add(Pair(timestamp, it.heartRate.toFloat()))
