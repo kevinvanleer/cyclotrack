@@ -967,7 +967,7 @@ class TripInProgressService @Inject constructor() :
         Log.d(logTag, "Restart trip service for ID ${tripId}; this=$this")
 
         lifecycleScope.launch(Dispatchers.IO) {
-            tripsRepository.get(tripId).let {
+            tripsRepository.getOrNull(tripId)?.let {
                 EventBus.getDefault().post(
                     TripProgressEvent(
                         TripProgress(

@@ -127,6 +127,9 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE id = :tripId")
     suspend fun load(tripId: Long): Trip
 
+    @Query("SELECT * FROM trip WHERE id = :tripId")
+    suspend fun loadOrNull(tripId: Long): Trip?
+
     @Query("SELECT * from trip ORDER BY id DESC")
     fun subscribeAll(): LiveData<Array<Trip>>
 
@@ -160,7 +163,7 @@ interface TripDao {
     @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
     fun observeNewestTrip(): LiveData<Trip>
 
-    @Query("SELECT * from trip WHERE distance < 1 OR duration < 60")
+    @Query("SELECT * from trip WHERE (distance < 1 OR duration < 60) AND inProgress = 0")
     suspend fun getCleanupTrips(): Array<Trip>
 
     @Query("SELECT id,userSex,userWeight,userHeight,userAge,userVo2max,userRestingHeartRate,userMaxHeartRate from trip where timestamp = (SELECT min(timestamp) from trip where userWeight is not null and id >= :tripId)")
