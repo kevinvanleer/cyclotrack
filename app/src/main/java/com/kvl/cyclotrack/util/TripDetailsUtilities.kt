@@ -97,8 +97,10 @@ val getSpeedDataFromSensor: (
             var loLast: Float? = null
             var trendAlpha = 0.5f
             var lastMeasurement: CadenceSpeedMeasurement? = null
+            val stride = maxOf(1, measurementsList.size / 1500)
 
-            measurementsList.forEach { measurements ->
+            measurementsList.forEachIndexed { index, measurements ->
+                val emit = index % stride == 0 || index == measurementsList.lastIndex
                 lastMeasurement
                     ?.let { last ->
                         if (validateSpeed(measurements, last)) {
@@ -114,7 +116,7 @@ val getSpeedDataFromSensor: (
                                     ?.let { speed ->
                                         val timestamp =
                                             (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
-                                        entries.add(Entry(timestamp, speed))
+                                        if (emit) entries.add(Entry(timestamp, speed))
                                         getTrendData(
                                             speed,
                                             trendAlpha,
@@ -123,14 +125,14 @@ val getSpeedDataFromSensor: (
                                             hiLast,
                                             loLast
                                         ).let { (trendNew, hiNew, loNew) ->
-                                            trend.add(Entry(timestamp, trendNew))
+                                            if (emit) trend.add(Entry(timestamp, trendNew))
                                             trendLast = trendNew
                                             hiNew?.let {
-                                                hi.add(Pair(timestamp, it))
+                                                if (emit) hi.add(Pair(timestamp, it))
                                                 hiLast = it
                                             }
                                             loNew?.let {
-                                                lo.add(Pair(timestamp, it))
+                                                if (emit) lo.add(Pair(timestamp, it))
                                                 loLast = it
                                             }
                                         }
@@ -171,15 +173,20 @@ val getSpeedDataFromGps: (
         var hiLast: Float? = null
         var loLast: Float? = null
 
-        measurements.forEach { measurement ->
-            Log.v(logTag, "GPS speed: ${measurement.speed}")
+        // A chart can't render 20k vertices, and holding an Entry per raw sample across four
+        // lists OOMs long rides on low-heap devices. Advance the trend/hi/lo EMAs on every
+        // sample (math unchanged) but only plot every Nth point (plus the last).
+        val stride = maxOf(1, measurements.size / 1500)
+
+        measurements.forEachIndexed { index, measurement ->
             val speed = getUserSpeed(
                 context,
                 measurement.speed.toDouble()
             )
             val timestamp =
                 (accumulatedTime + (measurement.time - intervalStart) / 1e3).toFloat()
-            entries.add(Entry(timestamp, speed))
+            val emit = index % stride == 0 || index == measurements.lastIndex
+            if (emit) entries.add(Entry(timestamp, speed))
             getTrendData(
                 speed,
                 trendAlpha,
@@ -188,14 +195,14 @@ val getSpeedDataFromGps: (
                 hiLast,
                 loLast
             ).let { (trendNew, hiNew, loNew) ->
-                trend.add(Entry(timestamp, trendNew))
+                if (emit) trend.add(Entry(timestamp, trendNew))
                 trendLast = trendNew
                 hiNew?.let {
-                    hi.add(Pair(timestamp, it))
+                    if (emit) hi.add(Pair(timestamp, it))
                     hiLast = it
                 }
                 loNew?.let {
-                    lo.add(Pair(timestamp, it))
+                    if (emit) lo.add(Pair(timestamp, it))
                     loLast = it
                 }
             }

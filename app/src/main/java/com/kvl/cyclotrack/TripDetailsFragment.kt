@@ -596,7 +596,8 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     var lastMeasurements: Measurements? = null
                     var smoothed: Double = measurements[0].altitude
                     var smoothedLast = smoothed
-                    measurements.forEach {
+                    val stride = maxOf(1, measurements.size / 1500)
+                    measurements.forEachIndexed { index, it ->
                         smoothed =
                             exponentialSmoothing(
                                 elevationAlpha,
@@ -610,15 +611,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                         }
                         lastMeasurements = it
 
-                        entries.add(
-                            Entry(
-                                totalDistance,
-                                getUserAltitude(
-                                    requireContext(),
-                                    smoothed
-                                ).toFloat()
+                        if (index % stride == 0 || index == measurements.lastIndex) {
+                            entries.add(
+                                Entry(
+                                    totalDistance,
+                                    getUserAltitude(
+                                        requireContext(),
+                                        smoothed
+                                    ).toFloat()
+                                )
                             )
-                        )
+                        }
                     }
                     return entries
                 }
@@ -1673,14 +1676,16 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 var loLast: Float? = null
 
                 val accumulatedTime = accumulateTime(intervals)
-                measurementsList.forEach { measurements ->
+                val stride = maxOf(1, measurementsList.size / 1500)
+                measurementsList.forEachIndexed { index, measurements ->
+                    val emit = index % stride == 0 || index == measurementsList.lastIndex
                     try {
                         measurements.instantaneousPower.toFloat()
                             .let { watts ->
                                 val timestamp =
                                     (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
 
-                                entries.add(
+                                if (emit) entries.add(
                                     Pair(
                                         timestamp,
                                         watts
@@ -1694,7 +1699,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     hiLast,
                                     loLast
                                 ).let { (trendNew, hiNew, loNew) ->
-                                    trend.add(
+                                    if (emit) trend.add(
                                         Pair(
                                             timestamp,
                                             trendNew
@@ -1702,7 +1707,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                     )
                                     trendLast = trendNew
                                     hiNew?.let {
-                                        hi.add(
+                                        if (emit) hi.add(
                                             Pair(
                                                 timestamp,
                                                 it
@@ -1711,7 +1716,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                         hiLast = it
                                     }
                                     loNew?.let {
-                                        lo.add(
+                                        if (emit) lo.add(
                                             Pair(
                                                 timestamp,
                                                 it
@@ -1818,7 +1823,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val accumulatedTime = accumulateTime(intervals)
                 var lastMeasurements: CadenceSpeedMeasurement? = null
-                measurementsList.forEach { measurements ->
+                val stride = maxOf(1, measurementsList.size / 1500)
+                measurementsList.forEachIndexed { index, measurements ->
+                    val emit = index % stride == 0 || index == measurementsList.lastIndex
                     lastMeasurements
                         ?.let { last ->
                             if (validateCadence(measurements, last)) {
@@ -1835,7 +1842,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                             val timestamp =
                                                 (accumulatedTime + (measurements.timestamp - intervalStart) / 1e3).toFloat()
 
-                                            entries.add(
+                                            if (emit) entries.add(
                                                 Pair(
                                                     timestamp,
                                                     rpm
@@ -1849,7 +1856,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                                 hiLast,
                                                 loLast
                                             ).let { (trendNew, hiNew, loNew) ->
-                                                trend.add(
+                                                if (emit) trend.add(
                                                     Pair(
                                                         timestamp,
                                                         trendNew
@@ -1857,7 +1864,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                                 )
                                                 trendLast = trendNew
                                                 hiNew?.let {
-                                                    hi.add(
+                                                    if (emit) hi.add(
                                                         Pair(
                                                             timestamp,
                                                             it
@@ -1866,7 +1873,7 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                                                     hiLast = it
                                                 }
                                                 loNew?.let {
-                                                    lo.add(
+                                                    if (emit) lo.add(
                                                         Pair(
                                                             timestamp,
                                                             it
@@ -1966,10 +1973,13 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                 val accumulatedTime = accumulateTime(intervals)
 
-                measurements.forEach {
-                    val timestamp =
-                        (accumulatedTime + (it.timestamp - intervalStart) / 1e3).toFloat()
-                    entries.add(Pair(timestamp, it.heartRate.toFloat()))
+                val stride = maxOf(1, measurements.size / 1500)
+                measurements.forEachIndexed { index, it ->
+                    if (index % stride == 0 || index == measurements.lastIndex) {
+                        val timestamp =
+                            (accumulatedTime + (it.timestamp - intervalStart) / 1e3).toFloat()
+                        entries.add(Pair(timestamp, it.heartRate.toFloat()))
+                    }
                 }
 
                 return entries
