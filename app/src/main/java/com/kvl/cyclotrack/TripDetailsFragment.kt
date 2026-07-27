@@ -39,6 +39,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -1092,7 +1093,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                             // for ActivityCompat#requestPermissions for more details.
                         }
                         WorkManager.getInstance(requireContext())
-                            .enqueue(
+                            .enqueueUniqueWork(
+                                "export-${viewModel.tripId}-xlsx",
+                                ExistingWorkPolicy.KEEP,
                                 OneTimeWorkRequestBuilder<ExportTripWorker>()
                                     .setInputData(
                                         workDataOf(
@@ -1107,7 +1110,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     R.id.details_menu_action_export_fit -> {
                         WorkManager.getInstance(requireContext())
-                            .enqueue(
+                            .enqueueUniqueWork(
+                                "export-${viewModel.tripId}-fit",
+                                ExistingWorkPolicy.KEEP,
                                 OneTimeWorkRequestBuilder<ExportTripWorker>()
                                     .setInputData(
                                         workDataOf(
