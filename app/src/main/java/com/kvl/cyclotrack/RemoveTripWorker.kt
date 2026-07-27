@@ -24,18 +24,23 @@ class RemoveTripWorker @AssistedInject constructor(
         inputData.getLongArray("tripIds")?.takeIf { it.isNotEmpty() }?.forEach { tripId ->
             Log.i(logTag, "Removing data from dB for trip $tripId")
             tripsRepository.getOrNull(tripId)?.let { trip ->
-                trip.takeIf { trip.inProgress }?.let { tripInProgress ->
-                    applicationContext.startService(
-                        Intent(
-                            applicationContext,
-                            TripInProgressService::class.java
-                        ).apply {
-                            this.action =
-                                applicationContext.getString(R.string.action_remove_trip_service)
-                            this.putExtra("tripId", tripInProgress.id)
-                        })
+                when {
+                    trip.inProgress -> {
+                        applicationContext.startService(
+                            Intent(
+                                applicationContext,
+                                TripInProgressService::class.java
+                            ).apply {
+                                this.action =
+                                    applicationContext.getString(R.string.action_remove_trip_service)
+                                this.putExtra("tripId", tripId)
+                            })
+                    }
 
-                } ?: tripsRepository.removeTrip(tripId)
+                    else -> {
+                        tripsRepository.removeTrip(tripId)
+                    }
+                }
             }
         }
         return Result.success()
