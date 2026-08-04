@@ -1,4 +1,3 @@
-import org.ajoberstar.grgit.Grgit
 
 plugins {
     id 'com.android.application'
@@ -59,24 +58,30 @@ android {
         versionName "Thermal protection"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
+        // Use the git CLI (natively worktree-aware) instead of grgit: grgit can't open a
+        // linked worktree, whose ".git" is a gitdir-pointer file rather than a directory.
+        def gitCmd = { String... args ->
+            def proc = (["git"] + (args as List)).execute(null, project.rootDir)
+            proc.waitFor()
+            return proc.in.text.trim()
+        }
         def lastCommitHash = { ->
-            def git = Grgit.open(dir: project.rootDir)
-            def lastHash = git.head().getAbbreviatedId()
+            def lastHash = gitCmd("rev-parse", "--short", "HEAD")
             println("INFO: Last Git Hash $lastHash")
             return lastHash
         }
-        def makeWipCommit = { ->
-            def git = Grgit.open(dir: project.rootDir)
-            if (git.status().unstaged.getAllChanges().size() > 0 || git.status().staged.getAllChanges().size() > 0)
-                if (noWipBranches.contains(git.branch.current().name)) {
-                    throw StopExecutionException("You are on a protected branch, either commit the changes or checkout a feature/bug branch")
-                } else git.commit(all: true, message: "wip")
-        }
         def currentBranch = { ->
-            def git = Grgit.open(dir: project.rootDir)
-            return git.branch.current()
+            return gitCmd("rev-parse", "--abbrev-ref", "HEAD")
         }
-        if (!noWipBranches.contains(currentBranch().name)) {
+        def makeWipCommit = { ->
+            if (!gitCmd("status", "--porcelain").isEmpty()) {
+                if (noWipBranches.contains(currentBranch())) {
+                    throw new StopExecutionException("You are on a protected branch, either commit the changes or checkout a feature/bug branch")
+                }
+                gitCmd("commit", "-a", "-m", "wip")
+            }
+        }
+        if (!noWipBranches.contains(currentBranch())) {
             //makeWipCommit()
         }
         def gitHash = lastCommitHash()
