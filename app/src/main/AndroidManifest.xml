@@ -60,9 +60,6 @@
             android:name="google_analytics_default_allow_ad_personalization_signals"
             android:value="false" />
         <meta-data
-            android:name="preloaded_fonts"
-            android:resource="@array/preloaded_fonts" />
-        <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/maps_api_key" />
 
