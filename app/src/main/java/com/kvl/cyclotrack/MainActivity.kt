@@ -32,6 +32,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
@@ -185,52 +186,65 @@ class MainActivity : AppCompatActivity() {
 
         Log.d(logTag, "MainActivity onResume")
         lifecycleScope.launch {
-            val workManager = WorkManager.getInstance(this@MainActivity)
-            // REPLACE resets accumulated backoff and applies constraint changes to the
-            // work spec, but must not cancel an actively running drain
-            val running = workManager
-                .getWorkInfosForUniqueWorkFlow(OnboardSensorsMigrationWorker.WORK_NAME)
-                .first().any { it.state == WorkInfo.State.RUNNING }
-            workManager.beginUniqueWork(
-                OnboardSensorsMigrationWorker.WORK_NAME,
-                if (running) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<OnboardSensorsMigrationWorker>()
-                    .setConstraints(
-                        Constraints.Builder().setRequiresCharging(true).build()
-                    )
-                    .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
-                    .build()
-            ).enqueue()
+            // runCatching: WorkManager init can die on device-side framework faults
+            // (NoSuchMethodError JobScheduler.forNamespace); a broken scheduler must
+            // not take down the activity
+            runCatching {
+                val workManager = WorkManager.getInstance(this@MainActivity)
+                // REPLACE resets accumulated backoff and applies constraint changes to the
+                // work spec, but must not cancel an actively running drain
+                val running = workManager
+                    .getWorkInfosForUniqueWorkFlow(OnboardSensorsMigrationWorker.WORK_NAME)
+                    .first().any { it.state == WorkInfo.State.RUNNING }
+                workManager.beginUniqueWork(
+                    OnboardSensorsMigrationWorker.WORK_NAME,
+                    if (running) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
+                    OneTimeWorkRequestBuilder<OnboardSensorsMigrationWorker>()
+                        .setConstraints(
+                            Constraints.Builder().setRequiresCharging(true).build()
+                        )
+                        .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
+                        .build()
+                ).enqueue()
+            }.onFailure {
+                Log.e(logTag, "Failed to enqueue migration work", it)
+                FirebaseCrashlytics.getInstance().recordException(it)
+            }
         }
-        if (hasFitnessPermissions(this)) {
-            WorkManager.getInstance(this).beginUniqueWork(
-                "GoogleFitSyncTripsWorker",
-                ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build()
-            ).enqueue()
-        }
-        if (shouldSyncGoogleFitBiometrics(this) &&
-            hasFitnessPermissions(this)
-        ) {
-            WorkManager.getInstance(this).beginUniqueWork(
-                "GoogleFitSyncBiometricsWorker",
-                ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build()
-            ).enqueue()
-        }
-        if (isStravaSynced(this)) {
-            WorkManager.getInstance(this).beginUniqueWork(
-                "StravaSyncTripsWorker",
-                // REPLACE cancels only cooperatively: the outgoing worker's full-trip
-                // Room loads keep running while the replacement starts its own,
-                // stacking multiple trips' data in the heap (OOM cluster on 256MB
-                // devices). APPEND_OR_REPLACE serializes behind live work but still
-                // replaces failed/cancelled chains.
-                ExistingWorkPolicy.APPEND_OR_REPLACE,
-                OneTimeWorkRequestBuilder<StravaSyncTripsWorker>()
-                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
-                    .build()
-            ).enqueue()
+        runCatching {
+            if (hasFitnessPermissions(this)) {
+                WorkManager.getInstance(this).beginUniqueWork(
+                    "GoogleFitSyncTripsWorker",
+                    ExistingWorkPolicy.REPLACE,
+                    OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build()
+                ).enqueue()
+            }
+            if (shouldSyncGoogleFitBiometrics(this) &&
+                hasFitnessPermissions(this)
+            ) {
+                WorkManager.getInstance(this).beginUniqueWork(
+                    "GoogleFitSyncBiometricsWorker",
+                    ExistingWorkPolicy.REPLACE,
+                    OneTimeWorkRequestBuilder<GoogleFitSyncBiometricsWorker>().build()
+                ).enqueue()
+            }
+            if (isStravaSynced(this)) {
+                WorkManager.getInstance(this).beginUniqueWork(
+                    "StravaSyncTripsWorker",
+                    // REPLACE cancels only cooperatively: the outgoing worker's full-trip
+                    // Room loads keep running while the replacement starts its own,
+                    // stacking multiple trips' data in the heap (OOM cluster on 256MB
+                    // devices). APPEND_OR_REPLACE serializes behind live work but still
+                    // replaces failed/cancelled chains.
+                    ExistingWorkPolicy.APPEND_OR_REPLACE,
+                    OneTimeWorkRequestBuilder<StravaSyncTripsWorker>()
+                        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
+                        .build()
+                ).enqueue()
+            }
+        }.onFailure {
+            Log.e(logTag, "Failed to enqueue sync work", it)
+            FirebaseCrashlytics.getInstance().recordException(it)
         }
 
         lifecycleScope.launch {
