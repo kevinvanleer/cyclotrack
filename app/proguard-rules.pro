@@ -20,6 +20,10 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+# ThermalListener implements an API-29 interface; keep it so R8 never merges it
+# into a class loaded on pre-Q devices (ClassNotFoundException on Android 9).
+-keep,allowobfuscation class com.kvl.cyclotrack.BatterySource$ThermalListener
+
 #For EventBus
 #https://stackoverflow.com/a/39387526/700204
 -keepattributes *Annotation*

@@ -7,6 +7,7 @@ import android.content.IntentFilter
 import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
+import androidx.annotation.RequiresApi
 import com.kvl.cyclotrack.events.BatteryEvent
 import com.kvl.cyclotrack.util.SystemUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,11 +42,21 @@ class BatterySource @Inject constructor(@param:ApplicationContext private val co
         }
     }
 
-    private val thermalListener = PowerManager.OnThermalStatusChangedListener { status ->
-        if (status != lastStatus) {
-            lastStatus = status
-            EventBus.getDefault()
-                .post(BatteryEvent.ThermalStatus(status, SystemUtils.currentTimeMillis()))
+    private var thermalListener: PowerManager.OnThermalStatusChangedListener? = null
+
+    // The class implementing OnThermalStatusChangedListener (API 29) must never be
+    // loaded on pre-Q devices: R8 merged the old SAM lambda's synthetic class into an
+    // eagerly-loaded class, crashing Android 9 with ClassNotFoundException at
+    // TripInProgressService instantiation. Named class (kept from merging in
+    // proguard-rules.pro) instantiated only behind the SDK_INT guard.
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private inner class ThermalListener : PowerManager.OnThermalStatusChangedListener {
+        override fun onThermalStatusChanged(status: Int) {
+            if (status != lastStatus) {
+                lastStatus = status
+                EventBus.getDefault()
+                    .post(BatteryEvent.ThermalStatus(status, SystemUtils.currentTimeMillis()))
+            }
         }
     }
 
@@ -55,7 +66,7 @@ class BatterySource @Inject constructor(@param:ApplicationContext private val co
         context.registerReceiver(batteryReceiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
-                .addThermalStatusListener(thermalListener)
+                .addThermalStatusListener(ThermalListener().also { thermalListener = it })
         }
     }
 
@@ -64,8 +75,11 @@ class BatterySource @Inject constructor(@param:ApplicationContext private val co
         started = false
         context.unregisterReceiver(batteryReceiver)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
-                .removeThermalStatusListener(thermalListener)
+            thermalListener?.let {
+                (context.getSystemService(Context.POWER_SERVICE) as PowerManager)
+                    .removeThermalStatusListener(it)
+            }
+            thermalListener = null
         }
         lastTemp = null; lastLevel = null; lastStatus = null
         EventBus.getDefault().removeStickyEvent(BatteryEvent.Level::class.java)
