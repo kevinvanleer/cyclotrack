@@ -29,7 +29,9 @@ import com.kvl.cyclotrack.events.ConnectedBikeEvent
 import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.getIntValue
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import javax.inject.Inject
 
@@ -679,7 +681,7 @@ class BleService @Inject constructor(
         }
     }
 
-    private fun connectToSensor(
+    private suspend fun connectToSensor(
         bluetoothAdapter: BluetoothAdapter,
         sensorAddress: String
     ) {
@@ -693,14 +695,21 @@ class BleService @Inject constructor(
                 bluetoothAdapter.bluetoothLeScanner?.let { bluetoothLeScanner ->
                     val callback = scanForDevice(device.address)
                     scanCallbacks.add(callback)
-                    // Filter to the target MAC so the OS only wakes the callback for this
-                    // device, not every BLE advertiser in range.
-                    bluetoothLeScanner.startScan(
-                        listOf(ScanFilter.Builder().setDeviceAddress(device.address).build()),
-                        ScanSettings.Builder()
-                            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),
-                        callback
-                    )
+                    // startScan blocks in BleScanCallbackWrapper.startRegistration
+                    // (Object.wait on a binder round-trip, 2s per scanner when the BT
+                    // stack is slow) — keep it off the main thread; it ANRed there.
+                    withContext(Dispatchers.IO) {
+                        // Filter to the target MAC so the OS only wakes the callback for
+                        // this device, not every BLE advertiser in range.
+                        bluetoothLeScanner.startScan(
+                            listOf(
+                                ScanFilter.Builder().setDeviceAddress(device.address).build()
+                            ),
+                            ScanSettings.Builder()
+                                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build(),
+                            callback
+                        )
+                    }
                 } ?: Log.w(logTag, "BLE scanner not available")
             } else {
                 Log.i(
@@ -767,10 +776,12 @@ class BleService @Inject constructor(
 
     fun restore() {
         Log.d(logTag, "called restore")
-        gatts.filter { shouldConnect(it) }.forEach { gatt ->
-            bluetoothManager.adapter?.let { bluetoothAdapter ->
-                FirebaseAnalytics.getInstance(context).logEvent("RestoreSensor") {}
-                connectToSensor(bluetoothAdapter, gatt.device.address)
+        lifecycle.coroutineScope.launch {
+            gatts.filter { shouldConnect(it) }.forEach { gatt ->
+                bluetoothManager.adapter?.let { bluetoothAdapter ->
+                    FirebaseAnalytics.getInstance(context).logEvent("RestoreSensor") {}
+                    connectToSensor(bluetoothAdapter, gatt.device.address)
+                }
             }
         }
     }
