@@ -12,6 +12,8 @@
     <string name="time_ago_placeholder">XX days ago</string>
     <string name="cyclotrack_summary_map_id">c2e079ebb492f6ef</string>
     <string name="start_label">START</string>
+    <string name="new_rides_disabled_title">New rides disabled</string>
+    <string name="new_rides_disabled_message">Please access Cyclotrack app settings and grant permission to Location data. You will not be able to start a ride until location permission is granted.\n\nCyclotrack needs access to GPS location data and background location data to calculate speed and distance traveled during your rides. Data is only recorded while rides are in progress. Data collected is stored on your device for your personal use. Your data is not sent to any third parties, including the developer (unless you enable the Google Fit integration).</string>
     <string name="pause_label">PAUSE</string>
     <string name="stop_label">STOP</string>
     <string name="resume_label">RESUME</string>

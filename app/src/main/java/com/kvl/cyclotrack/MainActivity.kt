@@ -347,8 +347,8 @@ class MainActivity : AppCompatActivity() {
                 ) { _, _ ->
                     Log.d("ALERT DIALOG", "CLICKED")
                 }
-                setTitle("New rides disabled")
-                setMessage("Please access Cyclotrack app settings and grant permission to Location data. You will not be able to start a ride until location permission is granted.\n\nCyclotrack needs access to GPS location data and background location data to calculate speed and distance traveled during your rides. Data is only recorded while rides are in progress. Data collected is stored on your device for your personal use. Your data is not sent to any third parties, including the developer (unless you enable the Google Fit integration).")
+                setTitle(getString(R.string.new_rides_disabled_title))
+                setMessage(getString(R.string.new_rides_disabled_message))
             }.create()
         }
 

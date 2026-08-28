@@ -1,11 +1,13 @@
 package com.kvl.cyclotrack
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.IntentSender
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Paint
@@ -33,7 +35,9 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -453,13 +457,42 @@ class TripInProgressFragment :
     }
 
 
-    private val startTripListener: OnClickListener = OnClickListener {
+    private val requestLocationPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) beginTripStart() else showLocationRequiredDialog()
+    }
+
+    private fun showLocationRequiredDialog() {
+        AlertDialog.Builder(requireContext()).apply {
+            setPositiveButton("OK") { _, _ -> }
+            setTitle(getString(R.string.new_rides_disabled_title))
+            setMessage(getString(R.string.new_rides_disabled_message))
+        }.create().show()
+    }
+
+    private fun hasLocationPermission() = ContextCompat.checkSelfPermission(
+        requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    private fun beginTripStart() {
         if (!gpsEnabled) {
             turnOnGps()
         } else {
             startTrip()
             hidePause()
             pauseButton.text = getString(R.string.pause_label)
+        }
+    }
+
+    // Starting the foreground service without the runtime location permission
+    // throws SecurityException in startForegroundCompat and the ride silently
+    // never starts — request the permission instead
+    private val startTripListener: OnClickListener = OnClickListener {
+        if (!hasLocationPermission()) {
+            requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        } else {
+            beginTripStart()
         }
     }
 
