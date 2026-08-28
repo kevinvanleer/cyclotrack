@@ -374,7 +374,13 @@ fun accumulateRevolutions(measurements: Array<CadenceSpeedMeasurement>): Long {
         lastMeasurement
             ?.let { last ->
                 if (validateSpeed(measurement, last)) {
-                    totalRevolutions += measurement.revolutions - last.revolutions
+                    val delta = measurement.revolutions - last.revolutions
+                    when {
+                        delta >= 0 -> totalRevolutions += delta
+                        last.revolutions >= 65525 -> totalRevolutions += delta + 65536
+                        // else: counter reset masked by a lastEvent rollover
+                        // (e.g. reset during a pause) — skip the pair
+                    }
                 }
             }
         lastMeasurement = measurement
