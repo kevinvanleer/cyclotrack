@@ -457,10 +457,25 @@ class TripInProgressFragment :
     }
 
 
+    private var onLocationPermissionGranted: (() -> Unit)? = null
+
     private val requestLocationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) beginTripStart() else showLocationRequiredDialog()
+        if (granted) onLocationPermissionGranted?.invoke() else showLocationRequiredDialog()
+        onLocationPermissionGranted = null
+    }
+
+    // Starting or resuming the foreground service without the runtime location
+    // permission throws SecurityException in startForegroundCompat and the ride
+    // silently never starts — request the permission instead
+    private fun withLocationPermission(action: () -> Unit) {
+        if (hasLocationPermission()) {
+            action()
+        } else {
+            onLocationPermissionGranted = action
+            requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
     }
 
     private fun showLocationRequiredDialog() {
@@ -485,15 +500,8 @@ class TripInProgressFragment :
         }
     }
 
-    // Starting the foreground service without the runtime location permission
-    // throws SecurityException in startForegroundCompat and the ride silently
-    // never starts — request the permission instead
     private val startTripListener: OnClickListener = OnClickListener {
-        if (!hasLocationPermission()) {
-            requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        } else {
-            beginTripStart()
-        }
+        withLocationPermission { beginTripStart() }
     }
 
     private fun pauseTripListener(tripId: Long): OnClickListener = OnClickListener {
@@ -1159,14 +1167,18 @@ class TripInProgressFragment :
                     initializeAfterTripCreated(tripId)
                     viewModel.resumeTrip(tripId, viewLifecycleOwner)
                     if (!TripInProgressService.running) {
-                        requireActivity().startService(
-                            Intent(
-                                requireContext(),
-                                TripInProgressService::class.java
-                            ).apply {
-                                this.action = getString(R.string.action_start_trip_service)
-                                this.putExtra("tripId", tripId)
-                            })
+                        // the crashed-session resume: card tap / notification lands here
+                        // and auto-starts the service, so it needs the same gate as START
+                        withLocationPermission {
+                            requireActivity().startService(
+                                Intent(
+                                    requireContext(),
+                                    TripInProgressService::class.java
+                                ).apply {
+                                    this.action = getString(R.string.action_start_trip_service)
+                                    this.putExtra("tripId", tripId)
+                                })
+                        }
                     }
 
                     viewLifecycleOwner.lifecycleScope.launch {
