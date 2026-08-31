@@ -123,6 +123,8 @@ class TripInProgressService @Inject constructor() :
         var running = false
             private set
 
+        // ponytail: fixed 1 s vibration-averaging EMA; make configurable if a device needs tuning
+        private const val GRADE_ACCEL_TAU_SECONDS = 1.0
     }
 
     var bike: Bike? = null
@@ -798,21 +800,45 @@ class TripInProgressService @Inject constructor() :
 
     private fun initGradeEstimator() {
         // Seed from this bike's last locked offset so grade is correct from the first sample.
+        // The bike record may not be loaded yet (fresh process; start() loads it on IO), so seed
+        // NaN now and fill the offset in when the record arrives — before the fix the whole trip
+        // ran un-offset and the display sat at the raw mount tilt until a lock.
         gradeState = GradeEstimator.seed((bike?.autoSlopeOffset ?: Float.NaN).toDouble())
         savedGradeOffset = null
+        if (bike == null) lifecycleScope.launch(Dispatchers.IO) {
+            val seed = (bikesRepository.getDefaultBike()?.also { bike = bike ?: it }
+                ?.autoSlopeOffset ?: Float.NaN).toDouble()
+            withContext(Dispatchers.Main) {
+                if (!gradeState.locked && gradeState.offset.isNaN() && !seed.isNaN())
+                    gradeState = gradeState.copy(offset = seed)
+            }
+        }
     }
+
+    // Grade rides on the raw accelerometer, not TYPE_GRAVITY: software gravity fusions drift
+    // several % under riding dynamics on some devices (Pixel 11 Pro: fine at rest, median +6.7%
+    // / p90 +19% tilt error while moving vs the accelerometer; ride 859 analysis 2026-08-31).
+    // A per-component EMA averages vibration out of the raw signal; ratio-of-means, never
+    // mean-of-ratios — z crosses spikes make per-sample y/z explode.
+    private var accelEma: FloatArray? = null
+    private var lastAccelTimeMs = 0L
 
     // MAIN thread mode: gradeState is also mutated by the GPS handler on the main
     // thread, so grade updates stay single-threaded
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onGravityGrade(event: PhysicsSensorEvent.Gravity) {
-        gradeState = GradeEstimator.onGravity(
-            gradeState,
-            floatArrayOf(event.x, event.y, event.z),
-            timestampMs = event.timestamp,
-        )
+    fun onAccelerometerGrade(event: PhysicsSensorEvent.Accelerometer) {
+        val ema = accelEma?.also {
+            val dt = if (lastAccelTimeMs in 1 until event.timestamp)
+                (event.timestamp - lastAccelTimeMs) / 1000.0 else 0.02
+            val alpha = (dt / (GRADE_ACCEL_TAU_SECONDS + dt)).toFloat()
+            it[0] += alpha * (event.x - it[0])
+            it[1] += alpha * (event.y - it[1])
+            it[2] += alpha * (event.z - it[2])
+        } ?: floatArrayOf(event.x, event.y, event.z).also { accelEma = it }
+        lastAccelTimeMs = event.timestamp
+        gradeState = GradeEstimator.onGravity(gradeState, ema, timestampMs = event.timestamp)
         val s = GradeEstimator.slope(gradeState)
-        if (FeatureFlags.devBuild) Log.v(logTag, "grade gY=${event.y} gZ=${event.z} slope=$s")
+        if (FeatureFlags.devBuild) Log.v(logTag, "grade aY=${ema[1]} aZ=${ema[2]} slope=$s")
         EventBus.getDefault().post(SlopeEvent(s))
     }
 
