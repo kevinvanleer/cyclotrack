@@ -7,13 +7,39 @@
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_main"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar_main"
+            app:layout_scrollFlags="scroll|enterAlways"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize" />
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/trip_summary_search_text_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="6dp"
+            android:layout_marginBottom="12dp"
+            android:hint="Search"
+            android:visibility="gone"
+            app:endIconMode="clear_text"
+            app:endIconScaleType="centerInside"
+            app:layout_scrollFlags="scroll|enterAlways">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/trip_summary_search_text_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawableStart="?android:attr/actionModeWebSearchDrawable"
+                android:imeOptions="actionSearch"
+                android:maxLines="1"
+                android:inputType="text"
+                android:selectAllOnFocus="true" />
+        </com.google.android.material.textfield.TextInputLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -29,6 +55,7 @@
         app:fabCradleVerticalOffset="40dp"
         android:background="@android:color/transparent"
         app:fabAlignmentMode="end"
+        app:paddingBottomSystemWindowInsets="false"
         android:layout_gravity="bottom">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -49,6 +76,14 @@
         android:contentDescription="@string/start_dashboard_button_description"
         app:srcCompat="@drawable/ic_baseline_directions_bike_24"
         app:layout_anchor="@id/main_activity_bottomAppBar" />
+
+    <View
+        android:id="@+id/status_bar_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_gravity="top"
+        android:background="@color/statusBarScrim"
+        android:elevation="8dp" />
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

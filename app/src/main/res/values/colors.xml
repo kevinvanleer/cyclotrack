@@ -3,6 +3,7 @@
     <color name="accentColor">#007700</color>
     <color name="secondaryGraphColor">#003300</color>
     <color name="backgroundColor">#000</color>
+    <color name="statusBarScrim">#99000000</color>
 
     <color name="primaryColor">#00c853</color>
     <color name="primaryLightColor">#5efc82</color>

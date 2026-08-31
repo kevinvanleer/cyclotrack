@@ -90,8 +90,10 @@ class TripSummariesAdapter(
         }
 
         holder.tripSummaryView.setOnLongClickListener { view ->
+            // The app bar expands under the still-pressed finger; keep the list from
+            // reading that motion as a drag for the rest of this touch.
+            view.parent.requestDisallowInterceptTouchEvent(true)
             multiSelectMode = true
-            multiSelectModeCallback(true)
             selectedTrips.add(tripId)
             view.isSelected = true
             true

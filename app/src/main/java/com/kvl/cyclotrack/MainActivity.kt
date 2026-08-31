@@ -13,6 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
@@ -27,6 +31,7 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
 import com.google.android.gms.common.GooglePlayServicesRepairableException
 import com.google.android.gms.security.ProviderInstaller
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.play.core.review.ReviewManagerFactory
@@ -318,11 +323,21 @@ class MainActivity : AppCompatActivity() {
             else -> setContentView(R.layout.activity_main)
         }
         setSupportActionBar(findViewById(R.id.toolbar_main))
+        val statusBarScrim = findViewById<View>(R.id.status_bar_scrim)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.toolbar_main)) { toolbar, insets ->
+            val top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            toolbar.updatePadding(top = top)
+            statusBarScrim.updateLayoutParams { height = top }
+            insets
+        }
         googleFitApiService = GoogleFitApiService(this)
 
         findViewById<BottomNavigationView>(R.id.main_activity_bottom_menu).setupWithNavController(
             findNavController(R.id.nav_host_fragment)
         )
+        findNavController(R.id.nav_host_fragment).addOnDestinationChangedListener { _, _, _ ->
+            findViewById<AppBarLayout>(R.id.app_bar_main).setExpanded(true, false)
+        }
 
         PreferenceManager.getDefaultSharedPreferences(this)
             .getBoolean(getString(R.string.preference_key_analytics_opt_in_presented), false).let {

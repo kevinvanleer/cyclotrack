@@ -4,6 +4,7 @@ import android.content.Context.INPUT_METHOD_SERVICE
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
@@ -18,6 +19,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.cardview.widget.CardView
 import androidx.core.view.MenuProvider
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.navGraphViewModels
@@ -26,6 +29,8 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.kvl.cyclotrack.databinding.FragmentTripSummariesBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,6 +47,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
     private lateinit var tripListView: RecyclerView
     private lateinit var searchTextLayout: TextInputLayout
+    private lateinit var searchTextInput: TextInputEditText
+    private var searchTextWatcher: TextWatcher? = null
 
     private lateinit var hintCard: CardView
     private lateinit var hintList: LinearLayout
@@ -71,8 +78,8 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
         textSize = 18.0F
         setPadding(20, 20, 20, 20)
         setOnClickListener { _ ->
-            binding.tripSummarySearchTextInput.setText("")
-            binding.tripSummarySearchTextInput.append(hint)
+            searchTextInput.setText("")
+            searchTextInput.append(hint)
             hintCard.visibility = View.GONE
         }
         width = 0
@@ -89,6 +96,20 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
     }
 
     private val enableMultiSelectControls: (enable: Boolean) -> Unit = { enable ->
+        if (enable) requireActivity().findViewById<AppBarLayout>(R.id.app_bar_main)?.let { appBar ->
+            if (appBar.top < 0) {
+                tripListView.stopNestedScroll()
+                var last = appBar.top
+                appBar.addOnOffsetChangedListener(object : AppBarLayout.OnOffsetChangedListener {
+                    override fun onOffsetChanged(bar: AppBarLayout, offset: Int) {
+                        tripListView.scrollBy(0, offset - last)
+                        last = offset
+                        if (offset >= 0) bar.post { bar.removeOnOffsetChangedListener(this) }
+                    }
+                })
+                appBar.setExpanded(true)
+            }
+        }
         (menu.findItem(R.id.action_clear_multiselect) as MenuItem).isVisible = enable
         (menu.findItem(R.id.action_stitch) as MenuItem).isVisible = enable
         if (FeatureFlags.devBuild) {
@@ -111,36 +132,11 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
         activity?.title = ""
         tripListView = view.findViewById(R.id.trip_summary_card_list)
-        searchTextLayout = binding.tripSummarySearchTextLayout
 
         hintCard = view.findViewById(R.id.trip_summary_search_hints_card)
         hintList = view.findViewById(R.id.trip_summary_search_hints_list)
         hints.forEach { hint ->
             hintList.addView(createHintTextView(hint))
-        }
-
-        binding.tripSummarySearchTextInput.setOnEditorActionListener { v, actionId, _ ->
-            when (actionId) {
-                EditorInfo.IME_ACTION_SEARCH -> {
-                    Log.d(logTag, "Clicked search icon: ${viewModel.searchText}")
-                    hintCard.visibility = View.GONE
-                    viewModel.filterTrips()
-                }
-
-                else -> {
-                    Log.d(logTag, "unhandle action")
-                }
-            }
-            val imm = requireContext().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.hideSoftInputFromWindow(v.windowToken, 0)
-            return@setOnEditorActionListener true
-        }
-
-        binding.tripSummarySearchTextInput.setOnFocusChangeListener { _, b ->
-            when (b) {
-                true -> hintCard.visibility = View.VISIBLE
-                else -> hintCard.visibility = View.GONE
-            }
         }
 
         viewModel.allTrips.observe(viewLifecycleOwner) {
@@ -309,6 +305,49 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
 
             builder.create()
         }
+    }
+
+    // The search bar lives in the activity's app bar; it is not findable from
+    // onViewCreated during activity recreation, so bind it once the activity is started.
+    override fun onStart() {
+        super.onStart()
+        searchTextLayout = requireActivity().findViewById(R.id.trip_summary_search_text_layout)
+        searchTextInput = requireActivity().findViewById(R.id.trip_summary_search_text_input)
+        searchTextLayout.isVisible = true
+        searchTextInput.setText(viewModel.searchText)
+        searchTextWatcher =
+            searchTextInput.doAfterTextChanged { viewModel.searchText = it?.toString() ?: "" }
+
+        searchTextInput.setOnEditorActionListener { v, actionId, _ ->
+            when (actionId) {
+                EditorInfo.IME_ACTION_SEARCH -> {
+                    Log.d(logTag, "Clicked search icon: ${viewModel.searchText}")
+                    hintCard.visibility = View.GONE
+                    viewModel.filterTrips()
+                }
+
+                else -> {
+                    Log.d(logTag, "unhandle action")
+                }
+            }
+            val imm = requireContext().getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(v.windowToken, 0)
+            return@setOnEditorActionListener true
+        }
+
+        searchTextInput.setOnFocusChangeListener { _, b ->
+            when (b) {
+                true -> hintCard.visibility = View.VISIBLE
+                else -> hintCard.visibility = View.GONE
+            }
+        }
+    }
+
+    override fun onStop() {
+        searchTextInput.removeTextChangedListener(searchTextWatcher)
+        searchTextInput.onFocusChangeListener = null
+        searchTextLayout.isVisible = false
+        super.onStop()
     }
 
     override fun onPause() {

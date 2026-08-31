@@ -7,7 +7,7 @@
     android:paddingHorizontal="5dp"
     tools:context=".AnalyticsFragment">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -126,5 +126,5 @@
                 app:contentPadding="10dp" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

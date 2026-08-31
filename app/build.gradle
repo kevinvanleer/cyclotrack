@@ -53,7 +53,7 @@ android {
         applicationId "com.kvl.cyclotrack"
         minSdk = 26
         targetSdk = 36
-        versionCode 76
+        versionCode 77
         versionName "Real-time grade"
 
         def noWipBranches = ["main", "master", "dev", "release/*"]
