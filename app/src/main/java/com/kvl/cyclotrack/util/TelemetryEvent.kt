@@ -11,23 +11,27 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 // queryable/graphable in the GA console). Each subclass groups as its own
 // Crashlytics issue and GA event name; the params carry the data.
 sealed class TelemetryEvent(
+    val eventName: String,
     message: String,
     val params: Map<String, Long> = emptyMap(),
 ) : Exception(message) {
-    class OnboardSensorsMigrationStarted(rides: Int) :
-        TelemetryEvent("rides=$rides", mapOf("rides" to rides.toLong()))
+    class OnboardSensorsMigrationStarted(rides: Int) : TelemetryEvent(
+        "OnboardSensorsMigrationStarted", "rides=$rides", mapOf("rides" to rides.toLong())
+    )
 
-    class OnboardSensorsMigrationFinished(rides: Int) :
-        TelemetryEvent("rides=$rides", mapOf("rides" to rides.toLong()))
+    class OnboardSensorsMigrationFinished(rides: Int) : TelemetryEvent(
+        "OnboardSensorsMigrationFinished", "rides=$rides", mapOf("rides" to rides.toLong())
+    )
 
-    class UpdateInstalled(from: Long, to: Long) :
-        TelemetryEvent("from=$from to=$to", mapOf("from" to from, "to" to to))
+    class UpdateInstalled(from: Long, to: Long) : TelemetryEvent(
+        "UpdateInstalled", "from=$from to=$to", mapOf("from" to from, "to" to to)
+    )
 }
 
 fun emitTelemetry(context: Context, event: TelemetryEvent) {
     FirebaseCrashlytics.getInstance().recordException(event)
     FirebaseAnalytics.getInstance(context.applicationContext)
-        .logEvent(event::class.simpleName ?: "TelemetryEvent") {
+        .logEvent(event.eventName) {
             event.params.forEach { (key, value) -> param(key, value) }
         }
 }

@@ -32,6 +32,10 @@
 }
 -keep enum org.greenrobot.eventbus.ThreadMode { *; }
 
+# Telemetry class names are the Crashlytics issue identity (fleet gates read
+# them from BigQuery); R8 renamed them to g9.y and merged Started/Finished.
+-keep class com.kvl.cyclotrack.util.TelemetryEvent* { *; }
+
 # Please add these rules to your existing keep rules in order to suppress warnings.
 # This is generated automatically by the Android Gradle plugin.
 -dontwarn org.bouncycastle.jsse.BCSSLParameters
