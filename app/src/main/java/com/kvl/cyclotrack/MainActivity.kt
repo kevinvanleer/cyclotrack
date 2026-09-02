@@ -44,6 +44,7 @@ import com.google.android.play.core.review.ReviewManagerFactory
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.hasFitnessPermissions
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
@@ -61,6 +62,12 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var tripsRepository: TripsRepository
+
+    @Inject
+    lateinit var timeStateRepository: TimeStateRepository
+
+    @Inject
+    lateinit var measurementsRepository: MeasurementsRepository
     lateinit var googleFitApiService: GoogleFitApiService
     private var newRidesDisabledDialog: AlertDialog? = null
     private val viewModel: MainActivityViewModel by viewModels()
@@ -374,11 +381,44 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    // A trip idle past this long is abandoned (crash mid-ride, backup restore to a
+    // new phone, forgotten stop): close it at its last recorded activity so stats
+    // stay honest. Even a multi-day tour pauses less than this; past 24h idle
+    // you're starting a new ride.
+    private val staleTripTimeoutMs = TimeUnit.HOURS.toMillis(24)
+
+    private suspend fun closeStaleTrips() {
+        if (TripInProgressService.running) return
+        tripsRepository.getInProgress().forEach { trip ->
+            val tripId = trip.id ?: return@forEach
+            val latestTimeState = timeStateRepository.getLatest(tripId)
+            val lastActivity = maxOf(
+                latestTimeState?.timestamp ?: trip.timestamp,
+                measurementsRepository.getLatest(tripId)?.time ?: 0L
+            )
+            if (SystemUtils.currentTimeMillis() - lastActivity > staleTripTimeoutMs) {
+                Log.i(logTag, "Auto-stopping stale in-progress trip $tripId")
+                if (latestTimeState?.state != TimeStateEnum.STOP) {
+                    timeStateRepository.appendTimeState(
+                        TimeState(
+                            tripId = tripId,
+                            state = TimeStateEnum.STOP,
+                            timestamp = lastActivity,
+                            auto = true,
+                        )
+                    )
+                }
+                tripsRepository.endTrip(tripId)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         super.onCreate(savedInstanceState)
         Log.d(logTag, "onCreate")
         title = ""
+        lifecycleScope.launch(Dispatchers.IO) { closeStaleTrips() }
         when (intent.getStringExtra("destinationView")) {
             TripInProgressFragment.toString() -> {
 

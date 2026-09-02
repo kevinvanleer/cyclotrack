@@ -168,6 +168,9 @@ interface TripDao {
     @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
     suspend fun getNewestTrip(): Trip?
 
+    @Query("SELECT * FROM trip WHERE inProgress = 1")
+    suspend fun loadInProgressTrips(): Array<Trip>
+
     @Query("SELECT * from trip WHERE timestamp = (SELECT max(timestamp) FROM trip)")
     fun observeNewestTrip(): LiveData<Trip>
 
