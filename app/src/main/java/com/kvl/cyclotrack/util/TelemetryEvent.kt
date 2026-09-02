@@ -15,12 +15,10 @@ sealed class TelemetryEvent(
     message: String,
     val params: Map<String, Long> = emptyMap(),
 ) : Exception(message) {
-    class OnboardSensorsMigrationStarted(rides: Int) : TelemetryEvent(
-        "OnboardSensorsMigrationStarted", "rides=$rides", mapOf("rides" to rides.toLong())
-    )
-
-    class OnboardSensorsMigrationFinished(rides: Int) : TelemetryEvent(
-        "OnboardSensorsMigrationFinished", "rides=$rides", mapOf("rides" to rides.toLong())
+    class LegacyOnboardSensorsDropped(rides: Int, rows: Long) : TelemetryEvent(
+        "LegacyOnboardSensorsDropped",
+        "rides=$rides rows=$rows",
+        mapOf("rides" to rides.toLong(), "rows" to rows)
     )
 
     class UpdateInstalled(from: Long, to: Long) : TelemetryEvent(

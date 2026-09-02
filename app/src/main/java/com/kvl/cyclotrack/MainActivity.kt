@@ -4,8 +4,16 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.CheckBox
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -22,10 +30,8 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager
 import androidx.work.BackoffPolicy
-import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException
@@ -44,8 +50,8 @@ import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -186,36 +192,94 @@ class MainActivity : AppCompatActivity() {
             }.create().show()
     }
 
+    // The 33->34 migration drains any remaining legacy sensor rows inline while
+    // the first DB query blocks; surface that as a fullscreen overlay when there
+    // is enough data for the pause to be noticeable. Trivial drains finish
+    // before this collector ever sees a non-null value.
+    private fun showLegacySensorDropProgress() {
+        var overlay: View? = null
+        var bar: ProgressBar? = null
+        var label: TextView? = null
+        val counts = NumberFormat.getIntegerInstance()
+        lifecycleScope.launch {
+            LegacySensorDropStatus.progress.collect { p ->
+                if (p == null) {
+                    overlay?.let {
+                        findViewById<ViewGroup>(android.R.id.content).removeView(it)
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Ride database optimized",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    overlay = null
+                    return@collect
+                }
+                if (p.total < LegacySensorDropStatus.UI_THRESHOLD_ROWS) return@collect
+                if (overlay == null) {
+                    val dp = resources.displayMetrics.density
+                    overlay = LinearLayout(this@MainActivity).apply {
+                        orientation = LinearLayout.VERTICAL
+                        gravity = Gravity.CENTER
+                        val bg = TypedValue()
+                        theme.resolveAttribute(android.R.attr.colorBackground, bg, true)
+                        setBackgroundColor(bg.data)
+                        isClickable = true
+                        elevation = 24 * dp
+                        val pad = (32 * dp).toInt()
+                        setPadding(pad, pad, pad, pad)
+                        addView(TextView(this@MainActivity).apply {
+                            text = "Optimizing ride database"
+                            textSize = 22f
+                        })
+                        label = TextView(this@MainActivity).also {
+                            addView(
+                                it,
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply { topMargin = (16 * dp).toInt() }
+                            )
+                        }
+                        bar = ProgressBar(
+                            this@MainActivity, null, android.R.attr.progressBarStyleHorizontal
+                        ).apply { max = 1000 }.also {
+                            addView(
+                                it,
+                                LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.MATCH_PARENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply { topMargin = (16 * dp).toInt() }
+                            )
+                        }
+                    }
+                    findViewById<ViewGroup>(android.R.id.content).addView(
+                        overlay,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    // keep the user watching: screen-off invites OEM freezers
+                    // and task cleaners to kill the migration
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+                if (p.finalizing) {
+                    bar?.isIndeterminate = true
+                    label?.text = "Finalizing — cleaning up old sensor data…"
+                } else {
+                    bar?.isIndeterminate = false
+                    bar?.progress = (p.migrated * 1000 / p.total).toInt()
+                    label?.text = "Migrating sensor data: " +
+                        "${counts.format(p.migrated)} of ${counts.format(p.total)} records"
+                }
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
 
         Log.d(logTag, "MainActivity onResume")
-        lifecycleScope.launch {
-            // runCatching: WorkManager init can die on device-side framework faults
-            // (NoSuchMethodError JobScheduler.forNamespace); a broken scheduler must
-            // not take down the activity
-            runCatching {
-                val workManager = WorkManager.getInstance(this@MainActivity)
-                // REPLACE resets accumulated backoff and applies constraint changes to the
-                // work spec, but must not cancel an actively running drain
-                val running = workManager
-                    .getWorkInfosForUniqueWorkFlow(OnboardSensorsMigrationWorker.WORK_NAME)
-                    .first().any { it.state == WorkInfo.State.RUNNING }
-                workManager.beginUniqueWork(
-                    OnboardSensorsMigrationWorker.WORK_NAME,
-                    if (running) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
-                    OneTimeWorkRequestBuilder<OnboardSensorsMigrationWorker>()
-                        .setConstraints(
-                            Constraints.Builder().setRequiresCharging(true).build()
-                        )
-                        .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
-                        .build()
-                ).enqueue()
-            }.onFailure {
-                Log.e(logTag, "Failed to enqueue migration work", it)
-                FirebaseCrashlytics.getInstance().recordException(it)
-            }
-        }
         runCatching {
             if (hasFitnessPermissions(this)) {
                 WorkManager.getInstance(this).beginUniqueWork(
@@ -348,6 +412,7 @@ class MainActivity : AppCompatActivity() {
             }
 
         checkUserCurrentVersion()
+        showLegacySensorDropProgress()
 
         if (!PreferenceManager.getDefaultSharedPreferences(this)
                 .contains(getString(R.string.preferences_key_google_fit))

@@ -15,7 +15,10 @@ import com.kvl.cyclotrack.data.CyclingPowerMeasurementDao
 import com.kvl.cyclotrack.data.ExportDao
 import com.kvl.cyclotrack.data.HeartRateMeasurementDao
 import com.kvl.cyclotrack.data.OnboardSensorMeasurementDao
+import com.kvl.cyclotrack.data.OnboardSensorsPivot
 import com.kvl.cyclotrack.data.SensorType
+import com.kvl.cyclotrack.util.TelemetryEvent
+import com.kvl.cyclotrack.util.emitTelemetry
 import com.kvl.cyclotrack.util.getBikeMassOrNull
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.getUserCircumferenceOrNull
@@ -24,6 +27,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Singleton
 
 fun resetFailedGoogleFitSyncs(db: SupportSQLiteDatabase) {
@@ -487,6 +491,108 @@ val MIGRATION_32_33 = object : Migration(32, 33) {
     }
 }
 
+object LegacySensorDropStatus {
+    const val UI_THRESHOLD_ROWS = 50_000L
+
+    data class Progress(
+        val migrated: Long,
+        val total: Long,
+        val finalizing: Boolean = false,
+    )
+
+    // non-null only while the 33->34 drain is running; MainActivity shows a
+    // blocking progress dialog when total crosses UI_THRESHOLD_ROWS
+    val progress = MutableStateFlow<Progress?>(null)
+}
+
+// The drain is the load-bearing path, not a fallback: the background worker it
+// replaces was gated on charging and could be blocked forever by OEM force-stop,
+// so any remaining legacy rows MUST be pivoted here, inside the migration
+// transaction, before the table drops.
+fun migration3334(appContext: Context) = object : Migration(33, 34) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        var rides = 0
+        var migrated = 0L
+        val total = db.query("SELECT COUNT(*) FROM OnboardSensors")
+            .use { it.moveToFirst(); it.getLong(0) }
+        if (total > 0) {
+            LegacySensorDropStatus.progress.value = LegacySensorDropStatus.Progress(0, total)
+            val insert = db.compileStatement(
+                "INSERT INTO OnboardSensorMeasurement (tripId, timestamp, sensorType, v0, v1, v2) VALUES (?, ?, ?, ?, ?, ?)"
+            )
+            val tripIds = ArrayList<Long>().apply {
+                db.query("SELECT DISTINCT tripId FROM OnboardSensors ORDER BY tripId")
+                    .use { while (it.moveToNext()) add(it.getLong(0)) }
+            }
+            rides = tripIds.size
+            tripIds.forEach { tripId ->
+                val pivot = OnboardSensorsPivot()
+                while (true) {
+                    val chunk = loadChunk(db, tripId, pivot.lastId)
+                    if (chunk.isEmpty()) break
+                    pivot.pivot(chunk).forEach { m ->
+                        insert.clearBindings()
+                        insert.bindLong(1, m.tripId)
+                        insert.bindLong(2, m.timestamp)
+                        insert.bindLong(3, m.sensorType.value.toLong())
+                        insert.bindDouble(4, m.v0.toDouble())
+                        m.v1?.let { insert.bindDouble(5, it.toDouble()) } ?: insert.bindNull(5)
+                        m.v2?.let { insert.bindDouble(6, it.toDouble()) } ?: insert.bindNull(6)
+                        insert.executeInsert()
+                    }
+                    migrated += chunk.size
+                    LegacySensorDropStatus.progress.value =
+                        LegacySensorDropStatus.Progress(migrated, total)
+                }
+            }
+        }
+        if (total > 0) {
+            // dropping a multi-GB table takes minutes; a bar parked at 100% reads
+            // as done or hung, and users kill the app over it
+            LegacySensorDropStatus.progress.value =
+                LegacySensorDropStatus.Progress(migrated, total, finalizing = true)
+        }
+        db.execSQL("DROP TABLE `OnboardSensors`")
+        // progress is NOT cleared here: Room still has to commit and validate,
+        // and after a big drain the first queries crawl through a multi-GB WAL.
+        // onOpen checkpoints the WAL and clears the overlay once the DB is
+        // actually ready.
+        emitTelemetry(appContext, TelemetryEvent.LegacyOnboardSensorsDropped(rides, migrated))
+    }
+
+    private fun loadChunk(db: SupportSQLiteDatabase, tripId: Long, afterId: Long) =
+        db.query(
+            "SELECT id, tripId, timestamp, gravityX, gravityY, gravityZ, " +
+                "gyroscopeX, gyroscopeY, gyroscopeZ, pressure, " +
+                "accelerometerX, accelerometerY, accelerometerZ " +
+                "FROM OnboardSensors WHERE tripId = ? AND id > ? ORDER BY id LIMIT 10000",
+            arrayOf(tripId, afterId)
+        ).use { c ->
+            fun floatOrNull(i: Int) = if (c.isNull(i)) null else c.getFloat(i)
+            val out = ArrayList<OnboardSensors>(c.count)
+            while (c.moveToNext()) {
+                out.add(
+                    OnboardSensors(
+                        id = c.getLong(0),
+                        tripId = c.getLong(1),
+                        timestamp = c.getLong(2),
+                        gravityX = floatOrNull(3),
+                        gravityY = floatOrNull(4),
+                        gravityZ = floatOrNull(5),
+                        gyroscopeX = floatOrNull(6),
+                        gyroscopeY = floatOrNull(7),
+                        gyroscopeZ = floatOrNull(8),
+                        pressure = floatOrNull(9),
+                        accelerometerX = floatOrNull(10),
+                        accelerometerY = floatOrNull(11),
+                        accelerometerZ = floatOrNull(12),
+                    )
+                )
+            }
+            out
+        }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -532,11 +638,19 @@ object TripsDatabaseModule {
                 MIGRATION_30_31,
                 MIGRATION_31_32,
                 MIGRATION_32_33,
+                migration3334(appContext),
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {
                     super.onOpen(db)
                     createDefaultBikeTriggers(db)
+                    if (LegacySensorDropStatus.progress.value != null) {
+                        // a 33->34 drain just ran: fold its multi-GB WAL back into
+                        // the main file while the overlay still covers the UI, so
+                        // the first dashboard queries hit a clean DB
+                        db.query("PRAGMA wal_checkpoint(TRUNCATE)").use { it.moveToFirst() }
+                        LegacySensorDropStatus.progress.value = null
+                    }
                 }
 
                 override fun onCreate(db: SupportSQLiteDatabase) {
@@ -573,12 +687,6 @@ object TripsDatabaseModule {
     @Singleton
     fun provideSplitDao(db: TripsDatabase): SplitDao {
         return db.splitDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideOnboardSensorsDao(db: TripsDatabase): OnboardSensorsDao {
-        return db.onboardSensorsDao()
     }
 
     @Provides

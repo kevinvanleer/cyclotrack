@@ -22,7 +22,6 @@ import com.kvl.cyclotrack.data.SensorTypeConverter
         Measurements::class,
         TimeState::class,
         Split::class,
-        OnboardSensors::class,
         OnboardSensorMeasurement::class,
         Bike::class,
         ExternalSensor::class,
@@ -32,7 +31,7 @@ import com.kvl.cyclotrack.data.SensorTypeConverter
         Export::class,
         CyclingPowerMeasurement::class
     ],
-    version = 33
+    version = 34
 )
 @TypeConverters(
     TimeStateEnumConverter::class,
@@ -47,7 +46,6 @@ abstract class TripsDatabase : RoomDatabase() {
     abstract fun measurementsDao(): MeasurementsDao
     abstract fun timeStateDao(): TimeStateDao
     abstract fun splitDao(): SplitDao
-    abstract fun onboardSensorsDao(): OnboardSensorsDao
     abstract fun onboardSensorMeasurementDao(): OnboardSensorMeasurementDao
     abstract fun bikeDao(): BikeDao
     abstract fun externalSensorsDao(): ExternalSensorDao
