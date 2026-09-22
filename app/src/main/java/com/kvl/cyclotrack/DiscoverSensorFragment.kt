@@ -112,16 +112,27 @@ class DiscoverSensorFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         try {
-            requireContext().unregisterReceiver(receiveBluetoothStateChanges)
-        } catch (e: Exception) {
-            Log.i(logTag, "Failed to unregister broadcast receiver", e)
-        }
-        try {
             liveDevices.removeObserver(deviceListObserver)
         } catch (e: UninitializedPropertyAccessException) {
             Log.i(logTag, "liveDevices was not initialized", e)
         }
+    }
+
+    // Scan only while visible; onStart re-reads Bluetooth and permission state, which may
+    // have changed while stopped (quick-settings toggle, permission granted in Settings)
+    override fun onStart() {
+        super.onStart()
+        requireContext().registerReceiver(
+            receiveBluetoothStateChanges,
+            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+        )
+        initializeBluetoothScan()
+    }
+
+    override fun onStop() {
+        super.onStop()
         viewModel.stopScan()
+        requireContext().unregisterReceiver(receiveBluetoothStateChanges)
     }
 
     private fun onDiscoveredItemSelected(checked: Boolean, position: Int, device: ExternalSensor) {
@@ -215,16 +226,11 @@ class DiscoverSensorFragment : Fragment() {
     }
 
     private fun disableBluetoothScan() {
-        try {
-            viewModel.stopScan()
-        } catch (e: SecurityException) {
-            Log.w(logTag, "Cannot stop BLE scan without permission", e)
-        } finally {
-            discoverSensorsIndicator.visibility = View.GONE
-            discoverSensorMessage.visibility = View.GONE
-            discoveredRecyclerView.visibility = View.GONE
-            enableBluetoothButton.visibility = View.VISIBLE
-        }
+        viewModel.stopScan()
+        discoverSensorsIndicator.visibility = View.GONE
+        discoverSensorMessage.visibility = View.GONE
+        discoveredRecyclerView.visibility = View.GONE
+        enableBluetoothButton.visibility = View.VISIBLE
     }
 
     private fun enableBluetoothScan() {
@@ -372,14 +378,6 @@ class DiscoverSensorFragment : Fragment() {
                 true -> initializeBluetoothScan()
                 else -> BleService.enableBluetooth(requireContext())
             }
-        }
-        requireContext().registerReceiver(
-            receiveBluetoothStateChanges,
-            IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        )
-        when (BleService.isBluetoothEnabled(requireContext())) {
-            true -> initializeBluetoothScan()
-            else -> disableBluetoothScan()
         }
         observeDeviceChanges()
     }

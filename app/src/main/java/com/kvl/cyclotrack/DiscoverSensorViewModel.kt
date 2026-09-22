@@ -1,5 +1,6 @@
 package com.kvl.cyclotrack
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
@@ -38,8 +39,13 @@ class DiscoverSensorViewModel @Inject constructor(
 
     val sensors = bleSensors.observeAll()
 
-    private val bluetoothLeScanner: BluetoothLeScanner? =
-        (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter.bluetoothLeScanner
+    private val bluetoothAdapter: BluetoothAdapter? =
+        (appContext.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+
+    // Adapter returns a null scanner while Bluetooth is off; re-read so enabling
+    // Bluetooth on this screen yields a live scanner
+    private val bluetoothLeScanner: BluetoothLeScanner?
+        get() = bluetoothAdapter?.bluetoothLeScanner
 
     // Only wake onScanResult for actual cycling sensors. An unfiltered scan reports every BLE
     // device in range (phones, watches, beacons), flooding the callback — the root of the
@@ -109,25 +115,27 @@ class DiscoverSensorViewModel @Inject constructor(
             bleDevices.value = testDevices.toTypedArray()
         }
 
+        if (bluetoothAdapter?.isEnabled != true) return
         try {
-            if (BleService.isBluetoothEnabled(appContext)) bluetoothLeScanner?.startScan(
-                sensorServiceFilters, scanSettings, scanDevicesCallback
-            )
+            bluetoothLeScanner?.startScan(sensorServiceFilters, scanSettings, scanDevicesCallback)
+        } catch (e: IllegalStateException) {
+            Log.w(logTag, "Bluetooth turned off before scan started", e)
         } catch (e: SecurityException) {
             Log.w(logTag, "Bluetooth permissions have not been granted", e)
             throw SecurityException("Bluetooth scan permission has not been granted")
         }
     }
 
-    fun stopScan() = try {
-        bluetoothLeScanner?.stopScan(scanDevicesCallback)
-    } catch (e: SecurityException) {
-        Log.w(logTag, "Bluetooth permissions have not been granted", e)
-        throw SecurityException("Bluetooth scan permission has not been granted")
-    }
-
-    override fun onCleared() {
-        Log.d(logTag, "view model cleared")
-        stopScan()
+    // Safe in any Bluetooth state: turning the adapter off tears down every scan, so
+    // there is nothing to stop, and BluetoothLeScanner throws if asked to anyway
+    fun stopScan() {
+        if (bluetoothAdapter?.isEnabled != true) return
+        try {
+            bluetoothLeScanner?.stopScan(scanDevicesCallback)
+        } catch (e: IllegalStateException) {
+            Log.w(logTag, "Bluetooth turned off before scan stopped", e)
+        } catch (e: SecurityException) {
+            Log.w(logTag, "Bluetooth permissions have not been granted", e)
+        }
     }
 }
