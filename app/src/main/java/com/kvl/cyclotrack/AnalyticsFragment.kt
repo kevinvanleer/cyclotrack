@@ -167,7 +167,6 @@ class AnalyticsFragment : Fragment() {
                 setStartTime(trip.timestamp)
                 setDate(trip.timestamp)
                 setTripDetails(trip.duration ?: 0.0, trip.distance ?: 0.0)
-                onResumeMap()
                 showSelectionIndicator = false
                 isSelected = false
 
@@ -742,7 +741,8 @@ class AnalyticsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         topLinearLayout = view.findViewById(R.id.fragmentAnalytics_topLinearLayout)
         rollupView = view.findViewById(R.id.trips_rollup)
-        spotlightTripCard = view.findViewById(R.id.fragmentAnalytics_spotlightRide)
+        spotlightTripCard = view.findViewById<TripSummaryCard>(R.id.fragmentAnalytics_spotlightRide)
+            .apply { bindMapLifecycle(viewLifecycleOwner.lifecycle) }
         spotlightTripHeading = view.findViewById(R.id.fragmentAnalytics_spotlightRideHeading)
         systemOfMeasurement = getSystemOfMeasurement(requireContext())
 

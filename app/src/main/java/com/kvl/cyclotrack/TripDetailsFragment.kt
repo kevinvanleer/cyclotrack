@@ -1160,8 +1160,6 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             Log.i(logTag, "Google Fit permissions lost, renewing")
             configureGoogleFit(requireActivity())
         }
-
-        if (this::mapView.isInitialized) mapView.onCreate(savedInstanceState)
     }
 
     override fun onResume() {
@@ -1184,19 +1182,19 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
         if (this::mapView.isInitialized) mapView.onStop()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (this::mapView.isInitialized) mapView.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        mapView.onDestroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (this::mapView.isInitialized) mapView.onSaveInstanceState(outState)
+        if (view != null) mapView.onSaveInstanceState(outState)
     }
 
     override fun onLowMemory() {
         super.onLowMemory()
-        if (this::mapView.isInitialized) mapView.onLowMemory()
+        if (view != null) mapView.onLowMemory()
     }
 
     private fun startTouchSequence(event: MotionEvent?): Boolean {

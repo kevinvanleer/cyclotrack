@@ -2,7 +2,6 @@ package com.kvl.cyclotrack
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.os.Bundle
 import android.text.format.DateUtils
 import android.util.AttributeSet
 import android.util.Log
@@ -10,6 +9,9 @@ import android.view.View
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.res.ResourcesCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -142,7 +144,7 @@ class TripSummaryCard : CardView {
     fun drawPath(polyline: PolylineOptions, latLngBounds: LatLngBounds) {
         Log.d("TRIP_SUMMARY_CARD", "DRAW PATH")
         path = polyline
-        if (this::map.isInitialized) {
+        if (mapUsable) {
             map.addPolyline(polyline)
             map.moveCamera(newLatLngBounds(latLngBounds, 1000, 1000, 100))
         }
@@ -174,39 +176,31 @@ class TripSummaryCard : CardView {
         }
     }
 
-    fun onCreateMap(savedInstanceState: Bundle?) {
-        mapView.onCreate(savedInstanceState)
+    private var mapLifecycle: Lifecycle? = null
+    private val mapLifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onStart(owner: LifecycleOwner) = mapView.onStart()
+        override fun onResume(owner: LifecycleOwner) = mapView.onResume()
+        override fun onPause(owner: LifecycleOwner) = mapView.onPause()
+        override fun onStop(owner: LifecycleOwner) = mapView.onStop()
+        override fun onDestroy(owner: LifecycleOwner) = releaseMap()
     }
 
-    fun onStart() {
-        mapView.onStart()
+    fun bindMapLifecycle(lifecycle: Lifecycle) {
+        mapLifecycle = lifecycle.also { it.addObserver(mapLifecycleObserver) }
     }
 
-    fun onResumeMap() {
-        mapView.onResume()
-    }
-
-    fun onPauseMap() {
-        mapView.onPause()
-    }
-
-    fun onStopMap() {
-        mapView.onStop()
-    }
-
-    fun onDestroyMap() {
+    fun releaseMap() {
+        val lifecycle = mapLifecycle ?: return
+        mapLifecycle = null
+        lifecycle.removeObserver(mapLifecycleObserver)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) mapView.onPause()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) mapView.onStop()
         mapView.onDestroy()
     }
 
-    fun onSaveMapInstanceState(state: Bundle) {
-        mapView.onSaveInstanceState(state)
-    }
-
-    fun onMapLowMemory() {
-        mapView.onLowMemory()
-    }
+    private val mapUsable get() = this::map.isInitialized && mapLifecycle != null
 
     fun clearMap() {
-        if (this::map.isInitialized) map.clear()
+        if (mapUsable) map.clear()
     }
 }

@@ -42,12 +42,21 @@ class TripSummariesAdapter(
     class TripSummaryViewHolder(val tripSummaryView: TripSummaryCard) :
         RecyclerView.ViewHolder(tripSummaryView)
 
+    private val cards = mutableListOf<TripSummaryCard>()
+
     //TODO: Instantiate TripSummaryCard without inflating layout
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripSummaryViewHolder {
-        return TripSummaryViewHolder(
-            LayoutInflater.from(parent.context)
-                .inflate(R.layout.view_trip_summary_card_wrapper, parent, false) as TripSummaryCard
-        )
+        val card = LayoutInflater.from(parent.context)
+            .inflate(R.layout.view_trip_summary_card_wrapper, parent, false) as TripSummaryCard
+        card.bindMapLifecycle(viewLifecycleOwner.lifecycle)
+        cards.add(card)
+        return TripSummaryViewHolder(card)
+    }
+
+    override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView)
+        cards.forEach { it.releaseMap() }
+        cards.clear()
     }
 
     override fun onBindViewHolder(holder: TripSummaryViewHolder, position: Int) {
@@ -122,7 +131,6 @@ class TripSummariesAdapter(
             trips[position].duration ?: 0.0,
             trips[position].distance ?: 0.0
         )
-        holder.tripSummaryView.onResumeMap()
         holder.tripSummaryView.clearMap()
         holder.tripSummaryView.showSelectionIndicator = multiSelectMode
         holder.tripSummaryView.isSelected =
@@ -169,7 +177,6 @@ class TripSummariesAdapter(
             trips[position].duration ?: 0.0,
             trips[position].distance ?: 0.0
         )
-        holder.tripSummaryView.onResumeMap()
         holder.tripSummaryView.clearMap()
         holder.tripSummaryView.showSelectionIndicator = multiSelectMode
         holder.tripSummaryView.isSelected =
