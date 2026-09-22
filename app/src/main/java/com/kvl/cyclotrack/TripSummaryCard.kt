@@ -31,7 +31,8 @@ class TripSummaryCard : CardView {
     private var startTimeView: TextView
     private var durationView: TextView
     private var mapView: MapView
-    private var path: PolylineOptions? = null
+    private val paths = mutableListOf<PolylineOptions>()
+    private var pathBounds: LatLngBounds? = null
 
     var tripId: Long = 0L
     var showSelectionIndicator = false
@@ -143,11 +144,14 @@ class TripSummaryCard : CardView {
 
     fun drawPath(polyline: PolylineOptions, latLngBounds: LatLngBounds) {
         Log.d("TRIP_SUMMARY_CARD", "DRAW PATH")
-        path = polyline
-        if (mapUsable) {
-            map.addPolyline(polyline)
-            map.moveCamera(newLatLngBounds(latLngBounds, 1000, 1000, 100))
-        }
+        paths.add(polyline)
+        pathBounds = latLngBounds
+        if (mapUsable) showPath(polyline, latLngBounds)
+    }
+
+    private fun showPath(polyline: PolylineOptions, latLngBounds: LatLngBounds) {
+        map.addPolyline(polyline)
+        map.moveCamera(newLatLngBounds(latLngBounds, 1000, 1000, 100))
     }
 
     override fun onFinishInflate() {
@@ -173,6 +177,7 @@ class TripSummaryCard : CardView {
             map.setMapStyle(MapStyleOptions.loadRawResourceStyle(context, R.raw.summary_map_style))
             map.uiSettings.setAllGesturesEnabled(false)
             map.uiSettings.isMapToolbarEnabled = false
+            if (mapUsable) pathBounds?.let { bounds -> paths.forEach { showPath(it, bounds) } }
         }
     }
 
@@ -201,6 +206,8 @@ class TripSummaryCard : CardView {
     private val mapUsable get() = this::map.isInitialized && mapLifecycle != null
 
     fun clearMap() {
+        paths.clear()
+        pathBounds = null
         if (mapUsable) map.clear()
     }
 }

@@ -12,6 +12,7 @@ import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.model.RoundCap
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class TripSummariesAdapter(
@@ -40,7 +41,9 @@ class TripSummariesAdapter(
     var selectedTrips = ArrayList<Long>()
 
     class TripSummaryViewHolder(val tripSummaryView: TripSummaryCard) :
-        RecyclerView.ViewHolder(tripSummaryView)
+        RecyclerView.ViewHolder(tripSummaryView) {
+        var loadJob: Job? = null
+    }
 
     private val cards = mutableListOf<TripSummaryCard>()
 
@@ -136,7 +139,8 @@ class TripSummariesAdapter(
         holder.tripSummaryView.isSelected =
             multiSelectMode && selectedTrips.contains(tripId)
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        holder.loadJob?.cancel()
+        holder.loadJob = viewLifecycleOwner.lifecycleScope.launch {
             Log.d(logTag, "Updating view for ${tripId}:${position}")
             val measurements = viewModel.getMeasurements(tripId)
             val timeStates = viewModel.getTripTimeStates(tripId)
@@ -182,7 +186,8 @@ class TripSummariesAdapter(
         holder.tripSummaryView.isSelected =
             multiSelectMode && selectedTrips.contains(tripId)
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        holder.loadJob?.cancel()
+        holder.loadJob = viewLifecycleOwner.lifecycleScope.launch {
             Log.d(logTag, "Updating view for ${tripId}:${position}")
             val measurements = viewModel.getMeasurements(tripId)
             val timeStates = viewModel.getTripTimeStates(tripId)
