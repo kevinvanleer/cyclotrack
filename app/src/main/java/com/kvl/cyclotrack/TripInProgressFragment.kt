@@ -774,8 +774,9 @@ class TripInProgressFragment :
                     getUserTemperatureUnit(requireContext())
                 )
                 footerRightView.text = run {
-                    val value =
-                        String.format("%.1f", getUserSpeed(requireContext(), weather.windSpeed))
+                    val value = weather.windSpeed
+                        ?.let { String.format("%.1f", getUserSpeed(requireContext(), it)) }
+                        ?: "-.-"
                     val unit =
                         getUserSpeedUnitShort(requireContext()).uppercase(Locale.getDefault())
                     SpannableString("$value $unit").apply {
@@ -785,8 +786,8 @@ class TripInProgressFragment :
                         )
                     }
                 }
-                when (weather.windSpeed) {
-                    0.0 -> {
+                when (weather.windSpeed?.takeIf { weather.windDirection != null }) {
+                    null, 0.0 -> {
                         windDirectionArrow.setPadding(
                             TypedValue.applyDimension(
                                 TypedValue.COMPLEX_UNIT_DIP,
@@ -807,9 +808,11 @@ class TripInProgressFragment :
             val location = it.first
             val weather = it.second
 
-            windDirectionArrow.rotation = bearingToIconRotation(
-                bearingToWindAngle(location.bearing, weather.windDirection)
-            ).toFloat()
+            weather.windDirection?.let { direction ->
+                windDirectionArrow.rotation = bearingToIconRotation(
+                    bearingToWindAngle(location.bearing, direction)
+                ).toFloat()
+            }
         }
     }
 

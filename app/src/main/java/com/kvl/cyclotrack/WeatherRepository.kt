@@ -3,15 +3,8 @@ package com.kvl.cyclotrack
 import javax.inject.Inject
 
 class WeatherRepository @Inject constructor(private val weatherDao: WeatherDao) {
-    suspend fun recordWeatherOneCall(
-        currentWeatherConditions: CurrentWeatherConditions,
-        tripId: Long
-    ) {
-        weatherDao.save(Weather(currentWeatherConditions, tripId))
-    }
-
-    suspend fun recordWeather(currentWeatherConditions: WeatherResponse, tripId: Long) {
-        weatherDao.save(Weather(currentWeatherConditions, tripId))
+    suspend fun recordWeather(weather: Weather) {
+        weatherDao.save(weather)
     }
 
     fun observeLatest() = weatherDao.observeLastestWeather()
