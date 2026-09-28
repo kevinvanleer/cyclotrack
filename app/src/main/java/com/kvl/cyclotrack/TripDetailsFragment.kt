@@ -65,6 +65,7 @@ import com.kvl.cyclotrack.util.getSpeedDataFromGps
 import com.kvl.cyclotrack.util.getSpeedDataFromSensor
 import com.kvl.cyclotrack.util.getTrendData
 import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.hasHealthConnectWriteAccess
 import com.kvl.cyclotrack.util.isGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.useBleSpeedData
 import com.kvl.cyclotrack.widgets.AxisLabelOrientation
@@ -114,6 +115,25 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     private lateinit var maxCameraPosition: CameraPosition
     private lateinit var googleFitSyncStatus: GoogleFitSyncStatusEnum
     private lateinit var stravaSyncStatus: GoogleFitSyncStatusEnum
+    private lateinit var healthConnectSyncStatus: GoogleFitSyncStatusEnum
+
+    // Whether Health Connect will actually accept a write. Only knowable from a
+    // coroutine, so it is resolved once and the menu rebuilt when it lands.
+    private var healthConnectGranted = false
+
+    // Google Fit re-inserts rather than replaces, so a ride it already holds must not
+    // be sent again. An edited ride goes to Fit through its own update worker, not
+    // through this menu.
+    private val googleFitNeedsSync: Boolean
+        get() = this::googleFitSyncStatus.isInitialized &&
+                (googleFitSyncStatus == GoogleFitSyncStatusEnum.NOT_SYNCED ||
+                        googleFitSyncStatus == GoogleFitSyncStatusEnum.REMOVED)
+
+    // Health Connect replaces on write, so anything short of synced is worth sending
+    // — including a ride edited since, or one whose last attempt failed.
+    private val healthConnectNeedsSync: Boolean
+        get() = this::healthConnectSyncStatus.isInitialized &&
+                healthConnectSyncStatus != GoogleFitSyncStatusEnum.SYNCED
 
 
     private fun drawPath(
@@ -187,31 +207,17 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
     }
 
     private fun configureSyncOptions(menu: Menu) {
-        when (hasFitnessPermissions(requireContext())) {
-            true -> {
-                when (googleFitSyncStatus) {
-                    GoogleFitSyncStatusEnum.SYNCED -> {
-                        menu.findItem(R.id.details_menu_action_unsync).isVisible = true
-                        menu.findItem(R.id.details_menu_action_sync).isVisible = false
-                    }
+        val googleFitConnected = hasFitnessPermissions(requireContext())
 
-                    GoogleFitSyncStatusEnum.NOT_SYNCED, GoogleFitSyncStatusEnum.REMOVED -> {
-                        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
-                        menu.findItem(R.id.details_menu_action_sync).isVisible = true
-                    }
+        // Sync is for getting a ride somewhere it is not, not for pushing it again.
+        // It goes away once every connected integration already holds this ride.
+        val canSync = (googleFitConnected && googleFitNeedsSync) ||
+                (healthConnectGranted && healthConnectNeedsSync)
+        val canUnsync = (googleFitConnected && googleFitSyncStatus.isOnRemote) ||
+                (healthConnectGranted && healthConnectSyncStatus.isOnRemote)
 
-                    else -> {
-                        menu.findItem(R.id.details_menu_action_sync).isVisible = false
-                        menu.findItem(R.id.details_menu_action_unsync).isVisible = false
-                    }
-                }
-            }
-
-            else -> {
-                menu.findItem(R.id.details_menu_action_sync).isVisible = false
-                menu.findItem(R.id.details_menu_action_unsync).isVisible = false
-            }
-        }
+        menu.findItem(R.id.details_menu_action_sync).isVisible = canSync
+        menu.findItem(R.id.details_menu_action_unsync).isVisible = canUnsync
         /*
         //NOTE: TEMPORARY OVERRIDE FOR STRAVA TESTING
         menu.findItem(R.id.details_menu_action_unsync).isVisible = false
@@ -258,6 +264,12 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
             .beginWith(
                 listOf(
                     OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                        .setInputData(
+                            workDataOf(
+                                "tripIds" to arrayOf(viewModel.tripId)
+                            )
+                        ).build(),
+                    OneTimeWorkRequestBuilder<HealthConnectDeleteSessionWorker>()
                         .setInputData(
                             workDataOf(
                                 "tripIds" to arrayOf(viewModel.tripId)
@@ -320,9 +332,14 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 ) { _, _ ->
                     WorkManager.getInstance(requireContext())
                         .enqueue(
-                            OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
-                                .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
-                                .build()
+                            listOf(
+                                OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
+                                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                                    .build(),
+                                OneTimeWorkRequestBuilder<HealthConnectDeleteSessionWorker>()
+                                    .setInputData(workDataOf("tripIds" to arrayOf(viewModel.tripId)))
+                                    .build()
+                            )
                         )
                 }
                 setNegativeButton(
@@ -1028,13 +1045,23 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                 viewModel.tripOverview.observe(viewLifecycleOwner) {
                     googleFitSyncStatus = it.googleFitSyncStatus
                     stravaSyncStatus = it.stravaSyncStatus
+                    healthConnectSyncStatus = it.healthConnectSyncStatus
+                }
+                viewLifecycleOwner.lifecycleScope.launch {
+                    hasHealthConnectWriteAccess(requireContext()).let { granted ->
+                        if (granted != healthConnectGranted) {
+                            healthConnectGranted = granted
+                            requireActivity().invalidateMenu()
+                        }
+                    }
                 }
             }
 
             override fun onPrepareMenu(menu: Menu) {
                 super.onPrepareMenu(menu)
                 if (this@TripDetailsFragment::googleFitSyncStatus.isInitialized &&
-                    this@TripDetailsFragment::stravaSyncStatus.isInitialized
+                    this@TripDetailsFragment::stravaSyncStatus.isInitialized &&
+                    this@TripDetailsFragment::healthConnectSyncStatus.isInitialized
                 ) configureSyncOptions(menu)
             }
 
@@ -1061,15 +1088,15 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
 
                     R.id.details_menu_action_delete -> {
                         Log.d(logTag, "Options menu clicked delete")
-                        when (googleFitSyncStatus) {
-                            GoogleFitSyncStatusEnum.SYNCED, GoogleFitSyncStatusEnum.DIRTY -> {
-                                when (hasFitnessPermissions(requireContext())) {
-                                    false -> showMustBeLoggedInDialog()
-                                    else -> showUnsyncAndDeleteDialog()
-                                }
-                            }
+                        when {
+                            healthConnectGranted && healthConnectSyncStatus.isOnRemote ->
+                                showUnsyncAndDeleteDialog()
 
-                            else -> showDeleteDialog()
+                            !googleFitSyncStatus.isOnRemote -> showDeleteDialog()
+
+                            hasFitnessPermissions(requireContext()) -> showUnsyncAndDeleteDialog()
+
+                            else -> showMustBeLoggedInDialog()
                         }
                         true
                     }
@@ -1126,11 +1153,19 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     }
 
                     R.id.details_menu_action_sync -> {
-                        WorkManager.getInstance(requireContext())
-                            .enqueue(
-                                OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
-                                    .setInputData(workDataOf("tripId" to viewModel.tripId)).build()
-                            )
+                        // Each integration is sent the ride only if it is missing it,
+                        // so the item cannot re-push what is already there.
+                        if (googleFitNeedsSync) {
+                            WorkManager.getInstance(requireContext())
+                                .enqueue(
+                                    OneTimeWorkRequestBuilder<GoogleFitCreateSessionWorker>()
+                                        .setInputData(workDataOf("tripId" to viewModel.tripId))
+                                        .build()
+                                )
+                        }
+                        if (healthConnectNeedsSync) {
+                            enqueueHealthConnectSession(requireContext(), viewModel.tripId)
+                        }
                         /*WorkManager.getInstance(requireContext())
                             .enqueue(
                                 OneTimeWorkRequestBuilder<StravaCreateActivityWorker>()

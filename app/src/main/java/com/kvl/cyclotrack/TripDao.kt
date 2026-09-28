@@ -44,6 +44,11 @@ data class TripStravaSync(
     val stravaSyncStatus: GoogleFitSyncStatusEnum,
 )
 
+data class TripHealthConnectSync(
+    val id: Long,
+    val healthConnectSyncStatus: GoogleFitSyncStatusEnum,
+)
+
 data class TripStats(
     val id: Long,
     val distance: Double?,
@@ -126,6 +131,9 @@ interface TripDao {
     @Update(entity = Trip::class)
     suspend fun updateGoogleFitSyncStatus(googleFitSyncStatus: TripGoogleFitSync)
 
+    @Update(entity = Trip::class)
+    suspend fun updateHealthConnectSyncStatus(healthConnectSyncStatus: TripHealthConnectSync)
+
     @Query("UPDATE trip SET bikeId=:bikeId where id = :id")
     suspend fun updateBikeId(id: Long, bikeId: Long)
 
@@ -158,6 +166,11 @@ interface TripDao {
 
     @Query("SELECT * FROM trip WHERE googleFitSyncStatus == 4 ORDER BY id DESC")
     suspend fun loadGoogleFitDirtyTrips(): Array<Trip>
+
+    // Never synced, edited since, or failed. A failure is worth retrying — it is
+    // usually transient, and excluding it strands the ride permanently.
+    @Query("SELECT * FROM trip WHERE healthConnectSyncStatus IN (0, 2, 4) AND inProgress = 0 ORDER BY id DESC")
+    suspend fun loadHealthConnectPendingTrips(): Array<Trip>
 
     @Query("SELECT * from trip WHERE distance > 1 AND duration > 60 ORDER BY id DESC")
     fun subscribeRealTrips(): LiveData<Array<Trip>>

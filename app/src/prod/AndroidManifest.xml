@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Health Connect ships to dev/debug/release only. Declaring the health permissions
+in a Play-distributed build triggers the health data declaration review, so the
+prod merge strips them along with the rationale screen they require.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.health.WRITE_EXERCISE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_EXERCISE_ROUTE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_DISTANCE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_HEART_RATE"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_ACTIVE_CALORIES_BURNED"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_POWER"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.WRITE_SPEED"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.READ_HEIGHT"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.READ_WEIGHT"
+        tools:node="remove" />
+    <uses-permission
+        android:name="android.permission.health.READ_RESTING_HEART_RATE"
+        tools:node="remove" />
+
+    <application>
+        <activity
+            android:name=".HealthConnectRationaleActivity"
+            tools:node="remove" />
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            tools:node="remove" />
+    </application>
+
+</manifest>

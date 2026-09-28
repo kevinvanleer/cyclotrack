@@ -46,6 +46,7 @@ import com.google.firebase.analytics.logEvent
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.kvl.cyclotrack.util.SystemUtils
 import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.isHealthConnectAvailable
 import com.kvl.cyclotrack.util.isStravaSynced
 import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.shouldSyncGoogleFitBiometrics
@@ -293,6 +294,13 @@ class MainActivity : AppCompatActivity() {
                     "GoogleFitSyncTripsWorker",
                     ExistingWorkPolicy.REPLACE,
                     OneTimeWorkRequestBuilder<GoogleFitSyncTripsWorker>().build()
+                ).enqueue()
+            }
+            if (isHealthConnectAvailable(this)) {
+                WorkManager.getInstance(this).beginUniqueWork(
+                    "HealthConnectSyncTripsWorker",
+                    ExistingWorkPolicy.REPLACE,
+                    OneTimeWorkRequestBuilder<HealthConnectSyncTripsWorker>().build()
                 ).enqueue()
             }
             if (shouldSyncGoogleFitBiometrics(this) &&

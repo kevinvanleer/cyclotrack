@@ -18,6 +18,9 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
 import androidx.core.view.setPadding
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -35,6 +38,10 @@ import com.kvl.cyclotrack.util.configureGoogleFit
 import com.kvl.cyclotrack.util.deauthorizeStrava
 import com.kvl.cyclotrack.util.getPreferences
 import com.kvl.cyclotrack.util.hasFitnessPermissions
+import com.kvl.cyclotrack.util.hasHealthConnectWriteAccess
+import com.kvl.cyclotrack.util.healthConnectPermissions
+import com.kvl.cyclotrack.util.healthConnectWritePermissions
+import com.kvl.cyclotrack.util.isHealthConnectAvailable
 import com.kvl.cyclotrack.util.setGoogleFitSyncEnabled
 import com.kvl.cyclotrack.util.updateStravaAuthToken
 import kotlinx.coroutines.CoroutineScope
@@ -258,6 +265,76 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
         }
     }
 
+    // Registered unconditionally: the contract must exist before the fragment
+    // starts, and Health Connect availability is only known later.
+    private val requestHealthConnectPermissions =
+        registerForActivityResult(PermissionController.createRequestPermissionResultContract()) { granted ->
+            Log.i(logTag, "Health Connect granted ${granted.size} permissions")
+            configureHealthConnectPreference()
+            if (granted.containsAll(healthConnectWritePermissions)) {
+                WorkManager.getInstance(requireContext()).enqueue(
+                    OneTimeWorkRequestBuilder<HealthConnectSyncTripsWorker>().build()
+                )
+            }
+        }
+
+    private fun configureHealthConnectPreference() {
+        val context = requireContext()
+        findPreference<Preference>(context.getString(R.string.preferences_key_health_connect))
+            ?.apply {
+                isVisible = isHealthConnectAvailable(context)
+                if (!isVisible) return@apply
+                viewLifecycleOwner.lifecycleScope.launch {
+                    when (hasHealthConnectWriteAccess(context)) {
+                        true -> configureManageHealthConnect(context)
+                        false -> configureConnectHealthConnect(context)
+                    }
+                }
+            }
+    }
+
+    private fun Preference.configureConnectHealthConnect(context: Context) {
+        title = getString(R.string.preferences_sync_with_health_connect_title)
+        summary = getString(R.string.preferences_sync_with_health_connect_summary)
+        onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            AlertDialog.Builder(context).apply {
+                setPositiveButton("SYNC") { _, _ ->
+                    requestHealthConnectPermissions.launch(healthConnectPermissions)
+                }
+                setTitle(getString(R.string.preferences_sync_with_health_connect_title))
+                setMessage(getString(R.string.health_connect_sync_dialog_description))
+            }.create().show()
+            true
+        }
+    }
+
+    private fun Preference.configureManageHealthConnect(context: Context) {
+        title = getString(R.string.preferences_disconnect_health_connect_title)
+        summary = getString(R.string.preferences_disconnect_health_connect_summary)
+        onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            AlertDialog.Builder(context).apply {
+                val removeAllCheckboxView =
+                    View.inflate(context, R.layout.remove_all_google_fit_dialog_option, null)
+                removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).text =
+                    getString(R.string.remove_cyclotrack_data_from_health_connect_message)
+                setPositiveButton("OPEN HEALTH CONNECT") { _, _ ->
+                    if (removeAllCheckboxView.findViewById<CheckBox>(R.id.checkbox_removeAllGoogleFit).isChecked) {
+                        WorkManager.getInstance(context).enqueue(
+                            OneTimeWorkRequestBuilder<RemoveAllHealthConnectDataWorker>().build()
+                        )
+                    }
+                    // Access is revoked in Health Connect itself; the app cannot
+                    // drop a permission it was granted.
+                    startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context))
+                }
+                setView(removeAllCheckboxView)
+                setTitle(getString(R.string.preferences_disconnect_health_connect_title))
+                setMessage(getString(R.string.health_connect_disconnect_dialog_message))
+            }.create().show()
+            true
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onGoogleFitAccessGranted(@Suppress("UNUSED_PARAMETER") event: GoogleFitAccessGranted) {
         setGoogleFitSyncEnabled(requireContext(), true)
@@ -416,6 +493,7 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         configureGoogleFitPreference(requireContext())
+        configureHealthConnectPreference()
 
         userGoogleFitBiometricsDialog = AlertDialog.Builder(context).apply {
             val dialogView =

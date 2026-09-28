@@ -32,8 +32,11 @@ class GoogleFitDeleteSessionWorker @AssistedInject constructor(
                 tripsRepository.get(tripId).let { trip ->
                     if (trip.googleFitSyncStatus == GoogleFitSyncStatusEnum.SYNCED) {
                         if (!hasFitnessPermissions(appContext)) {
+                            // Not a failure: this worker runs ahead of RemoveTripWorker
+                            // in the delete chain, and failing here would strand the
+                            // ride locally over an unsync that can never succeed.
                             Log.i(logTag, "Cannot remove data, user not logged in")
-                            return Result.failure()
+                            return@let
                         }
                         Log.i(logTag, "Removing data from Google Fit for trip ${tripId}")
                         timeStateRepository.getTimeStates(trip.id!!).let {

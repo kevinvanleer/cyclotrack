@@ -260,6 +260,9 @@ class TripSummariesFragment @Inject constructor() : Fragment() {
                             listOf(
                                 OneTimeWorkRequestBuilder<GoogleFitDeleteSessionWorker>()
                                     .setInputData(workDataOf("tripIds" to selectedTrips))
+                                    .build(),
+                                OneTimeWorkRequestBuilder<HealthConnectDeleteSessionWorker>()
+                                    .setInputData(workDataOf("tripIds" to selectedTrips))
                                     .build()
                             )
                         )

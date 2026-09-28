@@ -593,6 +593,15 @@ fun migration3334(appContext: Context) = object : Migration(33, 34) {
         }
 }
 
+// Health Connect tracks its own sync state rather than reusing googleFitSyncStatus:
+// the release and prod variants share an applicationId, so a ride already marked
+// synced to Google Fit would otherwise never reach Health Connect.
+val MIGRATION_34_35 = object : Migration(34, 35) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `Trip` ADD COLUMN `healthConnectSyncStatus` INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -639,6 +648,7 @@ object TripsDatabaseModule {
                 MIGRATION_31_32,
                 MIGRATION_32_33,
                 migration3334(appContext),
+                MIGRATION_34_35,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {

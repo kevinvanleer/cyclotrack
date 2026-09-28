@@ -85,6 +85,19 @@ class TripsRepository @Inject constructor(private val tripDao: TripDao) {
     suspend fun getGoogleFitUnsynced() = tripDao.loadGoogleFitUnsyncedTrips()
     suspend fun getGoogleFitDirty() = tripDao.loadGoogleFitDirtyTrips()
 
+    suspend fun setHealthConnectSyncStatus(
+        tripId: Long,
+        healthConnectSyncStatus: GoogleFitSyncStatusEnum,
+    ) =
+        tripDao.updateHealthConnectSyncStatus(
+            TripHealthConnectSync(
+                id = tripId,
+                healthConnectSyncStatus = healthConnectSyncStatus
+            )
+        )
+
+    suspend fun getHealthConnectPending() = tripDao.loadHealthConnectPendingTrips()
+
     suspend fun getStravaUnsynced() = tripDao.loadStravaUnsyncedTrips()
 
     fun longestTrips(limit: Int = 10) = tripDao.longestTrips(limit)

@@ -84,6 +84,15 @@
     <string name="preferences_sync_with_google_fit_summary">Sign in to Google Fit to sync your workouts</string>
     <string name="preferences_disconnect_google_fit_title">Disconnect from Google Fit</string>
     <string name="preferences_disconnect_google_fit_summary">Stop syncing data between Cyclotrack and Google Fit</string>
+    <string name="preferences_key_health_connect">preferences_key_health_connect</string>
+    <string name="preferences_sync_with_health_connect_title">Sync with Health Connect</string>
+    <string name="preferences_sync_with_health_connect_summary">Share your rides with Health Connect apps and devices</string>
+    <string name="preferences_disconnect_health_connect_title">Manage Health Connect</string>
+    <string name="preferences_disconnect_health_connect_summary">Remove Cyclotrack rides or revoke access in Health Connect</string>
+    <string name="health_connect_sync_dialog_description">Grant Cyclotrack access to Health Connect to share your rides. Each ride is written as a cycling workout with its distance, so apps and devices reading Health Connect — including Fitbit and your Pixel Watch — count it toward your activity. Your Health Connect height, weight, and resting heart rate will be used to estimate calorie burn if available.</string>
+    <string name="health_connect_disconnect_dialog_message">You can revoke Cyclotrack\'s access at any time in the Health Connect app. Check the box below to also remove the rides Cyclotrack has already written.</string>
+    <string name="remove_cyclotrack_data_from_health_connect_message">Remove Cyclotrack rides from Health Connect</string>
+    <string name="health_connect_unavailable_message">Health Connect is not available on this device</string>
     <string name="notification_id_trip_in_progress">notification_channel_trip_in_progress_low</string>
     <string name="notification_trip_in_progress_title">Ride in progress</string>
     <string name="notification_trip_in_progress_message">Tap to return to dashboard</string>

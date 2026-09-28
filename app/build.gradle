@@ -201,6 +201,8 @@ dependencies {
 
     implementation("com.garmin:fit:21.194.0")
 
+    implementation("androidx.health.connect:connect-client:1.1.0")
+
     androidTestImplementation "androidx.navigation:navigation-testing:$nav_version"
     debugImplementation "androidx.fragment:fragment-testing:$fragment_version"
 

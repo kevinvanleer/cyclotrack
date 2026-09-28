@@ -14,7 +14,12 @@ enum class GoogleFitSyncStatusEnum(val value: Int) {
     SYNCED(1),
     FAILED(2),
     REMOVED(3),
-    DIRTY(4)
+    DIRTY(4);
+
+    // The remote holds a copy of this ride, so removing it locally has to remove it
+    // there too. DIRTY counts: the copy is stale, not absent.
+    val isOnRemote: Boolean
+        get() = this == SYNCED || this == DIRTY
 }
 
 class GoogleFitSyncStatusConverter {
@@ -30,6 +35,7 @@ class GoogleFitSyncStatusConverter {
             1 -> GoogleFitSyncStatusEnum.SYNCED
             2 -> GoogleFitSyncStatusEnum.FAILED
             3 -> GoogleFitSyncStatusEnum.REMOVED
+            4 -> GoogleFitSyncStatusEnum.DIRTY
             else -> GoogleFitSyncStatusEnum.FAILED
         }
     }
@@ -104,4 +110,5 @@ data class Trip(
     val userMaxHeartRate: Int? = null,
     val googleFitSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
     val stravaSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
+    val healthConnectSyncStatus: GoogleFitSyncStatusEnum = GoogleFitSyncStatusEnum.NOT_SYNCED,
 )

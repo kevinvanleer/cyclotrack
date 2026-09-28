@@ -11,6 +11,8 @@ import com.kvl.cyclotrack.R
 import com.kvl.cyclotrack.Trip
 import com.kvl.cyclotrack.TripsRepository
 import com.kvl.cyclotrack.UserSexEnum
+import com.kvl.cyclotrack.data.CyclingPowerMeasurement
+import com.kvl.cyclotrack.getWork
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -310,31 +312,142 @@ fun getCaloriesBurnedLabel(
         else " (${speedToMets((overview.distance!! / overview.duration!!).toFloat())} METs)"
     }
 
+// A ride records the biometrics that were in effect when it happened; anything it
+// did not capture falls back to the current settings.
+fun tripBiometrics(context: Context, overview: Trip) = Biometrics(
+    0,
+    userAge = overview.userAge ?: getUserAge(context, overview.timestamp),
+    userSex = overview.userSex ?: getUserSex(context),
+    userWeight = overview.userWeight ?: getUserWeight(context),
+    userHeight = overview.userHeight ?: getUserHeight(context),
+    userVo2max = overview.userVo2max ?: getUserVo2max(context),
+    userRestingHeartRate = overview.userRestingHeartRate ?: getUserRestingHeartRate(context),
+    userMaxHeartRate = overview.userMaxHeartRate ?: getUserMaxHeartRate(context),
+)
+
 fun getCaloriesBurnedLabel(
     context: Context,
     overview: Trip,
     heartRate: Short?,
-): String {
-    fun getSex(value: UserSexEnum?) = value ?: getUserSex(context)
-    fun getAge(value: Float?) = value ?: getUserAge(context, overview.timestamp)
-    fun getWeight(value: Float?) = value ?: getUserWeight(context)
-    fun getHeight(value: Float?) = value ?: getUserHeight(context)
-    fun getVo2max(value: Float?) = value ?: getUserVo2max(context)
-    fun getRestingHeartRate(value: Int?) = value ?: getUserRestingHeartRate(context)
-    fun getMaxHeartRate(value: Int?) = value ?: getUserMaxHeartRate(context)
+): String = getCaloriesBurnedLabel(
+    context, tripBiometrics(context, overview), overview, heartRate
+)
 
-    return getCaloriesBurnedLabel(
-        context, Biometrics(
-            0,
-            userAge = getAge(overview.userAge),
-            userSex = getSex(overview.userSex),
-            userWeight = getWeight(overview.userWeight),
-            userHeight = getHeight(overview.userHeight),
-            userVo2max = getVo2max(overview.userVo2max),
-            userRestingHeartRate = getRestingHeartRate(overview.userRestingHeartRate),
-            userMaxHeartRate = getMaxHeartRate(overview.userMaxHeartRate),
-        ), overview, heartRate
-    )
+enum class CaloriesSource { POWER_METER, ESTIMATE }
+
+data class RideCalories(val active: Int?, val total: Int?, val source: CaloriesSource)
+
+private const val JOULES_PER_KCAL = 4184f
+
+// The share of metabolic energy that reaches the pedals. The literature puts gross
+// cycling efficiency at 20-25%; 24% is the middle of that, and the reason riders
+// treat a kJ of work as roughly a kcal burned. A knob because it genuinely varies
+// between riders and with intensity.
+const val CYCLING_GROSS_EFFICIENCY = 0.24f
+
+// Metabolic energy a rider spent to put this much work through the pedals. At 24%
+// efficiency the conversion lands near 1 kcal per kJ, which is why the two are used
+// interchangeably in cycling.
+fun workToCalories(joules: Int) =
+    (joules / (CYCLING_GROSS_EFFICIENCY * JOULES_PER_KCAL)).roundToInt()
+
+// Cyclotrack estimates a single figure per ride, net or gross depending on which
+// biometrics it has. Health Connect keeps the two apart, and they differ by resting
+// metabolism over the ride — computable whenever height is known, since that is what
+// the BMR formulas need. Without height, only the figure actually estimated is
+// reported rather than inventing its counterpart.
+fun rideCalories(
+    context: Context,
+    biometrics: Biometrics,
+    overview: Trip,
+    heartRate: Short?,
+    powerMeasurements: Array<CyclingPowerMeasurement> = emptyArray(),
+): RideCalories {
+    val resting = restingCalories(biometrics, overview.duration)
+
+    // Work at the pedals is measured rather than inferred, so it beats a formula
+    // built on heart rate and VO2max whenever a power meter was on the bike. The
+    // ride detail already prefers it for the same reason.
+    powerMeasurements.takeIf { it.size > 1 }
+        ?.let { getWork(it) }
+        ?.takeIf { it > 0 }
+        ?.let { joules ->
+            val total = workToCalories(joules)
+            return RideCalories(
+                active = resting?.let { (total - it).coerceAtLeast(0) },
+                total = total,
+                source = CaloriesSource.POWER_METER,
+            )
+        }
+
+    val estimate = getCaloriesBurned(context, biometrics, overview, heartRate)
+    return when (caloriesBasis(context, biometrics, heartRate)) {
+        CaloriesBasis.NET -> RideCalories(
+            active = estimate,
+            total = resting?.let { estimate + it },
+            source = CaloriesSource.ESTIMATE,
+        )
+
+        CaloriesBasis.GROSS -> RideCalories(
+            active = resting?.let { (estimate - it).coerceAtLeast(0) },
+            total = estimate,
+            source = CaloriesSource.ESTIMATE,
+        )
+    }
+}
+
+private fun restingCalories(biometrics: Biometrics, durationSeconds: Double?): Int? {
+    val sex = biometrics.userSex?.name ?: return null
+    val weight = biometrics.userWeight ?: return null
+    val height = biometrics.userHeight ?: return null
+    val age = biometrics.userAge?.roundToInt() ?: return null
+    val duration = durationSeconds?.takeIf { it > 0 } ?: return null
+
+    return (estimateBasalMetabolicRate(sex, weight, height, age)
+        .toFloat() / (24 * 3600) * duration).toInt()
+}
+
+enum class CaloriesBasis {
+    // Excludes resting metabolism, so it is what Health Connect calls active calories.
+    NET,
+
+    // Includes resting metabolism: Health Connect's total calories.
+    GROSS,
+}
+
+// getCaloriesBurned returns net or gross depending on the settings and on which
+// biometrics the ride captured, and only the label knew which. Filing a gross
+// estimate as active calories would overstate the day, so the choice of record has
+// to follow the same rules the label does.
+fun caloriesBasis(
+    context: Context,
+    biometrics: Biometrics,
+    heartRate: Short?,
+): CaloriesBasis {
+    val estimatedVo2max = biometrics.userVo2max
+        ?: biometrics.userRestingHeartRate?.let { restingHeartRate ->
+            biometrics.userAge?.roundToInt()?.let { age ->
+                estimateVo2Max(
+                    restingHeartRate,
+                    biometrics.userMaxHeartRate ?: estimateMaxHeartRate(age)
+                )
+            }
+        }
+    val hasCyclingInputs =
+        biometrics.userSex != null && biometrics.userAge != null && heartRate != null
+
+    return when {
+        hasCyclingInputs && estimatedVo2max != null ->
+            when (biometrics.userHeight != null || !useVo2maxCalorieEstimate(context)) {
+                true -> CaloriesBasis.NET
+                false -> CaloriesBasis.GROSS
+            }
+
+        hasCyclingInputs -> CaloriesBasis.NET
+
+        // The METs fallback counts resting metabolism in its 1 MET baseline.
+        else -> CaloriesBasis.GROSS
+    }
 }
 
 fun getCaloriesBurned(
