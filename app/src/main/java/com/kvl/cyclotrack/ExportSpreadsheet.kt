@@ -106,7 +106,7 @@ inline fun <reified T : Any> populateRow(
     data: T,
 ) {
     reflection.declaredMemberProperties.forEachIndexed { cellIdx, prop ->
-        prop.get(data).toString().let { stringVal ->
+        prop.get(data)?.toString()?.let { stringVal ->
             stringVal.toDoubleOrNull()?.let { doubleVal ->
                 sheet.value(rowIdx, cellIdx, doubleVal)
             } ?: sheet.value(rowIdx, cellIdx, stringVal)

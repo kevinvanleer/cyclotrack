@@ -602,6 +602,22 @@ val MIGRATION_34_35 = object : Migration(34, 35) {
     }
 }
 
+// OpenWeather omits unmeasured parameters, so all Weather columns except timestamp and
+// temperature become nullable. The /weather API has no dewPoint/uvIndex and stored -1
+// for them; those become NULL while OneCall-era rows keep their real values.
+val MIGRATION_35_36 = object : Migration(35, 36) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `Weather_new` (`timestamp` INTEGER NOT NULL, `sunrise` INTEGER, `sunset` INTEGER, `temperature` REAL NOT NULL, `feelsLike` REAL, `pressure` INTEGER, `humidity` INTEGER, `dewPoint` REAL, `uvIndex` REAL, `clouds` INTEGER, `visibility` INTEGER, `windSpeed` REAL, `windDirection` INTEGER, `tripId` INTEGER NOT NULL, `id` INTEGER PRIMARY KEY AUTOINCREMENT, FOREIGN KEY(`tripId`) REFERENCES `Trip`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL(
+            "INSERT INTO `Weather_new` (`timestamp`, `sunrise`, `sunset`, `temperature`, `feelsLike`, `pressure`, `humidity`, `dewPoint`, `uvIndex`, `clouds`, `visibility`, `windSpeed`, `windDirection`, `tripId`, `id`) " +
+                "SELECT `timestamp`, `sunrise`, `sunset`, `temperature`, `feelsLike`, `pressure`, `humidity`, NULLIF(`dewPoint`, -1), NULLIF(`uvIndex`, -1), `clouds`, `visibility`, `windSpeed`, `windDirection`, `tripId`, `id` FROM `Weather`"
+        )
+        db.execSQL("DROP TABLE `Weather`")
+        db.execSQL("ALTER TABLE `Weather_new` RENAME TO `Weather`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_Weather_tripId` ON `Weather` (`tripId`)")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object TripsDatabaseModule {
@@ -649,6 +665,7 @@ object TripsDatabaseModule {
                 MIGRATION_32_33,
                 migration3334(appContext),
                 MIGRATION_34_35,
+                MIGRATION_35_36,
             )
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onOpen(db: SupportSQLiteDatabase) {

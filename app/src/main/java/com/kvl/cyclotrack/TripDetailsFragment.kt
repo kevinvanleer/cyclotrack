@@ -393,9 +393,9 @@ class TripDetailsFragment : Fragment(), View.OnTouchListener {
                     } ${getUserTemperatureUnit(requireContext())}".toCharArray()
                 )
 
-                windIcon.visibility = View.VISIBLE
-                windText.visibility = View.VISIBLE
-                weathers.getAverageWind().let { wind ->
+                weathers.getAverageWind()?.let { wind ->
+                    windIcon.visibility = View.VISIBLE
+                    windText.visibility = View.VISIBLE
                     windText.text = String(
                         "%.1f %s %s".format(
                             getUserSpeed(requireContext(), wind.first),

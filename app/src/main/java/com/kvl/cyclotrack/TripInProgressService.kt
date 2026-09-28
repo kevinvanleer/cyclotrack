@@ -409,7 +409,6 @@ class TripInProgressService @Inject constructor() :
                 .adapter(WeatherResponse::class.java)
             val devAppId = getString(R.string.openweather_api_key)
             val weatherUrl =
-                //"https://api.openweathermap.org/data/2.5/onecall?lat=$lat&lon=$lng&exclude=minutely,hourly,daily&appid=$devAppId"
                 "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lng&appid=$devAppId"
             OkHttpClient().let { client ->
                 Request.Builder()
@@ -423,14 +422,10 @@ class TripInProgressService @Inject constructor() :
                                     Log.d(logTag, response.body.toString())
                                     if (response.isSuccessful) {
                                         try {
-                                            val weatherResponse = response.body?.source()
+                                            response.body?.source()
                                                 ?.let { jsonAdapter.nullSafe().fromJson(it) }
-                                            weatherResponse?.let {
-                                                weatherRepository.recordWeather(
-                                                    it,
-                                                    tripId
-                                                )
-                                            }
+                                                ?.toWeather(tripId)
+                                                ?.let { weatherRepository.recordWeather(it) }
                                         } catch (e: JsonDataException) {
                                             Log.w(logTag, "Failed to parse response", e)
                                             FirebaseCrashlytics.getInstance().recordException(e)

@@ -45,23 +45,23 @@ class UnitConversionTest {
 
     private fun wind(speed: Double, direction: Int) = Weather(
         timestamp = 0, sunrise = 0, sunset = 0, temperature = 280.0, feelsLike = 280.0,
-        pressure = 1013, humidity = 50, dewPoint = -1.0, uvIndex = -1.0, clouds = 0,
+        pressure = 1013, humidity = 50, dewPoint = null, uvIndex = null, clouds = 0,
         visibility = 10000, windSpeed = speed, windDirection = direction, tripId = 1,
     )
 
     @Test
     fun getAverageWind() {
         listOf(0, 45, 90, 135, 180, 225, 270, 315).forEach { direction ->
-            val average = arrayOf(wind(4.0, direction)).getAverageWind()
+            val average = arrayOf(wind(4.0, direction)).getAverageWind()!!
             Assert.assertEquals(4.0, average.first, 1e-9)
             Assert.assertEquals(direction.toDouble(), average.second, 1e-9)
         }
-        arrayOf(wind(4.0, 350), wind(4.0, 10)).getAverageWind().let {
+        arrayOf(wind(4.0, 350), wind(4.0, 10)).getAverageWind()!!.let {
             Assert.assertTrue(it.second < 1e-9 || it.second > 360 - 1e-9)
         }
         Assert.assertEquals(
             270.0,
-            arrayOf(wind(2.0, 225), wind(2.0, 315)).getAverageWind().second,
+            arrayOf(wind(2.0, 225), wind(2.0, 315)).getAverageWind()!!.second,
             1e-9
         )
     }
