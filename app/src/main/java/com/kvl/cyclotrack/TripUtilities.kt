@@ -1044,20 +1044,24 @@ fun calculateWheelCircumference(
 
 data class MapPath(val paths: Array<PolylineOptions>, val bounds: LatLngBounds?)
 
-fun Array<Weather>.getAverageWind(): Pair<Double, Double> {
+fun Array<Weather>.getAverageWind(): Pair<Double, Double>? {
+    val winds = mapNotNull { w ->
+        w.windSpeed?.let { speed -> w.windDirection?.let { direction -> speed to direction } }
+    }
+    if (winds.isEmpty()) return null
     var ew = 0.0
     var ns = 0.0
-    this.forEach {
-        ew += sin(it.windDirection * PI / 180) * it.windSpeed
-        ns += cos(it.windDirection * PI / 180) * it.windSpeed
+    winds.forEach { (speed, direction) ->
+        ew += sin(direction * PI / 180) * speed
+        ns += cos(direction * PI / 180) * speed
     }
-    ew /= this.size * -1
-    ns /= this.size * -1
+    ew /= winds.size * -1
+    ns /= winds.size * -1
     return Pair(
         sqrt(ew.pow(2) + ns.pow(2)),
         atan2(
-            ew / this.size * -1,
-            ns / this.size * -1
+            ew / winds.size * -1,
+            ns / winds.size * -1
         ) * 180 / PI + 180
     )
 }
