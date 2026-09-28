@@ -298,7 +298,7 @@ class BiometricsViewModel constructor(
         get() = try {
             "VO2Max ${
                 if (vo2max.isNullOrEmpty()) restingHeartRate?.takeIf { it.isNotBlank() && it.isDigitsOnly() }
-                    ?.toInt()
+                    ?.toIntOrNull()
                     ?.let {
                         estimateVo2Max(
                             it,
