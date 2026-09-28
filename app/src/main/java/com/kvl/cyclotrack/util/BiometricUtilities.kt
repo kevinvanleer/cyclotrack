@@ -46,6 +46,8 @@ fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
         else -> 1.0
     }
 
+private const val MAX_AGE_YEARS = 183f
+
 fun dateStringToAge(dateString: String, timestamp: Long = System.currentTimeMillis()) =
     try {
         SimpleDateFormat(
@@ -55,6 +57,7 @@ fun dateStringToAge(dateString: String, timestamp: Long = System.currentTimeMill
             dateString
         )
             ?.let { dateObj -> (timestamp - dateObj.time) / 1000f / 3600f / 24f / 365f }
+            ?.takeIf { it in 0f..MAX_AGE_YEARS }
     } catch (e: ParseException) {
         null
     }
