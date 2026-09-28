@@ -18,6 +18,19 @@ import com.kvl.cyclotrack.util.getUserVo2max
 import kotlin.math.roundToInt
 import kotlin.reflect.KProperty
 
+private const val MAX_RESTING_HEART_RATE = 200
+private const val MAX_MAX_HEART_RATE = 330
+private const val MAX_VO2MAX = 146
+private const val MAX_WEIGHT_LBS = 2100
+private const val MAX_WEIGHT_KG = 950
+private const val MAX_HEIGHT_INCHES = 160
+private const val MAX_HEIGHT_CM = 408
+
+internal fun capAt(value: String?, max: Int?): String? {
+    if (max == null) return value
+    return value?.toBigDecimalOrNull()?.takeIf { it > max.toBigDecimal() }?.let { max.toString() }
+        ?: value
+}
 
 class BiometricsViewModel constructor(
     private val googleFitApiService: GoogleFitApiService,
@@ -32,13 +45,14 @@ class BiometricsViewModel constructor(
         resId: Int,
         private val sharedPreferences: SharedPreferences,
         private val observable: BaseObservable,
+        private val max: Int?,
     ) {
         private val prefKey = CyclotrackApp.instance.getString(resId)
 
         operator fun getValue(
             biometricsViewModel: BiometricsViewModel,
             property: KProperty<*>,
-        ) = sharedPreferences.getString(prefKey, "")
+        ) = capAt(sharedPreferences.getString(prefKey, ""), max)
 
         operator fun setValue(
             biometricsViewModel: BiometricsViewModel,
@@ -46,7 +60,7 @@ class BiometricsViewModel constructor(
             newValue: String?,
         ) {
             sharedPreferences.edit {
-                this.putString(prefKey, newValue)
+                this.putString(prefKey, capAt(newValue, max))
             }
             observable.notifyPropertyChanged(BR.maxHrHint)
             observable.notifyPropertyChanged(BR.vo2maxHint)
@@ -55,8 +69,18 @@ class BiometricsViewModel constructor(
         }
     }
 
-    private fun makeObservablePreference(resId: Int) =
-        ObservablePreference(resId, sharedPreferences, this)
+    private fun makeObservablePreference(resId: Int, max: Int? = null) =
+        ObservablePreference(resId, sharedPreferences, this, max)
+
+    private val isImperial
+        get() = sharedPreferences.getString(
+            CyclotrackApp.instance.getString(R.string.preference_key_system_of_measurement),
+            "1"
+        ) == "1"
+
+    private val maxWeight get() = if (isImperial) MAX_WEIGHT_LBS else MAX_WEIGHT_KG
+
+    private val maxHeight get() = if (isImperial) MAX_HEIGHT_INCHES else MAX_HEIGHT_CM
 
     var sex: Int
         @Bindable
@@ -90,10 +114,13 @@ class BiometricsViewModel constructor(
     var dob by makeObservablePreference(R.string.preference_key_biometrics_user_dob)
 
     @get:Bindable
-    var vo2max by makeObservablePreference(R.string.preference_key_biometrics_user_vo2max)
+    var vo2max by makeObservablePreference(R.string.preference_key_biometrics_user_vo2max, MAX_VO2MAX)
 
     @get:Bindable
-    var maxHeartRate by makeObservablePreference(R.string.preference_key_biometrics_user_maxHeartRate)
+    var maxHeartRate by makeObservablePreference(
+        R.string.preference_key_biometrics_user_maxHeartRate,
+        MAX_MAX_HEART_RATE
+    )
 
     var weight
         @Bindable
@@ -108,9 +135,12 @@ class BiometricsViewModel constructor(
                     )
 
                     else
-                    -> sharedPreferences.getString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
-                        ""
+                    -> capAt(
+                        sharedPreferences.getString(
+                            CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
+                            ""
+                        ),
+                        maxWeight
                     )
                 }
             } catch (e: ClassCastException) {
@@ -121,7 +151,7 @@ class BiometricsViewModel constructor(
                 sharedPreferences.edit {
                     this.putString(
                         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
-                        newValue
+                        capAt(newValue, maxWeight)
                     )
                 }
                 notifyChange()
@@ -140,9 +170,12 @@ class BiometricsViewModel constructor(
                         )
                     )
 
-                    else -> sharedPreferences.getString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
-                        ""
+                    else -> capAt(
+                        sharedPreferences.getString(
+                            CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
+                            ""
+                        ),
+                        maxHeight
                     )
                 }
             } catch (e: ClassCastException) {
@@ -153,7 +186,7 @@ class BiometricsViewModel constructor(
                 sharedPreferences.edit {
                     this.putString(
                         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
-                        newValue
+                        capAt(newValue, maxHeight)
                     )
                 }
                 notifyChange()
@@ -166,9 +199,12 @@ class BiometricsViewModel constructor(
             try {
                 when (!isRestingHeartRateEditable) {
                     true -> gfRestingHr.toString()
-                    else -> sharedPreferences.getString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                        ""
+                    else -> capAt(
+                        sharedPreferences.getString(
+                            CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
+                            ""
+                        ),
+                        MAX_RESTING_HEART_RATE
                     )
                 }
             } catch (e: ClassCastException) {
@@ -179,7 +215,7 @@ class BiometricsViewModel constructor(
                 sharedPreferences.edit {
                     this.putString(
                         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                        newValue
+                        capAt(newValue, MAX_RESTING_HEART_RATE)
                     )
                 }
                 notifyChange()

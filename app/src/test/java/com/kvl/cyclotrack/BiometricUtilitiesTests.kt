@@ -685,4 +685,22 @@ class BiometricUtilitiesTests {
             )
         )
     }
+
+    @Test
+    fun capAt_caps_only_values_over_max() {
+        Assert.assertEquals("200", capAt("6956338288", 200))
+        Assert.assertEquals("200", capAt("99999999999999999999999", 200))
+        Assert.assertEquals("72.5", capAt("72.5", 200))
+        Assert.assertEquals("72.", capAt("72.", 200))
+        Assert.assertEquals("", capAt("", 200))
+        Assert.assertEquals(null, capAt(null, 200))
+        Assert.assertEquals("99999", capAt("99999", null))
+    }
+
+    @Test
+    fun dateStringToAge_rejects_out_of_range_dates() {
+        Assert.assertNotNull(dateStringToAge("1990-01-01"))
+        Assert.assertNull(dateStringToAge("3000-01-01"))
+        Assert.assertNull(dateStringToAge("1800-01-01"))
+    }
 }
