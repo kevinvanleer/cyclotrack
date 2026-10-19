@@ -909,13 +909,13 @@ fun degreesToCardinal(degrees: Float): String {
         in 56.25f..78.75f -> "ENE"
         in 78.75f..101.25f -> "E"
         in 101.25f..123.75f -> "ESE"
-        in 123.75f..145.25f -> "SE"
-        in 145.25f..167.75f -> "SSE"
-        in 167.75f..190.25f -> "S"
-        in 190.25f..212.75f -> "SSW"
-        in 212.75f..235.25f -> "SW"
-        in 235.25f..257.75f -> "WSW"
-        in 257.75f..281.25f -> "W"
+        in 123.75f..146.25f -> "SE"
+        in 146.25f..168.75f -> "SSE"
+        in 168.75f..191.25f -> "S"
+        in 191.25f..213.75f -> "SSW"
+        in 213.75f..236.25f -> "SW"
+        in 236.25f..258.75f -> "WSW"
+        in 258.75f..281.25f -> "W"
         in 281.25f..303.75f -> "WNW"
         in 303.75f..326.25f -> "NW"
         in 326.25f..348.75f -> "NNW"
@@ -1055,9 +1055,9 @@ fun Array<Weather>.getAverageWind(): Pair<Double, Double> {
     ns /= this.size * -1
     return Pair(
         sqrt(ew.pow(2) + ns.pow(2)),
-        atan2(
+        (atan2(
             ew / this.size * -1,
             ns / this.size * -1
-        ) * 180 / PI + 180
+        ) * 180 / PI + 360) % 360
     )
 }
