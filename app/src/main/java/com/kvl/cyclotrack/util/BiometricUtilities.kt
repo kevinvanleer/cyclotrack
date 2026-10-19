@@ -47,6 +47,28 @@ fun getMassConversionFactor(sharedPreferences: SharedPreferences) =
     }
 
 private const val MAX_AGE_YEARS = 183f
+const val MAX_RESTING_HEART_RATE = 200
+const val MAX_MAX_HEART_RATE = 330
+const val MAX_VO2MAX = 146
+private const val MAX_WEIGHT_LBS = 2100
+private const val MAX_WEIGHT_KG = 950
+private const val MAX_HEIGHT_INCHES = 160
+private const val MAX_HEIGHT_CM = 408
+
+fun getMaxUserWeight(sharedPreferences: SharedPreferences) =
+    when (sharedPreferences.getString("display_units", "1")) {
+        "1" -> MAX_WEIGHT_LBS
+        else -> MAX_WEIGHT_KG
+    }
+
+fun getMaxUserHeight(sharedPreferences: SharedPreferences) =
+    when (sharedPreferences.getString("display_units", "1")) {
+        "1" -> MAX_HEIGHT_INCHES
+        else -> MAX_HEIGHT_CM
+    }
+
+fun parseBiometric(value: String?, max: Int) =
+    value?.toFloatOrNull()?.takeIf { it > 0 && it <= max }
 
 fun dateStringToAge(dateString: String, timestamp: Long = System.currentTimeMillis()) =
     try {
@@ -106,7 +128,7 @@ fun getUserWeight(context: Context): Float? =
         context
             .getString(R.string.preference_key_biometrics_user_weight),
         ""
-    )?.toFloatOrNull()?.let {
+    ).let { parseBiometric(it, getMaxUserWeight(PreferenceManager.getDefaultSharedPreferences(context))) }?.let {
         getMassConversionFactor(PreferenceManager.getDefaultSharedPreferences(context)) * it
 
     }?.toFloat()
@@ -116,7 +138,7 @@ fun getUserHeight(context: Context): Float? =
         context
             .getString(R.string.preference_key_biometrics_user_height),
         ""
-    )?.toFloatOrNull()?.let {
+    ).let { parseBiometric(it, getMaxUserHeight(PreferenceManager.getDefaultSharedPreferences(context))) }?.let {
         when (PreferenceManager.getDefaultSharedPreferences(context)
             .getString("display_units", "1")) {
             "1" -> INCHES_TO_FEET * FEET_TO_METERS
@@ -165,21 +187,21 @@ fun getUserVo2max(context: Context) =
         context
             .getString(R.string.preference_key_biometrics_user_vo2max),
         ""
-    )?.toFloatOrNull()
+    ).let { parseBiometric(it, MAX_VO2MAX) }
 
 fun getUserRestingHeartRate(context: Context) =
     PreferenceManager.getDefaultSharedPreferences(context).getString(
         context
             .getString(R.string.preference_key_biometrics_user_restingHeartRate),
         ""
-    )?.toIntOrNull()
+    ).let { parseBiometric(it, MAX_RESTING_HEART_RATE) }?.toInt()
 
 fun getUserMaxHeartRate(context: Context) =
     PreferenceManager.getDefaultSharedPreferences(context).getString(
         context
             .getString(R.string.preference_key_biometrics_user_maxHeartRate),
         ""
-    )?.toIntOrNull()
+    ).let { parseBiometric(it, MAX_MAX_HEART_RATE) }?.toInt()
 
 fun getUserSex(sharedPreferences: SharedPreferences) =
     try {
@@ -199,7 +221,7 @@ fun getUserWeight(sharedPreferences: SharedPreferences): Float? =
         CyclotrackApp.instance
             .getString(R.string.preference_key_biometrics_user_weight),
         ""
-    )?.toFloatOrNull()?.let {
+    ).let { parseBiometric(it, getMaxUserWeight(sharedPreferences)) }?.let {
         getMassConversionFactor(sharedPreferences) * it
 
     }?.toFloat()
@@ -209,7 +231,7 @@ fun getUserHeight(sharedPreferences: SharedPreferences): Float? =
         CyclotrackApp.instance
             .getString(R.string.preference_key_biometrics_user_height),
         ""
-    )?.toFloatOrNull()?.let {
+    ).let { parseBiometric(it, getMaxUserHeight(sharedPreferences)) }?.let {
         when (sharedPreferences.getString("display_units", "1")) {
             "1" -> INCHES_TO_FEET * FEET_TO_METERS
             "2" -> 0.001
@@ -236,21 +258,21 @@ fun getUserVo2max(sharedPreferences: SharedPreferences) =
         CyclotrackApp.instance
             .getString(R.string.preference_key_biometrics_user_vo2max),
         ""
-    )?.toFloatOrNull()
+    ).let { parseBiometric(it, MAX_VO2MAX) }
 
 fun getUserRestingHeartRate(sharedPreferences: SharedPreferences) =
     sharedPreferences.getString(
         CyclotrackApp.instance
             .getString(R.string.preference_key_biometrics_user_restingHeartRate),
         ""
-    )?.toIntOrNull()
+    ).let { parseBiometric(it, MAX_RESTING_HEART_RATE) }?.toInt()
 
 fun getUserMaxHeartRate(sharedPreferences: SharedPreferences) =
     sharedPreferences.getString(
         CyclotrackApp.instance
             .getString(R.string.preference_key_biometrics_user_maxHeartRate),
         ""
-    )?.toIntOrNull()
+    ).let { parseBiometric(it, MAX_MAX_HEART_RATE) }?.toInt()
 
 fun estimateMaxHeartRate(age: Int) = (208 - 0.7 * age).toInt()
 
@@ -300,13 +322,11 @@ fun getCaloriesBurnedLabel(
     heartRate: Short?,
 ): String =
     (biometrics.userVo2max
-        ?: (biometrics.userRestingHeartRate?.let { restingHr ->
-            estimateVo2Max(
-                restingHr,
-                biometrics.userMaxHeartRate
-                    ?: estimateMaxHeartRate(biometrics.userAge?.roundToInt()!!)
-            )
-        })).let { estVo2max ->
+        ?: biometrics.userRestingHeartRate?.let { restingHr ->
+            (biometrics.userMaxHeartRate
+                ?: biometrics.userAge?.roundToInt()?.let { estimateMaxHeartRate(it) })
+                ?.let { estimateVo2Max(restingHr, it) }
+        }).let { estVo2max ->
         "Calories" + if (biometrics.userSex != null && biometrics.userAge != null && heartRate != null && estVo2max != null) {
             if (biometrics.userHeight != null || !useVo2maxCalorieEstimate(context)) " (net)"
             else " (gross)"
@@ -506,11 +526,9 @@ fun estimateCaloriesBurnedVo2max(
     distance: Float,
     heartRate: Short?,
 ): Int {
-    val estVo2max = vo2Max ?: restingHeartRate?.let {
-        estimateVo2Max(
-            it,
-            maximumHeartRate ?: estimateMaxHeartRate(age!!)
-        )
+    val estVo2max = vo2Max ?: restingHeartRate?.let { restingHr ->
+        (maximumHeartRate ?: age?.let { estimateMaxHeartRate(it) })
+            ?.let { estimateVo2Max(restingHr, it) }
     }
     return if (sex != null && age != null && heartRate != null && estVo2max != null) {
         if (height != null) estimateNetCaloriesBurned(

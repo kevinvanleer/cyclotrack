@@ -76,6 +76,7 @@
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="10dp"
                 android:hint="@{viewmodel.heightHint}"
+                app:error="@{viewmodel.heightError}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_biometrics_instruction_text">
 
@@ -95,6 +96,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:hint="@{viewmodel.weightHint}"
+                app:error="@{viewmodel.weightError}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_biometrics_height_layout">
 
@@ -161,6 +163,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:hint="@string/preference_biometrics_label_dob"
+                app:error="@{viewmodel.dobError}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_biometrics_sex">
 
@@ -180,6 +183,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="30dp"
                 android:hint="@{viewmodel.vo2maxHint}"
+                app:error="@{viewmodel.vo2maxError}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_biometrics_dob_layout">
 
@@ -199,6 +203,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginTop="10dp"
                 android:hint="@string/preference_biometrics_label_restingHeartRate"
+                app:error="@{viewmodel.restingHeartRateError}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_biometrics_vo2max_layout">
 
@@ -219,6 +224,7 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginTop="10dp"
                 android:hint="@{viewmodel.maxHrHint}"
+                app:error="@{viewmodel.maxHeartRateError}"
                 android:paddingBottom="30dp"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/preference_biometrics_restingHeartRate_layout">

@@ -687,14 +687,39 @@ class BiometricUtilitiesTests {
     }
 
     @Test
-    fun capAt_caps_only_values_over_max() {
-        Assert.assertEquals("200", capAt("6956338288", 200))
-        Assert.assertEquals("200", capAt("99999999999999999999999", 200))
-        Assert.assertEquals("72.5", capAt("72.5", 200))
-        Assert.assertEquals("72.", capAt("72.", 200))
-        Assert.assertEquals("", capAt("", 200))
-        Assert.assertEquals(null, capAt(null, 200))
-        Assert.assertEquals("99999", capAt("99999", null))
+    fun parseBiometric_accepts_only_values_above_zero_and_at_most_max() {
+        Assert.assertEquals(72.5f, parseBiometric("72.5", 200))
+        Assert.assertEquals(72f, parseBiometric("72.", 200))
+        Assert.assertEquals(200f, parseBiometric("200", 200))
+        Assert.assertNull(parseBiometric("6956338288", 200))
+        Assert.assertNull(parseBiometric("99999999999999999999999", 200))
+        Assert.assertNull(parseBiometric("201", 200))
+        Assert.assertNull(parseBiometric("0", 200))
+        Assert.assertNull(parseBiometric("0.0", 200))
+        Assert.assertNull(parseBiometric("-5", 200))
+        Assert.assertNull(parseBiometric("NaN", 200))
+        Assert.assertNull(parseBiometric(".", 200))
+        Assert.assertNull(parseBiometric("", 200))
+        Assert.assertNull(parseBiometric(null, 200))
+    }
+
+    @Test
+    fun estimateCaloriesBurnedVo2max_missing_age_and_max_heart_rate() {
+        val bodyMass = 70f
+        val duration = 40 * 60f
+        val distance = 16000f
+        Assert.assertEquals(
+            estimateCaloriesBurnedMets(bodyMass, distance, duration),
+            estimateCaloriesBurnedVo2max(
+                "MALE",
+                null, bodyMass, null, null,
+                60,
+                null,
+                duration,
+                distance,
+                169.toShort()
+            )
+        )
     }
 
     @Test
