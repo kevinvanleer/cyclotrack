@@ -68,7 +68,7 @@ fun getMaxUserHeight(sharedPreferences: SharedPreferences) =
     }
 
 fun parseBiometric(value: String?, max: Int) =
-    value?.toFloatOrNull()?.takeIf { it > 0 && it <= max }
+    value?.replace(',', '.')?.toFloatOrNull()?.takeIf { it > 0 && it <= max }
 
 fun dateStringToAge(dateString: String, timestamp: Long = System.currentTimeMillis()) =
     try {
@@ -234,7 +234,7 @@ fun getUserHeight(sharedPreferences: SharedPreferences): Float? =
     ).let { parseBiometric(it, getMaxUserHeight(sharedPreferences)) }?.let {
         when (sharedPreferences.getString("display_units", "1")) {
             "1" -> INCHES_TO_FEET * FEET_TO_METERS
-            "2" -> 0.001
+            "2" -> 0.01
             else -> 1.0
         } * it
 

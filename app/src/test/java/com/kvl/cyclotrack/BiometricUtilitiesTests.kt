@@ -690,6 +690,7 @@ class BiometricUtilitiesTests {
     fun parseBiometric_accepts_only_values_above_zero_and_at_most_max() {
         Assert.assertEquals(72.5f, parseBiometric("72.5", 200))
         Assert.assertEquals(72f, parseBiometric("72.", 200))
+        Assert.assertEquals(72.5f, parseBiometric("72,5", 200))
         Assert.assertEquals(200f, parseBiometric("200", 200))
         Assert.assertNull(parseBiometric("6956338288", 200))
         Assert.assertNull(parseBiometric("99999999999999999999999", 200))
