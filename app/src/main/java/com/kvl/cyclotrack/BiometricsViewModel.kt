@@ -3,21 +3,27 @@ package com.kvl.cyclotrack
 import android.content.SharedPreferences
 import android.util.Log
 import androidx.core.content.edit
-import androidx.core.text.isDigitsOnly
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import com.google.android.gms.common.api.ApiException
+import com.kvl.cyclotrack.util.MAX_MAX_HEART_RATE
+import com.kvl.cyclotrack.util.MAX_RESTING_HEART_RATE
+import com.kvl.cyclotrack.util.MAX_VO2MAX
 import com.kvl.cyclotrack.util.convertSystemToUserHeight
 import com.kvl.cyclotrack.util.convertSystemToUserMass
+import com.kvl.cyclotrack.util.dateStringToAge
 import com.kvl.cyclotrack.util.estimateMaxHeartRate
 import com.kvl.cyclotrack.util.estimateVo2Max
 import com.kvl.cyclotrack.util.getCaloriesEstimateType
+import com.kvl.cyclotrack.util.getMaxUserHeight
+import com.kvl.cyclotrack.util.getMaxUserWeight
 import com.kvl.cyclotrack.util.getUserAge
 import com.kvl.cyclotrack.util.getUserMaxHeartRate
+import com.kvl.cyclotrack.util.getUserRestingHeartRate
 import com.kvl.cyclotrack.util.getUserVo2max
+import com.kvl.cyclotrack.util.parseBiometric
 import kotlin.math.roundToInt
 import kotlin.reflect.KProperty
-
 
 class BiometricsViewModel constructor(
     private val googleFitApiService: GoogleFitApiService,
@@ -28,35 +34,70 @@ class BiometricsViewModel constructor(
     private val keyUserSex =
         CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_sex)
 
+    // Holds the typed text so an invalid entry stays visible without being saved
+    // or replacing the stored value.
     class ObservablePreference constructor(
         resId: Int,
         private val sharedPreferences: SharedPreferences,
         private val observable: BaseObservable,
+        private val errorMessage: () -> String,
+        private val isValid: (String) -> Boolean,
     ) {
         private val prefKey = CyclotrackApp.instance.getString(resId)
+        private var text: String? = null
+
+        var value: String?
+            get() = text ?: sharedPreferences.getString(prefKey, "")
+            set(newValue) {
+                text = newValue
+                when {
+                    newValue.isNullOrBlank() -> sharedPreferences.edit { remove(prefKey) }
+                    isValid(newValue) -> sharedPreferences.edit { putString(prefKey, newValue) }
+                }
+                observable.notifyChange()
+            }
+
+        val error
+            get() = value?.takeIf { it.isNotBlank() && !isValid(it) }?.let { errorMessage() }
 
         operator fun getValue(
             biometricsViewModel: BiometricsViewModel,
             property: KProperty<*>,
-        ) = sharedPreferences.getString(prefKey, "")
+        ) = value
 
         operator fun setValue(
             biometricsViewModel: BiometricsViewModel,
             property: KProperty<*>,
             newValue: String?,
         ) {
-            sharedPreferences.edit {
-                this.putString(prefKey, newValue)
-            }
-            observable.notifyPropertyChanged(BR.maxHrHint)
-            observable.notifyPropertyChanged(BR.vo2maxHint)
-            observable.notifyPropertyChanged(BR.vo2maxDefined)
-            observable.notifyPropertyChanged(BR.instructionText)
+            value = newValue
         }
     }
 
-    private fun makeObservablePreference(resId: Int) =
-        ObservablePreference(resId, sharedPreferences, this)
+    private fun makeObservablePreference(resId: Int, max: () -> Int) =
+        ObservablePreference(
+            resId,
+            sharedPreferences,
+            this,
+            { "Must be above 0 and at most ${max()}" },
+        ) { parseBiometric(it, max()) != null }
+
+    private val dobPreference = ObservablePreference(
+        R.string.preference_key_biometrics_user_dob,
+        sharedPreferences,
+        this,
+        { "Enter a valid date (yyyy-MM-dd)" },
+    ) { dateStringToAge(it) != null }
+    private val vo2maxPreference =
+        makeObservablePreference(R.string.preference_key_biometrics_user_vo2max) { MAX_VO2MAX }
+    private val maxHeartRatePreference =
+        makeObservablePreference(R.string.preference_key_biometrics_user_maxHeartRate) { MAX_MAX_HEART_RATE }
+    private val restingHeartRatePreference =
+        makeObservablePreference(R.string.preference_key_biometrics_user_restingHeartRate) { MAX_RESTING_HEART_RATE }
+    private val weightPreference =
+        makeObservablePreference(R.string.preference_key_biometrics_user_weight) { getMaxUserWeight(sharedPreferences) }
+    private val heightPreference =
+        makeObservablePreference(R.string.preference_key_biometrics_user_height) { getMaxUserHeight(sharedPreferences) }
 
     var sex: Int
         @Bindable
@@ -87,13 +128,31 @@ class BiometricsViewModel constructor(
 
 
     @get:Bindable
-    var dob by makeObservablePreference(R.string.preference_key_biometrics_user_dob)
+    var dob by dobPreference
 
     @get:Bindable
-    var vo2max by makeObservablePreference(R.string.preference_key_biometrics_user_vo2max)
+    var vo2max by vo2maxPreference
 
     @get:Bindable
-    var maxHeartRate by makeObservablePreference(R.string.preference_key_biometrics_user_maxHeartRate)
+    var maxHeartRate by maxHeartRatePreference
+
+    @get:Bindable
+    val dobError get() = dobPreference.error
+
+    @get:Bindable
+    val vo2maxError get() = vo2maxPreference.error
+
+    @get:Bindable
+    val maxHeartRateError get() = maxHeartRatePreference.error
+
+    @get:Bindable
+    val restingHeartRateError get() = restingHeartRatePreference.error.takeIf { isRestingHeartRateEditable }
+
+    @get:Bindable
+    val weightError get() = weightPreference.error.takeIf { isWeightEditable }
+
+    @get:Bindable
+    val heightError get() = heightPreference.error.takeIf { isHeightEditable }
 
     var weight
         @Bindable
@@ -107,24 +166,14 @@ class BiometricsViewModel constructor(
                         )
                     )
 
-                    else
-                    -> sharedPreferences.getString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
-                        ""
-                    )
+                    else -> weightPreference.value
                 }
             } catch (e: ClassCastException) {
                 ""
             }
         set(newValue) {
             if (gfWeight == null || !useGoogleFitBiometrics) {
-                sharedPreferences.edit {
-                    this.putString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_weight),
-                        newValue
-                    )
-                }
-                notifyChange()
+                weightPreference.value = newValue
             }
         }
 
@@ -140,23 +189,14 @@ class BiometricsViewModel constructor(
                         )
                     )
 
-                    else -> sharedPreferences.getString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
-                        ""
-                    )
+                    else -> heightPreference.value
                 }
             } catch (e: ClassCastException) {
                 ""
             }
         set(newValue) {
             if (gfHeight == null || !useGoogleFitBiometrics) {
-                sharedPreferences.edit {
-                    this.putString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_height),
-                        newValue
-                    )
-                }
-                notifyChange()
+                heightPreference.value = newValue
             }
         }
 
@@ -166,23 +206,14 @@ class BiometricsViewModel constructor(
             try {
                 when (!isRestingHeartRateEditable) {
                     true -> gfRestingHr.toString()
-                    else -> sharedPreferences.getString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                        ""
-                    )
+                    else -> restingHeartRatePreference.value
                 }
             } catch (e: ClassCastException) {
                 ""
             }
         set(newValue) {
             if (isRestingHeartRateEditable) {
-                sharedPreferences.edit {
-                    this.putString(
-                        CyclotrackApp.instance.getString(R.string.preference_key_biometrics_user_restingHeartRate),
-                        newValue
-                    )
-                }
-                notifyChange()
+                restingHeartRatePreference.value = newValue
             }
         }
 
@@ -295,27 +326,16 @@ class BiometricsViewModel constructor(
 
     @get:Bindable
     val vo2maxHint: String
-        get() = try {
-            "VO2Max ${
-                if (vo2max.isNullOrEmpty()) restingHeartRate?.takeIf { it.isNotBlank() && it.isDigitsOnly() }
-                    ?.toInt()
-                    ?.let {
-                        estimateVo2Max(
-                            it,
-                            getUserMaxHeartRate(sharedPreferences) ?: estimateMaxHeartRate(
-                                getUserAge(
-                                    sharedPreferences,
-                                    System.currentTimeMillis()
-                                )?.roundToInt()!!
-                            )
-                        )
-                    }?.let {
-                        "(est ${it.toInt()} mL/kg/min)"
-                    } ?: "(enter resting/max HR to estimate)" else "(enter resting/max HR to estimate)"
-            }"
-        } catch (e: NullPointerException) {
-            "VO2Max (enter resting/max HR to estimate)"
-        }
+        get() = "VO2Max ${
+            (if (isRestingHeartRateEditable) getUserRestingHeartRate(sharedPreferences) else gfRestingHr)
+                ?.takeIf { getUserVo2max(sharedPreferences) == null }
+                ?.let { restingHr ->
+                    (getUserMaxHeartRate(sharedPreferences)
+                        ?: getUserAge(sharedPreferences, System.currentTimeMillis())
+                            ?.roundToInt()?.let { estimateMaxHeartRate(it) })
+                        ?.let { "(est ${estimateVo2Max(restingHr, it).toInt()} mL/kg/min)" }
+                } ?: "(enter resting/max HR to estimate)"
+        }"
 
     @get:Bindable
     val maxHrHint: String
