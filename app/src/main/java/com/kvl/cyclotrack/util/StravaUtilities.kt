@@ -42,7 +42,6 @@ fun updateStravaAuthToken(
     authCode: String? = null,
     refreshToken: String? = null
 ): String? {
-    val logTag = "updateStravaAuthToken"
     if (authCode == null && refreshToken == null) {
         throw RuntimeException("Strava token exchange must have an authorization code or refresh token")
     }
@@ -79,11 +78,6 @@ fun updateStravaAuthToken(
                             val tokenResponse = response.body?.source()?.let {
                                 jsonAdapter.nullSafe().fromJson(it)
                             }
-                            Log.d(logTag, "$tokenResponse")
-                            Log.d(logTag, "${tokenResponse?.expires_in}")
-                            Log.d(logTag, "${tokenResponse?.refresh_token}")
-                            Log.d(logTag, "${tokenResponse?.access_token}")
-                            Log.d(logTag, "${tokenResponse?.athlete}")
                             getPreferences(context).edit().apply {
                                 putLong(
                                     context.getString(R.string.preference_key_strava_access_expires_at),
