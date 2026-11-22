@@ -47,6 +47,7 @@ import com.kvl.cyclotrack.util.updateStravaAuthToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -87,14 +88,14 @@ class AppPreferencesFragment : PreferenceFragmentCompat() {
 
     private fun disconnectStrava(context: Context, refreshToken: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            updateStravaAuthToken(
-                context = context,
-                refreshToken = refreshToken
-            )?.let { accessToken ->
-                try {
-                    deauthorizeStrava(accessToken, context)
-                } catch (e: IOException) {
-                    FirebaseCrashlytics.getInstance().recordException(e)
+            try {
+                updateStravaAuthToken(
+                    context = context,
+                    refreshToken = refreshToken
+                )?.let { accessToken -> deauthorizeStrava(accessToken, context) }
+            } catch (e: IOException) {
+                FirebaseCrashlytics.getInstance().recordException(e)
+                withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
                         "Failed to disconnect from Strava. Please try again.",
