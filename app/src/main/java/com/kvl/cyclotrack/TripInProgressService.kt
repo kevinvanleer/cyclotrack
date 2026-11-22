@@ -118,6 +118,12 @@ class TripInProgressService @Inject constructor() :
     private var nextWeatherUpdate = 0L
     private val weatherUpdatePeriod = 5 * 60000
 
+    private val weatherAdapter by lazy {
+        Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+            .adapter(WeatherResponse::class.java).nullSafe()
+    }
+    private val httpClient by lazy { OkHttpClient() }
+
     companion object {
         @Volatile
         var running = false
@@ -405,49 +411,45 @@ class TripInProgressService @Inject constructor() :
             val lat = location.latitude
             val lng = location.longitude
 
-            val jsonAdapter = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
-                .adapter(WeatherResponse::class.java)
             val devAppId = getString(R.string.openweather_api_key)
             val weatherUrl =
                 "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lng&appid=$devAppId"
-            OkHttpClient().let { client ->
-                Request.Builder()
-                    .url(weatherUrl)
-                    .build()
-                    .let { request ->
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            try {
-                                client.newCall(request).execute().let { response ->
-                                    Log.d(logTag, "Received response from OpenWeather")
-                                    Log.d(logTag, response.body.toString())
-                                    if (response.isSuccessful) {
-                                        try {
-                                            response.body?.source()
-                                                ?.let { jsonAdapter.nullSafe().fromJson(it) }
-                                                ?.toWeather(tripId)
-                                                ?.let { weatherRepository.recordWeather(it) }
-                                        } catch (e: JsonDataException) {
-                                            Log.w(logTag, "Failed to parse response", e)
-                                            FirebaseCrashlytics.getInstance().recordException(e)
-                                        } catch (e: SQLiteConstraintException) {
-                                            Log.e(logTag, "Failed to add weather measurements", e)
-                                            handleSqliteConstraintException(e)
-                                        }
-                                    } else {
-                                        nextWeatherUpdate = 0
-                                        Log.i(
-                                            logTag,
-                                            "Unexpected openweathermap response: $response"
-                                        )
+            Request.Builder()
+                .url(weatherUrl)
+                .build()
+                .let { request ->
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            httpClient.newCall(request).execute().use { response ->
+                                Log.d(logTag, "Received response from OpenWeather")
+                                Log.d(logTag, response.body.toString())
+                                if (response.isSuccessful) {
+                                    try {
+                                        response.body.source()
+                                            .let { weatherAdapter.fromJson(it) }
+                                            ?.toWeather(tripId)
+                                            ?.let { weatherRepository.recordWeather(it) }
+                                    } catch (e: JsonDataException) {
+                                        Log.w(logTag, "Failed to parse response", e)
+                                        FirebaseCrashlytics.getInstance().recordException(e)
+                                    } catch (e: SQLiteConstraintException) {
+                                        Log.e(logTag, "Failed to add weather measurements", e)
+                                        handleSqliteConstraintException(e)
                                     }
+                                } else {
+                                    nextWeatherUpdate = 0
+                                    Log.i(
+                                        logTag,
+                                        "Unexpected openweathermap response: $response"
+                                    )
                                 }
-                            } catch (e: IOException) {
-                                Log.i(logTag, "Weather request failed", e)
-                                nextWeatherUpdate = 0
                             }
+                        } catch (e: IOException) {
+                            Log.i(logTag, "Weather request failed", e)
+                            nextWeatherUpdate = 0
                         }
                     }
-            }
+                }
         }
     }
 
